@@ -1730,10 +1730,7 @@ export default function AllMatches() {
                         py: { xs: 2, md: 2.5 },
                         borderRadius: 0,
                         minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
-                        width: '100vw',
-                        position: 'relative',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
+                        width: '100%',
                     }}
                 >
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
@@ -1773,16 +1770,17 @@ export default function AllMatches() {
                         display: 'flex',
                         gap: { xs: 1.25, md: 3 },
                         mb: { xs: 3, md: 5 },
-                        flexWrap: { xs: 'wrap', md: 'nowrap' },
-                        flexDirection: { xs: 'column', md: 'row' },
-                        alignItems: { xs: 'stretch', md: 'center' },
-                        justifyContent: { xs: 'flex-start', md: 'space-between' }
+                        flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                        justifyContent: { xs: 'flex-start', sm: 'space-between' },
+                        px: { xs: 0, md: 2 }
                     }}>
 
                         <Box sx={{
                             display: 'flex',
                             gap: { xs: 1, md: 2 },
-                            width: { xs: '100%', md: 'auto' },
+                            width: { xs: '100%', sm: 'auto' },
                             alignItems: 'center',
                             flexDirection: { xs: 'column', sm: 'row' },
                             flexShrink: 0
@@ -1795,14 +1793,14 @@ export default function AllMatches() {
                                     color: 'white',
                                     fontFamily: 'Arial, Helvetica, sans-serif',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '13px', sm: '16px', md: '18px' },
-                                    minHeight: { md: 48 },
-                                    height: { md: 48 },
+                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                                    minHeight: { xs: 44, md: 48 },
+                                    height: { xs: 44, md: 48 },
                                     '&:hover': { bgcolor: '#0388E3' },
                                     width: { xs: '100%', sm: 'fit-content' },
                                     borderRadius: 2,
-                                    py: { xs: 1, md: 1 },
-                                    px: { xs: 3, md: 3 },
+                                    py: { xs: 0.75, md: 1 },
+                                    px: { xs: 2.5, md: 3 },
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                                     border: '1px solid rgba(255,255,255,0.1)',
                                     textTransform: 'none'
@@ -1858,10 +1856,10 @@ export default function AllMatches() {
                                 onClick={handleLeaguesDropdownOpen}
                                 sx={{
                                     textTransform: 'uppercase',
-                                    fontSize: { xs: '0.9rem', sm: '1.25rem', md: '1.2rem' },
+                                    fontSize: { xs: '0.95rem', sm: '1.25rem', md: '1.2rem' },
                                     fontWeight: 'bold',
-                                    minHeight: { md: 48 },
-                                    height: { md: 48 },
+                                    minHeight: { xs: 44, md: 48 },
+                                    height: { xs: 44, md: 48 },
                                     lineHeight: 1.2,
                                     wordBreak: 'normal',
                                     overflow: 'hidden',
@@ -1869,13 +1867,14 @@ export default function AllMatches() {
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
                                     minWidth: 0,
-                                    width: { xs: '100%', sm: 'auto' },
+                                    width: { xs: '100%', sm: 'min(52vw, 420px)', md: 'auto' },
+                                    minWidth: { sm: 240, md: 260 },
                                     textAlign: { xs: 'left', md: 'left' },
                                     // color: 'white',
                                     backgroundColor: '#2B2B2B',
                                     borderRadius: 2,
-                                    px: { xs: 1.5, sm: 2 },
-                                    py: { xs: 0.9, sm: 1 },
+                                    px: { xs: 1.75, sm: 2 },
+                                    py: { xs: 0.7, sm: 1 },
                                     '&:hover': {
                                         backgroundColor: '#2B2B2B',
                                     },
@@ -2058,14 +2057,14 @@ export default function AllMatches() {
 
                         {/* Filters: All | Results | Matches | Fixtures */}
                         <Box sx={{
-                            display: { xs: 'grid', md: 'flex' },
-                            gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', md: 'none' },
+                            display: { xs: 'grid', sm: 'flex' },
+                            gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', sm: 'none' },
                             gap: { xs: 0.75, sm: 1 },
                             flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
                             alignItems: 'center',
-                            justifyContent: { xs: 'center', md: 'flex-end' },
-                            width: { xs: '100%', md: 'auto' },
-                            mt: { xs: 1, md: 0 }
+                            justifyContent: { xs: 'center', sm: 'flex-end' },
+                            width: { xs: '100%', sm: 'auto' },
+                            mt: { xs: 1, sm: 0 }
                         }}>
                             <Button
                                 variant={matchFilter === 'all' ? 'contained' : 'outlined'}
@@ -2078,13 +2077,13 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '11px', sm: '14px' },
+                                    fontSize: { xs: '12px', sm: '14px' },
                                     minHeight: { md: 48 },
                                     height: { md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
-                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.65, sm: 0.8 },
+                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.75, sm: 0.8 },
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
@@ -2106,13 +2105,13 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '11px', sm: '14px' },
+                                    fontSize: { xs: '12px', sm: '14px' },
                                     minHeight: { md: 48 },
                                     height: { md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
-                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.65, sm: 0.8 },
+                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.75, sm: 0.8 },
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
@@ -2135,13 +2134,13 @@ export default function AllMatches() {
                                     borderRadius: '9999px',
                                     textTransform: 'none',
                                     fontWeight: 'bold',
-                                    fontSize: { xs: '11px', sm: '14px' },
+                                    fontSize: { xs: '12px', sm: '14px' },
                                     minHeight: { md: 48 },
                                     height: { md: 48 },
                                     minWidth: 0,
                                     width: { xs: '100%', sm: 'auto' },
-                                    px: { xs: 0.5, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.65, sm: 0.8 },
+                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
+                                    py: { xs: 0.75, sm: 0.8 },
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
@@ -2251,6 +2250,9 @@ export default function AllMatches() {
                                         key={match.id}
                                         sx={{
                                             position: 'relative',
+                                            width: '100%',
+                                            maxWidth: { xs: 420, sm: 'none' },
+                                            mx: { xs: 'auto', sm: 0 },
                                             borderRadius: 1,
                                             overflow: 'hidden',
                                             background: '#222',
@@ -2415,7 +2417,7 @@ export default function AllMatches() {
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 18 : 22} height={isMobile ? 18 : 22} />}
                                                                 disabled={isDisabled && (isAdmin || !!isInMatch)}
-                                                                sx={{ color: 'white', fontSize: { xs: '0.52rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.35, sm: 1 }, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                                sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 1 }, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                             >
                                                                 Add Stats
                                                             </Button>
@@ -2426,7 +2428,7 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                             startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 18 : 28} height={isMobile ? 18 : 22} />}
-                                                            sx={{ color: 'white', fontSize: { xs: '0.52rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.35, sm: 0.5 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 0.5 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                         >
                                                             View Teams
                                                         </Button>
@@ -2434,7 +2436,7 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 18 : 15} height={isMobile ? 18 : 22} />}
-                                                            sx={{ color: 'white', fontSize: { xs: '0.52rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.35, sm: 1 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            sx={{ color: 'white', fontSize: { xs: '0.62rem', sm: '0.6rem' }, textTransform: 'none', py: 0.5, px: { xs: 0.6, sm: 1 }, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
                                                         >
                                                             Results
                                                         </Button>
@@ -2492,6 +2494,9 @@ export default function AllMatches() {
                                     onClick={(e) => handleMatchCardClick(match, e)}
                                     sx={{
                                         position: 'relative',
+                                        width: '100%',
+                                        maxWidth: { xs: 420, sm: 'none' },
+                                        mx: { xs: 'auto', sm: 0 },
                                         borderRadius: 1,
                                         overflow: 'hidden',
                                         background: '#222',
