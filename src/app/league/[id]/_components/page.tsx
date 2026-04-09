@@ -2920,11 +2920,14 @@ export default function LeagueDetailPage() {
                                     {/* Centered League Name */}
                                     <Box sx={{
                                         position: 'absolute',
-                                        left: '50%',
-                                        transform: 'translateX(-50%)',
+                                        left: 0,
+                                        right: 0,
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '100%',
+                                        px: { xs: 1.5, sm: 2, md: 0 },
                                         gap: 0.5,
                                         mt: { xs: 8, sm: 12, md: 17 },
                                     }}>
@@ -2955,7 +2958,7 @@ export default function LeagueDetailPage() {
                                                         whiteSpace: 'nowrap',
                                                         flexShrink: 1,
                                                         minWidth: 0,
-                                                        maxWidth: { xs: '96vw', sm: '60vw', md: '50vw' },
+                                                        maxWidth: { xs: '100%', sm: '72vw', md: '56vw' },
                                                         textAlign: 'center',
                                                         color: 'white',
                                                         backgroundColor: 'transparent',
@@ -2991,7 +2994,7 @@ export default function LeagueDetailPage() {
                                                         component="span"
                                                         sx={{
                                                             display: 'inline-block',
-                                                            maxWidth: { xs: 'calc(100vw - 110px)', sm: '48vw', md: '42vw' },
+                                                            maxWidth: { xs: 'calc(100vw - 96px)', sm: '58vw', md: '48vw' },
                                                             overflow: 'visible',
                                                             textOverflow: 'clip',
                                                             whiteSpace: 'nowrap',
@@ -3032,7 +3035,7 @@ export default function LeagueDetailPage() {
                                                     py: 0,
                                                     minHeight: 'auto',
                                                     minWidth: 0,
-                                                    maxWidth: { xs: '78vw', sm: '60vw', md: '50vw' },
+                                                    maxWidth: { xs: '88vw', sm: '60vw', md: '50vw' },
                                                     overflow: 'hidden',
                                                     '&:hover': {
                                                         backgroundColor: 'rgba(255,255,255,0.05)',
@@ -3060,9 +3063,9 @@ export default function LeagueDetailPage() {
                                                     component="span"
                                                     sx={{
                                                         display: 'inline-block',
-                                                        maxWidth: { xs: '62vw', sm: '46vw', md: '40vw' },
+                                                        maxWidth: { xs: '75vw', sm: '46vw', md: '40vw' },
                                                         overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
+                                                        textOverflow: 'clip',
                                                         whiteSpace: 'nowrap',
                                                     }}
                                                 >
@@ -3280,10 +3283,7 @@ export default function LeagueDetailPage() {
                                         height: 'var(--header-divider-height)',
                                         bgcolor: 'var(--header-divider-color)',
                                         mt: { xs: 8, sm: 12, md: 17 },
-                                        width: '100vw',
-                                        position: 'relative',
-                                        left: '50%',
-                                        transform: 'translateX(-50%)',
+                                        width: '100%',
                                     }}
                                 />
 
