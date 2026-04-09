@@ -2075,25 +2075,22 @@ export default function LeagueDetailPage() {
         });
     };
 
-    const LEAGUE_NAME_MAX = 20;
-    const truncateLeagueName = (value: string): string => {
-        const trimmed = value.trim();
-        if (trimmed.length <= LEAGUE_NAME_MAX) return trimmed;
-        return `${trimmed.slice(0, LEAGUE_NAME_MAX - 3)}...`;
-    };
-
     const formatLeagueName = (name: string): string => {
         if (!name) return '';
+        return name
+            .trim()
+            .split(/\s+/)
+            .map((word) => (word ? `${word.charAt(0).toUpperCase()}${word.slice(1)}` : ''))
+            .join(' ');
+    };
 
-        // Capitalize first letter of the name
-        const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-
-        // Get first letter of each word and join them
-        const words = name.split(' ');
-        const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
-
-        // Return formatted name with initials in brackets
-        return truncateLeagueName(`${capitalizedName}`);
+    const getLeagueTitleFontSize = (name?: string): string => {
+        const len = (name ?? '').trim().length;
+        if (len >= 30) return '12px';
+        if (len >= 26) return '13px';
+        if (len >= 22) return '14px';
+        if (len >= 18) return '15px';
+        return '17px';
     };
 
     const formatMatchName = (name: string): string => {
@@ -2939,8 +2936,8 @@ export default function LeagueDetailPage() {
                                             <Image
                                                 src={LeagueIcon}
                                                 alt="League Icon"
-                                                width={isMobile ? 40 : 56}
-                                                height={isMobile ? 40 : 56}
+                                                width={isMobile ? 24 : 56}
+                                                height={isMobile ? 24 : 56}
                                                 style={{ objectFit: 'contain', pointerEvents: 'none' }}
                                             />
                                             {league ? (
@@ -2949,16 +2946,16 @@ export default function LeagueDetailPage() {
                                                     sx={{
                                                         textTransform: 'uppercase',
                                                         fontFamily: '"Oswald", sans-serif !important',
-                                                        fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                                                        fontSize: { xs: getLeagueTitleFontSize(league?.name), sm: '42px', md: '55px' },
                                                         fontWeight: 700,
-                                                        lineHeight: 1.1,
+                                                        lineHeight: { xs: 1, sm: 1.1 },
                                                         wordBreak: 'normal',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
+                                                        overflow: 'visible',
+                                                        textOverflow: 'clip',
                                                         whiteSpace: 'nowrap',
                                                         flexShrink: 1,
                                                         minWidth: 0,
-                                                        maxWidth: { xs: '72vw', sm: '60vw', md: '50vw' },
+                                                        maxWidth: { xs: '96vw', sm: '60vw', md: '50vw' },
                                                         textAlign: 'center',
                                                         color: 'white',
                                                         backgroundColor: 'transparent',
@@ -2969,9 +2966,10 @@ export default function LeagueDetailPage() {
                                                         '&:hover': {
                                                             backgroundColor: 'transparent',
                                                         },
-                                                        display: 'flex',
+                                                        display: 'inline-flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
+                                                        flexWrap: 'nowrap',
                                                         gap: 0.5,
                                                     }}
                                                     endIcon={
@@ -2993,10 +2991,11 @@ export default function LeagueDetailPage() {
                                                         component="span"
                                                         sx={{
                                                             display: 'inline-block',
-                                                            maxWidth: { xs: '60vw', sm: '48vw', md: '42vw' },
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
+                                                            maxWidth: { xs: 'calc(100vw - 110px)', sm: '48vw', md: '42vw' },
+                                                            overflow: 'visible',
+                                                            textOverflow: 'clip',
                                                             whiteSpace: 'nowrap',
+                                                            wordBreak: 'normal',
                                                             verticalAlign: 'middle',
                                                         }}
                                                     >
