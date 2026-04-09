@@ -4358,7 +4358,7 @@ export default function LeagueDetailPage() {
                                                                         </Box>
 
                                                                         {/* MOTM Section */}
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: -7.5 }}>
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', mt: { xs: -5, sm: -7.5 } }}>
                                                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minHeight: 52, gap: 0 }}>
                                                                                 <Image src={CardStar} alt="MOTM" width={34} height={34} />
                                                                                 {(() => {
