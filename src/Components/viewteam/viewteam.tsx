@@ -1340,7 +1340,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           justifyContent: 'center',
         }}
       >
-        <Box sx={{ position: 'relative', width: 60, height: 60 }}>
+        <Box sx={{ position: 'relative', width: { xs: 44, sm: 60 }, height: { xs: 44, sm: 60 } }}>
           <img 
             src={shirtImage.src} 
             alt="shirt" 
@@ -1370,10 +1370,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                 textShadow: '0 1px 3px rgba(0,0,0,0.6)'
               }}
             >
-              <Typography sx={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.2 }}>
+              <Typography sx={{ fontSize: { xs: 10, sm: 13 }, fontWeight: 700, letterSpacing: 0.2 }}>
                 {Math.round(player.xp)}
               </Typography>
-              <Typography sx={{ fontSize: 10.5, fontWeight: 700  }}>
+              <Typography sx={{ fontSize: { xs: 8.5, sm: 10.5 }, fontWeight: 700  }}>
                 xp
               </Typography>
             </Box>
@@ -1382,16 +1382,16 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <Box 
               sx={{ 
                 position: 'absolute',
-                top: '25px',
-                right: '-3px',
+                top: { xs: '18px', sm: '25px' },
+                right: { xs: '-2px', sm: '-3px' },
                 backgroundColor: teamSide === 'home' ? 'green' : 'blue',
                 color: 'white',
-                fontSize: 8,
+                fontSize: { xs: 6, sm: 8 },
                 fontWeight: 700,
-                padding: '2px 4px',
+                padding: { xs: '1px 3px', sm: '2px 4px' },
                 // borderRadius: '50%',
-                width: '10px',
-                height: '10px',
+                width: { xs: '8px', sm: '10px' },
+                height: { xs: '8px', sm: '10px' },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1403,8 +1403,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             </Box>
           )}
         </Box>
-        <Box sx={{ height: 4 }} />
-        <Typography sx={{ fontSize: 10, fontWeight: 600, color: '#fff', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '60px' }}>
+        <Box sx={{ height: { xs: 2, sm: 4 } }} />
+        <Typography sx={{ fontSize: { xs: 8, sm: 10 }, fontWeight: 600, color: '#fff', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: { xs: '48px', sm: '60px' } }}>
           {player.name}
         </Typography>
       </Box>
@@ -1434,7 +1434,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           touchAction: 'none',
         }}
       >
-        <Box sx={{ position: 'relative', width: 60, height: 60 }}>
+        <Box sx={{ position: 'relative', width: { xs: 44, sm: 60 }, height: { xs: 44, sm: 60 } }}>
           <img 
             src={shirtImage.src} 
             alt="guest-shirt" 
@@ -1448,8 +1448,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             }} 
           />
         </Box>
-        <Box sx={{ height: 6 }} />
-        <Typography sx={{ fontSize: 10, fontWeight: 600, color: '#fff', textAlign: 'center' }}>
+        <Box sx={{ height: { xs: 3, sm: 6 } }} />
+        <Typography sx={{ fontSize: { xs: 8, sm: 10 }, fontWeight: 600, color: '#fff', textAlign: 'center', maxWidth: { xs: '48px', sm: '60px' } }}>
           {name}
         </Typography>
       </Box>
@@ -1483,43 +1483,43 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         </Box>
       </Box> */}
 
-      <Box component="main" sx={{ p: 2 }}>
+      <Box component="main" sx={{ p: { xs: 1, sm: 2 } }}>
         {/* View toggle row: Home count | Table/Pitch buttons | Away count */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, mb: 1.5 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#00a77f' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: { xs: 1, sm: 4 }, mb: 1.5 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: '#00a77f' }}>
             {homeTeamName} ({homeTeamGoals ?? 0})
           </Typography>
-          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: 0.75, display: 'flex', gap: 1 }}>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: { xs: 0.5, sm: 0.75 }, display: 'flex', gap: { xs: 0.5, sm: 1 } }}>
             <Box
               onClick={() => setViewMode('table')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5,
-                px: 1.5, py: 0.5,
+                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
+                px: { xs: 0.9, sm: 1.5 }, py: { xs: 0.35, sm: 0.5 },
                 border: `0.5px solid #212121`,
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'table' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={TableViewImg.src} alt="table" width={23} height={23} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555' }}>Table View</Typography>
+              <img src={TableViewImg.src} alt="table" width={18} height={18} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.78rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555' }}>Table View</Typography>
             </Box>
             <Box
               onClick={() => setViewMode('pitch')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5,
-                px: 1.5, py: 0.5,
+                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
+                px: { xs: 0.9, sm: 1.5 }, py: { xs: 0.35, sm: 0.5 },
                 border: '0.5px solid #212121',
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={PitchViewImg.src} alt="pitch" width={26} height={26} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: '1.20rem', fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555' }}>Pitch View</Typography>
+              <img src={PitchViewImg.src} alt="pitch" width={18} height={18} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.78rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555' }}>Pitch View</Typography>
             </Box>
           </Box>
-          <Typography sx={{ fontWeight: 600, fontSize: '1.6rem', color: '#c95c1a' }}>
+          <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: '#c95c1a' }}>
             {awayTeamName} ({awayTeamGoals ?? 0})
           </Typography>
         </Box>
@@ -1535,9 +1535,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             borderRadius: 1,
             bgcolor: '#2b2b2b',
             overflow: 'hidden',
-            mx: 1,
+            mx: { xs: 0, sm: 1 },
             /* Desktop: horizontal pitch, Mobile: vertical pitch */
-            height: { xs: 420, sm: 500, md: 410 },
+            height: { xs: 500, sm: 500, md: 410 },
             position: 'relative',
           }}
         >
@@ -1622,19 +1622,19 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
             {/* Team Balance Bar */}
-            <Box sx={{ bgcolor: '#2b2b2b', borderRadius: 1.5, px: 2, py: 1.5, border: '1px solid #2b2b2b', maxWidth: 600, mx: 'auto', width: '100%' }}>
-              <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1', color: '#fff', textTransform: 'uppercase', letterSpacing: 1, mb: 0 }}>Team Balance</Typography>
+            <Box sx={{ bgcolor: '#2b2b2b', borderRadius: 1.5, px: { xs: 1, sm: 2 }, py: 1.5, border: '1px solid #2b2b2b', maxWidth: 600, mx: 'auto', width: '100%' }}>
+              <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1rem' }, color: '#fff', textTransform: 'uppercase', letterSpacing: 1, mb: 0 }}>Team Balance</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 {/* Home shirt */}
-                <img src={Shirt.src} alt="Home" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
+                <img src={Shirt.src} alt="Home" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
                 {/* Center: % + bar + VS */}
-                <Box sx={{ flex: 1, mx: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Box sx={{ flex: 1, mx: { xs: 0.5, sm: 1.5 }, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   {/* % labels at corners of bar */}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography sx={{ color: '#00a77f', fontWeight: 800, fontSize: '1.9rem', lineHeight: 1 }}>
+                    <Typography sx={{ color: '#00a77f', fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.9rem' }, lineHeight: 1 }}>
                       {`${homeBalancePct}%`}
                     </Typography>
-                    <Typography sx={{ color: '#e56a16', fontWeight: 800, fontSize: '1.9rem', lineHeight: 1 }}>
+                    <Typography sx={{ color: '#e56a16', fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.9rem' }, lineHeight: 1 }}>
                       {`${100 - homeBalancePct}%`}
                     </Typography>
                   </Box>
@@ -1668,55 +1668,55 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                       }}
                     />
                   </Box>
-                  <Typography sx={{ fontWeight: 600, fontSize: '1.7rem', color: '#fff', letterSpacing: '1px', fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
-                  <Typography sx={{ color: '#fff', fontSize: '0.82rem', textAlign: 'center', fontWeight: 600, mt: -1 }}>{matchDurationLabel}</Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.2rem', sm: '1.7rem' }, color: '#fff', letterSpacing: '1px', fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
+                  <Typography sx={{ color: '#fff', fontSize: { xs: '0.72rem', sm: '0.82rem' }, textAlign: 'center', fontWeight: 600, mt: { xs: -0.4, sm: -1 } }}>{matchDurationLabel}</Typography>
                 </Box>
                 {/* Away shirt */}
-                <img src={Shirtaway.src} alt="Away" width={94} height={94} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-50px' }} />
+                <img src={Shirtaway.src} alt="Away" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
               </Box>
             </Box>
 
-          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center',mt: -2 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'center', mt: -2 }}>
             {/* Home Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 275 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
               {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = homeCaptainId === pid;
                 return (
-                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #166956', borderRadius: 1, px: 1.5, py: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #166956', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
+                        <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
                       {hasPublishedResult && typeof (p as Player).xp === 'number' && (
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
                       )}
                     </Box>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
                   </Box>
                 );
               })}
             </Box>
             {/* Divider */}
-            <Box sx={{ width: '1.5px', bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
+            <Box sx={{ width: { xs: '100%', sm: '1.5px' }, height: { xs: '1.5px', sm: 'auto' }, bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
             {/* Away Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 275 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
               {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = awayCaptainId === pid;
                 return (
-                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #884a20', borderRadius: 1, px: 1.5, py: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #884a20', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{p.name}</Typography>
+                        <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
                       {hasPublishedResult && typeof (p as Player).xp === 'number' && (
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
                       )}
                     </Box>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
                   </Box>
                 );
               })}
@@ -1821,15 +1821,15 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </DialogContent>
         </Dialog>
 
-        <Box sx={{ height: 12 }} />
+        <Box sx={{ height: { xs: 8, sm: 12 } }} />
 
-        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: { xs: 0.5, sm: 1 } }}>
           {/* Left: Undo / back placeholder */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
-            <Box sx={{ width: 44, height: 44, mr: -10, borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canEditAnyFormation && undoStack.length > 0 ? 'pointer' : 'not-allowed', opacity: canEditAnyFormation && undoStack.length > 0 ? 1 : 0.45, visibility: viewMode === 'pitch' ? 'visible' : 'hidden' }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: { xs: 40, sm: 52 }, flexShrink: 0 }}>
+            <Box sx={{ width: { xs: 34, sm: 44 }, height: { xs: 34, sm: 44 }, mr: { xs: 0, sm: -10 }, borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canEditAnyFormation && undoStack.length > 0 ? 'pointer' : 'not-allowed', opacity: canEditAnyFormation && undoStack.length > 0 ? 1 : 0.45, visibility: viewMode === 'pitch' ? 'visible' : 'hidden' }}
               onClick={handleUndoFormation}
             >
-              <img src={UndoImg.src} alt="undo" width={24} height={24} style={{ objectFit: 'contain' }} />
+              <img src={UndoImg.src} alt="undo" width={20} height={20} style={{ objectFit: 'contain' }} />
             </Box>
           </Box>
 
@@ -1844,16 +1844,16 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               bgcolor: '#2b2b2b',
               textAlign: 'center',
               flex: 1,
-              mx: 10,
+              mx: { xs: 0, sm: 10 },
             }}
           >
-            <Typography sx={{ fontSize: 19, fontWeight: 600, color: '#00a77f', lineHeight: 1.1, mb: 0 }}>
+            <Typography sx={{ fontSize: { xs: 14, sm: 19 }, fontWeight: 600, color: '#00a77f', lineHeight: 1.1, mb: 0 }}>
               Match Predictions
             </Typography>
 
             {hasPublishedResult && homeTeamGoals != null && awayTeamGoals != null ? (
               <>
-                <Typography sx={{ fontSize: 19, fontWeight: 500, lineHeight: 1.1, mb: 0 }}>
+                <Typography sx={{ fontSize: { xs: 13, sm: 19 }, fontWeight: 500, lineHeight: 1.1, mb: 0 }}>
                   <span style={{ color: primaryColor }}>
                     {homeTeamGoals > awayTeamGoals
                       ? homeTeamName
@@ -1867,7 +1867,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                       : 'is predicted to win !'}
                   </span>
                 </Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.1 }}>
+                <Typography sx={{ fontSize: { xs: 12, sm: 16 }, fontWeight: 600, color: '#fff', lineHeight: 1.1 }}>
                   Predicted scores{' '}
                   <span style={{ color: primaryColor }}>
                     {homeTeamGoals} - {awayTeamGoals}
@@ -1876,7 +1876,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               </>
             ) : (
               <>
-                <Typography sx={{ fontSize: 19, fontWeight: 600, lineHeight: 1.1, mb: 0 }}>
+                <Typography sx={{ fontSize: { xs: 13, sm: 19 }, fontWeight: 600, lineHeight: 1.1, mb: 0 }}>
                   <span style={{ color: primaryColor }}>
                     {teamInsights
                       ? teamInsights.predicted === 'home'
@@ -1894,7 +1894,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                       : ''}
                   </span>
                 </Typography>
-                <Typography sx={{ fontSize: 19, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
+                <Typography sx={{ fontSize: { xs: 12.5, sm: 19 }, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
                   Predicted score is{' '}
                   <span style={{ color: primaryColor }}>
                     {teamInsights ? teamInsights.predictedScore : '\u2014'}
@@ -1916,22 +1916,22 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </Paper>
 
           {/* Right: Share button */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, flexShrink: 0 }}>
-            <Box sx={{ width: 44, height: 44, ml: -13, borderRadius: '3px', bgcolor: '#00a77f', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: { xs: 40, sm: 52 }, flexShrink: 0 }}>
+            <Box sx={{ width: { xs: 34, sm: 44 }, height: { xs: 34, sm: 44 }, ml: { xs: 0, sm: -13 }, borderRadius: '3px', bgcolor: '#00a77f', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               onClick={shareTeam}
             >
-              <ShareIcon sx={{ color: '#fff', fontSize: 20 }} />
+              <ShareIcon sx={{ color: '#fff', fontSize: { xs: 16, sm: 20 } }} />
             </Box>
           </Box>
         </Box>
 
-        <Typography sx={{ fontSize: 17, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
-          <img src={BulbImg.src} alt="tip" width={20} height={20} style={{ objectFit: 'contain' }} />
+        <Typography sx={{ fontSize: { xs: 12, sm: 17 }, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+          <img src={BulbImg.src} alt="tip" width={16} height={16} style={{ objectFit: 'contain' }} />
           {canEditAnyFormation
             ? 'Admins/Captains can drag players and save formation.'
             : 'Read-only view: formation can only be changed by Admin/Captains.'}
         </Typography>
-        <Box sx={{ height: 40 }} />
+        <Box sx={{ height: { xs: 16, sm: 40 } }} />
         
       </Box>
     </Box>
