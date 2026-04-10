@@ -790,6 +790,7 @@ export default function LeagueDetailPage() {
             if (response.status === 404 || response.status === 405) {
                 // Endpoint doesn't exist, show error message
                 console.error('Stats saving is not available yet. Please contact the administrator.');
+                toast.error('Stats saving is not available yet. Please contact the administrator.');
                 setStatsDialogOpen(false);
                 return;
             }

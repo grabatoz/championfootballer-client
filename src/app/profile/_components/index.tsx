@@ -502,7 +502,9 @@ const PlayerProfileCard = () => {
       // router.refresh?.()
       router.push("/home")
     } catch (err: unknown) {
-      setError(getErrorMessage(err))
+      const msg = getErrorMessage(err)
+      setError(msg)
+      toast.error(msg)
     } finally {
       setIsUpdating(false)
     }
