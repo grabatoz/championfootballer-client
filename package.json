@@ -50,5 +50,17 @@
     "typescript": "^5",
     "sharp": "^0.33.5",
     "eventsource": "^2.0.2"
+  },
+  "resolutions": {
+    "@typescript-eslint/eslint-plugin": "8.35.1",
+    "@typescript-eslint/parser": "8.35.1",
+    "@typescript-eslint/project-service": "8.35.1",
+    "@typescript-eslint/scope-manager": "8.35.1",
+    "@typescript-eslint/tsconfig-utils": "8.35.1",
+    "@typescript-eslint/type-utils": "8.35.1",
+    "@typescript-eslint/types": "8.35.1",
+    "@typescript-eslint/typescript-estree": "8.35.1",
+    "@typescript-eslint/utils": "8.35.1",
+    "@typescript-eslint/visitor-keys": "8.35.1"
   }
 }
