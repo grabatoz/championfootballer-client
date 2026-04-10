@@ -37,6 +37,7 @@ interface MatchSummaryProps {
   isUserAvailable: boolean
   availabilityLoading: { [matchId: string]: boolean }
   handleToggleAvailability: (matchId: string, isAvailable: boolean) => void
+  embeddedInDialog?: boolean
 }
 
 const getElapsedTime = (startTime: string, endTime?: string) => {
@@ -69,6 +70,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   isUserAvailable,
   availabilityLoading,
   handleToggleAvailability,
+  embeddedInDialog = false,
 }) => {
   const [, setElapsed] = useState("00:00")
   const { token, user } = useAuth()
@@ -198,7 +200,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "space-between",
-          p: { xs: 2, md: 3 },
+          p: { xs: embeddedInDialog ? 1.25 : 2, md: 3 },
           // background: "#1f673b",
           // background: "linear-gradient(0deg,rgba(2, 168, 128, 1) 43%, rgba(2, 208, 158, 1) 100%)",
           background: '#2b2b2b',
@@ -207,7 +209,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           width: "100%",
           maxWidth: 680,
           mx: "auto",
-          mb: 3,
+          mb: { xs: embeddedInDialog ? 1.5 : 3, md: 3 },
           border: "1px solid #f0f0f0",
           position: "relative"
         }}
@@ -215,8 +217,8 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
         {/* Match Status - Top Left */}
         <Box sx={{
           position: 'absolute', 
-          top: 13, 
-          left: 29, 
+          top: { xs: embeddedInDialog ? 8 : 13, sm: 13 }, 
+          left: { xs: embeddedInDialog ? 12 : 29, sm: 29 }, 
           zIndex: 2 
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -257,7 +259,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               fontWeight: 400,
               textAlign: "center",
               width: "100%",
-              mt: { xs: 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
+              mt: { xs: embeddedInDialog ? 2.6 : 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
               // mb: { xs: 1, md: 2 },
             }}
           >
@@ -273,7 +275,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             alignItems: "center",
             justifyContent: "space-between",
             width: "100%",
-            gap: { xs: 1, sm: 2, md: 4 }, // Reduced gap for xs, increased for larger screens
+            gap: { xs: embeddedInDialog ? 0.6 : 1, sm: 2, md: 4 }, // Reduced gap for xs, increased for larger screens
             my: { xs: 1, sm: 0 }, // Added vertical margin for spacing when stacked
           }}
         >
@@ -295,7 +297,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={homeTeamName}
               width={100}
               height={100}
-              style={{ objectFit: 'contain',  }}
+              style={{
+                objectFit: 'contain',
+                width: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+                height: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+              }}
             />
             <Box sx={{
               minWidth: 0,
@@ -343,7 +349,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ fontSize: { xs: 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: -3, sm: 0, md: 0 }, fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase' }}
+              sx={{ fontSize: { xs: embeddedInDialog ? 28 : 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: embeddedInDialog ? -2 : -3, sm: 0, md: 0 }, fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase' }}
             >
               VS
             </Typography>
@@ -403,7 +409,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               alt={awayTeamName}
               width={100}
               height={100}
-              style={{ objectFit: 'contain', order: 2,  }}
+              style={{
+                objectFit: 'contain',
+                order: 2,
+                width: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+                height: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+              }}
             />
           </Box>
         </Box>

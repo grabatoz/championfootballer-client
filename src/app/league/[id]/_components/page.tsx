@@ -5568,23 +5568,56 @@ export default function LeagueDetailPage() {
                                     bgcolor: '#2b2b2b',
                                     backgroundImage: 'none',
                                     borderRadius: { xs: 0, sm: 3 },
-                                    maxHeight: '90vh',
+                                    width: { xs: '100vw', sm: 'auto' },
+                                    maxWidth: { xs: '100vw', sm: 'calc(100% - 64px)' },
+                                    height: { xs: '100dvh', sm: 'auto' },
+                                    maxHeight: { xs: '100dvh', sm: '90vh' },
                                     overflow: 'hidden',
                                     position: 'relative',
-                                    border: '1px solid #fff',
+                                    m: { xs: 0, sm: 2 },
+                                    border: { xs: 'none', sm: '1px solid #fff' },
                                 }
                             }}
                         >
                             <IconButton
                                 onClick={() => { setResultsDialogOpen(false); setResultsDialogMatchId(null); }}
-                                sx={{ position: 'absolute', right: 0, top: 0, color: '#000', zIndex: 10, bgcolor: '#e6e6e6', borderRadius: '0 8px 0 0', width: 60, height: 50, '&:hover': { bgcolor: '#cfcfcf' } }}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    color: '#000',
+                                    zIndex: 10,
+                                    bgcolor: '#e6e6e6',
+                                    borderRadius: { xs: 0, sm: '0 8px 0 0' },
+                                    width: { xs: 48, sm: 60 },
+                                    height: { xs: 44, sm: 50 },
+                                    '&:hover': { bgcolor: '#cfcfcf' }
+                                }}
                             >
-                                <CloseIcon fontSize="medium" />
+                                <CloseIcon fontSize={isMobile ? 'small' : 'medium'} />
                             </IconButton>
-                            <DialogContent sx={{ p: 0, overflow: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-                                {resultsDialogOpen && resultsDialogMatchId && (
-                                    <MatchDetailsPage matchIdProp={resultsDialogMatchId} />
-                                )}
+                            <DialogContent
+                                sx={{
+                                    p: 0,
+                                    pt: { xs: 5.5, sm: 0 },
+                                    height: '100%',
+                                    overflow: 'hidden',
+                                    scrollbarWidth: 'none',
+                                    '&::-webkit-scrollbar': { display: 'none' }
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        height: '100%',
+                                        overflowY: 'auto',
+                                        scrollbarWidth: 'none',
+                                        '&::-webkit-scrollbar': { display: 'none' }
+                                    }}
+                                >
+                                    {resultsDialogOpen && resultsDialogMatchId && (
+                                        <MatchDetailsPage matchIdProp={resultsDialogMatchId} />
+                                    )}
+                                </Box>
                             </DialogContent>
                         </Dialog>
                     </>

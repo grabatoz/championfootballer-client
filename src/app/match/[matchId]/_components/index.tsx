@@ -110,6 +110,7 @@ type MatchStatLite = {
 export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string } = {}) {
   const params = useParams();
   const matchId = matchIdProp || (params?.matchId as string);
+  const isEmbeddedInDialog = Boolean(matchIdProp);
   // const router = useRouter();
   const { token, user } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
@@ -547,7 +548,13 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // }, [router, match]);
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 4 }, minHeight: '100vh' }}>
+    <Box
+      sx={{
+        p: isEmbeddedInDialog ? { xs: 0.75, sm: 2.5 } : { xs: 1, sm: 4 },
+        pb: isEmbeddedInDialog ? { xs: 1.5, sm: 3 } : undefined,
+        minHeight: isEmbeddedInDialog ? 'auto' : '100vh',
+      }}
+    >
 
       {/* <Button
         startIcon={<ArrowLeft />}
@@ -606,6 +613,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             isUserAvailable={!!match.availableUsers?.some(u => u?.id === user?.id)}
             availabilityLoading={availabilityLoading}
             handleToggleAvailability={handleToggleAvailability}
+            embeddedInDialog={isEmbeddedInDialog}
           />
           {!showGoals && (
             <Typography align="center" sx={{ mb: 3, color: 'gray' }}>
