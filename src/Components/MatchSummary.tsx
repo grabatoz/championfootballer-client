@@ -404,18 +404,19 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                 {awayGoals}
               </Typography>
             </Box>
-            <Image
-              src={RightShirtImg}
-              alt={awayTeamName}
-              width={100}
-              height={100}
-              style={{
-                objectFit: 'contain',
-                order: 2,
-                width: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
-                height: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
-              }}
-            />
+            <Box sx={{ order: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center' }}>
+              <Image
+                src={RightShirtImg}
+                alt={awayTeamName}
+                width={100}
+                height={100}
+                style={{
+                  objectFit: 'contain',
+                  width: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+                  height: embeddedInDialog ? 'clamp(72px, 24vw, 100px)' : undefined,
+                }}
+              />
+            </Box>
           </Box>
         </Box>
 

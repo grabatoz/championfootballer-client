@@ -801,8 +801,12 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                       <Box
                         sx={{
                           width: "100%",
-                          maxHeight: { xs: 400, sm: 480, md: 520 },
-                          overflowY: "auto",
+                          maxHeight: isEmbeddedInDialog
+                            ? { xs: 400, sm: 'none', md: 'none' }
+                            : { xs: 400, sm: 480, md: 520 },
+                          overflowY: isEmbeddedInDialog
+                            ? { xs: "auto", sm: "visible", md: "visible" }
+                            : "auto",
                           scrollbarWidth: "thin",
                           scrollbarColor: "rgba(255,255,255,0.3) transparent",
                           "&::-webkit-scrollbar": { 

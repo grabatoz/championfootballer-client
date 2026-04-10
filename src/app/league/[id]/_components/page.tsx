@@ -5550,7 +5550,7 @@ export default function LeagueDetailPage() {
                                     width: { xs: '100vw', sm: 'auto' },
                                     maxWidth: { xs: '100vw', sm: 'calc(100% - 64px)' },
                                     height: { xs: '100dvh', sm: 'auto' },
-                                    maxHeight: { xs: '100dvh', sm: '90vh' },
+                                    maxHeight: { xs: '100dvh', sm: '95vh' },
                                     overflow: 'hidden',
                                     position: 'relative',
                                     m: { xs: 0, sm: 2 },
@@ -5579,16 +5579,17 @@ export default function LeagueDetailPage() {
                                 sx={{
                                     p: 0,
                                     pt: { xs: 5.5, sm: 0 },
-                                    height: '100%',
-                                    overflow: 'hidden',
+                                    height: { xs: '100%', sm: 'auto' },
+                                    overflowX: 'hidden',
+                                    overflowY: { xs: 'hidden', sm: 'auto' },
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' }
                                 }}
                             >
                                 <Box
                                     sx={{
-                                        height: '100%',
-                                        overflowY: 'auto',
+                                        height: { xs: '100%', sm: 'auto' },
+                                        overflowY: { xs: 'auto', sm: 'visible' },
                                         scrollbarWidth: 'none',
                                         '&::-webkit-scrollbar': { display: 'none' }
                                     }}
