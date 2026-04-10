@@ -21,6 +21,8 @@ import {
     Theme,
     MenuItem,
     Avatar,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
@@ -370,6 +372,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const currentUserId = String((user as { id?: string; userId?: string } | undefined)?.id || (user as { id?: string; userId?: string } | undefined)?.userId || '');
     const params = useParams();
     const router = useRouter();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const leagueId = params?.id ? String(params.id) : '';
     const matchId = params?.matchId ? String(params.matchId) : '';
     // Embedded-mode resolved ids (auto-picked latest)
@@ -3425,6 +3429,42 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 onClose();
             }
         };
+        const adminHeaderLeagueText = (() => {
+            if (!league?.name) return 'League';
+            const leagueMeta = league as unknown as {
+                currentSeason?: { seasonNumber?: number };
+                seasons?: Array<{ seasonNumber?: number }>;
+                seasonNumber?: number;
+                season?: number;
+            };
+
+            let seasonNumber: number | undefined;
+            if (typeof leagueMeta.currentSeason?.seasonNumber === 'number') {
+                seasonNumber = leagueMeta.currentSeason.seasonNumber > 0 ? leagueMeta.currentSeason.seasonNumber : 1;
+            }
+            if (!seasonNumber && Array.isArray(leagueMeta.seasons) && leagueMeta.seasons.length > 0) {
+                const sn = leagueMeta.seasons[0]?.seasonNumber;
+                if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
+            }
+            if (!seasonNumber && typeof leagueMeta.seasonNumber === 'number') {
+                seasonNumber = leagueMeta.seasonNumber > 0 ? leagueMeta.seasonNumber : 1;
+            }
+            if (!seasonNumber && typeof leagueMeta.season === 'number') {
+                seasonNumber = leagueMeta.season > 0 ? leagueMeta.season : 1;
+            }
+
+            return seasonNumber ? `${league.name} - SEASON ${seasonNumber}` : league.name;
+        })();
+        const adminHeaderDateText = (() => {
+            const d = (match?.start || match?.date) as string | undefined;
+            if (!d) return '';
+            const dt = new Date(d);
+            if (Number.isNaN(dt.getTime())) return '';
+            const day = String(dt.getDate()).padStart(2, '0');
+            const month = String(dt.getMonth() + 1).padStart(2, '0');
+            const year = dt.getFullYear();
+            return `${day}-${month}-${year}`;
+        })();
 
         return (
             <Dialog
@@ -3435,8 +3475,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 PaperProps={{
                     sx: {
                         ...dialogPaperSx,
-                        maxWidth: 850,
-                        borderRadius: 0,
+                        width: { xs: 'calc(100% - 12px)', sm: 'calc(100% - 32px)', md: 'calc(100% - 64px)' },
+                        maxWidth: { xs: '100%', md: 850 },
+                        height: 'auto',
+                        maxHeight: { xs: '92vh', md: 'calc(100% - 64px)' },
+                        m: { xs: 0.75, sm: 2, md: 4 },
+                        borderRadius: { xs: 2, md: 0 },
                     }
                 }}
             >
@@ -3447,133 +3491,158 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         bgcolor: '#d9d9d9',
                     }}
                 >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            px: 3,
-                            py: 1.5,
-                        }}
-                    >
+                    {isMobile ? (
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'stretch',
+                                justifyContent: 'space-between',
+                                px: 0.9,
+                                py: 0.65,
+                                pr: 5.2,
+                                position: 'relative',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    border: '1px solid rgba(0,0,0,0.28)',
+                                    borderRadius: '2px',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <Box sx={{ px: 1, py: 0.55, borderBottom: '1px solid rgba(0,0,0,0.28)' }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                        {adminHeaderLeagueText}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                    <Box sx={{ px: 1, py: 0.5, borderRight: '1px solid rgba(0,0,0,0.28)' }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                            MATCH {computedMatchNumber ?? ''}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ px: 1, py: 0.5 }}>
+                                        <Typography sx={{ fontWeight: 600, fontSize: 12, textAlign: 'center', lineHeight: 1.2 }}>
+                                            {adminHeaderDateText}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                            <IconButton
+                                onClick={handleAdminDialogClose}
+                                size="small"
+                                sx={{
+                                    color: '#111',
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    bgcolor: '#e6e6e6',
+                                    borderRadius: 0,
+                                    width: 36,
+                                    height: 36,
+                                    '&:hover': {
+                                        bgcolor: '#e6e6e6',
+                                    }
+                                }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                        </Box>
+                    ) : (
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 0,
-                                width: '100%',
+                                justifyContent: 'space-between',
+                                px: 3,
+                                py: 1.5,
+                                position: 'relative',
                             }}
                         >
-                            <Box sx={{ 
-                                flex: 1, 
-                                textAlign: 'center',
-                                py: 1,
-                                borderRight: '2px solid #000',
-                            }}>
-                                <Typography sx={{ 
-                                    fontWeight: 700,
-                                    fontSize: 16,
-                                    color: '#000',
-                                    textTransform: 'uppercase'
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0,
+                                    width: '100%',
+                                }}
+                            >
+                                <Box sx={{
+                                    flex: 1,
+                                    textAlign: 'center',
+                                    py: 1,
+                                    borderRight: '2px solid #000',
                                 }}>
-                                    {league?.name
-                                        ? `${league.name}${
-                                            // Try to show season like: " - Season 1"
-                                            (() => {
-                                                const anyLeague = league as unknown as Record<string, any>;
-                                                const currentSeason = anyLeague?.currentSeason;
-                                                const seasons = anyLeague?.seasons;
-                                                let seasonNumber: number | undefined;
+                                    <Typography sx={{
+                                        fontWeight: 700,
+                                        fontSize: 16,
+                                        color: '#000',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {adminHeaderLeagueText}
+                                    </Typography>
+                                </Box>
 
-                                                if (currentSeason && typeof currentSeason === 'object') {
-                                                    const sn = (currentSeason as any)?.seasonNumber;
-                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                                }
-
-                                                if (!seasonNumber && Array.isArray(seasons) && seasons.length > 0) {
-                                                    const first = seasons[0];
-                                                    const sn = (first as any)?.seasonNumber;
-                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                                }
-
-                                                if (!seasonNumber) {
-                                                    const sn = (anyLeague as any)?.seasonNumber ?? (anyLeague as any)?.season;
-                                                    if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                                }
-
-                                                return seasonNumber ? ` - SEASON ${seasonNumber}` : '';
-                                            })()
-                                        }`
-                                        : 'League'}
-                                </Typography>
-                            </Box>
-                            
-                            <Box sx={{ 
-                                flex: 1, 
-                                textAlign: 'center',
-                                py: 1,
-                                borderRight: '2px solid #000',
-                            }}>
-                                <Typography sx={{ 
-                                    fontWeight: 700,
-                                    fontSize: 16,
-                                    color: '#000',
-                                    textTransform: 'uppercase'
+                                <Box sx={{
+                                    flex: 1,
+                                    textAlign: 'center',
+                                    py: 1,
+                                    borderRight: '2px solid #000',
                                 }}>
-                                    MATCH {computedMatchNumber ?? ''}
-                                </Typography>
-                            </Box>
-                            
-                            <Box sx={{ 
-                                flex: 1, 
-                                textAlign: 'center',
-                                py: 1,
-                            }}>
-                                <Typography sx={{ 
-                                    fontWeight: 600,
-                                    fontSize: 16,
-                                    color: '#000'
+                                    <Typography sx={{
+                                        fontWeight: 700,
+                                        fontSize: 16,
+                                        color: '#000',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        MATCH {computedMatchNumber ?? ''}
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{
+                                    flex: 1,
+                                    textAlign: 'center',
+                                    py: 1,
                                 }}>
-                                    {(() => {
-                                        const d = (match?.start || match?.date) as string | undefined;
-                                        if (!d) return '';
-                                        const dt = new Date(d);
-                                        if (Number.isNaN(dt.getTime())) return '';
-                                        // dd-MM-yyyy
-                                        const day = String(dt.getDate()).padStart(2, '0');
-                                        const month = String(dt.getMonth() + 1).padStart(2, '0');
-                                        const year = dt.getFullYear();
-                                        return `${day}-${month}-${year}`;
-                                    })()}
-                                </Typography>
+                                    <Typography sx={{
+                                        fontWeight: 600,
+                                        fontSize: 16,
+                                        color: '#000'
+                                    }}>
+                                        {adminHeaderDateText}
+                                    </Typography>
+                                </Box>
                             </Box>
+                            <IconButton
+                                onClick={handleAdminDialogClose}
+                                size="small"
+                                sx={{
+                                    color: 'black',
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    bgcolor: '#e6e6e6',
+                                    borderRadius: 0,
+                                    width: 63.5,
+                                    height: 63.5,
+                                    '&:hover': {
+                                        bgcolor: '#e6e6e6'
+                                    }
+                                }}
+                            >
+                                <CloseIcon sx={{ fontSize: 24 }} />
+                            </IconButton>
                         </Box>
-                        <IconButton 
-                            onClick={handleAdminDialogClose} 
-                            size="small" 
-                            sx={{ 
-                                color: 'black',
-                                position: 'absolute',
-                                right: 0,
-                                bgcolor: '#e6e6e6',
-                                borderRadius: 0,
-                                width: 63.5,
-                                height: 63.5,
-                                '&:hover': { 
-                                    bgcolor: '#e6e6e6' 
-                                }
-                            }}
-                        >
-                            <CloseIcon sx={{ fontSize: 24 }} />
-                        </IconButton>
-                    </Box>
+                    )}
                 </DialogTitle>
                 <DialogContent
                     sx={{
                         ...dialogContentSx,
-                        pt: 3,
-                        pb: 3,
-                        border: '5px solid #bfbfbf',
+                        pt: { xs: 1.5, sm: 2.5, md: 3 },
+                        pb: { xs: 1.5, sm: 2.5, md: 3 },
+                        border: { xs: '2px solid #bfbfbf', sm: '5px solid #bfbfbf' },
+                        overflowY: 'auto',
                     }}
                 >
                     {/* Title inside dark area */}
@@ -3581,9 +3650,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         sx={{
                             textAlign: 'center',
                             fontWeight: 600,
-                            letterSpacing: 3,
-                            mt: 1,
-                            fontSize: 19,
+                            letterSpacing: { xs: 1.2, sm: 2.4, md: 3 },
+                            mt: { xs: 0.5, sm: 1 },
+                            fontSize: { xs: 13, sm: 16, md: 19 },
                         }}
                     >
                         ADD MATCH SCORE
@@ -3592,11 +3661,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         sx={{
                             display: 'flex',
                             flexDirection: { xs: 'column', sm: 'row' },
-                            alignItems: 'flex-end',
+                            alignItems: { xs: 'center', sm: 'flex-end' },
                             justifyContent: 'space-between',
-                            gap: { xs: 3, sm: 4, md: 10 },
+                            gap: { xs: 1.5, sm: 4, md: 10 },
                             color: 'white',
-                            px: { xs: 2, sm: 4, md: 6 },
+                            px: { xs: 1, sm: 3, md: 6 },
                             // mt: 4,
                         }}
                     >
@@ -3613,8 +3682,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {/* Home team shirt image */}
                             <Box
                                 sx={{
-                                    width: 150,
-                                    height: 150,
+                                    width: { xs: 96, sm: 120, md: 150 },
+                                    height: { xs: 96, sm: 120, md: 150 },
                                     // mb: 1.5,
                                     position: 'relative',
                                 }}
@@ -3623,7 +3692,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     src={HomeTeamShirt}
                                     alt="Home team shirt"
                                     fill
-                                    sizes="150px"
+                                    sizes="(max-width: 600px) 96px, (max-width: 900px) 120px, 150px"
                                     style={{ objectFit: 'contain' }}
                                 />
                             </Box>
@@ -3640,7 +3709,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             <Typography
                                 sx={{
                                     fontWeight: 700,
-                                    fontSize: 18,
+                                    fontSize: { xs: 14, sm: 16, md: 18 },
                                     // mt: 0.5,
                                 }}
                             >
@@ -3664,7 +3733,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 variant="outlined"
                                 sx={{
                                     mt: 0.5,
-                                    width: 80,
+                                    width: { xs: 72, sm: 80 },
                                     border : '1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
                                         backgroundColor: '#262626',
@@ -3676,7 +3745,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     },
                                     input: {
                                         textAlign: 'center',
-                                        fontSize: 20,
+                                        fontSize: { xs: 18, sm: 20 },
                                         fontWeight: 700,
                                         paddingY: 0.75,
                                         MozAppearance: 'textfield',
@@ -3700,14 +3769,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                pb: 2,
+                                pb: { xs: 0.3, sm: 2 },
                             }}
                         >
                             <Typography
                                 sx={{
-                                    fontSize: 40,
+                                    fontSize: { xs: 22, sm: 30, md: 40 },
                                     fontWeight: 800,
-                                    letterSpacing: 4,
+                                    letterSpacing: { xs: 1.5, sm: 3, md: 4 },
                                 }}
                             >
                                 V/S
@@ -3727,8 +3796,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {/* Away team shirt image */}
                             <Box
                                 sx={{
-                                    width: 150,
-                                    height: 150,
+                                    width: { xs: 96, sm: 120, md: 150 },
+                                    height: { xs: 96, sm: 120, md: 150 },
                                     // mb: 1.5,
                                     position: 'relative',
                                 }}
@@ -3737,14 +3806,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     src={AwayTeamShirt}
                                     alt="Away team shirt"
                                     fill
-                                    sizes="150px"
+                                    sizes="(max-width: 600px) 96px, (max-width: 900px) 120px, 150px"
                                     style={{ objectFit: 'contain' }}
                                 />
                             </Box>
                             <Typography
                                 sx={{
                                     fontWeight: 700,
-                                    fontSize: 18,
+                                    fontSize: { xs: 14, sm: 16, md: 18 },
                                     // mt: 0.5,
                                 }}
                             >
@@ -3768,7 +3837,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 variant="outlined"
                                 sx={{
                                     mt: 0.5,
-                                    width: 80,
+                                    width: { xs: 72, sm: 80 },
                                     border :'1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
                                         backgroundColor: '#262626',
@@ -3780,7 +3849,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     },
                                     input: {
                                         textAlign: 'center',
-                                        fontSize: 20,
+                                        fontSize: { xs: 18, sm: 20 },
                                         fontWeight: 700,
                                         paddingY: 0.75,
                                         MozAppearance: 'textfield',
@@ -3824,7 +3893,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         />
                     </Box> */}
 
-                    <Box sx={{ mt: 4, px: { xs: 2, sm: 4, md: 6 }, display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ mt: { xs: 2.2, sm: 3.2, md: 4 }, px: { xs: 1.5, sm: 4, md: 6 }, display: 'flex', justifyContent: 'center' }}>
                         <Button
                             onClick={handleSaveDetails}
                             disabled={!league?.active || savingMatchDetails}
@@ -3836,8 +3905,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 letterSpacing: 1,
                                 backgroundColor: '#2196f3',
                                 '&:hover': { backgroundColor: '#1e88e5' },
-                                minWidth: 630,
-                                maxWidth: 630,
+                                width: '100%',
+                                minWidth: 0,
+                                maxWidth: { xs: '100%', sm: 420, md: 630 },
                             }}
                         >
                             {savingMatchDetails ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'SUBMIT'}
