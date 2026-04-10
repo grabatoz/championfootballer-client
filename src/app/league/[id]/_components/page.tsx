@@ -3639,6 +3639,7 @@ export default function LeagueDetailPage() {
                                     overflowY: 'visible',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
+                                    pb: { xs: 2, md: 3 },
                                     // p: 2
                                 }}>
                                 {isAdmin && (
@@ -4046,6 +4047,7 @@ export default function LeagueDetailPage() {
                                     overflowY: 'visible',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
+                                    pb: { xs: 2, md: 3 },
                                     // p: 2
                                 }}>
                                     {isAdmin && (
@@ -4092,6 +4094,25 @@ export default function LeagueDetailPage() {
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                                                    const cardActionButtonSx = {
+                                                        color: 'white',
+                                                        fontSize: '0.6rem',
+                                                        fontWeight: 600,
+                                                        textTransform: 'none',
+                                                        py: 0,
+                                                        px: 1,
+                                                        height: '30px',
+                                                        minHeight: '30px',
+                                                        borderRadius: '50px',
+                                                        whiteSpace: 'nowrap',
+                                                        width: '100%',
+                                                        minWidth: 0,
+                                                        justifyContent: 'center',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        '&:hover': { backgroundColor: '#444' },
+                                                        '& .MuiButton-startIcon': { mr: 0.35 }
+                                                    } as const;
                                                     
                                                     // Calculate win result
                                                     const homeGoals = match.homeTeamGoals ?? 0;
@@ -4442,24 +4463,10 @@ export default function LeagueDetailPage() {
                                                                                     startIcon={<Image src={ADDSTATS} alt="Add Stats" width={22} height={22} />}
                                                                                     disabled={isDisabled && (isAdmin || !!isInMatch)}
                                                                                     sx={{
-                                                                                        // backgroundColor: '#333',
-                                                                                        color: 'white',
-                                                                                        fontSize: '0.6rem',
-                                                                                        textTransform: 'none',
-                                                                                        py: 0.5,
-                                                                                        px: 1,
+                                                                                        ...cardActionButtonSx,
                                                                                         pointerEvents: 'none',
-                                                                                        borderRadius: '50px',
                                                                                         border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
-                                                                                        whiteSpace: 'nowrap',
-                                                                                        width: '100%',
-                                                                                        minWidth: 0,
-                                                                                        justifyContent: 'center',
-                                                                                        overflow: 'hidden',
-                                                                                        textOverflow: 'ellipsis',
-                                                                                        '&:hover': { backgroundColor: '#444' },
                                                                                         '&.Mui-disabled': { color: 'white' },
-                                                                                        '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                     }}
                                                                                 >
                                                                                    Add Stats
@@ -4478,22 +4485,8 @@ export default function LeagueDetailPage() {
                                                                                 }}
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={22} height={22} />}
                                                                                 sx={{
-                                                                                    // backgroundColor: '#333',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.6rem',
-                                                                                    textTransform: 'none',
-                                                                                    py: 0.5,
-                                                                                    px: 1,
-                                                                                    borderRadius: '50px',
+                                                                                    ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
-                                                                                    whiteSpace: 'nowrap',
-                                                                                    width: '100%',
-                                                                                    minWidth: 0,
-                                                                                    justifyContent: 'center',
-                                                                                    overflow: 'hidden',
-                                                                                    textOverflow: 'ellipsis',
-                                                                                    '&:hover': { backgroundColor: '#444' },
-                                                                                    '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -4503,25 +4496,11 @@ export default function LeagueDetailPage() {
                                                                             <Button
                                                                                 size="small"
                                                                                 onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
-                                                                                startIcon={<Image src={RESULTS} alt="Results" width={22} height={22} />}
+                                                                                startIcon={<Image src={RESULTS} alt="Results" width={16} height={16} />}
                                                                                 sx={{
-                                                                                    // backgroundColor: '#333',
-                                                                                    color: 'white',
-                                                                                    fontSize: '0.6rem',
-                                                                                    textTransform: 'none',
-                                                                                    py: 0.5,
-                                                                                    px: 1,
-                                                                                    borderRadius: '50px',
+                                                                                    ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
-                                                                                    whiteSpace: 'nowrap',
-                                                                                    width: '100%',
-                                                                                    minWidth: 0,
-                                                                                    justifyContent: 'center',
-                                                                                    overflow: 'hidden',
-                                                                                    textOverflow: 'ellipsis',
-                                                                                    '&:hover': { backgroundColor: '#444' },
                                                                                     '&.Mui-disabled': { color: 'white' },
-                                                                                    '& .MuiButton-startIcon': { mr: 0.35 }
                                                                                 }}
                                                                             >
                                                                                 Results
