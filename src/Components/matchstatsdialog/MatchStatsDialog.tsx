@@ -2314,7 +2314,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     const content = (
         <Box sx={{ 
-            minHeight: '100vh', 
+            minHeight: { xs: 'auto', md: '100vh' }, 
             color: 'black',
             overflow: 'hidden',
             '&::-webkit-scrollbar': {
@@ -2333,7 +2333,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         p: { xs: 1, sm: 2, md: 3 },
                         backgroundColor: '#262626',
                         color: 'white',
-                        border: '5px solid #bfbfbf',
+                        border: { xs: '2px solid #bfbfbf', md: '5px solid #bfbfbf' },
                         borderRadius: 0,
                         // boxShadow: 3,
                         // display: selectedLeagueHasNoMatches ? 'none' : 'block',
@@ -2382,8 +2382,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 sx={{
                                     fontWeight: 500,
                                     // mb: 0.5,
-                                    fontSize: '2rem',
-                                    mt: -3
+                                    fontSize: { xs: '1.25rem', md: '2rem' },
+                                    mt: { xs: 0, md: -3 },
                                 }}
                             >
                                 Stats
@@ -2393,8 +2393,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {/* {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) ? ( */}
                                 <>
                                     {/* Goals Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <img src={Goals.src} alt="Goals" style={{ width: 48, height: 48 }} />
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                        <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
                                         <TextField
                                             type="text"
                                             value={stats.goals}
@@ -2416,7 +2416,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             onFocus={(e) => e.target.select()}
                                             inputProps={{ style: { textAlign: 'center' } }}
                                             sx={{
-                                                width: 180,
+                                                width: { xs: 96, md: 180 },
                                                 '& .MuiOutlinedInput-root': {
                                                     color: '#fff',
                                                     '& fieldset': { borderColor: '#d9d9d9' },
@@ -2424,7 +2424,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     '&.Mui-focused fieldset': { borderColor: '#00C48C' },
                                                 },
                                                 '& .MuiInputBase-input': {
-                                                    fontSize: '1.25rem',
+                                                    fontSize: { xs: '1rem', md: '1.25rem' },
                                                     fontWeight: 600,
                                                     py: 0.75,
                                                 },
@@ -2441,14 +2441,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 }
                                             }}
                                         />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
                                             Goals
                                         </Typography>
                                     </Box>
 
                                     {/* Assists Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <img src={Assist.src} alt="Assists" style={{ width: 48, height: 48 }} />
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                        <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
                                         <TextField
                                             type="text"
                                             value={stats.assists}
@@ -2470,7 +2470,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             onFocus={(e) => e.target.select()}
                                             inputProps={{ style: { textAlign: 'center' } }}
                                             sx={{
-                                                width: 180,
+                                                width: { xs: 96, md: 180 },
                                                 '& .MuiOutlinedInput-root': {
                                                     color: '#fff',
                                                     '& fieldset': { borderColor: '#d9d9d9' },
@@ -2478,7 +2478,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     '&.Mui-focused fieldset': { borderColor: '#00C48C' },
                                                 },
                                                 '& .MuiInputBase-input': {
-                                                    fontSize: '1.25rem',
+                                                    fontSize: { xs: '1rem', md: '1.25rem' },
                                                     fontWeight: 600,
                                                     py: 0.75,
                                                 },
@@ -2495,14 +2495,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 }
                                             }}
                                         />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
                                             Assists
                                         </Typography>
                                     </Box>
 
                                     {/* Clean Sheet Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: 48, height: 48 }} />
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                        <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
                                         <TextField
                                             type="text"
                                             value={stats.cleanSheets}
@@ -2524,7 +2524,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             onFocus={(e) => e.target.select()}
                                             inputProps={{ style: { textAlign: 'center' } }}
                                             sx={{
-                                                width: 180,
+                                                width: { xs: 96, md: 180 },
                                                 '& .MuiOutlinedInput-root': {
                                                     color: '#fff',
                                                     '& fieldset': { borderColor: '#d9d9d9' },
@@ -2532,7 +2532,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     '&.Mui-focused fieldset': { borderColor: '#00C48C' },
                                                 },
                                                 '& .MuiInputBase-input': {
-                                                    fontSize: '1.25rem',
+                                                    fontSize: { xs: '1rem', md: '1.25rem' },
                                                     fontWeight: 600,
                                                     py: 0.75,
                                                 },
@@ -2549,7 +2549,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 }
                                             }}
                                         />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
                                             Clean Sheet
                                         </Typography>
                                     </Box>
@@ -2579,8 +2579,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 sx={{
                                     fontWeight: 500,
                                     // mb: 0.5,
-                                    fontSize: '2rem',
-                                    mt: -3
+                                    fontSize: { xs: '1.25rem', md: '2rem' },
+                                    mt: { xs: 0, md: -3 },
                                 }}
                             >
                                 Votes
@@ -2588,8 +2588,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} /> */}
 
                             {/* MOTM select */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <img src={MOMT.src} alt="MOTM" style={{ width: 35, height: 35 }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 } }}>
+                                <img src={MOMT.src} alt="MOTM" style={{ width: isMobile ? 28 : 35, height: isMobile ? 28 : 35 }} />
                                 <TextField
                                     select
                                     size="small"
@@ -2626,7 +2626,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     sx={{
-                                        minWidth: 290,
+                                        minWidth: { xs: 0, md: 290 },
+                                        width: { xs: '100%', md: 290 },
                                         '& .MuiOutlinedInput-root': {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
@@ -2702,8 +2703,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Box>
 
                             {/* Defensive Impact dropdown (like MOTM) */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <img src={DEFIMP.src} alt="Defensive" style={{ width: 35, height: 35 }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 } }}>
+                                <img src={DEFIMP.src} alt="Defensive" style={{ width: isMobile ? 28 : 35, height: isMobile ? 28 : 35 }} />
                                 <TextField
                                     select
                                     size="small"
@@ -2739,7 +2740,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     sx={{
-                                        minWidth: 290,
+                                        minWidth: { xs: 0, md: 290 },
+                                        width: { xs: '100%', md: 290 },
                                         '& .MuiOutlinedInput-root': {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
@@ -2810,8 +2812,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Box>
 
                             {/* + Mentality dropdown (like MOTM) */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <img src={MENTALITY.src} alt="Mentality" style={{ width: 35, height: 35 }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 } }}>
+                                <img src={MENTALITY.src} alt="Mentality" style={{ width: isMobile ? 28 : 35, height: isMobile ? 28 : 35 }} />
                                 <TextField
                                     select
                                     size="small"
@@ -2847,7 +2849,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     sx={{
-                                        width: 290,
+                                        minWidth: { xs: 0, md: 290 },
+                                        width: { xs: '100%', md: 290 },
                                         '& .MuiOutlinedInput-root': {
                                             backgroundColor: 'transparent',
                                             color: '#fff',
@@ -2929,7 +2932,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     <Box
                         sx={{
                             mt: { xs: 3, md: 4 },
-                            p: { xs: 1.5, sm: 1 , md: 2  },
+                            p: { xs: 1.1, sm: 1, md: 2 },
                             borderRadius: 0,
                             border: '1px solid #d9d9d9',
                             backgroundColor: '#262626',
@@ -2938,10 +2941,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         {/* Voted + Three columns in same row */}
                         <Box
                             sx={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: { xs: 3, md: 10 },
-                                flexWrap: 'wrap',
+                                display: { xs: 'grid', md: 'flex' },
+                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'none' },
+                                alignItems: { xs: 'stretch', md: 'flex-start' },
+                                columnGap: { xs: 1.2, md: 0 },
+                                rowGap: { xs: 1.3, md: 0 },
+                                gap: { md: 10 },
+                                flexWrap: { md: 'wrap' },
+                                '& > :first-of-type': {
+                                    gridColumn: { xs: '1 / -1', md: 'auto' },
+                                },
                             }}
                         >
                             {/* Voted title */}
@@ -2950,16 +2959,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     fontWeight: 500,
                                     color: '#00C48C',
                                     // pt: 1,
-                                    fontSize: '2rem',
-                                    mt: -1.5,
+                                    fontSize: { xs: '1.2rem', md: '2rem' },
+                                    mt: { xs: 0, md: -1.5 },
+                                    textAlign: { xs: 'center', md: 'left' },
                                 }}
                             >
                                 Voted
                             </Typography>
 
                             {/* MOTM */}
-                            <Box sx={{ textAlign: 'center'}}>
-                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                            <Box sx={{ textAlign: 'center', minWidth: 0 }}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: { xs: '0.72rem', md: '1.1rem' }, fontWeight: 500 }}>
                                     Man Of The Match
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
@@ -2969,8 +2979,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={motmPlayer.profilePicture}
                                             alt={`${motmPlayer.firstName} ${motmPlayer.lastName}`}
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -2982,8 +2992,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={PlayerImg.src}
                                             alt="Default Player"
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -2994,10 +3004,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         variant="body2"
                                         sx={{
                                             fontWeight: 600,
-                                            maxWidth: 140,
+                                            maxWidth: { xs: 110, md: 140 },
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
+                                            fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
                                         {motmPlayer ? `${motmPlayer.firstName} ${motmPlayer.lastName}${motmPlayer.isGuest ? ' (Guest)' : ''}` : 'Not selected'}
@@ -3006,8 +3017,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Box>
 
                             {/* Defensive Impact */}
-                            <Box sx={{ textAlign: 'center'}}>
-                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                            <Box sx={{ textAlign: 'center', minWidth: 0 }}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: { xs: '0.72rem', md: '1.1rem' }, fontWeight: 500 }}>
                                     Defensive Impact
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
@@ -3017,8 +3028,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={defensivePlayer.profilePicture}
                                             alt={`${defensivePlayer.firstName} ${defensivePlayer.lastName}`}
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -3030,8 +3041,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={PlayerImg.src}
                                             alt="Default Player"
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -3042,10 +3053,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         variant="body2"
                                         sx={{
                                             fontWeight: 600,
-                                            maxWidth: 140,
+                                            maxWidth: { xs: 110, md: 140 },
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
+                                            fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
                                         {defensivePlayer
@@ -3056,8 +3068,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Box>
 
                             {/* + Mentality */}
-                            <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: '1.1rem', fontWeight: 500 }}>
+                            <Box sx={{ textAlign: 'center', minWidth: 0 }}>
+                                <Typography variant="caption" sx={{ color: '#E5E7EB', mb: 1, display: 'block', fontSize: { xs: '0.72rem', md: '1.1rem' }, fontWeight: 500 }}>
                                     + Mentality
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
@@ -3067,8 +3079,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={mentalityPlayer.profilePicture}
                                             alt={`${mentalityPlayer.firstName} ${mentalityPlayer.lastName}`}
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -3080,8 +3092,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             src={PlayerImg.src}
                                             alt="Default Player"
                                             sx={{
-                                                width: 48,
-                                                height: 48,
+                                                width: { xs: 40, md: 48 },
+                                                height: { xs: 40, md: 48 },
                                                 borderRadius: '50%',
                                                 border: '2px solid #00C48C',
                                                 objectFit: 'cover',
@@ -3092,10 +3104,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         variant="body2"
                                         sx={{
                                             fontWeight: 600,
-                                            maxWidth: 140,
+                                            maxWidth: { xs: 110, md: 140 },
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
+                                            fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
                                         {mentalityPlayer
@@ -3924,6 +3937,31 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             return null;
         }
 
+        const dialogLeagueMeta = league as unknown as {
+            currentSeason?: { seasonNumber?: number };
+            seasons?: Array<{ seasonNumber?: number }>;
+            seasonNumber?: number;
+            season?: number;
+        };
+        let dialogSeasonNumber: number | undefined;
+        if (typeof dialogLeagueMeta.currentSeason?.seasonNumber === 'number') {
+            dialogSeasonNumber = dialogLeagueMeta.currentSeason.seasonNumber > 0 ? dialogLeagueMeta.currentSeason.seasonNumber : 1;
+        }
+        if (!dialogSeasonNumber && Array.isArray(dialogLeagueMeta.seasons) && dialogLeagueMeta.seasons.length > 0) {
+            const sn = dialogLeagueMeta.seasons[0]?.seasonNumber;
+            if (typeof sn === 'number') dialogSeasonNumber = sn > 0 ? sn : 1;
+        }
+        if (!dialogSeasonNumber && typeof dialogLeagueMeta.seasonNumber === 'number') {
+            dialogSeasonNumber = dialogLeagueMeta.seasonNumber > 0 ? dialogLeagueMeta.seasonNumber : 1;
+        }
+        if (!dialogSeasonNumber && typeof dialogLeagueMeta.season === 'number') {
+            dialogSeasonNumber = dialogLeagueMeta.season > 0 ? dialogLeagueMeta.season : 1;
+        }
+        const dialogLeagueTitle = `${league?.name || 'League'}${dialogSeasonNumber ? ` - Season ${dialogSeasonNumber}` : ''}`;
+        const dialogDateTitle = match?.date
+            ? new Date(match.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+            : '';
+
         return (
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" scroll="paper" keepMounted>
                 <DialogTitle sx={{
@@ -3934,59 +3972,96 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     color: '#1f1f1f',
                     p: 0,
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
-                                {league?.name || 'League'}{(() => {
-                                    const anyLeague = league as unknown as Record<string, any>;
-                                    const currentSeason = anyLeague?.currentSeason;
-                                    const seasons = anyLeague?.seasons;
-                                    let seasonNumber: number | undefined;
-
-                                    if (currentSeason && typeof currentSeason === 'object') {
-                                        const sn = (currentSeason as any)?.seasonNumber;
-                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                    }
-
-                                    if (!seasonNumber && Array.isArray(seasons) && seasons.length > 0) {
-                                        const first = seasons[0];
-                                        const sn = (first as any)?.seasonNumber;
-                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                    }
-
-                                    if (!seasonNumber) {
-                                        const sn = (anyLeague as any)?.seasonNumber ?? (anyLeague as any)?.season;
-                                        if (typeof sn === 'number') seasonNumber = sn > 0 ? sn : 1;
-                                    }
-
-                                    return seasonNumber ? ` - Season ${seasonNumber}` : '';
-                                })()}
-                            </Typography>
+                    {isMobile ? (
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'stretch',
+                                justifyContent: 'space-between',
+                                px: 0.9,
+                                py: 0.65,
+                                pr: 5.2,
+                                position: 'relative',
+                                width: '100%',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    border: '1px solid rgba(0,0,0,0.28)',
+                                    borderRadius: '2px',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <Box sx={{ px: 1, py: 0.55, borderBottom: '1px solid rgba(0,0,0,0.28)' }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                        {dialogLeagueTitle}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                    <Box sx={{ px: 1, py: 0.5, borderRight: '1px solid rgba(0,0,0,0.28)' }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                            Match {computedMatchNumber || ''}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ px: 1, py: 0.5 }}>
+                                        <Typography sx={{ fontWeight: 600, fontSize: 12, textAlign: 'center', lineHeight: 1.2 }}>
+                                            {dialogDateTitle}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                            <IconButton
+                                onClick={onClose}
+                                sx={{
+                                    color: '#111',
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    backgroundColor: '#e6e6e6',
+                                    borderRadius: 0,
+                                    width: 36,
+                                    height: 36,
+                                    '&:hover': { backgroundColor: '#e6e6e6' },
+                                }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
-                                Match {computedMatchNumber || ''}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5 }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                                {match?.date ? new Date(match.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
-                            </Typography>
-                        </Box>
-                    </Box>
-                    <IconButton 
-                        onClick={onClose} 
-                        sx={{ 
-                            color: 'black',
-                            backgroundColor: '#e6e6e6',
-                            borderRadius: 0,
-                            width: 56,
-                            height: 56,
-                            '&:hover': { backgroundColor: '#e6e6e6' },
-                        }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
+                    ) : (
+                        <>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
+                                        {dialogLeagueTitle}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5, borderRight: '1px solid #888' }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase' }}>
+                                        Match {computedMatchNumber || ''}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, py: 1.5 }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                        {dialogDateTitle}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <IconButton 
+                                onClick={onClose} 
+                                sx={{ 
+                                    color: 'black',
+                                    backgroundColor: '#e6e6e6',
+                                    borderRadius: 0,
+                                    width: 56,
+                                    height: 56,
+                                    '&:hover': { backgroundColor: '#e6e6e6' },
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </>
+                    )}
                 </DialogTitle>
                 <DialogContent
                     sx={{
