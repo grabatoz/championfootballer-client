@@ -3540,6 +3540,7 @@ export default function LeagueDetailPage() {
                                         borderRadius: { xs: 2, sm: 3 },
                                         boxShadow: 'none',
                                         mt: 1.2,
+                                        mb: { xs: 0, md: 4 },
                                         overflow: 'auto',
                                         '&::-webkit-scrollbar': {
                                             height: '6px',
