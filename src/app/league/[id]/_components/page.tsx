@@ -3045,7 +3045,18 @@ export default function LeagueDetailPage() {
                                                     alignItems: 'center',
                                                     gap: 0.5,
                                                 }}
-                                                startIcon={!isSelectedSeasonActive ? <Lock size={16} color="rgba(255,255,255,0.6)" /> : null}
+                                                startIcon={
+                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <Image
+                                                            src={LeagueIcon}
+                                                            alt="Season Icon"
+                                                            width={isMobile ? 14 : 16}
+                                                            height={isMobile ? 14 : 16}
+                                                            style={{ objectFit: 'contain', opacity: 0.95 }}
+                                                        />
+                                                        {!isSelectedSeasonActive ? <Lock size={14} color="rgba(255,255,255,0.6)" /> : null}
+                                                    </Box>
+                                                }
                                                 endIcon={
                                                     <Box
                                                         component="span"
