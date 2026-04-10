@@ -1485,41 +1485,74 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
       <Box component="main" sx={{ p: { xs: 1, sm: 2 } }}>
         {/* View toggle row: Home count | Table/Pitch buttons | Away count */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: { xs: 1, sm: 4 }, mb: 1.5 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: '#00a77f' }}>
+        <Box
+          sx={{
+            display: { xs: 'grid', sm: 'flex' },
+            gridTemplateColumns: { xs: 'minmax(60px,1fr) auto minmax(60px,1fr)', sm: 'none' },
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: { xs: 0.5, sm: 4 },
+            mb: 1.5,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: '1rem', sm: '1.6rem' },
+              color: '#00a77f',
+              whiteSpace: 'nowrap',
+              textAlign: { xs: 'left', sm: 'center' },
+              justifySelf: { xs: 'start', sm: 'auto' },
+            }}
+          >
             {homeTeamName} ({homeTeamGoals ?? 0})
           </Typography>
-          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: { xs: 0.5, sm: 0.75 }, display: 'flex', gap: { xs: 0.5, sm: 1 } }}>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: { xs: 0.4, sm: 0.75 }, display: 'flex', gap: { xs: 0.4, sm: 1 }, justifySelf: 'center' }}>
             <Box
               onClick={() => setViewMode('table')}
               sx={{
                 display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
-                px: { xs: 0.9, sm: 1.5 }, py: { xs: 0.35, sm: 0.5 },
+                px: { xs: 0.7, sm: 1.5 }, py: { xs: 0.3, sm: 0.5 },
                 border: `0.5px solid #212121`,
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'table' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={TableViewImg.src} alt="table" width={18} height={18} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.78rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555' }}>Table View</Typography>
+              <img src={TableViewImg.src} alt="table" width={16} height={16} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555', lineHeight: 1 }}>
+                Table
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
+              </Typography>
             </Box>
             <Box
               onClick={() => setViewMode('pitch')}
               sx={{
                 display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
-                px: { xs: 0.9, sm: 1.5 }, py: { xs: 0.35, sm: 0.5 },
+                px: { xs: 0.7, sm: 1.5 }, py: { xs: 0.3, sm: 0.5 },
                 border: '0.5px solid #212121',
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
               }}
             >
-              <img src={PitchViewImg.src} alt="pitch" width={18} height={18} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.78rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555' }}>Pitch View</Typography>
+              <img src={PitchViewImg.src} alt="pitch" width={16} height={16} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555', lineHeight: 1 }}>
+                Pitch
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
+              </Typography>
             </Box>
           </Box>
-          <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: '#c95c1a' }}>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: '1rem', sm: '1.6rem' },
+              color: '#c95c1a',
+              whiteSpace: 'nowrap',
+              textAlign: { xs: 'right', sm: 'center' },
+              justifySelf: { xs: 'end', sm: 'auto' },
+            }}
+          >
             {awayTeamName} ({awayTeamGoals ?? 0})
           </Typography>
         </Box>
