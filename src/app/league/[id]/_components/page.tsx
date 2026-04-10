@@ -4096,13 +4096,13 @@ export default function LeagueDetailPage() {
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
                                                     const cardActionButtonSx = {
                                                         color: 'white',
-                                                        fontSize: '0.6rem',
+                                                        fontSize: '0.55rem',
                                                         fontWeight: 600,
                                                         textTransform: 'none',
                                                         py: 0,
-                                                        px: 1,
-                                                        height: '30px',
-                                                        minHeight: '30px',
+                                                        px: 0.75,
+                                                        height: '28px',
+                                                        minHeight: '28px',
                                                         borderRadius: '50px',
                                                         whiteSpace: 'nowrap',
                                                         width: '100%',
@@ -4460,7 +4460,7 @@ export default function LeagueDetailPage() {
                                                                                 >
                                                                                 <Button
                                                                                     size="small"
-                                                                                    startIcon={<Image src={ADDSTATS} alt="Add Stats" width={22} height={22} />}
+                                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={18} height={18} />}
                                                                                     disabled={isDisabled && (isAdmin || !!isInMatch)}
                                                                                     sx={{
                                                                                         ...cardActionButtonSx,
@@ -4483,7 +4483,7 @@ export default function LeagueDetailPage() {
                                                                                     setViewTeamMatch({ leagueId, matchId: match.id, matchNumber });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
-                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={22} height={22} />}
+                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={18} height={18} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
@@ -4496,7 +4496,7 @@ export default function LeagueDetailPage() {
                                                                             <Button
                                                                                 size="small"
                                                                                 onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
-                                                                                startIcon={<Image src={RESULTS} alt="Results" width={16} height={16} />}
+                                                                                startIcon={<Image src={RESULTS} alt="Results" width={14} height={14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
