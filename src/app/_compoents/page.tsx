@@ -60,6 +60,7 @@ export default function LandingPage() {
             <Box sx={{ color: 'white' }}>
               {/* Heading */}
               <Typography
+                className="landing-hero-display"
                 sx={{
                   fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                   fontWeight: 400,
@@ -132,6 +133,7 @@ export default function LandingPage() {
               >
                 <Typography
                   component="span"
+                  className="landing-hero-display"
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
@@ -145,6 +147,7 @@ export default function LandingPage() {
                 </Typography>
                 <Typography
                   component="span"
+                  className="landing-hero-display"
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',

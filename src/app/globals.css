@@ -291,6 +291,13 @@ select,
   font-family: var(--font-woodford-family) !important;
 }
 
+/* Keep landing hero headlines in Anton on all breakpoints */
+.landing-hero-display.MuiTypography-root {
+  font-family: var(--font-geist-anton), 'Anton', 'Bebas Neue', 'Oswald', sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
 input::selection,
 textarea::selection,
 .MuiInputBase-input::selection,
