@@ -122,12 +122,13 @@ export default function LandingPage() {
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  alignItems: { xs: 'flex-start', md: 'baseline' },
+                  flexDirection: 'row',
+                  alignItems: 'baseline',
                   mt: { xs: 0.5, md: -3.5 },
-                  whiteSpace: { xs: 'normal', md: 'nowrap' },
-                  gap: { xs: 0.2, md: 0 },
-                  width: { xs: '100%', md: '826px' },
+                  whiteSpace: 'nowrap',
+                  gap: 0,
+                  width: { xs: 'auto', md: '826px' },
+                  maxWidth: '100%',
                   height: { xs: 'auto', md: '90px' }
                 }}
               >
@@ -137,7 +138,7 @@ export default function LandingPage() {
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
-                    fontSize: { xs: '1.2rem', md: '31px' },
+                    fontSize: { xs: '1rem', md: '31px' },
                     lineHeight: { xs: 1.05, md: '100% !important' },
                     letterSpacing: '0% !important',
                     textTransform: 'uppercase',
@@ -151,12 +152,12 @@ export default function LandingPage() {
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
-                    fontSize: { xs: '1.25rem', md: '42px' },
+                    fontSize: { xs: '1.05rem', md: '42px' },
                     lineHeight: { xs: 1.05, md: '100% !important' },
                     letterSpacing: '0% !important',
                     textTransform: 'uppercase',
-                    ml: { xs: 0, md: 1 },
-                    mt: { xs: 0.2, md: 1 },
+                    ml: { xs: 0.35, md: 1 },
+                    mt: { xs: 0, md: 1 },
                   }}
                 >
                   BUT WINNING AIN'T ONE!
@@ -191,9 +192,17 @@ export default function LandingPage() {
                     maxWidth: { xs: '100%', md: '355px' },
                     width: '100%',
                     mt: { xs: 0, md: 1 },
+                    whiteSpace: { xs: 'nowrap', md: 'normal' },
                   }}
                 >
-                  The best football app<br />on the planet!
+                  The best football app
+                  <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                    <br />
+                  </Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>
+                    {' '}
+                  </Box>
+                  on the planet!
                 </Typography>
               </Box>
 
