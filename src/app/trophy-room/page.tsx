@@ -3465,8 +3465,8 @@ export default function GlobalTrophyRoom() {
           sx: {
             borderRadius: { xs: 1.5, sm: 2 },
             overflow: 'visible',
-            width: { xs: 'calc(100vw - 20px)', sm: 'min(560px, calc(100vw - 56px))' },
-            maxWidth: { xs: 'calc(100vw - 20px)', sm: '560px' },
+            width: { xs: 'calc(100vw - 20px)', sm: 'min(540px, calc(100vw - 56px))' },
+            maxWidth: { xs: 'calc(100vw - 20px)', sm: '540px' },
             m: { xs: 0.5, sm: 2 },
           }
         }}
