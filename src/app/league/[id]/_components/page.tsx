@@ -5799,8 +5799,8 @@ export default function LeagueDetailPage() {
                     sx: {
                         borderRadius: { xs: 1.5, sm: 2 },
                         overflow: 'visible',
-                        width: { xs: 'calc(100vw - 20px)', sm: 'min(760px, calc(100vw - 24px))' },
-                        maxWidth: { xs: 'calc(100vw - 20px)', sm: '760px' },
+                        width: { xs: 'calc(100vw - 20px)', sm: 'min(700px, calc(100vw - 24px))' },
+                        maxWidth: { xs: 'calc(100vw - 20px)', sm: '700px' },
                         m: { xs: 0.5, sm: 2 },
                     }
                 }}
