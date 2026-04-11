@@ -143,9 +143,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownOffsetY, setDropdownOffsetY] = useState(0);
   const [networkDone, setNetworkDone] = useState(false);
   const [isCreatingSeason, setIsCreatingSeason] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const { token } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -278,6 +280,34 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Keep a small visual gap from viewport bottom/footer on short screens.
+  useEffect(() => {
+    if (!showDropdown || isFetching) {
+      setDropdownOffsetY(0);
+      return;
+    }
+
+    const adjustDropdownOffset = () => {
+      const menuEl = dropdownMenuRef.current;
+      if (!menuEl) return;
+
+      const footerGap = 14;
+      const viewportBottom = window.innerHeight - footerGap;
+      const rect = menuEl.getBoundingClientRect();
+      const overflow = rect.bottom - viewportBottom;
+
+      setDropdownOffsetY(overflow > 0 ? -Math.ceil(overflow) : 0);
+    };
+
+    const rafId = window.requestAnimationFrame(adjustDropdownOffset);
+    window.addEventListener('resize', adjustDropdownOffset);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', adjustDropdownOffset);
+    };
+  }, [showDropdown, isFetching, userLeagues.length]);
 
   // Handler to create new season
   const handleCreateNewSeason = async () => {
@@ -890,13 +920,16 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       {/* Dropdown menu */}
       {showDropdown && !isFetching && (
         <Box
+          ref={dropdownMenuRef}
           sx={{
             position: 'absolute',
             top: 'calc(100% - 2px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: { xs: '92vw', sm: '100%' },
-            maxWidth: { xs: '92vw', sm: '100%' },
+            left: 0,
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            transform: dropdownOffsetY !== 0 ? `translateY(${dropdownOffsetY}px)` : 'none',
+            transition: 'transform 0.2s ease',
             maxHeight: 300,
             overflowY: 'auto',
             p: 0.5,

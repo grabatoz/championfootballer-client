@@ -5765,55 +5765,65 @@ export default function LeagueDetailPage() {
                 onClose={() => setOpenQuickView(false)}
                 fullWidth
                 maxWidth={false}
-                PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden', maxWidth: '500px' } }}
+                PaperProps={{
+                    sx: {
+                        borderRadius: { xs: 1.5, sm: 2 },
+                        overflow: 'visible',
+                        width: { xs: 'calc(100vw - 8px)', sm: 'min(760px, calc(100vw - 24px))' },
+                        maxWidth: { xs: 'calc(100vw - 8px)', sm: '760px' }
+                    }
+                }}
             >
                 <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 }, bgcolor: '#000', position: 'relative' }}>
-                    <Image src={cflogo} alt="CF Logo" width={320} height={320} />
+                    <Image src={cflogo} alt="CF Logo" width={isMobile ? 160 : 320} height={isMobile ? 160 : 320} />
                     <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
 
                 <Divider />
-                <DialogContent sx={{ py: { xs: 0.5, sm: 3 }, overflow: 'hidden' }}>
+                <DialogContent sx={{ py: { xs: 0.65, sm: 2.5 }, px: { xs: 0.6, sm: 1.5 }, pb: { xs: 6.5, sm: 5 }, position: 'relative', overflowX: 'visible', overflowY: 'auto', maxHeight: { xs: '82vh', sm: 'calc(100dvh - 150px)' } }}>
                     {quickView.player && (
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: '110px 250px 120px' },
-                                gap: { xs: 1, sm: 0 },
+                                gridTemplateColumns: { xs: '64px minmax(0, 1fr) 64px', sm: '112px minmax(0, 260px) 112px' },
+                                gap: { xs: 0.3, sm: 1 },
                                 alignItems: 'start',
                                 justifyContent: 'center',
-                                height: '382px',
+                                minHeight: { xs: '352px', sm: '438px' },
                                
 
                             }}
                         >
                             {/* Left: Stats Icons */}
                             <Paper elevation={0} sx={{
-                                p: { xs: 0.75, sm: 1 },
-                                border: '1px solid rgba(0,0,0,0.08)',
-                                height: { xs: 'auto', sm: '280px' },
+                                p: { xs: 0.3, sm: 1 },
+                                border: '1px solid rgba(15, 23, 42, 0.2)',
+                                backgroundColor: '#fff',
+                                minWidth: 0,
+                                minHeight: { xs: '230px', sm: '280px' },
                                 borderRadius: 2,
-                                order: { xs: 2, sm: 1 },
+                                position: 'relative',
+                                zIndex: 4,
+                                order: { xs: 1, sm: 1 },
                                 mt: { xs: 0, sm: 5 }
                             }}>
-                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3, mb: 0.3 }}>Current Stats</Typography>
+                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                             <Box
                                 sx={{
-                                    display: { xs: 'grid', sm: 'flex' },
-                                    flexDirection: { sm: 'column' },
-                                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
-                                    gap: { xs: 0, sm: 0 },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: { xs: 0.06, sm: 0 },
                                 }}
                             >
                                 {[
-                                    { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
-                                    { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
-                                    { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                                    { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
-                                    { img: DefensiveImpact, label: 'Defensive Impact', value: quickView.defensiveImpact ?? 0 },
-                                    { img: Mentality, label: 'Mentality', value: quickView.mentality ?? 0 },
+                                    { img: Goals, label: 'Goals', shortLabel: 'Goals', value: quickView.stats?.goals ?? 0 },
+                                    { img: Assist, label: 'Assists', shortLabel: 'Assist', value: quickView.stats?.assists ?? 0 },
+                                    { img: Cleansheet, label: 'Clean Sheets', shortLabel: 'Clean', value: quickView.cleanSheets ?? 0 },
+                                    { img: Momt, label: 'Votes', shortLabel: 'Votes', value: quickView.motmCount ?? 0 },
+                                    { img: DefensiveImpact, label: 'Defensive Impact', shortLabel: 'Def', value: quickView.defensiveImpact ?? 0 },
+                                    { img: Mentality, label: 'Mentality', shortLabel: 'Mental', value: quickView.mentality ?? 0 },
                                 ].map((it, i) => (
                                     <Box
                                         key={i}
@@ -5821,13 +5831,13 @@ export default function LeagueDetailPage() {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'flex-start',
-                                            gap: 0.1,
-                                            p: { xs: 0.15, sm: 0.3 },
+                                            gap: 0.01,
+                                            p: { xs: 0.02, sm: 0.3 },
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <Image src={it.img} alt={it.label} width={20} height={20} style={{ objectFit: 'contain' }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
+                                            <Image src={it.img} alt={it.label} width={isMobile ? 10 : 20} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
+                                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.58rem', sm: '0.9rem' }, lineHeight: 1 }}>
                                                 {it.value}
                                             </Typography>
                                         </Box>
@@ -5835,14 +5845,14 @@ export default function LeagueDetailPage() {
                                             variant="caption"
                                             sx={{
                                                 color: '#64748b',
-                                                fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                                                fontSize: { xs: '0.43rem', sm: '0.65rem' },
                                                 textAlign: 'left',
-                                                lineHeight: 1.1,
+                                                lineHeight: 1,
                                                 whiteSpace: 'nowrap',
                                                 letterSpacing: 0,
                                             }}
                                         >
-                                            {it.label}
+                                            {isMobile ? it.shortLabel : it.label}
                                         </Typography>
                                     </Box>
                                 ))}
@@ -5860,13 +5870,13 @@ export default function LeagueDetailPage() {
                                 sx={{
                                      
                                     color: '#1976d2',
-                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                    fontSize: { xs: '0.48rem', sm: '0.75rem' },
                                     fontWeight: 600,
                                     textTransform: 'none',
                                     textDecoration: 'underline',
                                     textUnderlineOffset: '3px',
                                     WebkitTapHighlightColor: 'transparent',
-                                    padding: '4px 8px',
+                                    padding: { xs: '1px 2px', sm: '4px 8px' },
                                     minWidth: 'auto',
                                     '&:hover': {
                                         backgroundColor: 'transparent',
@@ -5895,8 +5905,10 @@ export default function LeagueDetailPage() {
                             <Box sx={{
                                 display: 'flex',
                                 justifyContent: 'center',
-                                alignItems: 'center',
-                                order: { xs: 1, sm: 2 }
+                                alignItems: 'flex-start',
+                                position: 'relative',
+                                zIndex: 2,
+                                order: { xs: 2, sm: 2 }
                             }}>
                                 {(() => {
                                     const p = quickView.player as User & PlayerProfileLike;
@@ -5920,30 +5932,63 @@ export default function LeagueDetailPage() {
                                         foot: getPreferredFoot(p),
                                         profileImage: getProfileImage(p),
                                         shirtIcon: '',
+                                        width: 260,
+                                        height: isMobile ? 410 : 390,
+                                        hideShareIcon: true,
                                         position: p.position ?? '',
                                     } satisfies PlayerCardProps;
-                                    return <PlayerCard {...playerCardProps} disableImagePopup />;
+                                    return (
+                                        <Box
+                                            sx={{
+                                                width: { xs: 160, sm: 260 },
+                                                height: { xs: 278, sm: 398 },
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'flex-start',
+                                                position: 'relative',
+                                                overflow: 'visible',
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: 260,
+                                                    height: { xs: 410, sm: 390 },
+                                                    position: { xs: 'absolute', sm: 'relative' },
+                                                    top: 0,
+                                                    left: { xs: '50%', sm: 'auto' },
+                                                    transform: { xs: 'translateX(-50%) scale(0.62)', sm: 'none' },
+                                                    transformOrigin: 'top center',
+                                                }}
+                                            >
+                                                <PlayerCard {...playerCardProps} disableImagePopup />
+                                            </Box>
+                                        </Box>
+                                    );
                                 })()}
                             </Box>
 
                             {/* Right: Last 10 Matches */}
                             <Paper elevation={0} sx={{
-                                p: { xs: 0.5, sm: 0.75 },
-                                border: '1px solid rgba(0,0,0,0.08)',
+                                p: { xs: 0.3, sm: 0.75 },
+                                border: '1px solid rgba(15, 23, 42, 0.2)',
+                                backgroundColor: '#fff',
                                 borderRadius: 2,
                                 overflowY: 'hidden',
+                                minWidth: 0,
+                                position: 'relative',
+                                zIndex: 4,
                                 order: { xs: 3, sm: 3 },
                                 mt: { xs: 0, sm: 5 },
-                                minHeight: { xs: 240, sm: 275 },
+                                minHeight: { xs: 230, sm: 275 },
                             }}>
-                                <Typography sx={{ fontWeight: 800, mb: 0.25, fontSize: { xs: '0.6rem', sm: '0.7rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
+                                <Typography sx={{ fontWeight: 800, mb: 0.2, fontSize: { xs: '0.5rem', sm: '0.7rem' }, letterSpacing: 0, lineHeight: 1.05 }}>Last 10 games</Typography>
                                 <Stack direction="column" spacing={0.2}>
                                     {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
                                         <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <Box
                                                 sx={{
-                                                    width: { xs: 24, sm: 28 },
-                                                    height: { xs: 20, sm: 24 },
+                                                    width: { xs: 14, sm: 28 },
+                                                    height: { xs: 14, sm: 24 },
                                                     borderRadius: 0.5,
                                                     backgroundColor: resultColor(m.result),
                                                     color: '#fff',
@@ -5951,14 +5996,14 @@ export default function LeagueDetailPage() {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                                                    fontSize: { xs: '0.46rem', sm: '0.6rem' },
                                                     lineHeight: 1,
                                                 }}
                                             >
                                                 {m.result}
                                             </Box>
                                             {idx === 0 && (
-                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.55rem', sm: '0.6rem' } }}>
+                                                <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.45rem', sm: '0.6rem' }, display: { xs: 'none', sm: 'block' } }}>
                                                     Latest
                                                 </Typography>
                                             )}
@@ -5971,6 +6016,39 @@ export default function LeagueDetailPage() {
                                     )}
                                 </Stack>
                             </Paper>
+                        </Box>
+                    )}
+                    {quickView.player && (
+                        <Box sx={{ position: 'absolute', right: { xs: 8, sm: 12 }, bottom: { xs: 8, sm: 10 }, zIndex: 10 }}>
+                            <IconButton
+                                sx={{
+                                    bgcolor: '#10b981',
+                                    color: '#fff',
+                                    width: { xs: 34, sm: 36 },
+                                    height: { xs: 34, sm: 36 },
+                                    borderRadius: 1.2,
+                                    '&:hover': { bgcolor: '#059669' },
+                                }}
+                                onClick={() => {
+                                    const playerName = [quickView.player?.firstName, quickView.player?.lastName]
+                                        .map((part) => (typeof part === 'string' ? part.trim() : ''))
+                                        .filter(Boolean)
+                                        .join(' ')
+                                        .trim() || 'Player';
+                                    const shareText = `Check out ${playerName}'s stats! ${Number(quickView.xp ?? 0)} XP`;
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: `${playerName} - Champion Footballer`,
+                                            text: shareText,
+                                        }).catch(() => {});
+                                    } else {
+                                        navigator.clipboard?.writeText(shareText);
+                                        toast.success('Player stats copied!');
+                                    }
+                                }}
+                            >
+                                <Share2 size={18} />
+                            </IconButton>
                         </Box>
                     )}
                 </DialogContent>

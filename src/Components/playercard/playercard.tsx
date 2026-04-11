@@ -642,8 +642,8 @@ const PlayerCard = ({
           <IconButton
             sx={{
               position: 'absolute',
-              bottom: 8,
-              right: -115,
+              bottom: disableImagePopup ? 6 : 8,
+              right: disableImagePopup ? 6 : -115,
               zIndex: 20,
               bgcolor: '#009371',
               color: '#fff',

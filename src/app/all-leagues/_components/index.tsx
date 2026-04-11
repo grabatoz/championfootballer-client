@@ -2768,6 +2768,7 @@ function AllLeagues() {
           ) : (
             leaguesToDisplay.map((league) => {
               const isCompleted = isLeagueCompleted(league);
+              const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
               return (
                 <Box
                   key={league.id}
@@ -2861,9 +2862,26 @@ function AllLeagues() {
                             position: 'relative',
                             bgcolor: 'white',
                             borderRadius: '50%',
-                          
+                            overflow: 'hidden',
                           }}>
-                            <Image src={league?.image || trofy} alt={`${league.name} icon`} width={60} height={60} priority style={{ objectFit: 'contain' }} />
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                width: '100%',
+                                height: '100%',
+                                p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
+                                boxSizing: 'border-box',
+                              }}
+                            >
+                              <Image
+                                src={league?.image || trofy}
+                                alt={`${league.name} icon`}
+                                fill
+                                priority
+                                sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                              />
+                            </Box>
                           </Box>
                         </Grid>
 
@@ -3138,6 +3156,7 @@ function AllLeagues() {
                 {archivedLeagues.map((league) => {
                   const actionLoading = archivedLeagueActionId === String(league.id);
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
+                  const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
                   return (
                   <Box
                     key={league.id}
@@ -3246,8 +3265,26 @@ function AllLeagues() {
                               position: 'relative',
                               bgcolor: 'white',
                               borderRadius: '50%',
+                              overflow: 'hidden',
                             }}>
-                              <Image src={league?.image || trofy} alt={`${league.name} icon`} width={60} height={60} priority style={{ objectFit: 'contain' }} />
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  width: '100%',
+                                  height: '100%',
+                                  p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
+                                  boxSizing: 'border-box',
+                                }}
+                              >
+                                <Image
+                                  src={league?.image || trofy}
+                                  alt={`${league.name} icon`}
+                                  fill
+                                  priority
+                                  sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                  style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                />
+                              </Box>
                             </Box>
                           </Grid>
 
