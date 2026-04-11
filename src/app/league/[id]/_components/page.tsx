@@ -5799,8 +5799,9 @@ export default function LeagueDetailPage() {
                     sx: {
                         borderRadius: { xs: 1.5, sm: 2 },
                         overflow: 'visible',
-                        width: { xs: 'calc(100vw - 8px)', sm: 'min(760px, calc(100vw - 24px))' },
-                        maxWidth: { xs: 'calc(100vw - 8px)', sm: '760px' }
+                        width: { xs: 'calc(100vw - 20px)', sm: 'min(760px, calc(100vw - 24px))' },
+                        maxWidth: { xs: 'calc(100vw - 20px)', sm: '760px' },
+                        m: { xs: 0.5, sm: 2 },
                     }
                 }}
             >
@@ -5812,16 +5813,35 @@ export default function LeagueDetailPage() {
                 </DialogTitle>
 
                 <Divider />
-                <DialogContent sx={{ py: { xs: 0.65, sm: 2.5 }, px: { xs: 0.6, sm: 1.5 }, pb: { xs: 6.5, sm: 5 }, position: 'relative', overflowX: 'visible', overflowY: 'auto', maxHeight: { xs: '82vh', sm: 'calc(100dvh - 150px)' } }}>
+                <DialogContent
+                    sx={{
+                        py: { xs: 0.65, sm: 2.5 },
+                        px: { xs: 0.6, sm: 1.5 },
+                        pb: { xs: 2.8, sm: 5 },
+                        position: 'relative',
+                        overflowX: 'visible',
+                        overflowY: 'auto',
+                        maxHeight: { xs: '78vh', sm: '70vh' },
+                        '@media (min-width:600px)': {
+                            scrollbarWidth: 'none',
+                            msOverflowStyle: 'none',
+                            '&::-webkit-scrollbar': {
+                                display: 'none',
+                                width: 0,
+                                height: 0,
+                            },
+                        },
+                    }}
+                >
                     {quickView.player && (
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '64px minmax(0, 1fr) 64px', sm: '112px minmax(0, 260px) 112px' },
-                                gap: { xs: 0.3, sm: 1 },
+                                gridTemplateColumns: { xs: '64px 160px 64px', sm: '112px minmax(0, 260px) 112px' },
+                                gap: { xs: 0.15, sm: 1 },
                                 alignItems: 'start',
                                 justifyContent: 'center',
-                                minHeight: { xs: '352px', sm: '438px' },
+                                minHeight: { xs: '308px', sm: '438px' },
                                
 
                             }}
@@ -5832,12 +5852,13 @@ export default function LeagueDetailPage() {
                                 border: '1px solid rgba(15, 23, 42, 0.2)',
                                 backgroundColor: '#fff',
                                 minWidth: 0,
-                                minHeight: { xs: '230px', sm: '280px' },
+                                minHeight: { xs: '188px', sm: '280px' },
+                                height: { xs: '188px', sm: 'auto' },
                                 borderRadius: 2,
                                 position: 'relative',
                                 zIndex: 4,
                                 order: { xs: 1, sm: 1 },
-                                mt: { xs: 0, sm: 5 }
+                                mt: { xs: 3.4, sm: 5 }
                             }}>
                                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                             <Box
@@ -6008,8 +6029,9 @@ export default function LeagueDetailPage() {
                                 position: 'relative',
                                 zIndex: 4,
                                 order: { xs: 3, sm: 3 },
-                                mt: { xs: 0, sm: 5 },
-                                minHeight: { xs: 230, sm: 275 },
+                                mt: { xs: 3.4, sm: 5 },
+                                minHeight: { xs: 188, sm: 275 },
+                                height: { xs: 188, sm: 'auto' },
                             }}>
                                 <Typography sx={{ fontWeight: 800, mb: 0.2, fontSize: { xs: '0.5rem', sm: '0.7rem' }, letterSpacing: 0, lineHeight: 1.05 }}>Last 10 games</Typography>
                                 <Stack direction="column" spacing={0.2}>
