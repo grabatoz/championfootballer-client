@@ -1236,10 +1236,19 @@ export default function PlayerStatsPage() {
     }, [data, leagueId, playerId, seasons, selectedSeason]);
 
     const yearsOptions = useMemo(() => {
-        const nowYear = dayjs().year();
-        const arr = ['all', ...Array.from({ length: 12 }, (_, i) => String(nowYear - i))];
-        return arr;
-    }, []);
+        const years = new Set<number>([dayjs().year()]);
+        const leaguesList = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? []);
+
+        leaguesList.forEach((league) => {
+            if (!hasMatches(league)) return;
+            (league.matches || []).forEach((m) => {
+                const y = dayjs(m.date).year();
+                if (Number.isFinite(y)) years.add(y);
+            });
+        });
+
+        return ['all', ...Array.from(years).sort((a, b) => b - a).map(String)];
+    }, [data]);
 
     // Helper: get latest league (by latest match date within the selected year)
     const getLatestLeagueIdForYear = (list: LeagueWithMatchesTyped[], y: string) => {
@@ -1294,6 +1303,13 @@ export default function PlayerStatsPage() {
             dispatch(setLeagueFilter('all'));
         }
     }, [leaguesForYear, leagueId, dispatch]);
+
+    useEffect(() => {
+        if (!year || year === 'all') return;
+        if (!yearsOptions.includes(year)) {
+            dispatch(setYearFilter('all'));
+        }
+    }, [year, yearsOptions, dispatch]);
 
     const handleYearSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;

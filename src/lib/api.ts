@@ -1340,7 +1340,7 @@ export interface WorldRankingPlayer {
   country?: string; // Optional country for display/filtering
 }
 export interface WorldRankingResponse {
-  players: WorldRankingPlayer[]; mode: 'avg'|'total'; limit: number; playerOutsideTop?: boolean; playerRank?: number;
+  players: WorldRankingPlayer[]; mode: 'avg'|'total'; limit: number; playerOutsideTop?: boolean; playerRank?: number; years?: number[];
 }
 export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId?: string; positionType?: string; year?: number; country?: string; limit?: number; token?: string }) {
   const { token, ...rest } = params || {};
@@ -1377,5 +1377,10 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
     limit: raw?.limit ?? players.length,
     playerOutsideTop: raw?.playerOutsideTop,
     playerRank: raw?.playerRank,
+    years: Array.isArray(raw?.years)
+      ? raw.years.map((v: unknown) => Number(v)).filter((n: number) => Number.isFinite(n))
+      : (Array.isArray(raw?.availableYears)
+        ? raw.availableYears.map((v: unknown) => Number(v)).filter((n: number) => Number.isFinite(n))
+        : undefined),
   } as WorldRankingResponse;
 }

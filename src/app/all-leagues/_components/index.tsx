@@ -1615,18 +1615,18 @@ function AllLeagues() {
     return false;
   }, [user?.id]);
 
-  // Fixed continuous list of years from 2000 up to current year + a few future years (calendar-like)
+  // Dynamic years: keep previous years that exist in leagues, and always keep current/latest year on top.
   const yearOptions = useMemo(() => {
-    const START_YEAR = 2000;
-    const YEARS_AHEAD = 5; // include next 5 years
-    const currentYear = new Date().getFullYear();
-    const maxYear = currentYear + YEARS_AHEAD;
-    const range: string[] = [];
-    for (let y = maxYear; y >= START_YEAR; y--) {
-      range.push(String(y));
-    }
-    return range;
-  }, []);
+    const years = new Set<number>([new Date().getFullYear()]);
+    leagues.forEach((league) => {
+      const t = Date.parse(league.createdAt || '');
+      if (!Number.isFinite(t)) return;
+      years.add(new Date(t).getFullYear());
+    });
+    return Array.from(years)
+      .sort((a, b) => b - a)
+      .map(String);
+  }, [leagues]);
 
   // A league is considered completed when:
   // 1. Backend computedStatus.isCompleted is true (season-based: all season matches completed), OR
@@ -1682,6 +1682,11 @@ function AllLeagues() {
     const stillExists = filteredLeagues.some(l => String(l.id) === selectedLeagueId);
     if (!stillExists) setSelectedLeagueId('all');
   }, [filteredLeagues, selectedLeagueId]);
+
+  useEffect(() => {
+    if (selectedYear === 'all') return;
+    if (!yearOptions.includes(selectedYear)) setSelectedYear('all');
+  }, [selectedYear, yearOptions]);
 
   // Archived leagues — always separate from the main list
   const archivedLeagues = useMemo(() => {

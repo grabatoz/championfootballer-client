@@ -1322,14 +1322,23 @@ export default function CareerPage() {
     return () => { aborted = true; };
   }, [playerId, matches, filters.leagueId, token]);
 
-  // Get unique years from matches for year filter
+  // Dynamic years: keep previous years from data and always include current/latest year
   const availableYears = useMemo(() => {
-    const years = new Set<string>();
-    matches.forEach(m => {
-      years.add(dayjs(m.date).year().toString());
+    const years = new Set<string>([dayjs().year().toString()]);
+    matches.forEach((m) => {
+      const y = dayjs(m.date).year();
+      if (Number.isFinite(y)) years.add(String(y));
     });
     return Array.from(years).sort((a, b) => Number(b) - Number(a));
   }, [matches]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!filters.year || filters.year === 'all') return;
+    if (!availableYears.includes(filters.year)) {
+      dispatch(setYearFilter('all'));
+    }
+  }, [loading, filters.year, availableYears, dispatch]);
 
   // Get selected league name for display
   const selectedLeagueName = useMemo(() => {

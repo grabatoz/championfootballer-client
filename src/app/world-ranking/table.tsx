@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWorldRanking, WorldRankingPlayer, WorldRankingResponse } from '@/lib/api';
-import { Box, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, CircularProgress } from '@mui/material';
+import { Box, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, CircularProgress, FormControl, Select, MenuItem } from '@mui/material';
 import Link from 'next/link';
 import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
@@ -75,10 +75,54 @@ export default function WorldRankingTable() {
   const [sort, setSort] = useState<SortState>({ key: 'rank', direction: 'asc' });
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const userRowRef = useRef<HTMLTableRowElement | null>(null);
+  const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number>(320);
   const years = useMemo(() => {
     const current = new Date().getFullYear();
-    return Array.from({ length: 10 }, (_, i) => (current - i).toString());
-  }, []);
+    const responseYears = Array.isArray(data?.years)
+      ? data.years
+        .filter((y): y is number => Number.isFinite(y))
+        .filter((y) => y >= 2000 && y <= current + 1)
+      : [];
+
+    const yearSet = new Set<number>([current, ...responseYears]);
+
+    return Array.from(yearSet).sort((a, b) => b - a).map(String);
+  }, [data?.years]);
+
+  useEffect(() => {
+    if (!filters.year) return;
+    if (!years.includes(filters.year)) {
+      setFilters((f) => ({ ...f, year: undefined }));
+    }
+  }, [filters.year, years]);
+
+  const handleFilterDropdownOpen = (event: React.SyntheticEvent) => {
+    if (typeof window === 'undefined') return;
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) return;
+
+    const rect = target.getBoundingClientRect();
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const spaceBelow = Math.floor(viewportHeight - rect.bottom - 10);
+    setDropdownMaxHeight(Math.max(140, spaceBelow));
+  };
+
+  const filterMenuProps = useMemo(() => ({
+    anchorOrigin: { vertical: 'bottom', horizontal: 'left' } as const,
+    transformOrigin: { vertical: 'top', horizontal: 'left' } as const,
+    marginThreshold: 0,
+    PaperProps: {
+      sx: {
+        mt: 0.5,
+        maxHeight: `${dropdownMaxHeight}px`,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        bgcolor: '#1a1a1a',
+        color: '#fff',
+        border: '1px solid rgba(229,106,22,0.75)',
+      },
+    },
+  }), [dropdownMaxHeight]);
   // Use the same full country dataset as the register form
   const countries = useMemo(() => {
     try {
@@ -208,6 +252,34 @@ export default function WorldRankingTable() {
     setSort({ key: 'rank', direction: 'asc' });
   };
 
+  const filterSelectSx = {
+    height: 39,
+    color: '#fff',
+    borderRadius: '24px',
+    fontSize: 15,
+    fontWeight: 600,
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#e56a16',
+      borderWidth: '1.5px',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#e56a16',
+    },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#e56a16',
+      borderWidth: '1.5px',
+    },
+    '& .MuiSelect-select': {
+      py: 0.95,
+      pr: '34px !important',
+      pl: 1.5,
+    },
+    '& .MuiSelect-icon': {
+      color: '#fff',
+      right: 10,
+    },
+  } as const;
+
   // Scroll current user into view when data loads
   useEffect(() => {
     if (!loading && userRowRef.current && tableContainerRef.current) {
@@ -230,35 +302,6 @@ export default function WorldRankingTable() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#0e0e0e', color: '#fff', overflowX: 'hidden' }}>
       <style>{`
-        .wr-select-wrap { position: relative; display: inline-block; }
-        .wr-select-wrap::after {
-          content: '';
-          position: absolute;
-          right: 14px;
-          top: 50%;
-          width: 0; height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 7px solid #fff;
-          transform: translateY(-50%);
-          pointer-events: none;
-        }
-        .wr-select {
-          height: 39px;
-          padding: 0 36px 0 14px;
-          background: transparent;
-          color: #fff;
-          border: 1.5px solid #e56a16;
-          border-radius: 24px;
-          font-size: 15px;
-          cursor: pointer;
-          outline: none;
-          appearance: none;
-          -webkit-appearance: none;
-          font-weight: 600;
-          width: auto;
-        }
-        .wr-select option { background: #1a1a1a; color: #fff; }
         .wr-search-icon { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; }
         @media (max-width: 600px) {
           .wr-right-filters {
@@ -267,15 +310,10 @@ export default function WorldRankingTable() {
             width: 100%;
             gap: 8px;
           }
-          .wr-right-filters .wr-select-wrap,
+          .wr-right-filters .wr-filter-control,
           .wr-right-filters .wr-clear-btn {
             width: 100%;
             min-width: 0;
-          }
-          .wr-right-filters .wr-select {
-            width: 100% !important;
-            min-width: 0 !important;
-            box-sizing: border-box;
           }
           .wr-right-filters .wr-clear-btn {
             width: 100%;
@@ -419,46 +457,56 @@ export default function WorldRankingTable() {
             justifyContent: { xs: 'flex-start', md: 'flex-end' }
           }}>
             {/* Position */}
-            <div className="wr-select-wrap">
-              <select
-                className="wr-select"
+            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 150 }}>
+              <Select
                 value={filters.positionType || ''}
-                onChange={e => setFilters(f => ({ ...f, positionType: e.target.value || undefined }))}
-                style={{ minWidth: '150px' }}
+                onOpen={handleFilterDropdownOpen}
+                onChange={(e) => setFilters((f) => ({ ...f, positionType: (e.target.value as string) || undefined }))}
+                displayEmpty
+                MenuProps={filterMenuProps}
+                sx={filterSelectSx}
               >
-                <option value="">All Position</option>
-                <option value="Defender">Defender</option>
-                <option value="Midfielder">Midfielder</option>
-                <option value="Forward">Forward</option>
-                <option value="Goalkeeper">Goalkeeper</option>
-              </select>
-            </div>
+                <MenuItem value="">All Position</MenuItem>
+                <MenuItem value="Defender">Defender</MenuItem>
+                <MenuItem value="Midfielder">Midfielder</MenuItem>
+                <MenuItem value="Forward">Forward</MenuItem>
+                <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
+              </Select>
+            </FormControl>
 
             {/* Year */}
-            <div className="wr-select-wrap">
-              <select
-                className="wr-select"
+            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 120 }}>
+              <Select
                 value={filters.year || ''}
-                onChange={e => setFilters(f => ({ ...f, year: e.target.value || undefined }))}
-                style={{ minWidth: '120px' }}
+                onOpen={handleFilterDropdownOpen}
+                onChange={(e) => setFilters((f) => ({ ...f, year: (e.target.value as string) || undefined }))}
+                displayEmpty
+                MenuProps={filterMenuProps}
+                sx={filterSelectSx}
               >
-                <option value="">All Years</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
+                <MenuItem value="">All Years</MenuItem>
+                {years.map((y) => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             {/* Country */}
-            <div className="wr-select-wrap">
-              <select
-                className="wr-select"
+            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 150 }}>
+              <Select
                 value={filters.country || ''}
-                onChange={e => setFilters(f => ({ ...f, country: e.target.value || undefined }))}
-                style={{ minWidth: '150px', width: '100px' }}
+                onOpen={handleFilterDropdownOpen}
+                onChange={(e) => setFilters((f) => ({ ...f, country: (e.target.value as string) || undefined }))}
+                displayEmpty
+                MenuProps={filterMenuProps}
+                sx={filterSelectSx}
               >
-                <option value="">All Country</option>
-                {countries.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
+                <MenuItem value="">All Country</MenuItem>
+                {countries.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             {/* Clear */}
             <Box
