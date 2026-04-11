@@ -2177,7 +2177,7 @@ export default function PlayerStatsPage() {
                                     mt: 1.8,
                                     display: 'grid',
                                     gridTemplateColumns: { xs: '0.9fr 1.1fr', sm: '0.85fr 1.15fr', md: 'repeat(2, minmax(0, 1fr))' },
-                                    // gap: { xs: 0.7, md: 0 },
+                                    gap: { xs: 0.7, md: 0 },
                                     width: '100%',
                                     maxWidth: { xs: 520, md: 500 },
                                     mx: 'auto',
@@ -2201,10 +2201,10 @@ export default function PlayerStatsPage() {
                                         },
                                         '&:hover .icon-box': { bgcolor: '#008c6b' },
                                         '&:hover .text-box': { bgcolor: '#2f2f2f' },
-                                        width: '78%',
+                                        width: { xs: '100%', md: '78%' },
                                         minWidth: 0,
                                         justifyContent: 'center',
-                                        ml:{sx:0,xs:0,md:6}
+                                        ml: { xs: 0, md: 6 }
                                     }}
                                     onClick={() => setStatsModalOpen(true)}
                                 >
@@ -2223,7 +2223,7 @@ export default function PlayerStatsPage() {
                                         bgcolor: '#2b2b2b', 
                                         display: 'flex', 
                                         alignItems: 'center',
-                                        justifyContent: 'flex-start',
+                                        justifyContent: { xs: 'center', md: 'flex-start' },
                                         px: { xs: 0.6, md: 0.9 },
                                         py: { xs: 0.55, md: 0.7 },
                                         width: '100%',
@@ -2234,7 +2234,8 @@ export default function PlayerStatsPage() {
                                             fontSize: { xs: 9, sm: 10, md: 11.5 }, 
                                             textTransform: 'uppercase',
                                             letterSpacing: 0.5,
-                                            whiteSpace: 'nowrap',
+                                            whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                                            lineHeight: 1.1,
                                             textAlign: 'center',
                                         }}>
                                             Stats Over Season
@@ -2285,7 +2286,7 @@ export default function PlayerStatsPage() {
                                         bgcolor: '#2b2b2b',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'flex-start',
+                                        justifyContent: { xs: 'center', md: 'flex-start' },
                                         px: { xs: 0.6, md: 0.9 },
                                         py: { xs: 0.55, md: 0.7 },
                                         width: '100%',
@@ -2296,7 +2297,8 @@ export default function PlayerStatsPage() {
                                             fontSize: { xs: 9.5, sm: 10.5, md: 11.5 },
                                             textTransform: 'uppercase',
                                             letterSpacing: 0.5,
-                                            whiteSpace: 'nowrap',
+                                            whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                                            lineHeight: 1.1,
                                             textAlign: 'center',
                                         }}>
                                             Performance Dashboard
