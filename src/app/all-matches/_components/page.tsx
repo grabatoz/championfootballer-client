@@ -1739,12 +1739,15 @@ export default function AllMatches() {
                 <Box
                     sx={{
                         mb: { xs: 3, md: 5 },
-                        bgcolor: 'black',
-                        px: 0,
+                        bgcolor: '#000',
+                        px: { xs: 2, sm: 3, md: 4 },
                         py: { xs: 2, md: 2.5 },
                         borderRadius: 0,
                         minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
-                        width: '100%',
+                        width: '100vw',
+                        position: 'relative',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
                     }}
                 >
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
@@ -1788,7 +1791,10 @@ export default function AllMatches() {
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'stretch', sm: 'center' },
                         justifyContent: { xs: 'flex-start', sm: 'space-between' },
-                        px: { xs: 0, md: 2 }
+                        px: { xs: 2, sm: 3, md: 3 },
+                        maxWidth: '1200px',
+                        mx: 'auto',
+                        width: '100%',
                     }}>
 
                         <Box sx={{
