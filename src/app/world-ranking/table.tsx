@@ -307,7 +307,7 @@ export default function WorldRankingTable() {
           color: '#fff',
           letterSpacing: '0px',
           textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          pt: { xs: 1, md: 2 },
+          pt: { xs: 2, md: 3 },
           pb: { xs: 3, md: 6 },
           lineHeight: 1,
         }}>
@@ -322,7 +322,7 @@ export default function WorldRankingTable() {
           transform: 'translateX(-50%)',
           height: 'var(--header-divider-height)', 
           background: 'var(--header-divider-color)',
-          mb: { xs: 0.4, md: 0.35 },
+          mb: { xs: 0.25, md: -1 },
         }} />
       </Box>
 
