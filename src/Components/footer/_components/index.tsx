@@ -143,24 +143,46 @@ export default function Footer() {
             >
               About Us
             </Button>
-            <Button
-              onClick={handleSignOut}
-              sx={{
-                textTransform: 'none',
-                color: '#fff',
-                fontWeight: 500,
-                fontSize: 16,
-                p: 0,
-                width: '100px',
-                height: '35px',
-                bgcolor: '#00A77F',
-                borderRadius: 1.5,
-                ml: 2,
-                '&:hover': { bgcolor: '#008f6d', color: '#fff' },
-              }}
-            >
-              Sign Out
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                onClick={handleSignOut}
+                sx={{
+                  textTransform: 'none',
+                  color: '#fff',
+                  fontWeight: 500,
+                  fontSize: 16,
+                  p: 0,
+                  width: '100px',
+                  height: '35px',
+                  bgcolor: '#00A77F',
+                  borderRadius: 1.5,
+                  ml: 2,
+                  '&:hover': { bgcolor: '#008f6d', color: '#fff' },
+                }}
+              >
+                Sign Out
+              </Button>
+            ) : (
+              <Button
+                component={Link}
+                href="/login"
+                sx={{
+                  textTransform: 'none',
+                  color: '#fff',
+                  fontWeight: 500,
+                  fontSize: 16,
+                  p: 0,
+                  width: '100px',
+                  height: '35px',
+                  bgcolor: '#00A77F',
+                  borderRadius: 1.5,
+                  ml: 2,
+                  '&:hover': { bgcolor: '#008f6d', color: '#fff' },
+                }}
+              >
+                Sign In
+              </Button>
+            )}
           </Stack>
 
           <Typography variant="body2" sx={{ color: 'white', mt: 3, fontSize: '15px', fontWeight: 450, letterSpacing: 1, textAlign: 'center' }}>
