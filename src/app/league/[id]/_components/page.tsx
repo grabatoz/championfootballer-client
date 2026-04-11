@@ -5620,24 +5620,36 @@ export default function LeagueDetailPage() {
             </Container>
 
 
-            <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} fullWidth maxWidth="xs">
-                <DialogTitle sx={{ fontWeight: 'bold' }}>
+            <Dialog
+                open={confirmDeleteOpen}
+                onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: {
+                        width: { xs: 'calc(100vw - 16px)', sm: '100%' },
+                        m: { xs: 1, sm: 2 },
+                        borderRadius: { xs: 1.5, sm: 2 },
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.2rem' }, px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, pb: { xs: 0.8, sm: 1.2 } }}>
                     {matchDeleteChecking ? 'Checking match...' : 'Archive Match'}
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 1, sm: 2 } }}>
                     {matchDeleteChecking ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
                             <CircularProgress size={20} />
-                            <Typography variant="body2">Checking match data...</Typography>
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Checking match data...</Typography>
                         </Box>
                     ) : (
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '0.85rem', sm: '0.95rem' }, lineHeight: 1.45 }}>
                             {'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
                         </Typography>
                     )}
                 </DialogContent>
                 <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
-                    <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                    <Button onClick={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}>
                         Cancel
                     </Button>
                     <Button
@@ -5645,7 +5657,7 @@ export default function LeagueDetailPage() {
                         variant="contained"
                         onClick={handleConfirmDeleteMatch}
                         disabled={matchDeleteChecking}
-                        sx={{ width: { xs: '100%', sm: 'auto' } }}
+                        sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                     >
                         Archive Match
                     </Button>
@@ -5658,14 +5670,21 @@ export default function LeagueDetailPage() {
                 onClose={() => setArchivedActionOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        width: { xs: 'calc(100vw - 16px)', sm: '100%' },
+                        m: { xs: 1, sm: 2 },
+                        borderRadius: { xs: 1.5, sm: 2 },
+                    }
+                }}
             >
-                <DialogTitle sx={{ fontWeight: 'bold' }}>Archived Match Actions</DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
+                <DialogTitle sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.2rem' }, px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, pb: { xs: 0.8, sm: 1.2 } }}>Archived Match Actions</DialogTitle>
+                <DialogContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 1, sm: 2 } }}>
+                    <Typography variant="body2" sx={{ mb: 1, fontSize: { xs: '0.85rem', sm: '0.95rem' }, lineHeight: 1.4 }}>
                         Choose an action for this archived match.
                     </Typography>
                     {archivedActionChecking && (
-                        <Typography variant="body2">Checking deletable status…</Typography>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Checking deletable status...</Typography>
                     )}
                     {archivedActionHasStats === true && (
                         <Alert severity="warning" sx={{ mt: 1 }}>
@@ -5682,7 +5701,7 @@ export default function LeagueDetailPage() {
                             setArchivedActionOpen(false);
                         }}
                         startIcon={<Undo2 size={16} />}
-                        sx={{ width: { xs: '100%', sm: 'auto' } }}
+                        sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                     >
                         Undo
                     </Button>
@@ -5707,9 +5726,9 @@ export default function LeagueDetailPage() {
                                     tryHardDeleteFromDialog();
                                 }}
                                 startIcon={<Trash2 size={16} />}
-                                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                                sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                             >
-                                {archivedActionChecking ? 'Checking…' : 'Permanently Delete'}
+                                {archivedActionChecking ? 'Checking...' : 'Permanently Delete'}
                             </Button>
                         </span>
                     </Tooltip>
@@ -6095,4 +6114,5 @@ export default function LeagueDetailPage() {
         </Box>
     );
 }
+
 
