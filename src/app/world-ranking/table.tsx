@@ -260,11 +260,36 @@ export default function WorldRankingTable() {
         }
         .wr-select option { background: #1a1a1a; color: #fff; }
         .wr-search-icon { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; }
+        @media (max-width: 600px) {
+          .wr-right-filters {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+            gap: 8px;
+          }
+          .wr-right-filters .wr-select-wrap,
+          .wr-right-filters .wr-clear-btn {
+            width: 100%;
+            min-width: 0;
+          }
+          .wr-right-filters .wr-select {
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+          }
+          .wr-right-filters .wr-clear-btn {
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+            padding-left: 0;
+            padding-right: 0;
+          }
+        }
       `}</style>
 
       {/* ────────── HEADER ────────── */}
       <Box sx={{ 
-        mb: { xs: 3, md: 5 }, 
+        mb: 0, 
         bgcolor: '#0e0e0e', 
         p: { xs: 2, md: 3 }, 
         minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
@@ -297,7 +322,7 @@ export default function WorldRankingTable() {
           transform: 'translateX(-50%)',
           height: 'var(--header-divider-height)', 
           background: 'var(--header-divider-color)',
-          // mb: { xs: 2, md: 2 },
+          mb: { xs: 0.4, md: 0.35 },
         }} />
       </Box>
 
@@ -305,9 +330,12 @@ export default function WorldRankingTable() {
       <Box sx={{
         bgcolor: '#0e0e0e',
         px: { xs: 2, md: 4 },
-        mt: { xs: -3, md: -6 },
+        mt: 0,
+        pt: 0,
         mb: { xs: 2, md: 2 },
-        mx: { xs: -2, sm: -3, md: -3 },
+        mx: 0,
+        position: 'relative',
+        zIndex: 1,
       }}>
         <Box sx={{
           display: 'flex',
@@ -381,7 +409,9 @@ export default function WorldRankingTable() {
           </Box>
 
           {/* Right side - Filters group */}
-          <Box sx={{ 
+          <Box
+            className="wr-right-filters"
+            sx={{ 
             display: 'flex', 
             flexWrap: 'wrap', 
             gap: { xs: 1, md: 1.2 },
@@ -432,6 +462,7 @@ export default function WorldRankingTable() {
 
             {/* Clear */}
             <Box
+              className="wr-clear-btn"
               onClick={clearFilters}
               sx={{
                 height: 39,
