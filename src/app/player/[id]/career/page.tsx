@@ -1371,6 +1371,8 @@ export default function CareerPage() {
     dispatch(setLeagueFilter('all'));
     setSeasonFilter('all');
   };
+  const dashboardTitle = playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD';
+  const isLongDashboardTitle = dashboardTitle.length > 30;
 
   return (
     <Box
@@ -1378,26 +1380,24 @@ export default function CareerPage() {
         minHeight: '100vh',
         background: themeColors.surfaceBase,
         py: 2,
-        px: 2,
+        px: 0,
       }}
     >
       <Container
-        maxWidth="lg"
+        disableGutters
+        maxWidth={false}
         sx={{
           py: 2,
           background: themeColors.surfaceBase,
         }}
       >
-        <Box sx={{ maxWidth: '100%', mx: 'auto', overflowX: 'hidden' }}>
+        <Box sx={{ maxWidth: '100%', mx: 'auto', overflowX: 'visible' }}>
           {/* Dark Header Section - Full Width */}
           <Box sx={{
             mt: 0,
             mb: 4,
-            width: '100vw',
-            maxWidth: '100vw',
-            position: 'relative',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            width: '100%',
+            maxWidth: '100%',
             overflow: 'hidden',
             background: '#0e0e0e',
           }}>
@@ -1427,18 +1427,24 @@ export default function CareerPage() {
                     fontWeight: 700, 
                     fontStyle: 'normal',
                     color: '#fff', 
-                    fontSize: { xs: '32px', sm: '42px', md: '55px' }, 
+                    fontSize: isLongDashboardTitle
+                      ? { xs: '22px', sm: '30px', md: '42px' }
+                      : { xs: '26px', sm: '36px', md: '50px' },
                     textTransform: 'uppercase',
                     letterSpacing: '0rem',
-                    lineHeight: { xs: 1.05, md: 1 },
+                    lineHeight: { xs: 1.1, md: 1.05 },
                     textAlign: 'center',
                     maxWidth: { xs: '92vw', sm: '88vw', md: '100%' },
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
+                    wordBreak: 'break-word',
+                    display: '-webkit-box',
+                    WebkitLineClamp: { xs: 2, sm: 2, md: 1 },
+                    WebkitBoxOrient: 'vertical',
                   }}
                 >
-                  {playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD'}
+                  {dashboardTitle}
                 </Typography>
               </Box>
 
@@ -1448,10 +1454,7 @@ export default function CareerPage() {
                   height: 'var(--header-divider-height)',
                   bgcolor: 'var(--header-divider-color)',
                   mt: { xs: 2, sm: 4, md: 6.3 },
-                  width: '100vw',
-                  position: 'relative',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  width: '100%',
                 }}
               />
 
@@ -1470,12 +1473,13 @@ export default function CareerPage() {
                 {/* Filter Buttons */}
                 <Box
                   sx={{
-                    display: 'flex',
+                    display: { xs: 'grid', md: 'flex' },
+                    gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', md: 'none' },
                     gap: 0.5,
                     flexWrap: { xs: 'nowrap', md: 'wrap' },
                     justifyContent: 'center',
                     width: { xs: '100%', md: 'auto' },
-                    overflowX: { xs: 'auto', md: 'visible' },
+                    overflowX: { xs: 'visible', md: 'visible' },
                     '&::-webkit-scrollbar': { display: 'none' },
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
@@ -1497,7 +1501,7 @@ export default function CareerPage() {
                       cursor: 'pointer',
                       outline: 'none',
                       minWidth: isMobile ? '0' : '100px',
-                      width: isMobile ? '24%' : 'auto',
+                      width: isMobile ? '100%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1528,7 +1532,7 @@ export default function CareerPage() {
                       cursor: 'pointer',
                       outline: 'none',
                       minWidth: isMobile ? '0' : '110px',
-                      width: isMobile ? '24%' : 'auto',
+                      width: isMobile ? '100%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1561,7 +1565,7 @@ export default function CareerPage() {
                       cursor: 'pointer',
                       outline: 'none',
                       minWidth: isMobile ? '0' : '110px',
-                      width: isMobile ? '24%' : 'auto',
+                      width: isMobile ? '100%' : 'auto',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       fontWeight: 600,
@@ -1593,7 +1597,7 @@ export default function CareerPage() {
                       outline: 'none',
                       fontWeight: 600,
                       minWidth: isMobile ? '0' : 'auto',
-                      width: isMobile ? '24%' : 'auto',
+                      width: isMobile ? '100%' : 'auto',
                     }}
                   >
                     Clear
@@ -1604,7 +1608,7 @@ export default function CareerPage() {
           </Box>
 
           {/* Main Content */}
-          <Box sx={{ maxWidth: '1130px', mx: 'auto' }}>
+          <Box sx={{ maxWidth: '1130px', mx: 'auto', px: { xs: 2, sm: 2, md: 3 } }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress sx={{ color: themeColors.primary }} />
