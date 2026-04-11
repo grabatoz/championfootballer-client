@@ -743,7 +743,7 @@ const PlayerProfileCard = () => {
               p: { xs: 1.25, sm: 2 },
               borderRadius: { xs: 0, sm: 5 },
               width: '100%',
-              maxWidth: { xs: '100%', sm: 900 },
+              maxWidth: { xs: '100%', sm: 650 },
               mx: { xs: 0, sm: 'auto' },
               background: "#1f1f1f",
               border: `1px solid ${themeColors.border}`,
