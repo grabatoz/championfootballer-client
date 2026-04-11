@@ -68,7 +68,7 @@ interface User {
   position?: string;
   xp?: number;
   profilePicture?: string | null;
-} 
+}
 
 interface Match {
   id: string;
@@ -336,19 +336,19 @@ const isBackendUser = (v: unknown): v is BackendUser => {
 };
 
 // --- Reusable Trophy Card Component (Dark Theme) ---
-const TrophyCard = ({ 
-  title, 
-  description, 
-  image, 
-  color, 
-  winner, 
+const TrophyCard = ({
+  title,
+  description,
+  image,
+  color,
+  winner,
   onButtonClick,
   isLarge = false,
   imageSize
 }: TrophyType & { onButtonClick?: () => void; isLarge?: boolean }) => {
   const dims = isLarge ? TOP_CARD_DIMENSIONS : BOTTOM_CARD_DIMENSIONS;
   const imgSize = imageSize || dims.image;
-  
+
   return (
     <Paper
       elevation={4}
@@ -383,7 +383,7 @@ const TrophyCard = ({
           sx={{
             color: '#FFFFFF',
             fontWeight: 800,
-            fontSize: isLarge 
+            fontSize: isLarge
               ? { xs: '1rem', sm: '1.2rem', md: '1.6rem' }
               : { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
             letterSpacing: 1,
@@ -399,7 +399,7 @@ const TrophyCard = ({
           variant="body2"
           sx={{
             color: 'rgba(255,255,255,0.8)',
-            fontSize: isLarge 
+            fontSize: isLarge
               ? { xs: '0.75rem', sm: '0.85rem', md: '1.05rem' }
               : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
             lineHeight: 1.4,
@@ -455,7 +455,7 @@ const TrophyCard = ({
             backgroundColor: color,
             color: '#FFFFFF',
             fontWeight: 900,
-            fontSize: isLarge 
+            fontSize: isLarge
               ? { xs: '1rem', sm: '1.1rem', md: '1.5rem' }
               : { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
             py: isLarge ? { xs: 1, sm: 1.5 } : { xs: 0.75, sm: 1.1 },
@@ -1178,7 +1178,7 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
 
       {/* For Rising Star, show XP below the title with label */}
       {id === 'rising_xp' && (
-        <Typography variant="subtitle2" sx={{ color: BLUE_HEX, fontWeight: 800, mt: 0.5 , fontSize: { xs: '0.9rem', sm: '2.5rem' } }}>
+        <Typography variant="subtitle2" sx={{ color: BLUE_HEX, fontWeight: 800, mt: 0.5, fontSize: { xs: '0.9rem', sm: '2.5rem' } }}>
           {formatNumber(xp)} XP
         </Typography>
       )}
@@ -1393,7 +1393,7 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; admi
       .map(l => (l && l.id != null ? String(l.id) : undefined))
       .filter((v): v is string => typeof v === 'string')
   );
-  
+
   const srcLeagues = [
     ...(u?.leagues ?? []),
     ...adminLeaguesArr,
@@ -1448,7 +1448,7 @@ const normalizeLeaguesFromAuthData = (u: BackendUser): { leagues: League[]; admi
     archived: typeof l?.archived === 'boolean' ? l.archived : isInactiveOrArchivedStatus(l?.status) && String(l?.status ?? '').toLowerCase().includes('archiv'),
     isAdmin: adminIds.has(String(l?.id ?? '')),
   }));
-  
+
   return { leagues, adminIds };
 };
 
@@ -1529,9 +1529,9 @@ export default function GlobalTrophyRoom() {
   const [relativeNowMs, setRelativeNowMs] = useState<number>(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'my'>('all');
-    const [selectedYear, setSelectedYear] = useState<string>('all');
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -1694,11 +1694,11 @@ export default function GlobalTrophyRoom() {
 
 
   // Helper to attach local meta (image/color/description) by title
-  const attachTrophyMeta = (items: Array<{ 
-    title: string; 
-    winnerId: string | number | null; 
-    winner: string | null; 
-    leagueId?: string | number; 
+  const attachTrophyMeta = (items: Array<{
+    title: string;
+    winnerId: string | number | null;
+    winner: string | null;
+    leagueId?: string | number;
     leagueName?: string;
     seasonId?: string | number;
     seasonName?: string;
@@ -1754,7 +1754,7 @@ export default function GlobalTrophyRoom() {
           return;
         }
         const data = await res.json().catch(() => null);
-        
+
         if (data && (data?.user || data?.success)) {
           const userPayload = data?.user ?? data;
           const { leagues: rawLeagues, adminIds } = normalizeLeaguesFromAuthData(userPayload);
@@ -1808,7 +1808,7 @@ export default function GlobalTrophyRoom() {
                 setBackendTotalXP(derivedXP);
               }
             }
-          } catch {}
+          } catch { }
         } else {
           setLeagues([]);
         }
@@ -1880,8 +1880,8 @@ export default function GlobalTrophyRoom() {
   }, [filteredLeagues, selectedLeagueId]);
 
   // Get currently selected league
-  const selectedLeague = selectedLeagueId && selectedLeagueId !== 'all' 
-    ? leagues.find(l => l.id === selectedLeagueId) 
+  const selectedLeague = selectedLeagueId && selectedLeagueId !== 'all'
+    ? leagues.find(l => l.id === selectedLeagueId)
     : null;
 
   // Fetch seasons for the selected league
@@ -1894,11 +1894,11 @@ export default function GlobalTrophyRoom() {
       console.log('[Trophy Room] Skipping season fetch - no league or token');
       return;
     }
-    
+
     const leagueId = selectedLeagueId;
     const controller = new AbortController();
     let isActive = true;
-    
+
     const fetchSeasons = async () => {
       console.log('[Trophy Room] Fetching seasons for league:', leagueId);
       try {
@@ -1910,17 +1910,17 @@ export default function GlobalTrophyRoom() {
           }
         );
         if (!isActive) return;
-        
+
         if (!res.ok) {
           console.log('[Trophy Room] Seasons API not OK:', res.status);
           if (isActive) setSeasonsChecked(true);
           return;
         }
-        
+
         const data = await res.json().catch(() => null);
         if (!isActive) return;
         console.log('[Trophy Room] Seasons API response:', { status: res.status, data });
-        
+
         if (data?.success && Array.isArray(data.seasons) && data.seasons.length > 0) {
           // Store seasons in dedicated state (NOT in leagues array)
           setLeagueSeasons(data.seasons);
@@ -1942,7 +1942,7 @@ export default function GlobalTrophyRoom() {
         setSeasonsChecked(true);
       }
     };
-    
+
     fetchSeasons();
   }, [selectedLeagueId, token]);
 
@@ -1982,22 +1982,22 @@ export default function GlobalTrophyRoom() {
       try {
         const params = new URLSearchParams({ _: Date.now().toString() });
         params.append('leagueId', selectedLeagueId);
-        
+
         if (selectedSeasonId && selectedSeasonId !== 'all') {
           params.append('seasonId', selectedSeasonId);
         }
-        
+
         const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?${params.toString()}`;
-        console.log('[Trophy Room] Fetching trophies with filters:', { 
-          url, 
-          leagueId: selectedLeagueId, 
-          seasonId: selectedSeasonId 
+        console.log('[Trophy Room] Fetching trophies with filters:', {
+          url,
+          leagueId: selectedLeagueId,
+          seasonId: selectedSeasonId
         });
-        
+
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (!res.ok) {
           console.error('[TrophyRoom] /leagues/trophy-room failed:', res.status);
           setApiAllWinners([]);
@@ -2005,7 +2005,7 @@ export default function GlobalTrophyRoom() {
           setError('Failed to load trophy room.');
           return;
         }
-        
+
         const data = await res.json().catch(() => null);
 
         if (data?.success) {
@@ -2048,7 +2048,7 @@ export default function GlobalTrophyRoom() {
           if (awardRes.ok && awardJson?.success && Number.isFinite(Number(awardJson.totalXP))) {
             setBackendTotalXP(Number(awardJson.totalXP));
           }
-        } catch {}
+        } catch { }
 
         // Then, fetch server-computed achievements summary for display
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements?_=${Date.now()}`, {
@@ -2073,11 +2073,11 @@ export default function GlobalTrophyRoom() {
   // Fetch ALL trophies won by current user across all leagues and seasons (for My Achievements)
   useEffect(() => {
     if (!token || !user || !leagues || leagues.length === 0) return;
-    
+
     (async () => {
       try {
         const allUserTrophies: TrophyType[] = [];
-        
+
         // Iterate through all leagues where user is a member
         for (const league of leagues) {
           // First, fetch seasons for this league from the API
@@ -2096,7 +2096,7 @@ export default function GlobalTrophyRoom() {
           } catch {
             // Ignore — will fall through to no-season fetch
           }
-          
+
           if (seasons.length === 0) {
             // No seasons, try fetching trophies for league without season filter
             try {
@@ -2133,7 +2133,7 @@ export default function GlobalTrophyRoom() {
             }
           }
         }
-        
+
         console.log('[My Achievements] Total user trophies found:', allUserTrophies.length);
         setMyAllTrophies(allUserTrophies);
       } catch (e) {
@@ -2171,23 +2171,23 @@ export default function GlobalTrophyRoom() {
     selectedLeagueId === 'all'
       ? baseTrophies
       : baseTrophies.filter(t => {
-          const matchesLeague = t.leagueId === selectedLeagueId;
-          const matchesSeason = !selectedSeasonId || !t.seasonId || t.seasonId === selectedSeasonId;
-          const matches = matchesLeague && matchesSeason;
-          
-          console.log('[Trophy Room] Trophy filter:', {
-            title: t.title,
-            trophyLeagueId: t.leagueId,
-            trophySeasonId: t.seasonId,
-            selectedLeagueId,
-            selectedSeasonId,
-            matchesLeague,
-            matchesSeason,
-            matches,
-          });
-          
-          return matches;
+        const matchesLeague = t.leagueId === selectedLeagueId;
+        const matchesSeason = !selectedSeasonId || !t.seasonId || t.seasonId === selectedSeasonId;
+        const matches = matchesLeague && matchesSeason;
+
+        console.log('[Trophy Room] Trophy filter:', {
+          title: t.title,
+          trophyLeagueId: t.leagueId,
+          trophySeasonId: t.seasonId,
+          selectedLeagueId,
+          selectedSeasonId,
+          matchesLeague,
+          matchesSeason,
+          matches,
         });
+
+        return matches;
+      });
 
   console.log('[Trophy Room] Trophies to display base:', {
     count: trophiesToDisplayBase.length,
@@ -2260,11 +2260,11 @@ export default function GlobalTrophyRoom() {
     count: trophiesToDisplay.length,
     selectedLeague: selectedLeague?.name,
     selectedSeason: displaySeason?.name,
-    trophies: trophiesToDisplay.map(t => ({ 
-      title: t.title, 
-      winner: t.winner, 
+    trophies: trophiesToDisplay.map(t => ({
+      title: t.title,
+      winner: t.winner,
       seasonId: t.seasonId,
-      seasonName: t.seasonName 
+      seasonName: t.seasonName
     })),
   });
 
@@ -2356,13 +2356,13 @@ export default function GlobalTrophyRoom() {
       const skillsSrc = fullPlayer?.skills ?? data.skills;
       const skills: Skills | undefined = skillsSrc
         ? {
-            dribbling: Number(skillsSrc.dribbling ?? 0),
-            shooting: Number(skillsSrc.shooting ?? 0),
-            passing: Number(skillsSrc.passing ?? 0),
-            pace: Number(skillsSrc.pace ?? 0),
-            defending: Number(skillsSrc.defending ?? 0),
-            physical: Number(skillsSrc.physical ?? 0),
-          }
+          dribbling: Number(skillsSrc.dribbling ?? 0),
+          shooting: Number(skillsSrc.shooting ?? 0),
+          passing: Number(skillsSrc.passing ?? 0),
+          pace: Number(skillsSrc.pace ?? 0),
+          defending: Number(skillsSrc.defending ?? 0),
+          physical: Number(skillsSrc.physical ?? 0),
+        }
         : undefined;
 
       const lastFive: UserMatchSummary[] = Array.isArray(data.lastFive) ? data.lastFive : [];
@@ -2403,7 +2403,7 @@ export default function GlobalTrophyRoom() {
       });
       setOpenQuickView(true);
     } catch {
-  // On API error, do not compute skills locally
+      // On API error, do not compute skills locally
       const league = leagues.find(l => l.id === trophy.leagueId);
       if (!league) return;
       const player = league.members.find(m => m.id === trophy.winnerId);
@@ -2412,7 +2412,7 @@ export default function GlobalTrophyRoom() {
       // You may still show basic stats from local league if desired, but no skills calculation
       const perLeague = summarizeUserMatchesByLeague(player.id, [league]);
       const allMatches = perLeague[league.id] ?? [];
-  const list = allMatches.slice(-10).reverse();
+      const list = allMatches.slice(-10).reverse();
       const stats = calculatePlayerStats(league)[player.id];
 
       setQuickView({
@@ -2439,7 +2439,7 @@ export default function GlobalTrophyRoom() {
 
   // UI
   return (
-    <Box sx={{ 
+    <Box sx={{
       minHeight: '100vh',
       overflowX: 'hidden',
     }}>
@@ -2450,7 +2450,7 @@ export default function GlobalTrophyRoom() {
       }}>
         {/* Orange top border */}
         {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}
-        
+
         <Paper sx={{
           px: { xs: 1.5, sm: 3, md: 4 },
           py: 1.5,
@@ -2464,7 +2464,7 @@ export default function GlobalTrophyRoom() {
           transform: 'translateX(-50%)',
         }}>
           {/* Centered League Name with Trophy Icon */}
-          <Box sx={{ 
+          <Box sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2473,14 +2473,14 @@ export default function GlobalTrophyRoom() {
             gap: 0.5
           }}>
             {/* Trophy Icon + League Name / User Name + Dropdown */}
-          <Box sx={{ 
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: { xs: 0.7, sm: 1.5 },
-            mt: { xs: 1.5, sm: 4 },
-            width: '100%',
-            justifyContent: 'center',
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: { xs: 0.7, sm: 1.5 },
+              mt: { xs: 1.5, sm: 4 },
+              width: '100%',
+              justifyContent: 'center',
             }}>
               {filter !== 'my' && (
                 <Image
@@ -2519,46 +2519,46 @@ export default function GlobalTrophyRoom() {
                   onClick={handleLeaguesDropdownOpen}
                   sx={{
                     fontFamily: '"Oswald", sans-serif !important',
-                                                                         textTransform: 'uppercase',
-                                                                         fontSize: { xs: '32px', sm: '42px', md: '55px' },
-                                                                         fontWeight: 700,
-                                                                         lineHeight: 1.1,
-                                                                         wordBreak: 'normal',
-                                                                         overflow: 'hidden',
-                                                                         textOverflow: 'ellipsis',
-                                                                         whiteSpace: 'nowrap',
-                                                                         flexShrink: 1,
-                                                                         minWidth: 0,
-                                                                         maxWidth: { xs: '80vw', sm: '70vw', md: '60vw' },
-                                                                         textAlign: 'center',
-                                                                         color: 'white',
-                                                                         backgroundColor: 'transparent',
-                                                                         borderRadius: 0,
-                                                                         px: 0,
-                                                                         py: 0,
-                                                                         height: { xs: 'auto', sm: 'auto' },
-                                                                         '&:hover': {
-                                                                             backgroundColor: 'transparent',
-                                                                         },
-                                                                         display: 'flex',
-                                                                         alignItems: 'center',
-                                                                         justifyContent: 'center',
-                                                                         gap: 0.5,
-                                                                     }}
-                                                                     endIcon={
-                                                                         <Box
-                                                                             component="span"
-                                                                             sx={{
-                                                                                 width: 0,
-                                                                                 height: 0,
-                                                                                 borderLeft: { xs: '6px solid transparent', sm: '10px solid transparent' },
-                                                                                 borderRight: { xs: '6px solid transparent', sm: '10px solid transparent' },
-                                                                                 borderTop: { xs: '10px solid #FFFFFF', sm: '16px solid #FFFFFF' },
-                                                                                 display: 'inline-block',
-                                                                                 ml: 0.5
-                                                                             }}
-                                                                             />
-                                                                            }
+                    textTransform: 'uppercase',
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    wordBreak: 'normal',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 1,
+                    minWidth: 0,
+                    maxWidth: { xs: '80vw', sm: '70vw', md: '60vw' },
+                    textAlign: 'center',
+                    color: 'white',
+                    backgroundColor: 'transparent',
+                    borderRadius: 0,
+                    px: 0,
+                    py: 0,
+                    height: { xs: 'auto', sm: 'auto' },
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                    },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                  }}
+                  endIcon={
+                    <Box
+                      component="span"
+                      sx={{
+                        width: 0,
+                        height: 0,
+                        borderLeft: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                        borderRight: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                        borderTop: { xs: '10px solid #FFFFFF', sm: '16px solid #FFFFFF' },
+                        display: 'inline-block',
+                        ml: 0.5
+                      }}
+                    />
+                  }
                 >
                   <Box
                     component="span"
@@ -2589,7 +2589,7 @@ export default function GlobalTrophyRoom() {
                 </Typography>
               )}
             </Box>
-            
+
             {/* Season indicator with dropdown */}
             {filter !== 'my' && displaySeason && (
               <Button
@@ -2611,7 +2611,19 @@ export default function GlobalTrophyRoom() {
                   alignItems: 'center',
                   gap: 0.5,
                 }}
-                endIcon={availableSeasons.length > 1 ? <ChevronDown size={16} /> : null}
+                endIcon={
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 0,
+                      height: 0,
+                      borderLeft: '6px solid transparent',
+                      borderRight: '6px solid transparent',
+                      borderTop: '10px solid rgba(255,255,255,0.9)',
+                      display: 'inline-block',
+                    }}
+                  />
+                }
               >
                 (#{displaySeason.name})
               </Button>
@@ -2744,19 +2756,19 @@ export default function GlobalTrophyRoom() {
           </Menu>
 
           {/* Orange divider */}
-          <Box sx={{ 
-            height: 'var(--header-divider-height)', 
-            bgcolor: 'var(--header-divider-color)', 
+          <Box sx={{
+            height: 'var(--header-divider-height)',
+            bgcolor: 'var(--header-divider-color)',
             width: '100vw',
             position: 'relative',
             left: '50%',
             transform: 'translateX(-50%)',
-            mb: 0.8, 
+            mb: 0.8,
             mt: { xs: 3, sm: 3.2 }
           }} />
 
           {/* Standings info and Navigation Tabs */}
-            <Box
+          <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
@@ -2814,17 +2826,17 @@ export default function GlobalTrophyRoom() {
             )}
 
             {/* Center: Navigation buttons */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'row',
-                flexWrap: { xs: 'nowrap', sm: 'nowrap' },
-                gap: { xs: 1, sm: 2 },
-                mt: { xs: 0.6, sm: 2 },
-                position: { xs: 'relative', sm: (filter === 'my' ? 'relative' : 'absolute') },
-                left: { xs: 'auto', sm: (filter === 'my' ? 'auto' : '50%') },
-                transform: { xs: 'none', sm: (filter === 'my' ? 'none' : 'translateX(-50%)') },
-                justifyContent: 'center',
-                width: { xs: '100%', sm: (filter === 'my' ? '100%' : 'auto') },
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: { xs: 'nowrap', sm: 'nowrap' },
+              gap: { xs: 1, sm: 2 },
+              mt: { xs: 0.6, sm: 2 },
+              position: { xs: 'relative', sm: (filter === 'my' ? 'relative' : 'absolute') },
+              left: { xs: 'auto', sm: (filter === 'my' ? 'auto' : '50%') },
+              transform: { xs: 'none', sm: (filter === 'my' ? 'none' : 'translateX(-50%)') },
+              justifyContent: 'center',
+              width: { xs: '100%', sm: (filter === 'my' ? '100%' : 'auto') },
             }}>
               <Box
                 onClick={() => setFilter('all')}
@@ -2884,15 +2896,15 @@ export default function GlobalTrophyRoom() {
 
 
       {filter === 'my' ? (
-        <Box sx={{ 
-          maxWidth: '783px', 
+        <Box sx={{
+          maxWidth: '783px',
           mx: 'auto',
           px: { xs: 2, sm: 3 },
         }}>
           {(() => {
             // Get ALL trophies won by current user across all leagues and seasons
             const myTrophies = myAllTrophies || [];
-            
+
             // Helper to get league date by ID
             const getLeagueDate = (leagueId?: string) => {
               if (!leagueId) return null;
@@ -2909,7 +2921,7 @@ export default function GlobalTrophyRoom() {
 
             // Categorize and sort trophies by priority and date
             // Each trophy instance is shown separately (not grouped)
-            
+
             // League Awards (in order: Champion, Runner-Up)
             const leagueChampions = myTrophies
               .filter(t => t.title === 'League Champion')
@@ -2991,7 +3003,7 @@ export default function GlobalTrophyRoom() {
             }
 
             const hasAnyTrophies = myTrophies.length > 0;
-            
+
             return hasAnyTrophies ? (
               <>
                 {/* Profile Card with Stars */}
@@ -3004,9 +3016,9 @@ export default function GlobalTrophyRoom() {
                   overflow: 'hidden',
                 }}>
                   {/* Profile Picture with Stars */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
                     alignItems: 'center',
                     gap: { xs: 1.5, sm: 3 },
                     py: { xs: 1.5, sm: 2 },
@@ -3027,12 +3039,12 @@ export default function GlobalTrophyRoom() {
                     >
                       {!getProfileImage(user as any) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
                     </Avatar>
-                   <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
+                    <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
                   </Box>
 
                   {/* Two Column Layout */}
-                  <Box sx={{ 
-                    display: 'grid', 
+                  <Box sx={{
+                    display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
                     gap: 0,
                     mt: 1,
@@ -3091,12 +3103,12 @@ export default function GlobalTrophyRoom() {
                                         transform: 'scale(1.05)',
                                       },
                                     }}
-                                    // onClick={() => openPlayerQuickView(trophy)}
+                                  // onClick={() => openPlayerQuickView(trophy)}
                                   >
-                                    <Box sx={{ 
-                                      position: 'relative', 
-                                      width: { xs: 40, sm: 50 }, 
-                                      height: { xs: 40, sm: 50 }, 
+                                    <Box sx={{
+                                      position: 'relative',
+                                      width: { xs: 40, sm: 50 },
+                                      height: { xs: 40, sm: 50 },
                                       mb: { xs: 1, sm: 1.5 },
                                       display: 'flex',
                                       alignItems: 'center',
@@ -3107,7 +3119,7 @@ export default function GlobalTrophyRoom() {
                                         alt={trophy.title}
                                         width={isMobile ? 40 : 50}
                                         height={isMobile ? 40 : 50}
-                                        style={{ 
+                                        style={{
                                           objectFit: 'contain',
                                           maxWidth: '100%',
                                           maxHeight: '100%',
@@ -3187,12 +3199,12 @@ export default function GlobalTrophyRoom() {
                                         transform: 'scale(1.05)',
                                       },
                                     }}
-                                    // onClick={() => openPlayerQuickView(trophy)}
+                                  // onClick={() => openPlayerQuickView(trophy)}
                                   >
-                                    <Box sx={{ 
-                                      position: 'relative', 
-                                      width: { xs: 40, sm: 50 }, 
-                                      height: { xs: 40, sm: 50 }, 
+                                    <Box sx={{
+                                      position: 'relative',
+                                      width: { xs: 40, sm: 50 },
+                                      height: { xs: 40, sm: 50 },
                                       mb: { xs: 1, sm: 1.5 },
                                       display: 'flex',
                                       alignItems: 'center',
@@ -3203,7 +3215,7 @@ export default function GlobalTrophyRoom() {
                                         alt={trophy.title}
                                         width={isMobile ? 40 : 50}
                                         height={isMobile ? 40 : 50}
-                                        style={{ 
+                                        style={{
                                           objectFit: 'contain',
                                           maxWidth: '100%',
                                           maxHeight: '100%',
@@ -3307,7 +3319,7 @@ export default function GlobalTrophyRoom() {
             </Box>
           )}
           {isMobile ? (
-            <Box sx={{ 
+            <Box sx={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: 1,
@@ -3345,25 +3357,25 @@ export default function GlobalTrophyRoom() {
           ) : (
             <>
               {/* Top Row - 3 Large Trophies */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { sm: 'repeat(3, 1fr)' }, 
-                gap: { sm: 2, md: 1.5 }, 
-                justifyContent: 'center', 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { sm: 'repeat(3, 1fr)' },
+                gap: { sm: 2, md: 1.5 },
+                justifyContent: 'center',
                 alignItems: 'stretch',
                 mb: { sm: 3 },
               }}>
                 {(() => {
                   const topTrophyTitles = ['League Champion', "Ballon D'or", 'Runner-Up'];
-                  const displayTrophies = trophiesToDisplay.length > 0 
+                  const displayTrophies = trophiesToDisplay.length > 0
                     ? trophiesToDisplay.filter(t => topTrophyTitles.includes(t.title))
                     : topTrophies.map(t => ({
-                        ...t,
-                        winner: 'TBC',
-                        winnerId: null,
-                        leagueId: selectedLeague ? selectedLeague.id : undefined,
-                        leagueName: selectedLeague ? selectedLeague.name : undefined,
-                      }));
+                      ...t,
+                      winner: 'TBC',
+                      winnerId: null,
+                      leagueId: selectedLeague ? selectedLeague.id : undefined,
+                      leagueName: selectedLeague ? selectedLeague.name : undefined,
+                    }));
                   return topTrophyTitles.map((title, index) => {
                     const trophy = displayTrophies.find(t => t.title === title) || {
                       ...topTrophies.find(t => t.title === title)!,
@@ -3386,25 +3398,25 @@ export default function GlobalTrophyRoom() {
               </Box>
 
               {/* Bottom Row - 5 Smaller Trophies */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, 
-                gap: { sm: 2, md: 1.5 }, 
-                justifyContent: 'center', 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' },
+                gap: { sm: 2, md: 1.5 },
+                justifyContent: 'center',
                 alignItems: 'stretch',
                 mb: { sm: 6, md: 8 },
               }}>
                 {(() => {
                   const bottomTrophyTitles = ['Golden Boot', 'King Playmaker', 'Legendary Shield', 'Dark Horse', 'Star Keeper'];
-                  const displayTrophies = trophiesToDisplay.length > 0 
+                  const displayTrophies = trophiesToDisplay.length > 0
                     ? trophiesToDisplay.filter(t => bottomTrophyTitles.includes(t.title))
                     : bottomTrophies.map(t => ({
-                        ...t,
-                        winner: 'TBC',
-                        winnerId: null,
-                        leagueId: selectedLeague ? selectedLeague.id : undefined,
-                        leagueName: selectedLeague ? selectedLeague.name : undefined,
-                      }));
+                      ...t,
+                      winner: 'TBC',
+                      winnerId: null,
+                      leagueId: selectedLeague ? selectedLeague.id : undefined,
+                      leagueName: selectedLeague ? selectedLeague.name : undefined,
+                    }));
                   return bottomTrophyTitles.map((title, index) => {
                     const trophy = displayTrophies.find(t => t.title === title) || {
                       ...bottomTrophies.find(t => t.title === title)!,
@@ -3444,216 +3456,291 @@ export default function GlobalTrophyRoom() {
       )}
 
       {/* Player Quick View Modal (Compact Version) */}
-    <Dialog
-            open={openQuickView}
-            onClose={() => setOpenQuickView(false)}
-            fullScreen={isMobile}
-            fullWidth
-            maxWidth="sm"
-            PaperProps={{ sx: { borderRadius: { xs: 0, sm: 2 }, overflow: 'hidden', maxWidth: '500px', m: { xs: 0, sm: 2 } } }}
-          >
-            <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 }, bgcolor: '#000', position: 'relative' }}>
-              <Image src={cflogo} alt="CF Logo" width={isMobile ? 210 : 320} height={isMobile ? 210 : 320} />
-              <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: { xs: 8, sm: 16 }, top: '50%', transform: 'translateY(-50%)' }}>
-                <CloseIcon />
-              </IconButton>
-            </DialogTitle>
-            <Divider />
-            <DialogContent sx={{ py: { xs: 0.5, sm: 3 }, overflowY: { xs: 'auto', sm: 'hidden' }, position: 'relative' }}>
-              {quickView.player && (
+      <Dialog
+        open={openQuickView}
+        onClose={() => setOpenQuickView(false)}
+        fullWidth
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 1.5, sm: 2 },
+            overflow: 'visible',
+            width: { xs: 'calc(100vw - 8px)', sm: 'min(760px, calc(100vw - 24px))' },
+            maxWidth: { xs: 'calc(100vw - 8px)', sm: '760px' }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 }, bgcolor: '#000', position: 'relative' }}>
+          <Image src={cflogo} alt="CF Logo" width={isMobile ? 160 : 320} height={isMobile ? 160 : 320} />
+          <IconButton onClick={() => setOpenQuickView(false)} sx={{ color: '#fff', position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <Divider />
+        <DialogContent sx={{ py: { xs: 0.65, sm: 2.5 }, px: { xs: 0.6, sm: 1.5 }, pb: { xs: 6.5, sm: 5 }, position: 'relative', overflowX: 'visible', overflowY: 'auto', maxHeight: { xs: '82vh', sm: 'calc(100dvh - 150px)' } }}>
+          {quickView.player && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '64px minmax(0, 1fr) 64px', sm: '112px minmax(0, 260px) 112px' },
+                gap: { xs: 0.3, sm: 1 },
+                alignItems: 'start',
+                justifyContent: 'center',
+                minHeight: { xs: '352px', sm: '438px' },
+              }}
+            >
+              {/* Left: Stats Icons */}
+              <Paper elevation={0} sx={{
+                p: { xs: 0.3, sm: 1 },
+                border: '1px solid rgba(15, 23, 42, 0.2)',
+                backgroundColor: '#fff',
+                minWidth: 0,
+                minHeight: { xs: '230px', sm: '280px' },
+                borderRadius: 2,
+                position: 'relative',
+                zIndex: 4,
+                order: { xs: 1, sm: 1 },
+                mt: { xs: 0, sm: 5 }
+              }}>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                 <Box
                   sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '110px 250px 120px' },
-                    gap: { xs: 1, sm: 0 },
-                    alignItems: 'start',
-                    justifyContent: 'center',
-                    height: { xs: 'auto', sm: '382px' },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: { xs: 0.06, sm: 0 },
                   }}
                 >
-                  {/* Left: Stats Icons */}
-                  <Paper elevation={0} sx={{
-                    p: { xs: 0.75, sm: 1 },
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    height: { xs: 'auto', sm: '280px' },
-                    borderRadius: 2,
-                    order: { xs: 2, sm: 1 },
-                    mt: { xs: 0, sm: 5 }
-                  }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.7rem', sm: '0.8rem' }, letterSpacing: 0.3, mb: 0.3 }}>Current Stats</Typography>
+                  {[
+                    { img: Goals, label: 'Goals', shortLabel: 'Goals', value: quickView.stats?.goals ?? 0 },
+                    { img: Assist, label: 'Assists', shortLabel: 'Assist', value: quickView.stats?.assists ?? 0 },
+                    { img: Cleansheet, label: 'Clean Sheets', shortLabel: 'Clean', value: quickView.cleanSheets ?? 0 },
+                    { img: Momt, label: 'Votes', shortLabel: 'Votes', value: quickView.motmCount ?? 0 },
+                    { img: DefImp, label: 'Defensive Impact', shortLabel: 'Def', value: quickView.defensiveImpact ?? 0 },
+                    { img: Mentality, label: 'Mentality', shortLabel: 'Mental', value: quickView.mentality ?? 0 },
+                  ].map((it, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: 0.01,
+                        p: { xs: 0.02, sm: 0.3 },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
+                        <Image src={it.img} alt={it.label} width={isMobile ? 10 : 20} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.58rem', sm: '0.9rem' }, lineHeight: 1 }}>
+                          {it.value}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#64748b',
+                          fontSize: { xs: '0.43rem', sm: '0.65rem' },
+                          textAlign: 'left',
+                          lineHeight: 1,
+                          whiteSpace: 'nowrap',
+                          letterSpacing: 0,
+                        }}
+                      >
+                        {isMobile ? it.shortLabel : it.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+                <Button
+                  variant="text"
+                  disableRipple
+                  disableFocusRipple
+                  sx={{
+                    color: '#1976d2',
+                    fontSize: { xs: '0.48rem', sm: '0.75rem' },
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px',
+                    WebkitTapHighlightColor: 'transparent',
+                    padding: { xs: '1px 2px', sm: '4px 8px' },
+                    minWidth: 'auto',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                    },
+                    '&:active': {
+                      boxShadow: 'none',
+                      backgroundColor: 'transparent',
+                    },
+                    '&:focus': {
+                      boxShadow: 'none',
+                      outline: 'none',
+                      backgroundColor: 'transparent',
+                    },
+                    '&.Mui-focusVisible': {
+                      boxShadow: 'none',
+                      outline: 'none',
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                >
+                  More Stats
+                </Button>
+              </Paper>
+
+              {/* Center: Player Card */}
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                position: 'relative',
+                zIndex: 2,
+                order: { xs: 2, sm: 2 }
+              }}>
+                {(() => {
+                  const p = quickView.player as User & PlayerProfileLike;
+                  const fullName = [p.firstName, p.lastName]
+                    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim();
+                  const playerCardProps = {
+                    name: fullName,
+                    number: getShirtNumber(p),
+                    points: Number(quickView.xp ?? 0),
+                    stats: {
+                      DRI: String(quickView.skills?.dribbling ?? 0),
+                      SHO: String(quickView.skills?.shooting ?? 0),
+                      PAS: String(quickView.skills?.passing ?? 0),
+                      PAC: String(quickView.skills?.pace ?? 0),
+                      DEF: String(quickView.skills?.defending ?? 0),
+                      PHY: String(quickView.skills?.physical ?? 0),
+                    },
+                    foot: getPreferredFoot(p),
+                    profileImage: getProfileImage(p),
+                    shirtIcon: '',
+                    width: 260,
+                    height: isMobile ? 410 : 390,
+                    hideShareIcon: true,
+                    position: p.position ?? '',
+                  };
+                  return (
                     <Box
                       sx={{
-                        display: { xs: 'grid', sm: 'flex' },
-                        flexDirection: { sm: 'column' },
-                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
-                        gap: { xs: 0, sm: 0 },
+                        width: { xs: 160, sm: 260 },
+                        height: { xs: 278, sm: 398 },
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'flex-start',
+                        position: 'relative',
+                        overflow: 'visible',
                       }}
                     >
-                      {[
-                        { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
-                        { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
-                        { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                        { img: Momt, label: 'Motm Votes', value: quickView.motmCount ?? 0 },
-                        { img: DefImp, label: 'Defensive Impact', value: quickView.defensiveImpact ?? 0 },
-                        { img: Mentality, label: 'Mentality', value: quickView.mentality ?? 0 },
-                      ].map((it, i) => (
-                        <Box
-                          key={i}
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            gap: 0.1,
-                            p: { xs: 0.15, sm: 0.3 },
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Image src={it.img} alt={it.label} width={20} height={20} style={{ objectFit: 'contain' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                              {it.value}
-                            </Typography>
-                          </Box>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: '#64748b',
-                              fontSize: { xs: '0.6rem', sm: '0.65rem' },
-                              textAlign: 'left',
-                              lineHeight: 1.1,
-                              whiteSpace: 'nowrap',
-                              letterSpacing: 0,
-                            }}
-                          >
-                            {it.label}
-                          </Typography>
-                        </Box>
-                      ))}
+                      <Box
+                        sx={{
+                          width: 260,
+                          height: { xs: 410, sm: 390 },
+                          position: { xs: 'absolute', sm: 'relative' },
+                          top: 0,
+                          left: { xs: '50%', sm: 'auto' },
+                          transform: { xs: 'translateX(-50%) scale(0.62)', sm: 'none' },
+                          transformOrigin: 'top center',
+                        }}
+                      >
+                        <PlayerCard {...playerCardProps} disableImagePopup />
+                      </Box>
                     </Box>
-                    <Button
-                      variant="text"
-                      sx={{
-                        color: '#1976d2',
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        padding: '4px 8px',
-                        minWidth: 'auto',
-                        '&:hover': { backgroundColor: 'transparent' },
-                      }}
-                    >
-                      More Stats
-                    </Button>
-                  </Paper>
+                  );
+                })()}
+              </Box>
 
-                  {/* Center: Player Card */}
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    order: { xs: 1, sm: 2 }
-                  }}>
-                    {(() => {
-                      const p = quickView.player as User & PlayerProfileLike;
-                      const playerCardProps = {
-                        name: p.firstName ?? '',
-                        number: getShirtNumber(p),
-                        points: Number(quickView.xp ?? 0),
-                        stats: {
-                          DRI: String(quickView.skills?.dribbling ?? 0),
-                          SHO: String(quickView.skills?.shooting ?? 0),
-                          PAS: String(quickView.skills?.passing ?? 0),
-                          PAC: String(quickView.skills?.pace ?? 0),
-                          DEF: String(quickView.skills?.defending ?? 0),
-                          PHY: String(quickView.skills?.physical ?? 0),
-                        },
-                        foot: getPreferredFoot(p),
-                        profileImage: getProfileImage(p),
-                        shirtIcon: '',
-                        position: p.position ?? '',
-                      };
-                      return <PlayerCard {...playerCardProps} disableImagePopup hideShareIcon />;
-                    })()}
-                  </Box>
-
-                  {/* Right: Last 10 Matches */}
-                  <Paper elevation={0} sx={{
-                    p: { xs: 0.5, sm: 0.75 },
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    borderRadius: 2,
-                    overflowY: 'hidden',
-                    order: { xs: 3, sm: 3 },
-                    mt: { xs: 0, sm: 5 },
-                    minHeight: { xs: 240, sm: 275 },
-                  }}>
-                    <Typography sx={{ fontWeight: 800, mb: 0.25, fontSize: { xs: '0.6rem', sm: '0.7rem' }, letterSpacing: 0.3 }}>Last 10 games</Typography>
-                    <Stack direction="column" spacing={0.2}>
-                      {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
-                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box
-                            sx={{
-                              width: { xs: 24, sm: 28 },
-                              height: { xs: 20, sm: 24 },
-                              borderRadius: 0.5,
-                              backgroundColor: resultColor(m.result),
-                              color: '#fff',
-                              fontWeight: 800,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: { xs: '0.55rem', sm: '0.6rem' },
-                              lineHeight: 1,
-                            }}
-                          >
-                            {m.result}
-                          </Box>
-                          {idx === 0 && (
-                            <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.55rem', sm: '0.6rem' } }}>
-                              Latest
-                            </Typography>
-                          )}
-                        </Box>
-                      ))}
-                      {(quickView.lastFive ?? []).length === 0 && (
-                        <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                          No recent matches.
+              {/* Right: Last 10 Matches */}
+              <Paper elevation={0} sx={{
+                p: { xs: 0.3, sm: 0.75 },
+                border: '1px solid rgba(15, 23, 42, 0.2)',
+                backgroundColor: '#fff',
+                borderRadius: 2,
+                overflowY: 'hidden',
+                minWidth: 0,
+                position: 'relative',
+                zIndex: 4,
+                order: { xs: 3, sm: 3 },
+                mt: { xs: 0, sm: 5 },
+                minHeight: { xs: 230, sm: 275 },
+              }}>
+                <Typography sx={{ fontWeight: 800, mb: 0.2, fontSize: { xs: '0.5rem', sm: '0.7rem' }, letterSpacing: 0, lineHeight: 1.05 }}>Last 10 games</Typography>
+                <Stack direction="column" spacing={0.2}>
+                  {(quickView.lastFive ?? []).slice(0, 10).map((m, idx) => (
+                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box
+                        sx={{
+                          width: { xs: 14, sm: 28 },
+                          height: { xs: 14, sm: 24 },
+                          borderRadius: 0.5,
+                          backgroundColor: resultColor(m.result),
+                          color: '#fff',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: { xs: '0.46rem', sm: '0.6rem' },
+                          lineHeight: 1,
+                        }}
+                      >
+                        {m.result}
+                      </Box>
+                      {idx === 0 && (
+                        <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: { xs: '0.45rem', sm: '0.6rem' }, display: { xs: 'none', sm: 'block' } }}>
+                          Latest
                         </Typography>
                       )}
-                    </Stack>
-                  </Paper>
-                </Box>
-              )}
-              {/* Share button - bottom right */}
-              {quickView.player && (
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    bottom: 28,
-                    right: 19,
-                    bgcolor: '#009371',
-                    color: '#fff',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '4px',
-                    '&:hover': { bgcolor: '#007a5e' },
-                  }}
-                  onClick={() => {
-                    const p = quickView.player;
-                    if (navigator.share) {
-                      navigator.share({
-                        title: `${p?.firstName ?? ''} - Champion Footballer`,
-                        text: `Check out ${p?.firstName ?? ''}'s stats! ${quickView.xp ?? 0} XP`,
-                      }).catch(() => {});
-                    } else {
-                      import('react-hot-toast').then(({ default: toast }) => toast.success('Share feature coming soon!'));
-                    }
-                  }}
-                >
-                  <ShareIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              )}
-            </DialogContent>
-          </Dialog>
-      </Box>
+                    </Box>
+                  ))}
+                  {(quickView.lastFive ?? []).length === 0 && (
+                    <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                      No recent matches.
+                    </Typography>
+                  )}
+                </Stack>
+              </Paper>
+            </Box>
+          )}
+          {quickView.player && (
+            <Box sx={{ position: 'absolute', right: { xs: 8, sm: 12 }, bottom: { xs: 8, sm: 10 }, zIndex: 10 }}>
+              <IconButton
+                sx={{
+                  bgcolor: '#10b981',
+                  color: '#fff',
+                  width: { xs: 34, sm: 36 },
+                  height: { xs: 34, sm: 36 },
+                  borderRadius: 1.2,
+                  '&:hover': { bgcolor: '#059669' },
+                }}
+                onClick={() => {
+                  const playerName = [quickView.player?.firstName, quickView.player?.lastName]
+                    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim() || 'Player';
+                  const shareText = `Check out ${playerName}'s stats! ${Number(quickView.xp ?? 0)} XP`;
+                  if (navigator.share) {
+                    navigator.share({
+                      title: `${playerName} - Champion Footballer`,
+                      text: shareText,
+                    }).catch(() => { });
+                  } else {
+                    navigator.clipboard?.writeText(shareText);
+                    import('react-hot-toast').then(({ default: toast }) => toast.success('Player stats copied!'));
+                  }
+                }}
+              >
+                <ShareIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Box>
     // </Box>
   );
 }
