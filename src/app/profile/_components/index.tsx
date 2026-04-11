@@ -761,7 +761,7 @@ const PlayerProfileCard = () => {
               </Stepper>
               <Box sx={{ width: '100%', height: 3, background: '#fff', mx: 0, mb: 3, opacity: 0.4 }} />
 
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'stretch' }, gap: 1.5, width: '100%', height: { xs: 'auto', sm: 180 } }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 1.5, width: '100%', height: { xs: 'auto', sm: 180 } }}>
                 <Avatar
                   src={imgSrc}
                   alt="Profile"
@@ -781,7 +781,7 @@ const PlayerProfileCard = () => {
                 >
                   <Person sx={{ fontSize: 62, color: themeColors.textFaint }} />
                 </Avatar>
-                <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', flex: 1, width: '100%' }}>
                   <Typography variant="h5" fontWeight={800} sx={{
                     color: themeColors.text,
                     lineHeight: 1.15,
