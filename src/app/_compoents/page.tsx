@@ -341,10 +341,10 @@ export default function LandingPage() {
             <Card
               key={f.id}
               elevation={0}
-              sx={{
-                width: '100%',
-                height: { xs: 'auto', sm: 200, md: 200 },
-                minHeight: { xs: 180, sm: 200, md: 200 },
+                sx={{
+                  width: '100%',
+                height: { xs: 230, sm: 238, md: 238 },
+                minHeight: { xs: 230, sm: 238, md: 238 },
                 borderRadius: 2,
                 overflow: 'hidden',
                 display: 'flex',
@@ -352,36 +352,59 @@ export default function LandingPage() {
                 justifyContent: 'flex-start',
                 boxShadow: 'none',
                 bgcolor: '#eaeae8',
-                border: '1px solid rgba(255,255,255,0.2)',
-                p: 2,
-
+                p: 0,
               }}
             >
-              {/* <Typography variant="overline" sx={{ color: '#000000', letterSpacing: 1, fontWeight: 700 }}>
-                {f.id}
-              </Typography> */}
-              <Typography
-                variant="h6"
+              <Box
                 sx={{
-                  fontSize: { xs: '0.88rem', md: '1.1rem' },
-                  lineHeight: { xs: 1.25, md: 1.2 },
-                  color: '#000000',
-                  fontWeight: 700,
-                  mt: 0.5,
-                  whiteSpace: { xs: 'normal', md: 'nowrap' },
-                  overflow: { xs: 'visible', md: 'hidden' },
-                  textOverflow: { xs: 'clip', md: 'ellipsis' }
+                  width: '100%',
+                  px: { xs: 1.25, md: 1.8 },
+                  py: { xs: 0.65, md: 0.75 },
+                  minHeight: { xs: 42, md: 46 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  bgcolor: '#eaeae8',
                 }}
               >
-                {f.id}. {f.title}
-              </Typography>
-              <Box sx={{ mt: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: { xs: '0.9rem', md: '1.1rem' },
+                    lineHeight: 1.2,
+                    color: '#000000',
+                    fontWeight: 700,
+                    whiteSpace: { xs: 'normal', md: 'nowrap' },
+                    overflow: { xs: 'visible', md: 'hidden' },
+                    textOverflow: { xs: 'clip', md: 'ellipsis' },
+                  }}
+                >
+                  {f.id}. {f.title}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: { xs: 10, md: 12 },
+                  bgcolor: '#000000',
+                }}
+              />
+              <Box
+                sx={{
+                  flex: 1,
+                  width: '100%',
+                  p: { xs: 1.25, md: 1.5 },
+                  bgcolor: '#eaeae8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Box
                   sx={{
                     position: 'relative',
                     width: '100%',
-                    height: { xs: 95, sm: 105, md: 110 },
-                    maxWidth: 320,
+                    height: '100%',
+                    maxWidth: '100%',
                     mx: 'auto',
                   }}
                 >
