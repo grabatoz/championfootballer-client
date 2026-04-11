@@ -2638,17 +2638,27 @@ export default function PlayerStatsPage() {
                     <Dialog 
                         open={statsModalOpen} 
                         onClose={() => setStatsModalOpen(false)}
-                        fullScreen={isMobile}
+                        fullWidth
+                        scroll="paper"
                         maxWidth={false}
+                        sx={{
+                            '& .MuiDialog-container': {
+                                alignItems: 'center',
+                            },
+                        }}
                         PaperProps={{
                             sx: {
                                 bgcolor: '#e8e4e0',
-                                borderRadius: { xs: 0, sm: '6px' },
+                                borderRadius: { xs: '10px', sm: '8px' },
                                 border: '2px solid #3a3a3a',
                                 overflow: 'hidden',
-                                width: '100%',
+                                width: { xs: 'calc(100% - 16px)', sm: '100%' },
                                 maxWidth: '1020px',
-                                m: { xs: 0, sm: 2 },
+                                m: { xs: 1, sm: 2 },
+                                maxHeight: { xs: 'calc(100dvh - 16px)', sm: 'calc(100dvh - 32px)' },
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: 'auto',
                             }
                         }}
                     >
@@ -2656,37 +2666,59 @@ export default function PlayerStatsPage() {
                         <DialogTitle sx={{ 
                             bgcolor: '#d9d9d9', 
                             color: '#000', 
-                            display: 'flex', 
-                            alignItems: { xs: 'flex-start', md: 'center' }, 
-                            justifyContent: 'space-between',
-                            py: { xs: 1.25, md: 1.5 },
+                            py: { xs: 1.2, md: 1.45 },
                             px: { xs: 1.25, md: 2 },
-                            pr: { xs: 5.5, md: 6 },
+                            pr: { xs: 5.5, md: 7 },
                             minHeight: 'auto',
                             position: 'relative',
+                            borderBottom: '1px solid #bdb8b3',
                         }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.8, md: 1.5 }, flex: 1, justifyContent: { xs: 'flex-start', md: 'space-between' }, maxWidth: 'calc(100% - 40px)', flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                                    <Image src={TrofiiImg} alt="Trophy" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(17%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)' }} />
-                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' }, wordBreak: 'break-word' }}>
+                            {isMobile ? (
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.95, minWidth: 0, pr: 4.4 }}>
+                                    <Image
+                                        src={TrofiiImg}
+                                        alt="Trophy"
+                                        width={18}
+                                        height={18}
+                                        style={{ objectFit: 'contain', marginTop: 2, filter: 'brightness(0) saturate(100%) invert(17%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)' }}
+                                    />
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.15, minWidth: 0 }}>
+                                        <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 800, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.62px', color: '#222', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {currentLeagueName}
+                                        </Typography>
+                                        <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.58px', color: '#3d3d3d', lineHeight: 1.2 }}>
+                                            {selectedSeason && selectedSeason !== 'all' ? 'SEASON STATS' : 'STATS OVER SEASONS'}
+                                        </Typography>
+                                        <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.55px', color: '#1f1f1f', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {playerName.toUpperCase()}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.1, minWidth: 0, pr: 6 }}>
+                                    <Image
+                                        src={TrofiiImg}
+                                        alt="Trophy"
+                                        width={28}
+                                        height={28}
+                                        style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(17%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)' }}
+                                    />
+                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 800, fontSize: 19, textTransform: 'uppercase', letterSpacing: '0.9px', color: '#222', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '34%' }}>
                                         {currentLeagueName}
                                     </Typography>
+                                    <Typography sx={{ color: '#777', fontSize: 18, lineHeight: 1 }}>|</Typography>
+                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: 17, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#3d3d3d', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                                        {selectedSeason && selectedSeason !== 'all' ? 'SEASON STATS' : 'STATS OVER SEASONS'}
+                                    </Typography>
+                                    <Typography sx={{ color: '#777', fontSize: 18, lineHeight: 1 }}>|</Typography>
+                                    <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 800, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.85px', color: '#1f1f1f', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '34%' }}>
+                                        {playerName.toUpperCase()}
+                                    </Typography>
                                 </Box>
-                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5, display: { xs: 'none', md: 'block' } }}>|</Typography>
-                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' } }}>
-                                    {selectedSeason && selectedSeason !== 'all' 
-                                        ? 'SEASON STATS'
-                                        : 'STATS OVER SEASONS'
-                                    }
-                                </Typography>
-                                <Typography sx={{ color: '#777', fontSize: 18, mx: 0.5, display: { xs: 'none', md: 'block' } }}>|</Typography>
-                                <Typography sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontWeight: 700, fontSize: { xs: 14, sm: 17, md: 22 }, textTransform: 'uppercase', letterSpacing: { xs: '0.4px', md: '1px' }, color: '#2d2d2d', whiteSpace: { xs: 'normal', md: 'nowrap' }, wordBreak: 'break-word' }}>
-                                    {playerName.toUpperCase()}
-                                </Typography>
-                            </Box>
+                            )}
                             <IconButton 
                                 onClick={() => setStatsModalOpen(false)}
-                                sx={{ color: '#555',  bgcolor: '#e6e6e6', borderRadius: '3px', '&:hover': { color: '#000', bgcolor: '#e6e6e6' }, position: 'absolute', right: { xs: 6, md: 12 }, top: { xs: 6, md: '50%' }, transform: { xs: 'none', md: 'translateY(-50%)' } }}
+                                sx={{ color: '#555',  bgcolor: '#e6e6e6', borderRadius: '3px', '&:hover': { color: '#000', bgcolor: '#e6e6e6' }, position: 'absolute', right: { xs: 6, md: 10 }, top: { xs: 6, md: 7 } }}
                             >
                                 <CloseIcon sx={{ fontSize: { xs: 20, md: 24 } }} />
                             </IconButton>
@@ -2696,7 +2728,8 @@ export default function PlayerStatsPage() {
                             bgcolor: '#f2f2f2', 
                             px: { xs: 1.25, sm: 2.5, md: 5 }, 
                             py: { xs: 2, md: 4 },
-                            maxHeight: { xs: 'calc(100vh - 72px)', md: '60vh' },
+                            flex: '0 1 auto',
+                            minHeight: 0,
                             overflowY: 'auto',
                             '&::-webkit-scrollbar': {
                                 width: '6px',
@@ -2722,9 +2755,6 @@ export default function PlayerStatsPage() {
                                 <Box sx={{ textAlign: 'center', py: 6 }}>
                                     <Typography sx={{ color: '#555', fontSize: 16, mb: 1 }}>
                                         No season to compare.
-                                    </Typography>
-                                    <Typography sx={{ color: '#888', fontSize: 13 }}>
-                                        Please return to player stats.
                                     </Typography>
                                 </Box>
                             ) : (
