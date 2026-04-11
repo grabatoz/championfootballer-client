@@ -17,6 +17,7 @@ import {
   ToggleButton,
   CardContent,
   Button,
+  Menu,
   Select,
   MenuItem,
   FormControl,
@@ -457,6 +458,12 @@ export default function CareerPage() {
   const [seasonFilter, setSeasonFilter] = useState<string>('all');
   const [availableSeasons, setAvailableSeasons] = useState<SeasonInfo[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
+  const yearFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const leagueFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const seasonFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [yearMenuOpen, setYearMenuOpen] = useState(false);
+  const [leagueMenuOpen, setLeagueMenuOpen] = useState(false);
+  const [seasonMenuOpen, setSeasonMenuOpen] = useState(false);
 
   // Fetch seasons when a league is selected
   useEffect(() => {
@@ -1374,11 +1381,36 @@ export default function CareerPage() {
     preferredAppliedRef.current = true;
   }, [urlLeagueId, preferredLeagueId, filters.leagueId, availableLeagues, dispatch]);
 
+  const selectedSeasonLabel = useMemo(() => {
+    if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';
+    const selected = availableSeasons.find((s) => s.id === seasonFilter);
+    if (!selected) return 'All Seasons';
+    return `${selected.name}${selected.isActive ? ' (Active)' : ''}`;
+  }, [seasonFilter, availableSeasons]);
+
+  const handleYearFilterChange = (value: string) => {
+    dispatch(setYearFilter(value));
+    setYearMenuOpen(false);
+  };
+
+  const handleLeagueFilterChange = (value: string) => {
+    dispatch(setLeagueFilter(value));
+    setLeagueMenuOpen(false);
+  };
+
+  const handleSeasonFilterChange = (value: string) => {
+    setSeasonFilter(value);
+    setSeasonMenuOpen(false);
+  };
+
   // Clear all filters
   const handleClearFilters = () => {
     dispatch(setYearFilter('all'));
     dispatch(setLeagueFilter('all'));
     setSeasonFilter('all');
+    setYearMenuOpen(false);
+    setLeagueMenuOpen(false);
+    setSeasonMenuOpen(false);
   };
   const dashboardTitle = playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD';
   const isLongDashboardTitle = dashboardTitle.length > 30;
@@ -1495,101 +1527,371 @@ export default function CareerPage() {
                   }}
                 >
                   {/* Year Filter */}
-                  <select
-                    value={filters.year || 'all'}
-                    onChange={(e) => dispatch(setYearFilter(e.target.value))}
-                    style={{
-                      height: isMobile ? '34px' : '39px',
-                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
-                      marginLeft: isMobile ? '0px' : '4px',
-                      backgroundColor: 'transparent',
-                      color: '#fff',
-                      border: '1.5px solid #e56a16',
-                      borderRadius: '24px',
-                      fontSize: isMobile ? '11px' : '17px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      minWidth: isMobile ? '0' : '100px',
-                      width: isMobile ? '100%' : 'auto',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      fontWeight: 600,
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 12px center',
-                    }}
-                  >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
-                    {availableYears.map(year => (
-                      <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
-                    ))}
-                  </select>
+                  {isMobile ? (
+                    <>
+                      <button
+                        ref={yearFilterButtonRef}
+                        type="button"
+                        onClick={() => {
+                          setLeagueMenuOpen(false);
+                          setSeasonMenuOpen(false);
+                          setYearMenuOpen((prev) => !prev);
+                        }}
+                        style={{
+                          height: '34px',
+                          padding: '0 20px 0 7px',
+                          marginLeft: '0px',
+                          backgroundColor: 'transparent',
+                          color: '#fff',
+                          border: '1.5px solid #e56a16',
+                          borderRadius: '24px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          width: '100%',
+                          fontWeight: 600,
+                          textAlign: 'left',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 12px center',
+                        }}
+                      >
+                        {filters.year && filters.year !== 'all' ? filters.year : 'All Years'}
+                      </button>
+                      <Menu
+                        anchorEl={yearFilterButtonRef.current}
+                        open={yearMenuOpen}
+                        onClose={() => setYearMenuOpen(false)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{
+                          sx: {
+                            mt: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#1a1a1a',
+                            width: yearFilterButtonRef.current?.offsetWidth || 120,
+                            maxWidth: yearFilterButtonRef.current?.offsetWidth || 120,
+                          }
+                        }}
+                        MenuListProps={{ sx: { py: 0 } }}
+                      >
+                        <MenuItem
+                          selected={(filters.year || 'all') === 'all'}
+                          onClick={() => handleYearFilterChange('all')}
+                          sx={{
+                            color: '#fff',
+                            fontSize: 11,
+                            minHeight: 34,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                            '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                          }}
+                        >
+                          All Years
+                        </MenuItem>
+                        {availableYears.map((year) => (
+                          <MenuItem
+                            key={year}
+                            selected={(filters.year || 'all') === year}
+                            onClick={() => handleYearFilterChange(year)}
+                            sx={{
+                              color: '#fff',
+                              fontSize: 11,
+                              minHeight: 34,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                              '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            }}
+                          >
+                            {year}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <select
+                      value={filters.year || 'all'}
+                      onChange={(e) => handleYearFilterChange(e.target.value)}
+                      style={{
+                        height: '39px',
+                        padding: '0 36px 0 12px',
+                        marginLeft: '4px',
+                        backgroundColor: 'transparent',
+                        color: '#fff',
+                        border: '1.5px solid #e56a16',
+                        borderRadius: '24px',
+                        fontSize: '17px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        minWidth: '100px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        fontWeight: 600,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                      }}
+                    >
+                      <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
+                      {availableYears.map(year => (
+                        <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
+                      ))}
+                    </select>
+                  )}
 
                   {/* League Filter */}
-                  <select
-                    value={filters.leagueId || 'all'}
-                    onChange={(e) => dispatch(setLeagueFilter(e.target.value))}
-                    style={{
-                      height: isMobile ? '34px' : '39px',
-                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
-                      marginLeft: isMobile ? '0px' : '4px',
-                      backgroundColor: 'transparent',
-                      color: '#fff',
-                      border: '1.5px solid #e56a16',
-                      borderRadius: '24px',
-                      fontSize: isMobile ? '11px' : '17px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      minWidth: isMobile ? '0' : '110px',
-                      width: isMobile ? '100%' : 'auto',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      fontWeight: 600,
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 12px center',
-                    }}
-                  >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
-                    {availableLeagues.map((league: LeagueWithMatches & { name?: string }) => (
-                      <option key={league.id} value={league.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                        {league.name || `League ${league.id}`}
-                      </option>
-                    ))}
-                  </select>
+                  {isMobile ? (
+                    <>
+                      <button
+                        ref={leagueFilterButtonRef}
+                        type="button"
+                        onClick={() => {
+                          setYearMenuOpen(false);
+                          setSeasonMenuOpen(false);
+                          setLeagueMenuOpen((prev) => !prev);
+                        }}
+                        style={{
+                          height: '34px',
+                          padding: '0 20px 0 7px',
+                          marginLeft: '0px',
+                          backgroundColor: 'transparent',
+                          color: '#fff',
+                          border: '1.5px solid #e56a16',
+                          borderRadius: '24px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          width: '100%',
+                          fontWeight: 600,
+                          textAlign: 'left',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 12px center',
+                        }}
+                      >
+                        {selectedLeagueName || 'All Leagues'}
+                      </button>
+                      <Menu
+                        anchorEl={leagueFilterButtonRef.current}
+                        open={leagueMenuOpen}
+                        onClose={() => setLeagueMenuOpen(false)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{
+                          sx: {
+                            mt: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#1a1a1a',
+                            width: leagueFilterButtonRef.current?.offsetWidth || 120,
+                            maxWidth: leagueFilterButtonRef.current?.offsetWidth || 120,
+                          }
+                        }}
+                        MenuListProps={{ sx: { py: 0 } }}
+                      >
+                        <MenuItem
+                          selected={(filters.leagueId || 'all') === 'all'}
+                          onClick={() => handleLeagueFilterChange('all')}
+                          sx={{
+                            color: '#fff',
+                            fontSize: 11,
+                            minHeight: 34,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                            '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                          }}
+                        >
+                          All Leagues
+                        </MenuItem>
+                        {availableLeagues.map((league: LeagueWithMatches & { name?: string }) => (
+                          <MenuItem
+                            key={league.id}
+                            selected={(filters.leagueId || 'all') === league.id}
+                            onClick={() => handleLeagueFilterChange(league.id)}
+                            sx={{
+                              color: '#fff',
+                              fontSize: 11,
+                              minHeight: 34,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                              '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            }}
+                          >
+                            {league.name || `League ${league.id}`}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <select
+                      value={filters.leagueId || 'all'}
+                      onChange={(e) => handleLeagueFilterChange(e.target.value)}
+                      style={{
+                        height: '39px',
+                        padding: '0 36px 0 12px',
+                        marginLeft: '4px',
+                        backgroundColor: 'transparent',
+                        color: '#fff',
+                        border: '1.5px solid #e56a16',
+                        borderRadius: '24px',
+                        fontSize: '17px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        minWidth: '110px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        fontWeight: 600,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                      }}
+                    >
+                      <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
+                      {availableLeagues.map((league: LeagueWithMatches & { name?: string }) => (
+                        <option key={league.id} value={league.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                          {league.name || `League ${league.id}`}
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
                   {/* Season Filter */}
-                  <select
-                    value={seasonFilter}
-                    onChange={(e) => setSeasonFilter(e.target.value)}
-                    style={{
-                      height: isMobile ? '34px' : '39px',
-                      padding: isMobile ? '0 20px 0 7px' : '0 36px 0 12px',
-                      marginLeft: isMobile ? '0px' : '4px',
-                      backgroundColor: 'transparent',
-                      color: '#fff',
-                      border: '1.5px solid #e56a16',
-                      borderRadius: '24px',
-                      fontSize: isMobile ? '11px' : '17px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      minWidth: isMobile ? '0' : '110px',
-                      width: isMobile ? '100%' : 'auto',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      fontWeight: 600,
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 12px center',
-                    }}
-                  >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
-                    {availableSeasons.map(season => (
-                      <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                        {season.name}{season.isActive ? ' (Active)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                  {isMobile ? (
+                    <>
+                      <button
+                        ref={seasonFilterButtonRef}
+                        type="button"
+                        onClick={() => {
+                          setYearMenuOpen(false);
+                          setLeagueMenuOpen(false);
+                          setSeasonMenuOpen((prev) => !prev);
+                        }}
+                        style={{
+                          height: '34px',
+                          padding: '0 20px 0 7px',
+                          marginLeft: '0px',
+                          backgroundColor: 'transparent',
+                          color: '#fff',
+                          border: '1.5px solid #e56a16',
+                          borderRadius: '24px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          width: '100%',
+                          fontWeight: 600,
+                          textAlign: 'left',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 12px center',
+                        }}
+                      >
+                        {selectedSeasonLabel}
+                      </button>
+                      <Menu
+                        anchorEl={seasonFilterButtonRef.current}
+                        open={seasonMenuOpen}
+                        onClose={() => setSeasonMenuOpen(false)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{
+                          sx: {
+                            mt: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#1a1a1a',
+                            width: seasonFilterButtonRef.current?.offsetWidth || 120,
+                            maxWidth: seasonFilterButtonRef.current?.offsetWidth || 120,
+                          }
+                        }}
+                        MenuListProps={{ sx: { py: 0 } }}
+                      >
+                        <MenuItem
+                          selected={seasonFilter === 'all'}
+                          onClick={() => handleSeasonFilterChange('all')}
+                          sx={{
+                            color: '#fff',
+                            fontSize: 11,
+                            minHeight: 34,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                            '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                          }}
+                        >
+                          All Seasons
+                        </MenuItem>
+                        {availableSeasons.map((season) => (
+                          <MenuItem
+                            key={season.id}
+                            selected={seasonFilter === season.id}
+                            onClick={() => handleSeasonFilterChange(season.id)}
+                            sx={{
+                              color: '#fff',
+                              fontSize: 11,
+                              minHeight: 34,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                              '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            }}
+                          >
+                            {season.name}{season.isActive ? ' (Active)' : ''}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <select
+                      value={seasonFilter}
+                      onChange={(e) => handleSeasonFilterChange(e.target.value)}
+                      style={{
+                        height: '39px',
+                        padding: '0 36px 0 12px',
+                        marginLeft: '4px',
+                        backgroundColor: 'transparent',
+                        color: '#fff',
+                        border: '1.5px solid #e56a16',
+                        borderRadius: '24px',
+                        fontSize: '17px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        minWidth: '110px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        fontWeight: 600,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                      }}
+                    >
+                      <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                      {availableSeasons.map(season => (
+                        <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                          {season.name}{season.isActive ? ' (Active)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
                   {/* Clear Button */}
                   <button
