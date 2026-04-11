@@ -1627,32 +1627,49 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
     return (
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Box sx={{ p: isDialog ? 0 : { xs: 1, sm: 2, md: 3 }, minHeight: isDialog ? 'auto' : '100vh', color: '#E5E7EB', bgcolor: '#000' }}>
+        <Box sx={{ p: isDialog ? 0 : { xs: 1, sm: 2, md: 3 }, minHeight: isDialog ? 'auto' : '100vh', color: '#E5E7EB', bgcolor: '#000', overflowX: 'hidden' }}>
         {/* Close Button - hide in dialog mode since dialog has its own close */}
         {/* {!isDialog && <CloseButton fallbackRoute="/dashboard" />} */}
-          <Box sx={{ display: 'flex', gap: 0, flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'center', md: 'stretch' } }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, md: 0 }, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch' }}>
             {/* LEFT PANEL */}
             <Box sx={{ width: { xs: '100%', md: '55%' }, display: 'flex', flexDirection: 'column' }}>
               {/* EDIT MATCH Tab Header */}
-              <Box sx={{ py: 1.5, px: 3, background: '#00a77f', textAlign: 'center', borderRadius: 0 }}>
-                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
+              <Box sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 3 }, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
                   Edit Match
                 </Typography>
+                <IconButton
+                  onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }}
+                  sx={{
+                    display: { xs: 'inline-flex', md: 'none' },
+                    bgcolor: '#e6e6e6',
+                    color: '#000',
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 46,
+                    borderRadius: 0,
+                    '&:hover': { bgcolor: '#d0d0d0' }
+                  }}
+                >
+                  <X size={26} />
+                </IconButton>
               </Box>
               <form ref={formRef} onSubmit={handleUpdateMatch} style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, bgcolor: '#1a1a1a', color: '#E5E7EB', borderRadius: 0, border: '1px solid white', borderTop: 'none', mb: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   {/* SELECT TEAM Section */}
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff', fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, textTransform: 'uppercase', mb: 1 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff', fontSize: { xs: '0.95rem', sm: '1.3rem', md: '1.5rem' }, textTransform: 'uppercase', mb: 1 }}>
                     Select Team
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#fff', mb: 2, fontSize: { xs: '0.75rem', sm: '1rem' }, textAlign: 'center' }}>
                     Click on a player from the home or away team to switch or remove players.
                   </Typography>
                   {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <Button startIcon={<Image src={GuestIcon} alt="Guest" width={18} height={18} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' }, transition: 'all .25s ease' }}>Add Guest</Button>
-                    <Button startIcon={<Scale size={18} />} variant="outlined" onClick={balanceTeams} disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)} sx={{ borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>{xpLoading || isBalancing ? 'Balancing…' : 'Balance Teams'}</Button>
-                    <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ borderColor: '#e56a16', color: '#e56a16', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' }, '&:hover': { borderColor: '#d35a0f', backgroundColor: 'rgba(229, 106, 22, 0.1)' } }}>Shuffle Teams</Button>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2.5, flexWrap: 'wrap', justifyContent: 'center', flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <Button startIcon={<Image src={GuestIcon} alt="Guest" width={18} height={18} />} variant='contained' onClick={() => setGuestDialogOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' }, background: 'linear-gradient(135deg,#e56a16,#cf2326)', color: 'white', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.7rem', sm: '0.875rem' }, '&:hover': { background: 'linear-gradient(135deg,#d32f2f,#b71c1c)', transform: 'translateY(-2px)' }, transition: 'all .25s ease' }}>Add Guest</Button>
+                    <Button startIcon={<Scale size={18} />} variant="outlined" onClick={balanceTeams} disabled={xpLoading || isBalancing || (homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2)} sx={{ width: { xs: '100%', sm: 'auto' }, borderColor: '#1a8a6d', color: '#1a8a6d', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.7rem', sm: '0.875rem' }, '&:hover': { borderColor: '#157a62', backgroundColor: 'rgba(26, 138, 109, 0.1)' } }}>{xpLoading || isBalancing ? 'Balancing...' : 'Balance Teams'}</Button>
+                    <Button startIcon={<Shuffle size={18} />} variant="outlined" onClick={shuffleTeams} disabled={homeTeamUsers.filter(p => !p.isGuest).length + awayTeamUsers.filter(p => !p.isGuest).length < 2} sx={{ width: { xs: '100%', sm: 'auto' }, borderColor: '#e56a16', color: '#e56a16', fontWeight: 600, borderRadius: 3, px: { xs: 1, sm: 2 }, fontSize: { xs: '0.7rem', sm: '0.875rem' }, '&:hover': { borderColor: '#d35a0f', backgroundColor: 'rgba(229, 106, 22, 0.1)' } }}>Shuffle Teams</Button>
                   </Box>
                   {/* Player Selection Section */}
                       {(homeSelectedCount > 0 || awaySelectedCount > 0) && !hasMinimumTeamRequirements && (
@@ -1665,7 +1682,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
                       <Grid container spacing={1}>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Players</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Players</Typography>
                           <Autocomplete
                             key={`home-${availabilityVersion}`}
                             multiple
@@ -1680,7 +1697,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             ListboxProps={{
                               sx: {
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                                 gap: 1,
                                 p: 1,
                                 bgcolor: '#000'
@@ -1845,7 +1862,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Players</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Players</Typography>
                           <Autocomplete
                             key={`away-${availabilityVersion}`}
                             multiple
@@ -1860,7 +1877,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             ListboxProps={{
                               sx: {
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                                 gap: 1,
                                 p: 1,
                                 bgcolor: '#000'
@@ -2026,7 +2043,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
                         {/* Manual captain selectors */}
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Captain</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={homeTeamUsers}
                             value={homeCaptain}
@@ -2108,7 +2125,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Captain</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={awayTeamUsers}
                             value={awayCaptain}
@@ -2195,7 +2212,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                   {/* Team Names (Optional) */}
                   <Grid container spacing={1} sx={{ mt: 0.5 }}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Home Team Name (Optional)</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Home Team Name (Optional)</Typography>
                       <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
                         <TextField
                           placeholder='Enter team name'
@@ -2221,7 +2238,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       )}
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Away Team Name (Optional)</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Away Team Name (Optional)</Typography>
                       <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
                         <TextField
                           placeholder='Enter team name'
@@ -2255,7 +2272,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                   <Box sx={{ mb: 2, }}>
                     <Typography
                       onClick={() => setShowNotificationBox(prev => !prev)}
-                      sx={{ color: 'white', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 500, '&:hover': { textDecoration: 'underline' }, userSelect: 'none' }}
+                      sx={{ color: 'white', cursor: 'pointer', fontSize: { xs: '0.9rem', sm: '1.1rem' }, fontWeight: 500, '&:hover': { textDecoration: 'underline' }, userSelect: 'none' }}
                     >
                       {showNotificationBox ? '− Close Notification' : '+ Add Match Notification'}
                     </Typography>
@@ -2293,7 +2310,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                   <Typography variant='h6' sx={{ mb: 0.1, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' }, color: 'white' }}>Match Detail</Typography>
                   <Grid container spacing={1}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
                       <DatePicker
                         format="DD-MMM-YYYY"
                         value={matchDate}
@@ -2314,7 +2331,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Time</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Time</Typography>
                       <TimePicker
                         value={startTime}
                         onChange={(nv: Dayjs | null) => setStartTime(nv)}
@@ -2334,7 +2351,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration</Typography>
                       <TextField
                         type='number'
                         value={duration}
@@ -2352,7 +2369,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: '1.3rem', fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
                       <TextField
                         value={location}
                         onChange={(e) => {
@@ -2391,7 +2408,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                     type='submit'
                     variant='contained'
                     fullWidth
-                    sx={{ mt: 3, py: 1, background: 'linear-gradient(135deg, #00a77f, #00a77f)', color: 'white', fontWeight: 'bold', fontSize: '1.1rem', borderRadius: 1,  '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
+                    sx={{ mt: 3, py: { xs: 0.9, sm: 1 }, background: 'linear-gradient(135deg, #00a77f, #00a77f)', color: 'white', fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' }, borderRadius: 1,  '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE'}
@@ -2402,12 +2419,12 @@ const clampLocation = (value: string) => value.slice(0, 120);
             {/* RIGHT PANEL */}
             <Box sx={{ width: { xs: '100%', md: '45%' }, display: 'flex', flexDirection: 'column' }}>
               {/* MATCH PREVIEW Tab Header */}
-              <Box sx={{ py: 1.5, px:3, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: 2 }}>
+              <Box sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 3 }, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
                   Match Preview
                 </Typography>
-                <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ bgcolor: '#e6e6e6', color: '#000', position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', borderRadius: '0 1px 1px 0', '&:hover': { bgcolor: '#d0d0d0' } }}>
-                  <X size={45} />
+                <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ display: { xs: 'none', md: 'inline-flex' }, bgcolor: '#e6e6e6', color: '#000', position: 'absolute', right: 0, top: 0, bottom: 0, transform: 'none', borderRadius: 0, width: { md: 58, lg: 64 }, '&:hover': { bgcolor: '#d0d0d0' } }}>
+                  <X size={isDialog ? 32 : 38} />
                 </IconButton>
               </Box>
               <Paper sx={{

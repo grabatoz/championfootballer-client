@@ -135,6 +135,9 @@ type PlayerCardProps = {
     foot: string;
     profileImage?: string;
     shirtIcon?: string;
+    width?: number | string;
+    height?: number | string;
+    hideShareIcon?: boolean;
     position: string;
 };
 
@@ -3047,13 +3050,13 @@ export default function LeagueDetailPage() {
                                                 }}
                                                 startIcon={
                                                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <Image
+                                                        {/* <Image
                                                             src={LeagueIcon}
                                                             alt="Season Icon"
                                                             width={isMobile ? 14 : 16}
                                                             height={isMobile ? 14 : 16}
                                                             style={{ objectFit: 'contain', opacity: 0.95 }}
-                                                        />
+                                                        /> */}
                                                         {!isSelectedSeasonActive ? <Lock size={14} color="rgba(255,255,255,0.6)" /> : null}
                                                     </Box>
                                                 }
@@ -6069,7 +6072,8 @@ export default function LeagueDetailPage() {
                         bgcolor: '#0a0a0a',
                         backgroundImage: 'none',
                         width: { xs: '100%', md: '85%' },
-                        maxHeight: '90vh',
+                        height: { xs: '100dvh', md: 'auto' },
+                        maxHeight: { xs: '100dvh', md: '90vh' },
                         borderRadius: { xs: 0, sm: 2 },
                     }
                 }}
