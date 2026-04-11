@@ -21,7 +21,7 @@ export default function Footer() {
   const handleSignOut = async () => {
     try {
       await dispatch(logout());
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -165,7 +165,7 @@ export default function Footer() {
             ) : (
               <Button
                 component={Link}
-                href="/login"
+                href="/"
                 sx={{
                   textTransform: 'none',
                   color: '#fff',
