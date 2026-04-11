@@ -4111,13 +4111,13 @@ export default function LeagueDetailPage() {
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
                                                     const cardActionButtonSx = {
                                                         color: 'white',
-                                                        fontSize: '0.55rem',
+                                                        fontSize: { xs: '0.48rem', sm: '0.55rem' },
                                                         fontWeight: 600,
                                                         textTransform: 'none',
                                                         py: 0,
-                                                        px: 0.75,
-                                                        height: '28px',
-                                                        minHeight: '28px',
+                                                        px: { xs: 0.45, sm: 0.75 },
+                                                        height: { xs: '24px', sm: '28px' },
+                                                        minHeight: { xs: '24px', sm: '28px' },
                                                         borderRadius: '50px',
                                                         whiteSpace: 'nowrap',
                                                         width: '100%',
@@ -4126,7 +4126,15 @@ export default function LeagueDetailPage() {
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         '&:hover': { backgroundColor: '#444' },
-                                                        '& .MuiButton-startIcon': { mr: 0.35 }
+                                                        '& .MuiButton-startIcon': {
+                                                            mr: { xs: 0.2, sm: 0.35 },
+                                                            ml: 0,
+                                                            display: 'inline-flex',
+                                                            flexShrink: 0,
+                                                        },
+                                                        '& .MuiButton-startIcon img': {
+                                                            display: 'block',
+                                                        },
                                                     } as const;
                                                     
                                                     // Calculate win result
@@ -4475,7 +4483,7 @@ export default function LeagueDetailPage() {
                                                                                 >
                                                                                 <Button
                                                                                     size="small"
-                                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={18} height={18} />}
+                                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                     disabled={isDisabled && (isAdmin || !!isInMatch)}
                                                                                     sx={{
                                                                                         ...cardActionButtonSx,
@@ -4498,7 +4506,7 @@ export default function LeagueDetailPage() {
                                                                                     setViewTeamMatch({ leagueId, matchId: match.id, matchNumber });
                                                                                     setViewTeamOpen(true);
                                                                                 }}
-                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={18} height={18} />}
+                                                                                startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
@@ -4511,7 +4519,7 @@ export default function LeagueDetailPage() {
                                                                             <Button
                                                                                 size="small"
                                                                                 onClick={() => { setResultsDialogMatchId(match.id); setResultsDialogOpen(true); }}
-                                                                                startIcon={<Image src={RESULTS} alt="Results" width={14} height={14} />}
+                                                                                startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
                                                                                     border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
