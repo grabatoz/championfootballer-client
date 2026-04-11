@@ -2179,6 +2179,7 @@ export default function AllMatches() {
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                     gap: 3,
+                    mb: { xs: 1, md: 4 },
                 }}>
                     {loading ? (
                         <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '20vh', md: '30vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2392,6 +2393,36 @@ export default function AllMatches() {
                                                     </Box>
 
                                                     {/* Action Buttons */}
+                                                    {(() => {
+                                                        const resultCardActionButtonSx = {
+                                                            color: 'white',
+                                                            fontSize: { xs: '0.48rem', sm: '0.55rem' },
+                                                            fontWeight: 600,
+                                                            textTransform: 'none',
+                                                            py: 0,
+                                                            px: { xs: 0.45, sm: 0.75 },
+                                                            height: { xs: '24px', sm: '28px' },
+                                                            minHeight: { xs: '24px', sm: '28px' },
+                                                            borderRadius: '50px',
+                                                            whiteSpace: 'nowrap',
+                                                            width: '100%',
+                                                            minWidth: 0,
+                                                            justifyContent: 'center',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            '&:hover': { backgroundColor: '#444' },
+                                                            '& .MuiButton-startIcon': {
+                                                                mr: { xs: 0.2, sm: 0.35 },
+                                                                ml: 0,
+                                                                display: 'inline-flex',
+                                                                flexShrink: 0,
+                                                            },
+                                                            '& .MuiButton-startIcon img': {
+                                                                display: 'block',
+                                                            },
+                                                        } as const;
+
+                                                        return (
                                                     <Box
                                                         sx={{
                                                             display: 'grid',
@@ -2434,9 +2465,9 @@ export default function AllMatches() {
                                                             >
                                                             <Button
                                                                 size="small"
-                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={22} height={22} />}
+                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                                 disabled={isDisabled && (isAdmin || !!isInMatch)}
-                                                                sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, pointerEvents: 'none', borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                                sx={{ ...resultCardActionButtonSx, pointerEvents: 'none', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', '&.Mui-disabled': { color: 'white' } }}
                                                             >
                                                                 Add Stats
                                                             </Button>
@@ -2446,20 +2477,22 @@ export default function AllMatches() {
                                                         <Button
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
-                                                            startIcon={<Image src={ViewTeamImg} alt="View Team" width={22} height={22} />}
-                                                            sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
+                                                            sx={{ ...resultCardActionButtonSx, border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c' }}
                                                         >
                                                             View Teams
                                                         </Button>
                                                         <Button
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
-                                                            startIcon={<Image src={RESULTS} alt="Results" width={22} height={22} />}
-                                                            sx={{ color: 'white', fontSize: '0.6rem', textTransform: 'none', py: 0.5, px: 1, borderRadius: '50px', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', whiteSpace: 'nowrap', width: '100%', minWidth: 0, justifyContent: 'center', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { backgroundColor: '#444' }, '&.Mui-disabled': { color: 'white' }, '& .MuiButton-startIcon': { mr: 0.35 } }}
+                                                            startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
+                                                            sx={{ ...resultCardActionButtonSx, border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', '&.Mui-disabled': { color: 'white' } }}
                                                         >
                                                             Results
                                                         </Button>
                                                     </Box>
+                                                        );
+                                                    })()}
                                                 </Box>
 
                                                 {/* Right Admin Column */}
