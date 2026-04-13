@@ -157,9 +157,20 @@ function CallbackHandler() {
         console.log('[CALLBACK] API Base:', API_BASE);
         
         const url = new URL(window.location.href);
-        const token = url.searchParams.get('token');
-        const error = url.searchParams.get('error');
-        const next = url.searchParams.get('next') || '/home';
+        const hash = url.hash.startsWith('#') ? url.hash.slice(1) : '';
+        const hashParams = new URLSearchParams(hash);
+
+        const token = hashParams.get('token') || url.searchParams.get('token');
+        const error = hashParams.get('error') || url.searchParams.get('error');
+        const next = hashParams.get('next') || url.searchParams.get('next') || '/home';
+
+        // Remove token-bearing URL parts from browser address bar/history.
+        if (token) {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('token');
+          cleanUrl.hash = '';
+          window.history.replaceState({}, document.title, `${cleanUrl.pathname}${cleanUrl.search}`);
+        }
 
         if (error) {
           console.error('[CALLBACK] OAuth error:', error);

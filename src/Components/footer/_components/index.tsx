@@ -21,7 +21,11 @@ export default function Footer() {
   const handleSignOut = async () => {
     try {
       await dispatch(logout());
-      router.push('/');
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+        return;
+      }
+      router.replace('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -185,9 +189,34 @@ export default function Footer() {
             )}
           </Stack>
 
-          <Typography variant="body2" sx={{ color: 'white', mt: 3, fontSize: '15px', fontWeight: 450, letterSpacing: 1, textAlign: 'center' }}>
-             {new Date().getFullYear()} Champion Footballer. All rights reserved.
-          </Typography>
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'white',
+                fontSize: { xs: 'clamp(10px, 2.8vw, 12px)', sm: '13px', md: '15px' },
+                fontWeight: 450,
+                letterSpacing: { xs: 0.3, sm: 0.8 },
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {new Date().getFullYear()} Champion Footballer. All rights reserved.
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                mt: 0.8,
+                color: '#00A77F',
+                fontSize: { xs: '11px', sm: '12px', md: '13px' },
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                lineHeight: 1.2,
+              }}
+            >
+              Developed by TechSolutionor
+            </Typography>
+          </Box>
         </Stack>
       </Container>
     </Box>

@@ -283,31 +283,56 @@ export const authAPI = {
     }    
   },
 
-  logout: async (token: string) => {
+  logout: async (token?: string | null) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      let headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to logout');
+      if (typeof token === 'string' && token && token !== 'undefined' && token !== 'null') {
+        headers = {
+          ...headers,
+          'Authorization': `Bearer ${token}`,
+        };
       }
 
-      // Return success response
-      return { 
+      let response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+
+      // Backward compatibility for older servers that only support GET.
+      if (!response.ok && (response.status === 404 || response.status === 405)) {
+        response = await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+        });
+      }
+
+      if (!response.ok) {
+        let message = 'Failed to logout';
+        try {
+          const data = await response.json();
+          if (typeof data?.message === 'string' && data.message.trim()) {
+            message = data.message;
+          }
+        } catch { }
+        throw new Error(message);
+      }
+
+      return {
         success: true,
-        message: 'Logged out successfully'
+        message: 'Logged out successfully',
       };
     } catch (error: unknown) {
       if (error instanceof Error) {
         return { success: false, error: error.message };
       }
       return { success: false, error: 'Logout failed' };
-    }    
+    }
   },
 
   checkAuth: async (): Promise<ApiResponse<User>> => {

@@ -19,6 +19,8 @@ import {
   Divider,
   MenuItem,
   GlobalStyles,
+  useTheme,
+  useMediaQuery,
   // styled
 } from '@mui/material';
 
@@ -1294,6 +1296,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 // };
 
 export default function PlayerDashboard() {
+  const theme = useTheme();
+  const isMobileCreateDialog = useMediaQuery(theme.breakpoints.down('sm'));
   const [inviteCode, setInviteCode] = useState('');
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User };
@@ -2420,17 +2424,23 @@ export default function PlayerDashboard() {
        <Dialog
           open={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
+          fullWidth
+          maxWidth="sm"
+          fullScreen={isMobileCreateDialog}
+          scroll="paper"
           PaperProps={{
             sx: {
-              borderRadius: { xs: 2, sm: 3 },
+              borderRadius: isMobileCreateDialog ? 0 : { xs: 2, sm: 3 },
               background: 'rgba(15,15,15,0.96)',
               border: '1px solid rgba(255,255,255,0.08)',
               boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
               backdropFilter: 'blur(10px)',
               p: { xs: 1.2, sm: 1.6 },
               color: '#E5E7EB',
-              width: { xs: 'calc(100% - 16px)', sm: '100%' },
+              width: { xs: '100%', sm: '100%' },
+              m: { xs: 0, sm: 2 },
               maxWidth: 620,
+              maxHeight: { xs: '100dvh', sm: 'calc(100dvh - 64px)' },
             },
           }}
         >
@@ -2466,7 +2476,7 @@ export default function PlayerDashboard() {
               <X />
             </IconButton>
           </Box>
-          <DialogContent sx={{ pt: 2.2 }}>
+          <DialogContent sx={{ pt: 2.2, px: { xs: 1.2, sm: 3 }, pb: { xs: 1.5, sm: 2 } }}>
             <TextField
               autoFocus
               margin="dense"
@@ -2587,7 +2597,8 @@ export default function PlayerDashboard() {
               {/* Image Preview */}
               <Box sx={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
                 mb: 2,
                 p: 2,
@@ -2624,6 +2635,7 @@ export default function PlayerDashboard() {
                   variant="outlined"
                   startIcon={<CloudUpload />}
                   sx={{
+                    width: { xs: '100%', sm: 'auto' },
                     color: '#E56A16',
                     borderColor: '#E56A16',
                     borderRadius: 2,
@@ -2651,6 +2663,7 @@ export default function PlayerDashboard() {
                     variant="outlined"
                     onClick={handleRemoveImage}
                     sx={{
+                      width: { xs: '100%', sm: 'auto' },
                       color: '#ff6b6b',
                       borderColor: '#ff6b6b',
                       borderRadius: 2,
@@ -2668,7 +2681,17 @@ export default function PlayerDashboard() {
               </Box>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              pb: 2,
+              pt: 0.5,
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              gap: 1,
+              '& > *': { m: '0 !important', width: { xs: '100%', sm: 'auto' } },
+            }}
+          >
             <Button
               onClick={handleCreateLeague}
               variant="contained"

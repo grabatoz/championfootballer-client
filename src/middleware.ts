@@ -15,7 +15,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  const token = request.cookies.get('token')?.value || request.cookies.get('auth_token')?.value;
+  const rawToken = request.cookies.get('token')?.value || request.cookies.get('auth_token')?.value;
+  const token =
+    typeof rawToken === 'string' &&
+    rawToken !== 'undefined' &&
+    rawToken !== 'null' &&
+    rawToken.split('.').length === 3
+      ? rawToken
+      : undefined;
 
   // Public routes
   const publicAlwaysPaths = ['/about', '/terms', '/privacy', '/contact']; // always accessible (no redirect even if logged-in)

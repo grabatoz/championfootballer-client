@@ -1576,6 +1576,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   )
 }
 function AllLeagues() {
+  const theme = useTheme();
+  const isMobileCreateDialog = useMediaQuery(theme.breakpoints.down('sm'));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [leagues, setLeagues] = useState<LeagueWithStatus[]>([]);
@@ -3472,17 +3474,23 @@ function AllLeagues() {
         <Dialog
           open={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
+          fullWidth
+          maxWidth="sm"
+          fullScreen={isMobileCreateDialog}
+          scroll="paper"
           PaperProps={{
             sx: {
-              borderRadius: { xs: 2, sm: 3 },
+              borderRadius: isMobileCreateDialog ? 0 : { xs: 2, sm: 3 },
               background: 'rgba(15,15,15,0.96)',
               border: '1px solid rgba(255,255,255,0.08)',
               boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
               backdropFilter: 'blur(10px)',
               p: { xs: 1.2, sm: 1.6 },
               color: '#E5E7EB',
-              width: { xs: 'calc(100% - 16px)', sm: '100%' },
+              width: { xs: '100%', sm: '100%' },
+              m: { xs: 0, sm: 2 },
               maxWidth: 620,
+              maxHeight: { xs: '100dvh', sm: 'calc(100dvh - 64px)' },
             },
           }}
         >
@@ -3521,7 +3529,7 @@ function AllLeagues() {
               <X />
             </IconButton>
           </Box>
-          <DialogContent sx={{ pt: 2.2 }}>
+          <DialogContent sx={{ pt: 2.2, px: { xs: 1.2, sm: 3 }, pb: { xs: 1.5, sm: 2 } }}>
             <TextField
               autoFocus
               margin="dense"
@@ -3643,7 +3651,8 @@ function AllLeagues() {
               {/* Image Preview */}
               <Box sx={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
                 mb: 2,
                 p: 2,
@@ -3680,6 +3689,7 @@ function AllLeagues() {
                   variant="outlined"
                   startIcon={<CloudUpload />}
                   sx={{
+                    width: { xs: '100%', sm: 'auto' },
                     color: '#E56A16',
                     borderColor: '#E56A16',
                     borderRadius: 2,
@@ -3707,6 +3717,7 @@ function AllLeagues() {
                     variant="outlined"
                     onClick={handleRemoveImage}
                     sx={{
+                      width: { xs: '100%', sm: 'auto' },
                       color: '#ff6b6b',
                       borderColor: '#ff6b6b',
                       borderRadius: 2,
@@ -3724,7 +3735,17 @@ function AllLeagues() {
               </Box>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              pb: 2,
+              pt: 0.5,
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              gap: 1,
+              '& > *': { m: '0 !important', width: { xs: '100%', sm: 'auto' } },
+            }}
+          >
             <Button
               onClick={handleCreateLeague}
               variant="contained"

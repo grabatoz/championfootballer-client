@@ -72,6 +72,27 @@ const isSessionExpired = (): boolean => {
   return Number.isFinite(expiry) ? now > expiry : true
 }
 
+const clearClientAuthArtifacts = (): void => {
+  if (typeof window === "undefined") return
+
+  const expireCookieNow = (name: string) => {
+    Cookies.remove(name, { path: "/" })
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0`
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax`
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure`
+  }
+
+  expireCookieNow("token")
+  expireCookieNow("auth_token")
+  localStorage.removeItem("token")
+  localStorage.removeItem("user")
+  localStorage.removeItem("userData")
+  localStorage.removeItem("isAuthenticated")
+  localStorage.removeItem("sessionExpiry")
+  localStorage.removeItem("authData")
+  sessionStorage.removeItem("authData")
+}
+
 // Helper to normalize User to UserProfile
 const normalizeUserForStorage = (user: User): UserProfile => {
   // Type assertion to access potentially missing properties
@@ -104,15 +125,7 @@ const syncStateWithStorage = (state: TypedAuthState): void => {
 
   // If no auth signal at all (no token and not authenticated), clear storage
   if (!state.isAuthenticated && !state.token) {
-    Cookies.remove("token", { path: "/" })
-    Cookies.remove("auth_token", { path: "/" })
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    localStorage.removeItem("userData")
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("sessionExpiry")
-    localStorage.removeItem("authData")
-    sessionStorage.removeItem("authData")
+    clearClientAuthArtifacts()
     return
   }
 
@@ -126,15 +139,7 @@ const loadSessionFromStorage = (): TypedAuthState => {
 
   if (isSessionExpired()) {
     // clear any stale data
-    Cookies.remove("token", { path: "/" })
-    Cookies.remove("auth_token", { path: "/" })
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    localStorage.removeItem("userData")
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("sessionExpiry")
-    localStorage.removeItem("authData")
-    sessionStorage.removeItem("authData")
+    clearClientAuthArtifacts()
     return initialState
   }
 
@@ -235,17 +240,18 @@ export const checkAuth = createAsyncThunk<ApiResponse<User>>("auth/check", async
 })
 
 export const logout = createAsyncThunk<{ success: boolean }>("auth/logout", async () => {
-  if (typeof window !== "undefined") {
-    Cookies.remove("token", { path: "/" })
-    Cookies.remove("auth_token", { path: "/" })
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    localStorage.removeItem("userData")
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("sessionExpiry")
-    localStorage.removeItem("authData")
-    sessionStorage.removeItem("authData")
+  const token =
+    Cookies.get("token") ||
+    Cookies.get("auth_token") ||
+    (typeof window !== "undefined" ? localStorage.getItem("token") : null)
+
+  try {
+    await authAPI.logout(token)
+  } catch {
+    // Local cleanup must still happen even if network/server logout fails.
   }
+
+  clearClientAuthArtifacts()
   return { success: true }
 })
 
@@ -354,17 +360,7 @@ const authSlice = createSlice({
         state.userData = initialState.userData
         state.token = null
         state.error = null
-        if (typeof window !== "undefined") {
-          Cookies.remove("token", { path: "/" })
-          Cookies.remove("auth_token", { path: "/" })
-          localStorage.removeItem("token")
-          localStorage.removeItem("user")
-          localStorage.removeItem("userData")
-          localStorage.removeItem("isAuthenticated")
-          localStorage.removeItem("sessionExpiry")
-          localStorage.removeItem("authData")
-          sessionStorage.removeItem("authData")
-        }
+        clearClientAuthArtifacts()
       })
   },
 })

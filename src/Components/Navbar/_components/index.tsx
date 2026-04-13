@@ -1946,7 +1946,11 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
       // Clear notifications on logout
       setNotifications([]);
       setUnreadCount(0);
-      router.push('/');
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+        return;
+      }
+      router.replace('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
