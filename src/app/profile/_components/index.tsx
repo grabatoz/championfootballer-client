@@ -1124,11 +1124,21 @@ const PlayerProfileCard = () => {
                                     value={gender}
                                     onChange={e => setGender(e.target.value)}
                                     sx={{
-                                      justifyContent: 'center',
-                                      flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                                      gap: 2,
-                                      '& .MuiFormControlLabel-root': { m: 0 },
-                                      '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
+                                      width: '100%',
+                                      display: 'grid',
+                                      gridTemplateColumns: '1fr auto 1fr',
+                                      alignItems: 'center',
+                                      px: { xs: 0.5, sm: 1 },
+                                      '& .MuiFormControlLabel-root': { m: 0, whiteSpace: 'nowrap' },
+                                      '& .MuiFormControlLabel-root:nth-of-type(1)': {
+                                        gridColumn: 1,
+                                        justifySelf: 'start',
+                                      },
+                                      '& .MuiFormControlLabel-root:nth-of-type(2)': {
+                                        gridColumn: 2,
+                                        justifySelf: 'center',
+                                      },
+                                      '& .MuiFormControlLabel-label': { fontSize: { xs: 12, sm: 13 }, color: themeColors.textDim, letterSpacing: .2 }
                                     }}
                                   >
                                     <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Male" />
@@ -1159,11 +1169,21 @@ const PlayerProfileCard = () => {
                                     value={preferredFoot}
                                     onChange={e => setPreferredFoot(e.target.value)}
                                     sx={{
-                                      justifyContent: 'center',
-                                      flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                                      gap: 2,
-                                      '& .MuiFormControlLabel-root': { m: 0 },
-                                      '& .MuiFormControlLabel-label': { fontSize: 13, color: themeColors.textDim, letterSpacing: .2 }
+                                      width: '100%',
+                                      display: 'grid',
+                                      gridTemplateColumns: '1fr auto 1fr',
+                                      alignItems: 'center',
+                                      px: { xs: 0.5, sm: 1 },
+                                      '& .MuiFormControlLabel-root': { m: 0, whiteSpace: 'nowrap' },
+                                      '& .MuiFormControlLabel-root:nth-of-type(1)': {
+                                        gridColumn: 1,
+                                        justifySelf: 'start',
+                                      },
+                                      '& .MuiFormControlLabel-root:nth-of-type(2)': {
+                                        gridColumn: 2,
+                                        justifySelf: 'center',
+                                      },
+                                      '& .MuiFormControlLabel-label': { fontSize: { xs: 12, sm: 13 }, color: themeColors.textDim, letterSpacing: .2 }
                                     }}
                                   >
                                     <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
