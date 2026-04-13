@@ -3641,7 +3641,7 @@ export default function GlobalTrophyRoom() {
                     profileImage: getProfileImage(p),
                     shirtIcon: '',
                     width: 260,
-                    height: isMobile ? 410 : 390,
+                    height: isMobile ? 410 : 410,
                     hideShareIcon: true,
                     position: p.position ?? '',
                   };
@@ -3649,7 +3649,7 @@ export default function GlobalTrophyRoom() {
                     <Box
                       sx={{
                         width: { xs: 160, sm: 260 },
-                        height: { xs: 278, sm: 398 },
+                        height: { xs: 278, sm: 430 },
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'flex-start',
@@ -3660,7 +3660,7 @@ export default function GlobalTrophyRoom() {
                       <Box
                         sx={{
                           width: 260,
-                          height: { xs: 410, sm: 390 },
+                          height: { xs: 410, sm: 410 },
                           position: { xs: 'absolute', sm: 'relative' },
                           top: 0,
                           left: { xs: '50%', sm: 'auto' },

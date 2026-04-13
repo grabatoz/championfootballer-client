@@ -571,7 +571,7 @@ const PlayerCard = ({
         </Box>
 
         {/* Name and Title (from static logic) */}
-        <Box sx={{ mt: disableImagePopup ? 1 : 2, mb:0.5 }}>
+        <Box sx={{ mt: disableImagePopup ? 1 : 2, mb: disableImagePopup ? 0.9 : 0.5 }}>
           <Typography
             fontSize="14px"
             fontWeight="bold"
@@ -587,7 +587,11 @@ const PlayerCard = ({
           fontSize="16px"
           fontWeight="semi-bold"
           color="#fff"
-          sx={{ my: 0.5, lineHeight: 1 }}
+          sx={{
+            mt: { xs: 0.45, sm: disableImagePopup ? 1.05 : 0.5 },
+            mb: 0.5,
+            lineHeight: 1
+          }}
         >
           {avgSkill}
         </Typography>
