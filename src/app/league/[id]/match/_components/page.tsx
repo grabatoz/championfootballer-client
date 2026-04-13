@@ -40,6 +40,7 @@ function CustomCalendar({
   onSelect,
   disabled = () => false
 }: CustomCalendarProps) {
+  const dayCellSize = { xs: 34, sm: 40 };
   const start = dayjs(month).startOf('month');
   const daysInMonth = start.daysInMonth();
   const offset = start.day(); // 0 = Sunday
@@ -54,9 +55,10 @@ function CustomCalendar({
     <Paper
       elevation={0}
       sx={{
-        maxWidth: 360,
+        width: '100%',
+        maxWidth: { xs: 320, sm: 360 },
         mx: 'auto',
-        p: 2,
+        p: { xs: 1.25, sm: 2 },
         bgcolor: '#131212',
         borderRadius: 3
       }}
@@ -85,23 +87,26 @@ function CustomCalendar({
       {/* grid of days */}
       <Box
         display="grid"
-        gridTemplateColumns="repeat(7,40px)"
+        gridTemplateColumns="repeat(7, minmax(0, 1fr))"
         justifyContent="center"
-        columnGap={1.5}
-        rowGap={1.5}
+        width="100%"
+        maxWidth={{ xs: 286, sm: 352 }}
+        mx="auto"
+        columnGap={{ xs: 0.75, sm: 1.5 }}
+        rowGap={{ xs: 0.75, sm: 1.5 }}
       >
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((wd) => (
           <Typography
             key={wd}
             variant="caption"
-            sx={{ width: 40, textAlign: 'center', color: THEME.TEXT_MUTED }}
+            sx={{ textAlign: 'center', color: THEME.TEXT_MUTED }}
           >
             {wd}
           </Typography>
         ))}
 
         {slots.map((d, idx) => {
-          if (!d) return <Box key={idx} sx={{ width: 40, height: 40 }} />;
+          if (!d) return <Box key={idx} sx={{ width: dayCellSize, height: dayCellSize, mx: 'auto' }} />;
           const dateObj = d.toDate();
           const isSel = dayjs(selected).isSame(d, 'day');
           const isDis = disabled(dateObj);
@@ -112,12 +117,13 @@ function CustomCalendar({
               disabled={isDis}
               onClick={() => !isDis && onSelect(dateObj)}
               sx={{
-                width: 40,
-                height: 40,
+                width: dayCellSize,
+                height: dayCellSize,
                 minWidth: 0,
                 borderRadius: 2,
                 p: 0,
                 fontWeight: 500,
+                mx: 'auto',
                 // selected and disabled both white, others your normal text color
                 color: isSel
                   ? '#fff'
@@ -314,6 +320,9 @@ const GradientCard: React.FC<React.PropsWithChildren<{ title: string; subtitle?:
   <Paper
     elevation={0}
     sx={{
+      width: '100%',
+      maxWidth: 1120,
+      mx: 'auto',
       p: { xs: 2, md: 3 },
       bgcolor: '#2b2b2b !important',
       borderRadius: 2,
@@ -978,12 +987,12 @@ export default function ScheduleMatchPage() {
       <Box
         sx={{
           minHeight: '100vh',
-          p: { xs: 2.5, md: 5 },
+          p: { xs: 1.25, sm: 2.5, md: 5 },
           color: THEME.TEXT,
           fontFamily: '"Woodford Bourne Pro", sans-serif',
           display: 'flex',
           flexDirection: 'column',
-          gap: 4,
+          gap: { xs: 2.5, md: 4 },
           overflowX: 'hidden',
           // background:
           //   'radial-gradient(circle at 18% 14%, rgba(229,106,22,0.12) 0%, #050505 58%)'
@@ -1049,14 +1058,14 @@ export default function ScheduleMatchPage() {
         <GradientCard
           title=""
         >
-          <Grid container spacing={4}>
+          <Grid container spacing={{ xs: 2.25, md: 4 }}>
             {/* DATE */}
             <Grid item xs={12} md={6}>
               <Typography
                 sx={{
                   fontWeight: 500,
                   mb: 1,
-                  fontSize: 22,
+                  fontSize: { xs: 18, sm: 22 },
                   letterSpacing: 1,
                   color: '#fff'
                 }}
@@ -1087,7 +1096,7 @@ export default function ScheduleMatchPage() {
                   <Typography
                     sx={{
                       flex: 1,
-                      fontSize: 19,
+                      fontSize: { xs: 16, sm: 19 },
                       fontWeight: 600,
                       letterSpacing: 0.6,
                       color: '#00a77f'
@@ -1099,7 +1108,7 @@ export default function ScheduleMatchPage() {
                     size="small"
                     onClick={() => setDate(date.subtract(1, 'month'))}
                     sx={{
-                      minWidth: 34,
+                      minWidth: { xs: 30, sm: 34 },
                       borderRadius: 2,
                       color: THEME.TEXT,
                       border: '1px solid rgba(255,255,255,0.18)',
@@ -1113,7 +1122,7 @@ export default function ScheduleMatchPage() {
                     size="small"
                     onClick={() => setDate(date.add(1, 'month'))}
                     sx={{
-                      minWidth: 34,
+                      minWidth: { xs: 30, sm: 34 },
                       borderRadius: 2,
                       color: THEME.TEXT,
                       border: '1px solid rgba(255,255,255,0.18)',
@@ -1152,7 +1161,7 @@ export default function ScheduleMatchPage() {
                   <Typography sx={{ fontSize: 18, fontWeight: 500, letterSpacing: 0.5, color: '#fff' }}>
                     Selected:
                   </Typography>
-                  <Typography sx={{ fontSize: 16, color: THEME.TEXT_MUTED }}>
+                  <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: THEME.TEXT_MUTED }}>
                     {date.format('ddd, DD MMM YYYY')}
                   </Typography>
                 </Box>
@@ -1164,7 +1173,7 @@ export default function ScheduleMatchPage() {
                 sx={{
                   fontWeight: 500,
                   mb: 1,
-                  fontSize: 22,
+                  fontSize: { xs: 18, sm: 22 },
                   letterSpacing: 1,
                   color: '#fff'
                 }}
@@ -1174,7 +1183,7 @@ export default function ScheduleMatchPage() {
               <Box
                 sx={{
                   display: 'flex',
-                  gap: 2,
+                  gap: { xs: 1.25, sm: 2 },
                   flexWrap: 'wrap',
                   p: 2,
                   border: '1px solid rgba(255,255,255,0.45)',
@@ -1240,29 +1249,30 @@ export default function ScheduleMatchPage() {
                 {/* AM/PM buttons removed; AM/PM integrated into Hour select */}
               </Box>
 
-              <Box sx={{ mt: 1 }}>
-                <Typography
-                  sx={{
-                    fontWeight: 500,
-                    mb: 1,
-                    fontSize: 22,
-                    letterSpacing: 1,
-                    color: '#fff'
-                  }}
-                >
-                  Match Duration
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    gap: 2,
-                    p: 2,
-                    border: '1px solid rgba(255,255,255,0.45)',
-                    borderRadius: 2,
-                    background: '#2b2b2b'
-                  }}
-                >
-                  <Box sx={{ flex: 1 }}>
+                <Box sx={{ mt: 1 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 500,
+                      mb: 1,
+                      fontSize: { xs: 18, sm: 22 },
+                      letterSpacing: 1,
+                      color: '#fff'
+                    }}
+                  >
+                    Match Duration
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1, sm: 2 },
+                      flexWrap: 'nowrap',
+                      p: 2,
+                      border: '1px solid rgba(255,255,255,0.45)',
+                      borderRadius: 2,
+                      background: '#2b2b2b'
+                    }}
+                  >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                       Hours
                     </Typography>
@@ -1283,7 +1293,7 @@ export default function ScheduleMatchPage() {
                       ))}
                     </Select>
                   </Box>
-                  <Box sx={{ flex: 1 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: 14, mb: 0.5, color: '#fff' }}>
                       Minutes
                     </Typography>
@@ -1312,7 +1322,7 @@ export default function ScheduleMatchPage() {
                   sx={{
                     fontWeight: 500,
                     mb: 1,
-                    fontSize: 22,
+                    fontSize: { xs: 18, sm: 22 },
                     letterSpacing: 1,
                     color: '#fff',
                     mt: 1.5
@@ -1320,7 +1330,7 @@ export default function ScheduleMatchPage() {
                 >
                   Location
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'nowrap' }}>
                   <TextField
                     fullWidth
                     placeholder="e.g. County or State"
@@ -1330,6 +1340,8 @@ export default function ScheduleMatchPage() {
                       setSelectedMapPoint(null);
                     }}
                     sx={{
+                      flex: 1,
+                      minWidth: 0,
                       ...textFieldStyles,
                       '& .MuiInputBase-input': { py: '12px' },
                       '& .MuiOutlinedInput-root': {
@@ -1342,6 +1354,7 @@ export default function ScheduleMatchPage() {
                   <IconButton
                     onClick={handleOpenMap}
                     sx={{
+                      flexShrink: 0,
                       p: 0.5,
                       borderRadius: 2,
                       border: '1px solid rgba(255,255,255,0.2)',
@@ -1377,10 +1390,10 @@ export default function ScheduleMatchPage() {
                 <Box
                   sx={{
                     background: '#2b2b2b',
-                    px: 1,
+                    px: { xs: 1, sm: 1.25 },
                     py: 1,
                     borderRadius: 3,
-                    fontSize: 15,
+                    fontSize: { xs: 13.5, sm: 15 },
                     fontWeight: 500,
                     color: '#fff',
                     lineHeight: 1.55,
