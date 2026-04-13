@@ -1125,20 +1125,21 @@ const PlayerProfileCard = () => {
                                     onChange={e => setGender(e.target.value)}
                                     sx={{
                                       width: '100%',
-                                      display: 'grid',
-                                      gridTemplateColumns: '1fr auto 1fr',
-                                      alignItems: 'center',
-                                      px: { xs: 0.5, sm: 1 },
-                                      '& .MuiFormControlLabel-root': { m: 0, whiteSpace: 'nowrap' },
-                                      '& .MuiFormControlLabel-root:nth-of-type(1)': {
-                                        gridColumn: 1,
-                                        justifySelf: 'start',
+                                      justifyContent: 'space-between',
+                                      flexWrap: 'nowrap',
+                                      columnGap: { xs: 0.4, sm: 1.2 },
+                                      '& .MuiFormControlLabel-root': {
+                                        m: 0,
+                                        flex: '1 1 0',
+                                        minWidth: 0,
+                                        justifyContent: 'center',
                                       },
-                                      '& .MuiFormControlLabel-root:nth-of-type(2)': {
-                                        gridColumn: 2,
-                                        justifySelf: 'center',
-                                      },
-                                      '& .MuiFormControlLabel-label': { fontSize: { xs: 12, sm: 13 }, color: themeColors.textDim, letterSpacing: .2 }
+                                      '& .MuiFormControlLabel-label': {
+                                        fontSize: { xs: 12, sm: 13 },
+                                        color: themeColors.textDim,
+                                        letterSpacing: .2,
+                                        whiteSpace: 'nowrap',
+                                      }
                                     }}
                                   >
                                     <FormControlLabel value="male" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Male" />
@@ -1170,20 +1171,21 @@ const PlayerProfileCard = () => {
                                     onChange={e => setPreferredFoot(e.target.value)}
                                     sx={{
                                       width: '100%',
-                                      display: 'grid',
-                                      gridTemplateColumns: '1fr auto 1fr',
-                                      alignItems: 'center',
-                                      px: { xs: 0.5, sm: 1 },
-                                      '& .MuiFormControlLabel-root': { m: 0, whiteSpace: 'nowrap' },
-                                      '& .MuiFormControlLabel-root:nth-of-type(1)': {
-                                        gridColumn: 1,
-                                        justifySelf: 'start',
+                                      justifyContent: 'space-between',
+                                      flexWrap: 'nowrap',
+                                      columnGap: { xs: 0.4, sm: 1.2 },
+                                      '& .MuiFormControlLabel-root': {
+                                        m: 0,
+                                        flex: '1 1 0',
+                                        minWidth: 0,
+                                        justifyContent: 'center',
                                       },
-                                      '& .MuiFormControlLabel-root:nth-of-type(2)': {
-                                        gridColumn: 2,
-                                        justifySelf: 'center',
-                                      },
-                                      '& .MuiFormControlLabel-label': { fontSize: { xs: 12, sm: 13 }, color: themeColors.textDim, letterSpacing: .2 }
+                                      '& .MuiFormControlLabel-label': {
+                                        fontSize: { xs: 12, sm: 13 },
+                                        color: themeColors.textDim,
+                                        letterSpacing: .2,
+                                        whiteSpace: 'nowrap',
+                                      }
                                     }}
                                   >
                                     <FormControlLabel value="Left" control={<StyledRadio size="small" sx={{ '& .MuiSvgIcon-root': { fontSize: 18 } }} />} label="Left" />
@@ -1212,7 +1214,25 @@ const PlayerProfileCard = () => {
                     mx: 'auto'
                   }}>
                     <FormControl component="fieldset" sx={{ width: '100%' }}>
-                      <RadioGroup value={positionType} onChange={e => setPositionType(e.target.value)} row sx={{ justifyContent: { xs: 'flex-start', sm: 'space-between' }, px: { xs: 1, sm: 4 }, gap: { xs: 1, sm: 0 }, flexWrap: 'wrap' }}>
+                      <RadioGroup
+                        value={positionType}
+                        onChange={e => setPositionType(e.target.value)}
+                        sx={{
+                          px: { xs: 0.5, sm: 2 },
+                          display: 'grid',
+                          gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, minmax(0, 1fr))' },
+                          columnGap: { xs: 0.75, sm: 1.25 },
+                          rowGap: { xs: 1, sm: 0.5 },
+                          alignItems: 'center',
+                          '& .MuiFormControlLabel-root': {
+                            m: 0,
+                            minWidth: 0,
+                            width: '100%',
+                            justifyContent: 'flex-start',
+                            pl: { xs: 0.25, sm: 0.5 },
+                          },
+                        }}
+                      >
                         {["Goalkeeper", "Defender", "Midfielder", "Forward"].map(type => (
                           <FormControlLabel
                             key={type}
