@@ -1,12 +1,12 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import dynamic from 'next/dynamic';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, X, CloudUpload, CheckCircle, Search, ExpandMore } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, CloudUpload, CheckCircle, Search, ExpandMore } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { SettingsIcon } from 'lucide-react';
+import { SettingsIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import leagueIcon from '@/Components/images/league.png';
 import trofy from '@/Components/images/trofy.png';
@@ -1595,6 +1595,7 @@ function AllLeagues() {
   const dispatch = useDispatch<AppDispatch>();
   const [leagueImage, setLeagueImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [maxGames, setMaxGames] = useState<string>('20');
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -1892,11 +1893,17 @@ function AllLeagues() {
       toast.error('Please enter a league name');
       return;
     }
+    const gamesNum = Number(maxGames);
+    if (!maxGames || isNaN(gamesNum) || gamesNum < 1 || gamesNum > 100) {
+      toast.error('Number of games must be between 1 and 100');
+      return;
+    }
     setIsCreating(true);
     try {
       console.log('Creating league:', leagueName.trim());
       const formData = new FormData();
       formData.append('name', leagueName.trim());
+      formData.append('maxGames', String(gamesNum));
       if (leagueImage) formData.append('image', leagueImage);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues`, {
@@ -1919,6 +1926,7 @@ function AllLeagues() {
         setLeagueName('');
         setLeagueImage(null);
         setImagePreview(null);
+        setMaxGames('20');
 
         // Optimistically add new league to state
         if (data.league) {
@@ -3466,24 +3474,54 @@ function AllLeagues() {
           onClose={() => setIsDialogOpen(false)}
           PaperProps={{
             sx: {
-              borderRadius: 3,
-              background: '#2B2B2B',
-              border: '1px solid #3A3A3A',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-              p: 2,
-              color: '#fff',
+              borderRadius: { xs: 2, sm: 3 },
+              background: 'rgba(15,15,15,0.96)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+              backdropFilter: 'blur(10px)',
+              p: { xs: 1.2, sm: 1.6 },
+              color: '#E5E7EB',
+              width: { xs: 'calc(100% - 16px)', sm: '100%' },
+              maxWidth: 620,
             },
           }}
         >
-          <Box display="flex" justifyContent="space-between" alignItems="center" p={1}>
-            <DialogTitle sx={{ p: 0, fontWeight: 'bold', color: '#fff', fontSize: 22, letterSpacing: 0.5 }}>
+          <Box
+            display="flex"
+            alignItems="center"
+            p={1}
+            sx={{
+              position: 'relative',
+              pr: 6,
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: -2,
+                height: '2px',
+                background: 'linear-gradient(90deg, rgba(229,106,22,0.75), rgba(207,35,38,0.75))',
+              }
+            }}
+          >
+            <DialogTitle sx={{ p: 0, fontWeight: 700, color: '#E5E7EB', fontSize: { xs: 19, sm: 22 }, letterSpacing: 0.5 }}>
               Create a League
             </DialogTitle>
-            <IconButton onClick={() => setIsDialogOpen(false)} sx={{ color: '#fff' }}>
+            <IconButton
+              onClick={() => setIsDialogOpen(false)}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                color: '#E5E7EB',
+                bgcolor: 'rgba(255,255,255,0.08)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.14)' },
+              }}
+            >
               <X />
             </IconButton>
           </Box>
-          <DialogContent>
+          <DialogContent sx={{ pt: 2.2 }}>
             <TextField
               autoFocus
               margin="dense"
@@ -3495,7 +3533,7 @@ function AllLeagues() {
               onChange={(e) => {
                 const raw = e.target.value;
                 const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
-                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 20);
+                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 30);
                 setLeagueName(sanitized);
                 setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
               }}
@@ -3525,37 +3563,80 @@ function AllLeagues() {
                 mt: 1,
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
-                  background: '#2B2B2B',
-                  color: '#fff',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#E5E7EB',
                   borderRadius: 2,
-                  border: '1.5px solid #3A3A3A',
+                  border: '1.5px solid rgba(255,255,255,0.16)',
                   '& fieldset': {
-                    borderColor: '#E56A16',
+                    borderColor: 'rgba(255,255,255,0.18)',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#CF2326',
+                    borderColor: 'rgba(229,106,22,0.9)',
                   },
                   '&.Mui-focused fieldset': {
                     borderColor: '#E56A16',
                   },
                   '& input': {
-                    color: '#fff',
+                    color: '#E5E7EB',
                   },
                 },
-                '& label': { color: '#fff' },
-                '& .MuiInputLabel-root': { color: '#fff' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#fff' },
+                '& label': { color: '#9CA3AF' },
+                '& .MuiInputLabel-root': { color: '#9CA3AF' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
               }}
-              inputProps={{ maxLength: 20, 'aria-invalid': Boolean(leagueNameError) }}
-              InputLabelProps={{ sx: { color: '#fff' } }}
-              FormHelperTextProps={{ sx: { color: '#fff', '&.Mui-error': { color: '#f44336' } } }}
+              inputProps={{ maxLength: 30, 'aria-invalid': Boolean(leagueNameError) }}
+              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+              FormHelperTextProps={{ sx: { color: '#9CA3AF', '&.Mui-error': { color: '#f87171' } } }}
               error={Boolean(leagueNameError)}
-              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 20).'}
+              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 30).'}
+            />
+
+            {/* Number of Games in Season */}
+            <TextField
+              margin="dense"
+              label="Number of Games"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={maxGames}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                setMaxGames(v);
+              }}
+              onKeyPress={(e) => {
+                if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
+                  e.preventDefault();
+                }
+                if (e.key === 'Enter' && !leagueNameError && leagueName.trim().length > 0) {
+                  handleCreateLeague();
+                }
+              }}
+              sx={{
+                mt: 1,
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#E5E7EB',
+                  borderRadius: 2,
+                  border: '1.5px solid rgba(255,255,255,0.16)',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
+                  '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.9)' },
+                  '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                  '& input': { color: '#E5E7EB' },
+                },
+                '& label': { color: '#9CA3AF' },
+                '& .MuiInputLabel-root': { color: '#9CA3AF' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
+              }}
+              inputProps={{ min: 1, max: 100 }}
+              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+              FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
+              helperText="Number of games to be played in the current season (1-100)."
             />
 
             {/* League Image Upload Section */}
             <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ color: '#fff', mb: 1, fontWeight: 'bold' }}>
+              <Typography variant="subtitle1" sx={{ color: '#E5E7EB', mb: 1, fontWeight: 700 }}>
                 League Image (Optional)
               </Typography>
 
@@ -3566,9 +3647,9 @@ function AllLeagues() {
                 gap: 2,
                 mb: 2,
                 p: 2,
-                border: '2px dashed #E56A16',
+                border: '1.5px dashed rgba(229,106,22,0.8)',
                 borderRadius: 2,
-                background: 'rgba(229,106,22,0.08)',
+                background: 'rgba(255,255,255,0.03)',
                 minHeight: 80
               }}>
                 <Avatar
@@ -3577,16 +3658,16 @@ function AllLeagues() {
                   sx={{
                     width: 60,
                     height: 60,
-                    border: '2px solid #E56A16',
-                    background: '#2B2B2B'
+                    border: '2px solid rgba(229,106,22,0.85)',
+                    background: '#1f1f1f'
                   }}
                   variant="rounded"
                 />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#E0E0E0', mb: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.5 }}>
                     {imagePreview ? 'Selected Image' : 'Default Flag Image'}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#C7C7C7' }}>
+                  <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
                     {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
                   </Typography>
                 </Box>
@@ -3664,12 +3745,12 @@ function AllLeagues() {
               onClick={() => setIsDialogOpen(false)}
               variant="outlined"
               sx={{
-                color: '#fff',
-                border: '1.5px solid #444',
+                color: '#E5E7EB',
+                border: '1.5px solid rgba(229,106,22,0.7)',
                 borderRadius: 2,
                 px: 3,
                 fontWeight: 'bold',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                '&:hover': { bgcolor: 'rgba(229,106,22,0.1)', borderColor: '#E56A16' },
               }}
             >
               Cancel
