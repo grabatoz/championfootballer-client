@@ -5793,14 +5793,14 @@ export default function LeagueDetailPage() {
             <Dialog
                 open={openQuickView}
                 onClose={() => setOpenQuickView(false)}
-                fullWidth
+                fullWidth={false}
                 maxWidth={false}
                 PaperProps={{
                     sx: {
                         borderRadius: { xs: 1.5, sm: 2 },
                         overflow: 'visible',
-                        width: { xs: 'calc(100vw - 20px)', sm: 'min(700px, calc(100vw - 24px))' },
-                        maxWidth: { xs: 'calc(100vw - 20px)', sm: '700px' },
+                        width: { xs: 'calc(100vw - 20px)', sm: 'min(540px, calc(100vw - 56px))' },
+                        maxWidth: { xs: 'calc(100vw - 20px)', sm: '540px' },
                         m: { xs: 0.5, sm: 2 },
                     }
                 }}
@@ -5858,7 +5858,7 @@ export default function LeagueDetailPage() {
                                 position: 'relative',
                                 zIndex: 4,
                                 order: { xs: 1, sm: 1 },
-                                mt: { xs: 3.4, sm: 5 }
+                                mt: { xs: 3.4, sm: 6 }
                             }}>
                                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                             <Box
@@ -5984,7 +5984,7 @@ export default function LeagueDetailPage() {
                                         profileImage: getProfileImage(p),
                                         shirtIcon: '',
                                         width: 260,
-                                        height: isMobile ? 410 : 390,
+                                        height: isMobile ? 410 : 410,
                                         hideShareIcon: true,
                                         position: p.position ?? '',
                                     } satisfies PlayerCardProps;
@@ -5992,7 +5992,7 @@ export default function LeagueDetailPage() {
                                         <Box
                                             sx={{
                                                 width: { xs: 160, sm: 260 },
-                                                height: { xs: 278, sm: 398 },
+                                                height: { xs: 278, sm: 430 },
                                                 display: 'flex',
                                                 justifyContent: 'center',
                                                 alignItems: 'flex-start',
@@ -6003,7 +6003,7 @@ export default function LeagueDetailPage() {
                                             <Box
                                                 sx={{
                                                     width: 260,
-                                                    height: { xs: 410, sm: 390 },
+                                                    height: { xs: 410, sm: 410 },
                                                     position: { xs: 'absolute', sm: 'relative' },
                                                     top: 0,
                                                     left: { xs: '50%', sm: 'auto' },
@@ -6029,7 +6029,7 @@ export default function LeagueDetailPage() {
                                 position: 'relative',
                                 zIndex: 4,
                                 order: { xs: 3, sm: 3 },
-                                mt: { xs: 3.4, sm: 5 },
+                                mt: { xs: 3.4, sm: 6 },
                                 minHeight: { xs: 188, sm: 275 },
                                 height: { xs: 188, sm: 'auto' },
                             }}>
