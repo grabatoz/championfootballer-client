@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAppDispatch, useAuth } from "@/lib/hooks"
 import { login, register } from "@/lib/features/authSlice"
@@ -38,6 +38,12 @@ import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import type { User } from "@/types/user"
 import { Country, State, City } from 'country-state-city'
+import {
+  formatPhoneDigitRule,
+  getPhoneDigitRuleByIsoCode,
+  isPhoneDigitsValidForRule,
+  sanitizePhoneDigits,
+} from "@/lib/phoneValidation"
 
 interface AuthTabsProps {
   showLogin?: boolean
@@ -256,6 +262,20 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   // Phone country code selector (independent of profile country)
   const [phoneCountryCode, setPhoneCountryCode] = useState<string>("AE")
+  const [phoneError, setPhoneError] = useState("")
+
+  const selectedPhoneRule = useMemo(
+    () => getPhoneDigitRuleByIsoCode(phoneCountryCode),
+    [phoneCountryCode]
+  )
+  const phoneDigitsLabel = formatPhoneDigitRule(selectedPhoneRule)
+  const phoneRuleHint = `Required ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+
+  const getPhoneLengthError = (digits: string): string => {
+    if (!digits) return ""
+    if (isPhoneDigitsValidForRule(digits, selectedPhoneRule)) return ""
+    return `Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+  }
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
@@ -385,6 +405,14 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+
+    if (name === "phone") {
+      const digits = sanitizePhoneDigits(value).slice(0, selectedPhoneRule.max)
+      setRegisterData((prev) => ({ ...prev, phone: digits }))
+      setPhoneError(getPhoneLengthError(digits))
+      return
+    }
+
     const next = { ...registerData, [name]: value }
     setRegisterData(next)
 
@@ -397,6 +425,28 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       setConfirmError(value && value !== next.password ? "Passwords do not match" : "")
     }
   }
+
+  useEffect(() => {
+    const digits = sanitizePhoneDigits(registerData.phone || "")
+    const trimmed = digits.slice(0, selectedPhoneRule.max)
+
+    if (trimmed !== registerData.phone) {
+      setRegisterData((prev) => ({ ...prev, phone: trimmed }))
+      return
+    }
+
+    if (!trimmed) {
+      setPhoneError("")
+      return
+    }
+
+    if (isPhoneDigitsValidForRule(trimmed, selectedPhoneRule)) {
+      setPhoneError("")
+      return
+    }
+
+    setPhoneError(`Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`)
+  }, [phoneCountryCode, registerData.phone, selectedPhoneRule, phoneDigitsLabel])
 
   // Derived lists from country-state-city library
   const countries = Country.getAllCountries()
@@ -531,6 +581,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const validateRegisterForm = () => {
     const age = Number.parseInt(registerData.age)
+    const phoneDigits = sanitizePhoneDigits(registerData.phone || "")
     let msg = ""
     if (
       !registerData.email ||
@@ -556,6 +607,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       setConfirmError("Passwords do not match")
     }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) msg = "Invalid email"
+    else if (!isPhoneDigitsValidForRule(phoneDigits, selectedPhoneRule)) {
+      msg = `Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+      setPhoneError(msg)
+    }
     else if (isNaN(age) || age < 18 || age > 65) msg = "Age must be between 18 and 65"
     else if (!acceptTerms) msg = "Please accept the terms"
     if (msg) {
@@ -563,6 +618,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       toast.error(msg)
       return false
     }
+    setPhoneError("")
     return true
   }
 
@@ -1085,6 +1141,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
+                error={Boolean(phoneError)}
+                helperText={phoneError || phoneRuleHint}
+                FormHelperTextProps={{ sx: { color: phoneError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: selectedPhoneRule.max }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start" sx={{ height: '100%' }}>

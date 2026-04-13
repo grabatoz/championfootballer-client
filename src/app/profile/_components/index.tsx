@@ -1,7 +1,7 @@
 "use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Person, Sports, AccountCircle } from "@mui/icons-material"
 import { Visibility, VisibilityOff, ArrowBack, ArrowForward } from "@mui/icons-material"
 import {
@@ -77,6 +77,12 @@ import { updateProfile, deleteProfile, deleteProfilePicture } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
+import {
+  formatPhoneDigitRule,
+  getPhoneDigitRuleByCountryName,
+  isPhoneDigitsValidForRule,
+  sanitizePhoneDigits,
+} from "@/lib/phoneValidation"
 import Dribbling from '@/Components/images/Dribbling.png'
 import Pace from '@/Components/images/pace.png'
 import Physical from '@/Components/images/physical.png'
@@ -298,6 +304,7 @@ const PlayerProfileCard = () => {
   const [stateProvince, setStateProvince] = useState(user?.state || "")
   const [city, setCity] = useState(user?.city || "")
   const [phone, setPhone] = useState(user?.phone || "")
+  const [phoneError, setPhoneError] = useState("")
   // When editing location we mirror the City/State value into both city and stateProvince for backward compatibility.
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState(user?.email || "")
@@ -355,6 +362,15 @@ const PlayerProfileCard = () => {
   const currentPositionOptions = resolvedPositionType ? positionOptionsMap[resolvedPositionType] : []
   const useExpandedPositionSpacing = currentPositionOptions.length === 5
 
+  const selectedCountryPhoneRule = useMemo(
+    () => getPhoneDigitRuleByCountryName(country),
+    [country]
+  )
+  const selectedCountryPhoneDigitsLabel = formatPhoneDigitRule(selectedCountryPhoneRule)
+  const selectedCountryPhoneHint = country
+    ? `Required ${selectedCountryPhoneDigitsLabel} digits${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
+    : "Enter 6-15 digits (select country for exact phone rule)"
+
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
 
   useEffect(() => {
@@ -370,6 +386,34 @@ const PlayerProfileCard = () => {
       setPosition("")
     }
   }, [user?.position])
+
+  useEffect(() => {
+    const digits = sanitizePhoneDigits(phone)
+    const trimmed = digits.slice(0, selectedCountryPhoneRule.max)
+    if (trimmed !== phone) {
+      setPhone(trimmed)
+      return
+    }
+
+    if (!trimmed) {
+      setPhoneError("")
+      return
+    }
+
+    if (isPhoneDigitsValidForRule(trimmed, selectedCountryPhoneRule)) {
+      setPhoneError("")
+      return
+    }
+
+    setPhoneError(
+      `Phone number must be ${selectedCountryPhoneDigitsLabel} digits${country ? ` for ${country}` : ""}${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
+    )
+  }, [
+    phone,
+    country,
+    selectedCountryPhoneRule,
+    selectedCountryPhoneDigitsLabel,
+  ])
 
   // Note: Do not auto-change playing style on position type change.
   // We keep whatever is in DB/user selection; RadioGroup will show none selected
@@ -446,7 +490,17 @@ const PlayerProfileCard = () => {
       if (!isBlank(country)) updateData.country = country
       if (!isBlank(stateProvince)) updateData.state = stateProvince
       if (!isBlank(city)) updateData.city = city
-      if (!isBlank(phone)) updateData.phone = phone
+      if (!isBlank(phone)) {
+        const phoneDigits = sanitizePhoneDigits(phone).slice(0, selectedCountryPhoneRule.max)
+        if (!isPhoneDigitsValidForRule(phoneDigits, selectedCountryPhoneRule)) {
+          const msg = `Phone number must be ${selectedCountryPhoneDigitsLabel} digits${country ? ` for ${country}` : ""}${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
+          setPhoneError(msg)
+          toast.error(msg)
+          setIsUpdating(false)
+          return
+        }
+        updateData.phone = phoneDigits
+      }
 
       // Skills: include only the ones that have numeric values; skip otherwise
       const skillsUpdate: Record<string, number> = {}
@@ -1092,10 +1146,21 @@ const PlayerProfileCard = () => {
                               size="small"
                               type="tel"
                               value={phone}
-                              onChange={e => setPhone(e.target.value)}
-                              placeholder="+44 7911 123456"
+                              onChange={e => {
+                                const digits = sanitizePhoneDigits(e.target.value).slice(0, selectedCountryPhoneRule.max)
+                                setPhone(digits)
+                              }}
+                              placeholder="Enter phone digits"
                               fullWidth
-                              inputProps={{ maxLength: 20 }}
+                              inputProps={{ maxLength: selectedCountryPhoneRule.max, inputMode: "numeric", pattern: "[0-9]*" }}
+                              error={Boolean(phoneError)}
+                              helperText={phoneError || selectedCountryPhoneHint}
+                              FormHelperTextProps={{
+                                sx: {
+                                  color: phoneError ? "#ff6b6b !important" : `${themeColors.textDim} !important`,
+                                  fontSize: "0.72rem",
+                                }
+                              }}
                               sx={{ mb: 1 }}
                             />
                           </Grid>
