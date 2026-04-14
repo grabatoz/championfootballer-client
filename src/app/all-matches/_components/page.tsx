@@ -3312,7 +3312,14 @@ export default function AllMatches() {
                 onClose={() => setViewTeamOpen(false)}
                 maxWidth={false}
                 fullScreen={isMobile}
-                PaperProps={{ sx: { bgcolor: '#2b2b2b', width: { xs: '100%', sm: '90%', md: '70%' }, maxWidth: { xs: '100%', sm: '90%', md: '70%' }, borderRadius: { xs: 0, sm: 2 } } }}
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#2b2b2b',
+                        width: { xs: '100%', sm: '90%', md: 'min(980px, 62vw)' },
+                        maxWidth: { xs: '100%', sm: '90%', md: '980px' },
+                        borderRadius: { xs: 0, sm: 2 }
+                    }
+                }}
             >
                 <DialogTitle sx={{
                     fontWeight: 'bold',
