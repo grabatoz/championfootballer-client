@@ -686,7 +686,7 @@ export default function PlayerStatsPage() {
             .then((res) => {
                 if (cancelled) return;
                 if (res.success && res.data) {
-                    setCareerData(res.data);
+                    setCareerData(res.data as unknown as RootState['playerStats']['data']);
                 }
             })
             .catch(() => {
