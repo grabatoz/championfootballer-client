@@ -43,6 +43,7 @@ interface Player {
   name: string;
   profilePicture: string | null;
   rating: number;
+  cpPoints?: number; // Preferred CP points field
   xpPoints?: number; // Added for XP points
   statsSum?: number; // Added for stats sum
   shirtNumber?: string; // Optional shirt number
@@ -559,10 +560,12 @@ const AllPlayersPage = () => {
   );
   console.log('Filtered Players:', filteredPlayers);
 
-  // Helper to get XP points and stats sum for sorting
-  function getXpPoints(player: Player) {
-    // If XP points are a separate field, use it. Otherwise, use rating as XP points.
-    return typeof player.xpPoints === 'number' ? player.xpPoints : player.rating;
+  // Helper to get CP/XP points and stats sum for sorting
+  function getCpPoints(player: Player) {
+    // Prefer CP points, fallback to XP points, then rating.
+    if (typeof player.cpPoints === 'number') return player.cpPoints;
+    if (typeof player.xpPoints === 'number') return player.xpPoints;
+    return player.rating;
   }
   function getStatsSum(player: Player) {
     // If player has a stats object/array, sum it. Otherwise, use rating.
@@ -571,21 +574,24 @@ const AllPlayersPage = () => {
   }
 
   // Sort players:
-  // - default: XP desc, then stats desc
-  // - when All Positions sort is active: name asc/desc (tie-breaker remains XP/stats)
+  // - default: CP/XP desc, then stats desc
+  // - when sort toggle is active: CP/XP asc/desc
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    const cpA = getCpPoints(a);
+    const cpB = getCpPoints(b);
+
     if (allPositionsSortActive) {
-      const nameCmp = String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
-      if (nameCmp !== 0) return allPositionsSortDirection === 'asc' ? nameCmp : -nameCmp;
+      if (cpA !== cpB) {
+        return allPositionsSortDirection === 'asc' ? cpA - cpB : cpB - cpA;
+      }
     }
 
-    const xpA = getXpPoints(a);
-    const xpB = getXpPoints(b);
-    if (xpB !== xpA) return xpB - xpA;
-    // If XP points are equal, compare stats sum
+    if (cpB !== cpA) return cpB - cpA;
+    // If CP/XP points are equal, compare stats sum
     const statsA = getStatsSum(a);
     const statsB = getStatsSum(b);
-    return statsB - statsA;
+    if (statsB !== statsA) return statsB - statsA;
+    return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
   });
 
   const handleAllPositionsSortToggle = () => {
@@ -1142,7 +1148,7 @@ const AllPlayersPage = () => {
                           color: '#fff',
                           fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
-                          {player.rating}
+                          {getCpPoints(player)}
                         </Typography>
                       </Box>
                     </ListItem>
