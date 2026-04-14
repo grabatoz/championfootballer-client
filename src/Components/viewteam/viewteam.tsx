@@ -1475,20 +1475,31 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           >
             {homeTeamName} ({homeTeamGoals ?? 0})
           </Typography>
-          <Box sx={{ bgcolor: '#fff', borderRadius: 0.5, p: { xs: 0.4, sm: 0.75 }, display: 'flex', gap: { xs: 0.4, sm: 1 }, justifySelf: 'center' }}>
+          <Box
+            sx={{
+              bgcolor: '#fff',
+              borderRadius: 0.5,
+              p: { xs: 0.4, sm: 0.75, md: 1 },
+              display: 'flex',
+              gap: { xs: 0.4, sm: 1, md: 1.2 },
+              justifySelf: 'center'
+            }}
+          >
             <Box
               onClick={() => setViewMode('table')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
-                px: { xs: 0.7, sm: 1.5 }, py: { xs: 0.3, sm: 0.5 },
-                border: `0.5px solid #212121`,
+                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5, md: 2 },
+                px: { xs: 0.7, sm: 1.5, md: 3 }, py: { xs: 0.3, sm: 0.5, md: 0.95 },
+                border: { xs: '0.5px solid #212121', md: '1px solid #212121' },
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'table' ? '#00a77f' : 'transparent',
+                minHeight: { md: 58 },
+                minWidth: { md: 228 },
               }}
             >
-              <img src={TableViewImg.src} alt="table" width={16} height={16} style={{ objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555', lineHeight: 1 }}>
+              <img src={TableViewImg.src} alt="table" width={16} height={16} style={{ width: 'clamp(16px, 1.6vw, 30px)', height: 'clamp(16px, 1.6vw, 30px)', objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem', md: '2rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555', lineHeight: 1 }}>
                 Table
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
               </Typography>
@@ -1496,16 +1507,18 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <Box
               onClick={() => setViewMode('pitch')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5 },
-                px: { xs: 0.7, sm: 1.5 }, py: { xs: 0.3, sm: 0.5 },
-                border: '0.5px solid #212121',
+                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5, md: 2 },
+                px: { xs: 0.7, sm: 1.5, md: 3 }, py: { xs: 0.3, sm: 0.5, md: 0.95 },
+                border: { xs: '0.5px solid #212121', md: '1px solid #212121' },
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
+                minHeight: { md: 58 },
+                minWidth: { md: 228 },
               }}
             >
-              <img src={PitchViewImg.src} alt="pitch" width={16} height={16} style={{ objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555', lineHeight: 1 }}>
+              <img src={PitchViewImg.src} alt="pitch" width={16} height={16} style={{ width: 'clamp(16px, 1.6vw, 30px)', height: 'clamp(16px, 1.6vw, 30px)', objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem', md: '2rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555', lineHeight: 1 }}>
                 Pitch
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
               </Typography>
