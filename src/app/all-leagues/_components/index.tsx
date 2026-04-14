@@ -191,6 +191,23 @@ const sortLeaguesByRecency = <T extends Pick<League, 'updatedAt' | 'createdAt'> 
   });
 };
 
+const LEAGUE_IMAGE_MAX_SIZE_MB = 5;
+const LEAGUE_IMAGE_MAX_SIZE_BYTES = LEAGUE_IMAGE_MAX_SIZE_MB * 1024 * 1024;
+
+const validateLeagueImageFile = (file: File): boolean => {
+  if (!file.type.startsWith('image/')) {
+    toast.error('Please select an image file');
+    return false;
+  }
+
+  if (file.size > LEAGUE_IMAGE_MAX_SIZE_BYTES) {
+    toast.error(`Image size limit is ${LEAGUE_IMAGE_MAX_SIZE_MB}MB. Please upload ${LEAGUE_IMAGE_MAX_SIZE_MB}MB or smaller.`);
+    return false;
+  }
+
+  return true;
+};
+
 
 interface LeagueMembersDialogProps {
   open: boolean
@@ -1138,7 +1155,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                       {settingsImagePreview && !settingsRemoveImage ? 'Current Image' : 'No Image'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
-                      {settingsImagePreview && !settingsRemoveImage ? 'Upload a new image to replace or click Remove' : 'Upload a custom image for your league'}
+                      {settingsImagePreview && !settingsRemoveImage
+                        ? `Upload a new image to replace or click Remove (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`
+                        : `Upload a custom image for your league (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`}
                     </Typography>
                   </Box>
                 </Box>
@@ -1169,8 +1188,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
-                        if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
-                        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+                        if (!validateLeagueImageFile(file)) {
+                          try { (e.target as HTMLInputElement).value = '' } catch {}
+                          return
+                        }
                         setSettingsImageFile(file)
                         setSettingsRemoveImage(false)
                         const reader = new FileReader()
@@ -1734,13 +1755,8 @@ function AllLeagues() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
+      if (!validateLeagueImageFile(file)) {
+        try { event.target.value = ''; } catch {}
         return;
       }
 
@@ -3677,7 +3693,9 @@ function AllLeagues() {
                     {imagePreview ? 'Selected Image' : 'Default Flag Image'}
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
-                    {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
+                    {imagePreview
+                      ? `Click to change or remove (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`
+                      : `Upload a custom image for your league (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`}
                   </Typography>
                 </Box>
               </Box>
