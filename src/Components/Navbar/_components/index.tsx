@@ -1835,7 +1835,6 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
             // Clear all league-related cache
             localStorage.removeItem('leaguesCache');
             localStorage.removeItem('lastLeaguesFetch');
-            localStorage.removeItem('preferredLeagueId');
             
             // Clear sessionStorage too
             sessionStorage.clear();
@@ -1844,7 +1843,12 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
             const keysToRemove: string[] = [];
             for (let i = 0; i < localStorage.length; i++) {
               const key = localStorage.key(i);
-              if (key && (key.includes('cache') || key.includes('Cache') || key.includes('league') || key.includes('League'))) {
+              if (
+                key &&
+                key !== 'preferredLeagueId' &&
+                key !== 'prefferdLeagueId' &&
+                (key.includes('cache') || key.includes('Cache') || key.includes('league') || key.includes('League'))
+              ) {
                 keysToRemove.push(key);
               }
             }

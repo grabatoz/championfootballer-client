@@ -20,6 +20,11 @@ const NO_CACHE_MODE = !['0', 'false', 'no', 'off'].includes(
   (process.env.NEXT_PUBLIC_NO_CACHE || 'true').toLowerCase()
 );
 
+const PRESERVED_LOCAL_STORAGE_KEYS = new Set([
+  'preferredLeagueId',
+  'prefferdLeagueId',
+]);
+
 function clearLocalStorageFamilies(resourceId?: string | null): void {
   if (typeof window === 'undefined') return;
 
@@ -32,6 +37,10 @@ function clearLocalStorageFamilies(resourceId?: string | null): void {
 
     const keys = Object.keys(localStorage);
     for (const key of keys) {
+      if (PRESERVED_LOCAL_STORAGE_KEYS.has(key)) {
+        continue;
+      }
+
       const lower = key.toLowerCase();
       if (
         key.startsWith('chunk_') ||

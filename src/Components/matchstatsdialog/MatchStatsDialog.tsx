@@ -948,8 +948,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const preferredLeague = allLeagues.find(l => String(l.id) === preferredId);
                 if (!preferredLeague) {
                     console.warn('[MatchStats] Preferred league not found in available leagues:', preferredId);
-                    // Clear invalid preferred league from localStorage
-                    localStorage.removeItem('preferredLeagueId');
                     setLoading(false);
                     return;
                 }
