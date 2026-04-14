@@ -356,7 +356,7 @@ export default function AllMatches() {
     const [seasons, setSeasons] = useState<SeasonOption[]>([]);
     const [selectedSeason, setSelectedSeason] = useState<string>('all');
     const [seasonsLoading, setSeasonsLoading] = useState(false);
-    const [matchFilter, setMatchFilter] = useState<'results' | 'fixtures'>('results');
+    const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures'>('results');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
