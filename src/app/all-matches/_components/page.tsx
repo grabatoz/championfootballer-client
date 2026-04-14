@@ -3333,7 +3333,8 @@ export default function AllMatches() {
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
                         <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>TEAMS</span>
-                        <span style={{ fontSize: isMobile ? '1.1rem' : '1.8rem' }}>&#9917;</span>
+                        {/* <span style={{ fontSize: isMobile ? '1.1rem' : '1.8rem' }}>&#9917;</span> */}
+                        <Image src={FootBallIcon} alt="Football" width={24} height={24} />
                         <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>MATCH {viewTeamMatch?.matchNumber ?? '-'}</span>
                     </Box>
                     <IconButton
