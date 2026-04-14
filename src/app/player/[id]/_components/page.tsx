@@ -1627,6 +1627,7 @@ export default function PlayerStatsPage() {
                 left: '50%',
                 transform: 'translateX(-50%)',
                 background: '#0e0e0e',
+                zIndex: 20,
             }}>
                 <Paper sx={{
                     px: 0,
@@ -1692,12 +1693,13 @@ export default function PlayerStatsPage() {
                         <Box
                             ref={searchWrapperRef}
                             sx={{
-                                width: { xs: '100%', md: 'fit-content' },
-                                minWidth: { md: 260 },
-                                maxWidth: { md: 420 },
+                                width: { xs: '100%', md: 460 },
+                                minWidth: { md: 300 },
+                                maxWidth: { md: 480 },
                                 ml: { xs: 0, md: 0.8 },
                                 position: 'relative',
-                                zIndex: 5,
+                                zIndex: 1200,
+                                isolation: 'isolate',
                             }}
                         >
                             <TextField
@@ -1731,7 +1733,7 @@ export default function PlayerStatsPage() {
                                     }
                                 }}
                                 sx={{
-                                    width: { xs: '100%', md: 'fit-content' },
+                                    width: { xs: '100%', md: '100%' },
                                     '& .MuiOutlinedInput-root': {
                                         height: { xs: 38, sm: 42 },
                                         color: 'white',
@@ -1765,11 +1767,12 @@ export default function PlayerStatsPage() {
                                         top: '100%',
                                         left: 0,
                                         right: 0,
+                                        zIndex: 1300,
                                         mt: 0,
                                         maxHeight: 320,
                                         overflowY: 'auto',
                                         borderRadius: 2,
-                                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                                        background: '#1f1f1f',
                                         border: '1px solid rgba(255,255,255,0.25)',
                                         p: 1.25,
                                         '&::-webkit-scrollbar': { width: 6 },
@@ -1833,6 +1836,14 @@ export default function PlayerStatsPage() {
                                                                     width: 34,
                                                                     height: 34,
                                                                     border: '1px solid rgba(255,255,255,0.25)',
+                                                                    overflow: 'hidden',
+                                                                    flexShrink: 0,
+                                                                    '& .MuiAvatar-img': {
+                                                                        width: '100% !important',
+                                                                        height: '100% !important',
+                                                                        objectFit: 'cover',
+                                                                        display: 'block',
+                                                                    },
                                                                 }}
                                                             />
 
@@ -2289,7 +2300,7 @@ export default function PlayerStatsPage() {
                 </Paper>
             </Box>
          
-        <Container maxWidth={false} sx={{ bgcolor: '#383838', py: { xs: 2.2, md: 3 }, px: { xs: 1.3, sm: 2, md: 3.5 }, maxWidth: 1165, mx: 'auto', borderRadius: 2, mb: 5 }}>
+        <Container maxWidth={false} sx={{ bgcolor: '#383838', py: { xs: 2.2, md: 3 }, px: { xs: 1.3, sm: 2, md: 3.5 }, maxWidth: 1165, mx: 'auto', borderRadius: 2, mb: 5, position: 'relative', zIndex: 1 }}>
             {loading ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2  }}>
                     <CircularProgress sx={{ color: TEAL_PRIMARY }} />
