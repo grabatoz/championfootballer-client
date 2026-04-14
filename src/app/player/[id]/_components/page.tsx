@@ -163,38 +163,6 @@ function isLeagueActiveForFilter(l: LeagueWithMatchesTyped): boolean {
     return true;
 }
 
-function normalizeResult(input: unknown): 'W' | 'D' | 'L' | null {
-    const v = String(input ?? '').trim().toUpperCase();
-    if (v === 'W' || v === 'WIN') return 'W';
-    if (v === 'D' || v === 'DRAW') return 'D';
-    if (v === 'L' || v === 'LOSS' || v === 'LOSE') return 'L';
-    return null;
-}
-
-function resolveMatchResult(match: LeagueMatch, playerId?: string): 'W' | 'D' | 'L' | null {
-    const explicit = normalizeResult(match.playerStats?.result ?? match.result);
-    if (explicit) return explicit;
-
-    if (typeof match.homeTeamGoals !== 'number' || typeof match.awayTeamGoals !== 'number') {
-        return null;
-    }
-
-    const pid = String(playerId || '');
-    const isHomeByUsers = (match.homeTeamUsers || []).some(u => String(u.id) === pid);
-    const isAwayByUsers = (match.awayTeamUsers || []).some(u => String(u.id) === pid);
-    const isHomeByLegacy = (match.homeTeam?.players || []).some(p => String((p?.id ?? p?._id) || '') === pid);
-    const isAwayByLegacy = (match.awayTeam?.players || []).some(p => String((p?.id ?? p?._id) || '') === pid);
-
-    const isHome = isHomeByUsers || isHomeByLegacy;
-    const isAway = isAwayByUsers || isAwayByLegacy;
-    if (!isHome && !isAway) return null;
-
-    const teamGoals = isHome ? Number(match.homeTeamGoals) : Number(match.awayTeamGoals);
-    const oppGoals = isHome ? Number(match.awayTeamGoals) : Number(match.homeTeamGoals);
-    if (teamGoals === oppGoals) return 'D';
-    return teamGoals > oppGoals ? 'W' : 'L';
-}
-
 // AbortError type guard (replaces (err as any) usage)
 function isAbortError(error: unknown): error is DOMException & { name: 'AbortError' } {
     return (
@@ -291,7 +259,8 @@ export default function PlayerStatsPage() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
     const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const currentUserId = String(user?.id || '').trim();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -300,6 +269,7 @@ export default function PlayerStatsPage() {
     const { leagueId, year } = filters;
 
     const { data: fullPlayerData } = useSelector((state: RootState) => state.playerStats);
+    const [careerData, setCareerData] = useState<RootState['playerStats']['data']>(null);
     
     // Debug logging
     useEffect(() => {
@@ -341,24 +311,18 @@ export default function PlayerStatsPage() {
     const [statsModalOpen, setStatsModalOpen] = useState(false);
     const [statsModalTab, setStatsModalTab] = useState<'goals' | 'assists' | 'motm' | 'defensive' | 'totalXP'>('goals');
 
-    // Compute effective filters for each card based on active tab
-    // When a card's own tab is active → show ALL data (no filters)
-    // When other tabs are active → respect user-selected filters
-    
-    // Trophies card filters
-    const effectiveTrophiesLeagueId = (activeTab === 'trophies') ? 'all' : (leagueId || 'all');
-    const effectiveTrophiesYear = (activeTab === 'trophies') ? 'all' : (year || 'all');
-    const effectiveTrophiesSeasonId = (activeTab === 'trophies') ? 'all' : (selectedSeason || 'all');
-    
-    // Rewards card filters
-    const effectiveRewardsLeagueId = (activeTab === 'rewards') ? 'all' : (leagueId || 'all');
-    const effectiveRewardsYear = (activeTab === 'rewards') ? 'all' : (year || 'all');
-    const effectiveRewardsSeasonId = (activeTab === 'rewards') ? 'all' : (selectedSeason || 'all');
-    
-    // History card filters
-    const effectiveHistoryLeagueId = (activeTab === 'history') ? 'all' : (leagueId || 'all');
-    const effectiveHistoryYear = (activeTab === 'history') ? 'all' : (year || 'all');
-    const effectiveHistorySeasonId = (activeTab === 'history') ? 'all' : (selectedSeason || 'all');
+    // Tabs only control visual highlight. Data always follows selected filters.
+    const effectiveTrophiesLeagueId = leagueId || 'all';
+    const effectiveTrophiesYear = year || 'all';
+    const effectiveTrophiesSeasonId = selectedSeason || 'all';
+
+    const effectiveRewardsLeagueId = leagueId || 'all';
+    const effectiveRewardsYear = year || 'all';
+    const effectiveRewardsSeasonId = selectedSeason || 'all';
+
+    const effectiveHistoryLeagueId = leagueId || 'all';
+    const effectiveHistoryYear = year || 'all';
+    const effectiveHistorySeasonId = selectedSeason || 'all';
 
     // Latest year present in data (fallback: current year)
     const latestYearInData = useMemo(() => {
@@ -709,6 +673,31 @@ export default function PlayerStatsPage() {
         }
     }, [dispatch, playerId, leagueId, year]);
 
+    // Always keep an unfiltered snapshot for Career Stats (all leagues, all years).
+    useEffect(() => {
+        if (!playerId) {
+            setCareerData(null);
+            return;
+        }
+
+        let cancelled = false;
+        playerAPI
+            .getPlayerStats(String(playerId), 'all', 'all')
+            .then((res) => {
+                if (cancelled) return;
+                if (res.success && res.data) {
+                    setCareerData(res.data);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setCareerData(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [playerId, token]);
+
     // Awards flattening
     const allTrophyAwards: AllTrophyAward[] = useMemo(() => {
         if (!data || !data.trophies) return [];
@@ -739,6 +728,11 @@ export default function PlayerStatsPage() {
         });
         return matches;
     }, [data]);
+
+    const careerMatches = useMemo<LeagueMatch[]>(() => {
+        const source = careerData || data;
+        return (source?.leagues || []).flatMap((l) => (hasMatches(l) ? l.matches ?? [] : []));
+    }, [careerData, data]);
 
     const currentLeagueMatches = useMemo<LeagueMatch[]>(() => {
         const leaguesList: LeagueWithMatchesTyped[] = (data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [];
@@ -783,6 +777,7 @@ export default function PlayerStatsPage() {
     }, [data, leagueId, selectedSeason, seasons]);
 
     const accumulativeTotals = useMemo(() => sumStatsFromMatches(allMatches), [allMatches]);
+    const careerTotals = useMemo(() => sumStatsFromMatches(careerMatches), [careerMatches]);
     const currentLeagueTotals = useMemo(() => sumStatsFromMatches(currentLeagueMatches), [currentLeagueMatches]);
 
     // Count MOTM votes from votes array - Current League
@@ -809,7 +804,7 @@ export default function PlayerStatsPage() {
 
     // Count MOTM votes from votes array - Career (All Matches)
     const careerMotmVotesCount = useMemo(() => {
-        const count = allMatches.reduce((acc, match) => {
+        const count = careerMatches.reduce((acc, match) => {
             const votes = (match as any).votes || [];
             const votesForPlayer = votes.filter((vote: any) => 
                 String(vote.votedForId) === String(playerId)
@@ -818,7 +813,7 @@ export default function PlayerStatsPage() {
         }, 0);
         console.log('✅ Total Career MOTM votes for player:', count);
         return count;
-    }, [allMatches, playerId]);
+    }, [careerMatches, playerId]);
 
     // Count defensive impact votes from captain picks - Current League
     const defensiveImpactCount = useMemo(() => {
@@ -841,27 +836,13 @@ export default function PlayerStatsPage() {
 
     // Count defensive impact votes from captain picks - Career (All Matches)
     const careerDefensiveImpactCount = useMemo(() => {
-        const count = allMatches.filter(match => {
+        const count = careerMatches.filter(match => {
             const m = match as any;
             return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
         }).length;
         console.log('✅ Total Career defensive impact count:', count);
         return count;
-    }, [allMatches, playerId]);
-
-    // Calculate Win Ratio - Current League
-    const currentWinRatio = useMemo(() => {
-        if (currentLeagueMatches.length === 0) return 0;
-        const wins = currentLeagueMatches.filter(match => resolveMatchResult(match, playerId) === 'W').length;
-        return Math.round((wins / currentLeagueMatches.length) * 100);
-    }, [currentLeagueMatches, playerId]);
-
-    // Calculate Win Ratio - Career (All Matches)
-    const careerWinRatio = useMemo(() => {
-        if (allMatches.length === 0) return 0;
-        const wins = allMatches.filter(match => resolveMatchResult(match, playerId) === 'W').length;
-        return Math.round((wins / allMatches.length) * 100);
-    }, [allMatches, playerId]);
+    }, [careerMatches, playerId]);
 
     // Fallback XP from already-loaded profile payload
     const profileXPFallback = useMemo(() => {
@@ -933,7 +914,10 @@ export default function PlayerStatsPage() {
     const xpProgressToMax = useMemo(() => {
         const safeXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
         const cappedXp = Math.min(XP_STATUS_MAX_POINTS, safeXp);
-        return Math.max(0, Math.min(100, Math.round((cappedXp / XP_STATUS_MAX_POINTS) * 100)));
+        const rawPercent = (cappedXp / XP_STATUS_MAX_POINTS) * 100;
+        if (rawPercent <= 0) return 0;
+        if (rawPercent >= 100) return 100;
+        return Math.max(1, Math.round(rawPercent));
     }, [xp]);
 
     const xpRemainingToMax = useMemo(() => {
@@ -1373,7 +1357,7 @@ export default function PlayerStatsPage() {
     }, [allTrophyAwards]);
 
     useEffect(() => {
-        // Fetch trophies whenever effective filters change or tab changes
+        // Fetch trophies whenever selected filters change
         if (!playerId) return;
         let cancelled = false;
         setTrophiesLoading(true);
@@ -1383,7 +1367,6 @@ export default function PlayerStatsPage() {
             leagueId: effectiveTrophiesLeagueId, 
             year: effectiveTrophiesYear,
             selectedSeason: effectiveTrophiesSeasonId,
-            activeTab
         });
         
         // Fetch trophies with filters
@@ -1400,13 +1383,13 @@ export default function PlayerStatsPage() {
             })
             .finally(() => { if (!cancelled) setTrophiesLoading(false); });
         return () => { cancelled = true; };
-    }, [playerId, effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId, localCounts, activeTab]);
+    }, [playerId, effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId, localCounts]);
 
     // Fetch player badges/achievements
     useEffect(() => {
         console.log('🔥 [BADGES] useEffect triggered!', { playerId, hasToken: !!token, leagueId, year, selectedSeason });
         
-        // Fetch badges whenever effective filters change or tab changes
+        // Fetch badges whenever selected filters change
         if (!playerId) {
             console.warn('⚠️ [BADGES] No playerId - skipping');
             return;
@@ -1419,7 +1402,7 @@ export default function PlayerStatsPage() {
         
         let cancelled = false;
         setBadgesLoading(true);
-        console.log('🔄 [BADGES] Starting badge fetch with filters:', { leagueId: effectiveRewardsLeagueId, year: effectiveRewardsYear, selectedSeason: effectiveRewardsSeasonId, activeTab });
+        console.log('🔄 [BADGES] Starting badge fetch with filters:', { leagueId: effectiveRewardsLeagueId, year: effectiveRewardsYear, selectedSeason: effectiveRewardsSeasonId });
         
         // Build query params for effective filters
         const params = new URLSearchParams();
@@ -1522,11 +1505,11 @@ export default function PlayerStatsPage() {
             console.log('🧹 [BADGES] Cleanup');
             cancelled = true; 
         };
-    }, [playerId, token, effectiveRewardsLeagueId, effectiveRewardsYear, effectiveRewardsSeasonId, activeTab]);
+    }, [playerId, token, effectiveRewardsLeagueId, effectiveRewardsYear, effectiveRewardsSeasonId]);
 
     // Fetch history records from backend with filters
     useEffect(() => {
-        // Fetch history whenever effective filters change or tab changes
+        // Fetch history whenever selected filters change
         if (!playerId) return;
         let cancelled = false;
         setHistoryRecordsLoading(true);
@@ -1536,7 +1519,6 @@ export default function PlayerStatsPage() {
             leagueId: effectiveHistoryLeagueId, 
             year: effectiveHistoryYear, 
             selectedSeason: effectiveHistorySeasonId,
-            activeTab
         });
         
         playerAPI.getPlayerHistoryRecords(String(playerId), effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId)
@@ -1555,7 +1537,7 @@ export default function PlayerStatsPage() {
             });
 
         return () => { cancelled = true; };
-    }, [playerId, effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId, activeTab]);
+    }, [playerId, effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId]);
 
     const earnedTrophies = useMemo(() => {
         // Aggregate counts for duplicate keys (e.g., 'Champion Footballer' + 'League Champion')
@@ -2542,17 +2524,18 @@ export default function PlayerStatsPage() {
                                         alignItems: 'stretch',
                                         borderRadius: 1,
                                         overflow: 'hidden',
-                                        cursor: 'pointer',
+                                        cursor: currentUserId ? 'pointer' : 'not-allowed',
                                         border: '1px solid rgba(255,255,255,0.4)',
                                         boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                                        opacity: currentUserId ? 1 : 0.6,
                                         transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
                                         '&:hover': {
-                                            transform: 'translateY(-1px)',
-                                            boxShadow: '0 10px 22px rgba(0,0,0,0.45)',
-                                            borderColor: 'rgba(255,255,255,0.65)',
+                                            transform: currentUserId ? 'translateY(-1px)' : 'none',
+                                            boxShadow: currentUserId ? '0 10px 22px rgba(0,0,0,0.45)' : '0 6px 16px rgba(0,0,0,0.35)',
+                                            borderColor: currentUserId ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.4)',
                                         },
-                                        '&:hover .perf-icon-box': { bgcolor: '#008c6b' },
-                                        '&:hover .perf-text-box': { bgcolor: '#2f2f2f' },
+                                        '&:hover .perf-icon-box': { bgcolor: currentUserId ? '#008c6b' : '#00a77f' },
+                                        '&:hover .perf-text-box': { bgcolor: currentUserId ? '#2f2f2f' : '#2b2b2b' },
                                         width: '100%',
                                         maxWidth: { xs: '100%', md: 238 },
                                         minWidth: 0,
@@ -2560,7 +2543,8 @@ export default function PlayerStatsPage() {
                                         justifySelf: { xs: 'stretch', md: 'start' },
                                     }}
                                     onClick={() => {
-                                        if (playerId) router.push(`/player/${playerId}/career`);
+                                        if (!currentUserId) return;
+                                        router.push(`/player/${currentUserId}/career`);
                                     }}
                                 >
                                     <Box className="perf-icon-box" sx={{
@@ -2652,22 +2636,40 @@ export default function PlayerStatsPage() {
                     {/* Stats Row */}
                     <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'flex-start' }}>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="Matches" value={activeTab === 'career' ? allMatches.length : currentLeagueMatches.length} />
+                            <StatItem
+                                label="Matches"
+                                value={activeTab === 'career' ? careerMatches.length : (leagueId === 'all' ? allMatches.length : currentLeagueMatches.length)}
+                            />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="Goals" value={activeTab === 'career' ? accumulativeTotals.goals : currentLeagueTotals.goals} />
+                            <StatItem
+                                label="Goals"
+                                value={activeTab === 'career' ? careerTotals.goals : (leagueId === 'all' ? accumulativeTotals.goals : currentLeagueTotals.goals)}
+                            />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="Assists" value={activeTab === 'career' ? accumulativeTotals.assists : currentLeagueTotals.assists} />
+                            <StatItem
+                                label="Assists"
+                                value={activeTab === 'career' ? careerTotals.assists : (leagueId === 'all' ? accumulativeTotals.assists : currentLeagueTotals.assists)}
+                            />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="MOTM" value={activeTab === 'career' ? careerMotmVotesCount : motmVotesCount} />
+                            <StatItem
+                                label="MOTM"
+                                value={activeTab === 'career' ? careerMotmVotesCount : (leagueId === 'all' ? careerMotmVotesCount : motmVotesCount)}
+                            />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="Defensive" value={activeTab === 'career' ? careerDefensiveImpactCount : defensiveImpactCount} />
+                            <StatItem
+                                label="Defensive"
+                                value={activeTab === 'career' ? careerDefensiveImpactCount : (leagueId === 'all' ? careerDefensiveImpactCount : defensiveImpactCount)}
+                            />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
-                            <StatItem label="Clean Sheet" value={activeTab === 'career' ? accumulativeTotals.cleanSheets : currentLeagueTotals.cleanSheets} />
+                            <StatItem
+                                label="Clean Sheet"
+                                value={activeTab === 'career' ? careerTotals.cleanSheets : (leagueId === 'all' ? accumulativeTotals.cleanSheets : currentLeagueTotals.cleanSheets)}
+                            />
                         </Grid>
                         <Grid item xs={12} sm={4} md>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
@@ -2675,7 +2677,7 @@ export default function PlayerStatsPage() {
                                     Total xp
                                 </Typography>
                                 <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>
-                                    {/* {activeTab === 'career' ? careerWinRatio : currentWinRatio}% */}
+                                    {xpLoading ? '...' : `${Math.max(0, xp).toLocaleString()} XP`}
                                 </Typography>
                                 <Box sx={{ 
                                     width: '100%',
@@ -2687,8 +2689,8 @@ export default function PlayerStatsPage() {
                                 }}>
                                     <Box sx={{ 
                                         height: '100%', 
-                                        bgcolor: '#00a77f', 
-                                        width: `${activeTab === 'career' ? careerWinRatio : currentWinRatio}%`,
+                                        bgcolor: xpStatusTier.cardColor, 
+                                        width: xpProgressToMax > 0 ? `max(${xpProgressToMax}%, 6px)` : '0%',
                                         transition: 'width 0.4s ease'
                                     }} />
                                 </Box>

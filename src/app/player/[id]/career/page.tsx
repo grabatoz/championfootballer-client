@@ -394,11 +394,13 @@ export default function CareerPage() {
         (l.matches as LeagueMatch[]).some((m) => dayjs(m.date).year().toString() === effectiveYear)
     );
   }, [data?.leagues, filters.year]);
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const currentUserId = String(user?.id || '').trim();
+  const routePlayerId = String(playerId || '').trim();
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -441,11 +443,26 @@ export default function CareerPage() {
 
   const loading = !data;
 
+  // Personal dashboard only: prevent opening another player's dashboard route.
   useEffect(() => {
-    if (playerId) {
-      dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
+    if (authLoading) return;
+    if (!routePlayerId) return;
+
+    if (!currentUserId) {
+      router.replace(`/player/${routePlayerId}`);
+      return;
     }
-  }, [playerId, dispatch, filters.leagueId, filters.year]);
+
+    if (routePlayerId !== currentUserId) {
+      router.replace(`/player/${currentUserId}/career`);
+    }
+  }, [authLoading, routePlayerId, currentUserId, router]);
+
+  useEffect(() => {
+    if (!playerId || authLoading) return;
+    if (!currentUserId || String(playerId) !== currentUserId) return;
+    dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
+  }, [playerId, dispatch, filters.leagueId, filters.year, authLoading, currentUserId]);
 
   const matches: LeagueMatch[] = useMemo(() => {
     const d: PlayerStatsData | undefined = data;
