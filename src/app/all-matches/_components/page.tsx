@@ -1983,7 +1983,7 @@ export default function AllMatches() {
                     }}
                         className='all-leagues-heading'
                     >
-                        ALL MATCHES
+                        MATCHES
                     </Typography>
 
                     <Box
@@ -2429,7 +2429,7 @@ export default function AllMatches() {
                             width: { xs: '100%', sm: 'auto' },
                             mt: { xs: 1, sm: 0 }
                         }}>
-                            <Button
+                            {/* <Button
                                 variant={matchFilter === 'all' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('all')}
                                 sx={{
@@ -2456,7 +2456,7 @@ export default function AllMatches() {
                                 }}
                             >
                                 All Matches
-                            </Button>
+                            </Button> */}
                             <Button
                                 variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
