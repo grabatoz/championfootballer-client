@@ -913,9 +913,22 @@ const AllPlayersPage = () => {
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               ALL POSITIONS
             </Typography>
-            <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10, lineHeight: 1 }}>
-              {allPositionsSortActive ? (allPositionsSortDirection === 'asc' ? '^' : 'v') : 'v'}
-            </Typography>
+            <Box
+              sx={{
+                ml: 1,
+                width: 0,
+                height: 0,
+                borderLeft: '6px solid transparent',
+                borderRight: '6px solid transparent',
+                borderTop: '8px solid #fff',
+                transform:
+                  allPositionsSortActive && allPositionsSortDirection === 'asc'
+                    ? 'rotate(180deg)'
+                    : 'rotate(0deg)',
+                transformOrigin: 'center',
+                transition: 'transform 0.3s ease',
+              }}
+            />
           </Box>
           
           {/* Playing Style */}
