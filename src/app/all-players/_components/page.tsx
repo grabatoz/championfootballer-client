@@ -483,13 +483,12 @@ const AllPlayersPage = () => {
       setSelectedLeague('all');
       setSelectedSeason('all'); // Also reset season
     } else {
-      // When we have leagues, check if we should auto-select
+      // When we have leagues, only auto-select if current league is invalid.
+      // Keep explicit "all" selection intact so users can view players across all leagues.
       const currentLeagueExists = filteredLeagues.some(l => l.id === selectedLeague);
       
-      // Auto-select if:
-      // 1. Current selection is 'all' but we have leagues available, OR
-      // 2. Current selection doesn't exist in filtered leagues
-      if (selectedLeague === 'all' || !currentLeagueExists) {
+      // Auto-select only if current selected league no longer exists in filtered list
+      if (selectedLeague !== 'all' && !currentLeagueExists) {
         // Try to get preferred league from localStorage
         let leagueToSelect = filteredLeagues[0].id;
         try {
