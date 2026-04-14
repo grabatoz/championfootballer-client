@@ -1692,7 +1692,9 @@ export default function PlayerStatsPage() {
                         <Box
                             ref={searchWrapperRef}
                             sx={{
-                                width: { xs: '100%', md: '420px' },
+                                width: { xs: '100%', md: 'fit-content' },
+                                minWidth: { md: 260 },
+                                maxWidth: { md: 420 },
                                 ml: { xs: 0, md: 0.8 },
                                 position: 'relative',
                                 zIndex: 5,
@@ -1729,7 +1731,7 @@ export default function PlayerStatsPage() {
                                     }
                                 }}
                                 sx={{
-                                    width: '100%',
+                                    width: { xs: '100%', md: 'fit-content' },
                                     '& .MuiOutlinedInput-root': {
                                         height: { xs: 38, sm: 42 },
                                         color: 'white',
@@ -1882,7 +1884,7 @@ export default function PlayerStatsPage() {
                             }}
                         >
                             {/* Year Filter */}
-                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? '112px' : '100%' }}>
+                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'fit-content' : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -1901,7 +1903,7 @@ export default function PlayerStatsPage() {
                                         fontSize: '17px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        width: '100%',
+                                        width: 'auto',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
                                         MozAppearance: 'none',
@@ -1986,7 +1988,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* League Filter */}
-                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? '120px' : '100%' }}>
+                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'fit-content' : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -2005,7 +2007,7 @@ export default function PlayerStatsPage() {
                                         fontSize: '17px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        width: '100%',
+                                        width: 'auto',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
                                         MozAppearance: 'none',
@@ -2108,7 +2110,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* Season Filter */}
-                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? '120px' : '100%' }}>
+                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 'fit-content' : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -2135,7 +2137,7 @@ export default function PlayerStatsPage() {
                                         fontSize: '17px',
                                         cursor: leagueId === 'all' ? 'not-allowed' : 'pointer',
                                         outline: 'none',
-                                        width: '100%',
+                                        width: 'auto',
                                         opacity: leagueId === 'all' ? 0.6 : 1,
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
