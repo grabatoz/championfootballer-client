@@ -178,8 +178,8 @@ interface League {
 
 interface User {
     xp: number;
-    shirtNumber?: string | number;
-    positionType?: string;
+    shirtNumber: undefined;
+    positionType: undefined;
     id: string;
     firstName: string;
     lastName: string;
@@ -4644,11 +4644,12 @@ export default function LeagueDetailPage() {
                                     overflowX: 'hidden',
                                     scrollbarWidth: 'none',
                                     '&::-webkit-scrollbar': { display: 'none' },
-                                    width: 'min(99.4vw, 1366px)',
-                                    maxWidth: '1366px',
+                                    width: '99.4vw',
                                     position: 'relative',
                                     left: '50%',
-                                    transform: 'translateX(-50%)',
+                                    right: '50%',
+                                    marginLeft: '-50vw',
+                                    marginRight: '-50vw',
                                 }}>
                                     {dreamTeamLoading ? (
                                         <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -4661,10 +4662,13 @@ export default function LeagueDetailPage() {
                                             <Box
                                                 sx={{
                                                     position: 'relative',
-                                                    width: '100%',
-                                                    height: { xs: '500px', sm: '550px', md: '600px', lg: '650px' },
+                                                    width: '100vw',
+                                                    maxWidth: '100vw',
+                                                    marginLeft: 'calc(50% - 50vw)',
+                                                    height: { xs: '500px', sm: '550px', md: '600px', lg: 'auto' },
+                                                    aspectRatio: { lg: '2251 / 1146' },
                                                     overflow: 'hidden',
-                                                    mt: -10,
+                                                    mt: 0,
                                                 }}
                                             >
                                                 <Image 
@@ -4675,7 +4679,7 @@ export default function LeagueDetailPage() {
                                                         width: '100%', 
                                                         height: '100%',
                                                         objectFit: 'cover',
-                                                        objectPosition: 'center top'
+                                                        objectPosition: 'center center'
                                                     }} 
                                                 />
                                                 
@@ -4683,8 +4687,8 @@ export default function LeagueDetailPage() {
                                                 <Box
                                                     sx={{
                                                         position: 'absolute',
-                                                        top: { xs: '8%', sm: '8%', md: '8%', lg: '25%', xl: '25%' },
-                                                        left: { xs: '5%', sm: '8%', md: '12%', lg: '20%', xl: '20%' },
+                                                        top: { xs: '8%', sm: '9%', md: '10%', lg: '12%', xl: '12%' },
+                                                        left: { xs: '5%', sm: '8%', md: '10%', lg: '12%', xl: '12%' },
                                                         zIndex: 1,
                                                     }}
                                                 >
@@ -4692,7 +4696,7 @@ export default function LeagueDetailPage() {
                                                         sx={{
                                                             color: '#ffffff',
                                                             fontWeight: 600,
-                                                            fontSize: { xs: '16px', sm: '20px', md: '22px', lg: '24px', xl: '24px' },
+                                                            fontSize: { xs: '14px', sm: '18px', md: '22px', lg: '24px', xl: '28px' },
                                                             textTransform: 'uppercase',
                                                             letterSpacing: '2px',
                                                             // textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
@@ -4707,195 +4711,63 @@ export default function LeagueDetailPage() {
 
                                                 {/* Overlay players */}
                                                 {(() => {
-                                                    type OverlayRole = 'GK' | 'DF' | 'MF' | 'FW';
-                                                    type OverlayPlayer = {
-                                                        id: string;
-                                                        firstName: string;
-                                                        lastName: string;
-                                                        position?: string;
-                                                        positionType?: string;
-                                                        profilePicture?: string | null;
-                                                        xp: number;
-                                                        role?: OverlayRole;
+                                                    // Get league members with their XP
+                                                    const leagueMembers = filteredLeague?.members || [];
+                                                    
+                                                    // Map members with their XP and sort by XP (highest first)
+                                                    const playersWithXP = leagueMembers.map(member => ({
+                                                        ...member,
+                                                        xp: getLeagueXpForMember(member.id, member.xp)
+                                                    })).sort((a, b) => b.xp - a.xp);
+                                                    
+                                                    // Take top 5 players based on XP
+                                                    const playersToShow = playersWithXP.slice(0, 5);
+                                                    
+                                                    console.log('✅ Dream Team - Top 5 XP Players:', playersToShow.map(p => ({
+                                                        name: `${p?.firstName || ''} ${p?.lastName || ''}`.trim(),
+                                                        xp: p?.xp || 0,
+                                                        positionType: p?.positionType || 'N/A'
+                                                    })));
+                                                    
+                                                    // Define positions based on number of players (adjusted to stay inside pitch boundaries)
+                                                    const getPositions = (count: number) => {
+                                                        if (count === 1) {
+                                                            return [{ left: '60%', top: '55%' }];
+                                                        } else if (count === 2) {
+                                                            return [
+                                                                { left: '55%', top: '52%' },
+                                                                { left: '70%', top: '52%' },
+                                                            ];
+                                                        } else if (count === 3) {
+                                                            return [
+                                                                { left: '50%', top: '52%' },
+                                                                { left: '62%', top: '48%' },
+                                                                { left: '74%', top: '52%' },
+                                                            ];
+                                                        } else if (count === 4) {
+                                                            return [
+                                                                { left: '52%', top: '48%' },
+                                                                { left: '72%', top: '48%' },
+                                                                { left: '55%', top: '62%' },
+                                                                { left: '70%', top: '62%' },
+                                                            ];
+                                                        } else {
+                                                            // 5 players - 3-1-1 formation (inside pitch boundaries)
+                                                            return [
+                                                                { left: '35%', top: '70%' },
+                                                                { left: '52%', top: '80%' },
+                                                                { left: '44%', top: '65%' },
+                                                                { left: '62%', top: '76%' },
+                                                                { left: '56%', top: '66%' },
+                                                            ];
+                                                        }
                                                     };
-
-                                                    const toOverlayList = (list: unknown, role: OverlayRole): OverlayPlayer[] => {
-                                                        if (!Array.isArray(list)) return [];
-                                                        return list
-                                                            .map((item) => {
-                                                                const rec = (item && typeof item === 'object')
-                                                                    ? (item as Record<string, unknown>)
-                                                                    : {};
-                                                                const id = rec.id != null ? String(rec.id) : '';
-                                                                if (!id) return null;
-                                                                return {
-                                                                    id,
-                                                                    firstName: String(rec.firstName ?? ''),
-                                                                    lastName: String(rec.lastName ?? ''),
-                                                                    position: rec.position != null ? String(rec.position) : undefined,
-                                                                    positionType: rec.positionType != null ? String(rec.positionType) : undefined,
-                                                                    profilePicture: rec.profilePicture != null ? String(rec.profilePicture) : undefined,
-                                                                    xp: Number(rec.xp ?? 0),
-                                                                    role,
-                                                                } as OverlayPlayer;
-                                                            })
-                                                            .filter((player): player is OverlayPlayer => Boolean(player));
-                                                    };
-
-                                                    const apiDreamTeamPlayers: OverlayPlayer[] = [
-                                                        ...toOverlayList(dreamTeam?.goalkeeper, 'GK'),
-                                                        ...toOverlayList(dreamTeam?.defenders, 'DF'),
-                                                        ...toOverlayList(dreamTeam?.midfielders, 'MF'),
-                                                        ...toOverlayList(dreamTeam?.forwards, 'FW'),
-                                                    ];
-
-                                                    // Fallback for older/empty responses
-                                                    const fallbackPlayers: OverlayPlayer[] = (filteredLeague?.members || [])
-                                                        .map((member) => ({
-                                                            id: String(member.id),
-                                                            firstName: member.firstName || '',
-                                                            lastName: member.lastName || '',
-                                                            position: member.position || undefined,
-                                                            positionType: member.positionType || undefined,
-                                                            profilePicture: member.profilePicture || undefined,
-                                                            xp: getLeagueXpForMember(member.id, member.xp),
-                                                        }))
-                                                        .sort((a, b) => b.xp - a.xp)
-                                                        .slice(0, 5);
-
-                                                    const playersToShow: OverlayPlayer[] = (
-                                                        apiDreamTeamPlayers.length > 0
-                                                            ? apiDreamTeamPlayers
-                                                            : fallbackPlayers
-                                                    ).slice(0, 5);
-
-                                                    console.log('[DreamTeam] Render source:', {
-                                                        source: apiDreamTeamPlayers.length > 0 ? 'dreamTeamApi' : 'leagueMembersFallback',
-                                                        total: playersToShow.length,
-                                                        gk: Array.isArray(dreamTeam?.goalkeeper) ? dreamTeam.goalkeeper.length : 0,
-                                                        df: Array.isArray(dreamTeam?.defenders) ? dreamTeam.defenders.length : 0,
-                                                        mf: Array.isArray(dreamTeam?.midfielders) ? dreamTeam.midfielders.length : 0,
-                                                        fw: Array.isArray(dreamTeam?.forwards) ? dreamTeam.forwards.length : 0,
-                                                        players: playersToShow.map((p) => ({
-                                                            id: p.id,
-                                                            name: `${p.firstName} ${p.lastName}`.trim(),
-                                                            position: p.position || '',
-                                                            positionType: p.positionType || '',
-                                                            xp: p.xp,
-                                                            role: p.role || 'auto',
-                                                        })),
-                                                    });
-
-                                                    const normalizeDreamRole = (player: OverlayPlayer): OverlayRole => {
-                                                        if (player.role) return player.role;
-                                                        const raw = `${player?.positionType || ''} ${player?.position || ''}`.toLowerCase();
-                                                        if (!raw.trim()) return 'MF';
-                                                        if (
-                                                            raw.includes('gk') ||
-                                                            raw.includes('goalkeeper') ||
-                                                            raw.includes('goal keeper') ||
-                                                            raw.includes('keeper')
-                                                        ) return 'GK';
-                                                        if (
-                                                            raw.includes('df') ||
-                                                            raw.includes('def') ||
-                                                            raw.includes('back') ||
-                                                            raw.includes('cb') ||
-                                                            raw.includes('lb') ||
-                                                            raw.includes('rb')
-                                                        ) return 'DF';
-                                                        if (
-                                                            raw.includes('fw') ||
-                                                            raw.includes('forw') ||
-                                                            raw.includes('strik') ||
-                                                            raw.includes('st') ||
-                                                            raw.includes('cf') ||
-                                                            raw.includes('att')
-                                                        ) return 'FW';
-                                                        if (
-                                                            raw.includes('mf') ||
-                                                            raw.includes('mid') ||
-                                                            raw.includes('wing') ||
-                                                            raw.includes('cm') ||
-                                                            raw.includes('dm') ||
-                                                            raw.includes('am')
-                                                        ) return 'MF';
-                                                        return 'MF';
-                                                    };
-
-                                                    const roleBuckets: Record<OverlayRole, OverlayPlayer[]> = {
-                                                        GK: [],
-                                                        DF: [],
-                                                        MF: [],
-                                                        FW: [],
-                                                    };
-
-                                                    playersToShow.forEach((player) => {
-                                                        roleBuckets[normalizeDreamRole(player)].push(player);
-                                                    });
-
-                                                    const roleRows: Record<OverlayRole, number> = {
-                                                        GK: 78,
-                                                        DF: 70,
-                                                        MF: 63,
-                                                        FW: 56,
-                                                    };
-
-                                                    const roleRanges: Record<OverlayRole, [number, number]> = {
-                                                        GK: [54, 54],
-                                                        DF: [44, 64],
-                                                        MF: [46, 62],
-                                                        FW: [47, 61],
-                                                    };
-
-                                                    // Avoid vertical stacking when a role has only one player.
-                                                    // On this tilted pitch, slight horizontal staggering looks more natural.
-                                                    const singleRoleX: Record<OverlayRole, number> = {
-                                                        GK: 54,
-                                                        DF: 47,
-                                                        MF: 57,
-                                                        FW: 54,
-                                                    };
-
-                                                    const clamp = (value: number, min: number, max: number) => (
-                                                        Math.min(max, Math.max(min, value))
-                                                    );
-
-                                                    // Keep all overlays inside the visible pitch area.
-                                                    const SAFE_LEFT_MIN = 43;
-                                                    const SAFE_LEFT_MAX = 65;
-                                                    const SAFE_TOP_MIN = 54;
-                                                    const SAFE_TOP_MAX = 79;
-
-                                                    const positionsByPlayerId = new Map<string, { left: string; top: string }>();
-                                                    (['GK', 'DF', 'MF', 'FW'] as const).forEach((role) => {
-                                                        const group = roleBuckets[role];
-                                                        if (!group.length) return;
-
-                                                        const [minX, maxX] = roleRanges[role];
-                                                        const xValues =
-                                                            group.length === 1
-                                                                ? [singleRoleX[role]]
-                                                                : group.map((_, idx) =>
-                                                                    minX + (idx * (maxX - minX)) / Math.max(group.length - 1, 1)
-                                                                );
-
-                                                        group.forEach((player, idx) => {
-                                                            const rawLeft = xValues[idx];
-                                                            const rawTop = roleRows[role];
-                                                            const safeLeft = clamp(rawLeft, SAFE_LEFT_MIN, SAFE_LEFT_MAX);
-                                                            const safeTop = clamp(rawTop, SAFE_TOP_MIN, SAFE_TOP_MAX);
-                                                            positionsByPlayerId.set(String(player.id), {
-                                                                left: `${safeLeft}%`,
-                                                                top: `${safeTop}%`,
-                                                            });
-                                                        });
-                                                    });
+                                                    
+                                                    const positions = getPositions(playersToShow.length);
                                                     
                                                     return playersToShow.map((player, idx) => {
-                                                        const pos = positionsByPlayerId.get(String(player.id)) || { left: '54%', top: '70%' };
-                                                        const topPct = Number.parseFloat(pos.top);
-                                                        if (!player) return null; 
+                                                        const pos = positions[idx];
+                                                        if (!player || !pos) return null; 
                                                     return (
                                                         <Box
                                                             key={`player-${idx}-${player.id}`}
@@ -4905,16 +4777,16 @@ export default function LeagueDetailPage() {
                                                                 top: pos.top,
                                                                 transform: 'translate(-50%, -50%)',
                                                                 textAlign: 'center',
-                                                                zIndex: Number.isFinite(topPct) ? Math.round(topPct) : 2,
+                                                                zIndex: 2,
                                                             }}
                                                         >
                                                             {/* Shirt */}
                                                             <Box
                                                                 sx={{
                                                                     position: 'relative',
-                                                                    width: { xs: 40, sm: 50, md: 60, lg: 70 },
-                                                                    height: { xs: 40, sm: 50, md: 60, lg: 70 },
-                                                                    mb: { xs: 0.25, sm: 0.5, md: 0.75 },
+                                                                    width: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
+                                                                    height: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
+                                                                    mb: -0.5,
                                                                 }}
                                                             >
                                                                 <Link href={`/player/${player.id}`} prefetch={false}>
@@ -4941,13 +4813,13 @@ export default function LeagueDetailPage() {
                                                                     sx={{
                                                                         color: '#ffffff',
                                                                         fontWeight: 700,
-                                                                        fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px' },
+                                                                        fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px', xl: '14px' },
                                                                         lineHeight: 1.2,
                                                                         textAlign: 'center',
                                                                         // textShadow: '3px 3px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8)',
                                                                         whiteSpace: 'nowrap',
                                                                         // backgroundColor: 'rgba(0,0,0,0.6)',
-                                                                        padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px' },
+                                                                        padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px', xl: '4px 12px' },
                                                                         // borderRadius: '6px',
                                                                         // border: '1px solid rgba(255,255,255,0.2)',
                                                                     }}
