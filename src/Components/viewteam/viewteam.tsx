@@ -28,6 +28,8 @@ import PitchViewImg from '@/Components/images/footblgrond.png';
 import BulbImg from '@/Components/images/bulb.png';
 import UndoImg from '@/Components/images/undo.png';
 import { useAuth } from '@/lib/hooks';
+import Awayimgcf from '@/Components/images/awayteamshirt.png'
+import Homeimgcf from '@/Components/images/hometeamshirt.png'
 
 // Define the expected shape from useAuth
 type AuthUser = {
@@ -1652,7 +1654,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               <Typography sx={{ textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1rem' }, color: '#fff', textTransform: 'uppercase', letterSpacing: 1, mb: 0 }}>Team Balance</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 {/* Home shirt */}
-                <img src={Shirt.src} alt="Home" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
+                <img src={Homeimgcf.src} alt="Home" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
                 {/* Center: % + bar + VS */}
                 <Box sx={{ flex: 1, mx: { xs: 0.5, sm: 1.5 }, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   {/* % labels at corners of bar */}
@@ -1682,7 +1684,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         borderRadius: '6px 0 0 6px',
                       }}
                     />
-                    <Box
+                    {/* <Box
                       sx={{
                         position: 'absolute',
                         top: 0,
@@ -1692,13 +1694,13 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         transform: 'translateX(-1px)',
                         bgcolor: '#fff',
                       }}
-                    />
+                    /> */}
                   </Box>
                   <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.2rem', sm: '1.7rem' }, color: '#fff', letterSpacing: '1px', fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
                   <Typography sx={{ color: '#fff', fontSize: { xs: '0.72rem', sm: '0.82rem' }, textAlign: 'center', fontWeight: 600, mt: { xs: -0.4, sm: -1 } }}>{matchDurationLabel}</Typography>
                 </Box>
                 {/* Away shirt */}
-                <img src={Shirtaway.src} alt="Away" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
+                <img src={Awayimgcf.src} alt="Away" width={70} height={70} style={{ objectFit: 'contain', flexShrink: 0, marginTop: '-24px' }} />
               </Box>
             </Box>
 
