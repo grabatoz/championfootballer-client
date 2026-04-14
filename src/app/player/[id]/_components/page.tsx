@@ -38,12 +38,11 @@ import Image, { StaticImageData } from 'next/image';
 import dayjs from 'dayjs';
 import { useAuth } from '@/lib/hooks';
 import { playerAPI } from '@/lib/api';
-import FootballImg from '@/Components/images/football.png';
 import GoatImg from '@/Components/images/goat.png';
 import { BarChart, SpaceDashboard } from '@mui/icons-material';
 import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
-import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
+import XPStarMilestoneCard, { XP_TIERS, getXPTier } from '@/Components/XPStarMilestoneCard';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -56,6 +55,7 @@ const DARK_BG = '#383838';
 const CARD_BG = '#272727';
 const TEAL_PRIMARY = '#00a77f';
 const ORANGE_ACCENT = '#ff6b35';
+const XP_STATUS_MAX_POINTS = 15000;
 
 // Add the blue filter constant
 const BLUE_FILTER = 'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
@@ -276,60 +276,14 @@ function sumXPAwardedFromMatches(matches: LeagueMatch[] = []): number {
     }, 0);
 }
 
-// XP Milestone calculation
-type XPMilestone = {
-    title: string;
-    minXP: number;
-    maxXP: number;
-    color: string;
-    bgColor: string;
-};
-
-const XP_MILESTONES: XPMilestone[] = [
-    { title: 'Rookie', minXP: 0, maxXP: 100, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Prospect', minXP: 100, maxXP: 250, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Rising Star', minXP: 250, maxXP: 500, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Skilled Player', minXP: 500, maxXP: 1000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Talented Player', minXP: 1000, maxXP: 2000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Chosen One', minXP: 2000, maxXP: 3000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Serial Winner', minXP: 3000, maxXP: 4000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Supreme Player', minXP: 4000, maxXP: 5000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Invincible', minXP: 5000, maxXP: 6000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Maestro', minXP: 6000, maxXP: 7000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Creme de la Creme', minXP: 7000, maxXP: 8000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Elite', minXP: 8000, maxXP: 9000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'World-Class', minXP: 9000, maxXP: 10000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'The Undisputed', minXP: 10000, maxXP: 12000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Icon', minXP: 12000, maxXP: 15000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Generational Talent', minXP: 15000, maxXP: 18000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Legend of the Game', minXP: 18000, maxXP: 22000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Football Royalty', minXP: 22000, maxXP: 25000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Hall of Famer', minXP: 25000, maxXP: 30000, color: '#000000', bgColor: '#FFFFFF' },
-    { title: 'Champion Footballer', minXP: 30000, maxXP: Infinity, color: '#000000', bgColor: '#FFFFFF' },
-];
-
-function getXPMilestone(xp: number): { current: XPMilestone; next: XPMilestone | null; progress: number } {
-    let currentMilestone = XP_MILESTONES[0];
-    let nextMilestone: XPMilestone | null = XP_MILESTONES[1];
-    
-    for (let i = 0; i < XP_MILESTONES.length; i++) {
-        if (xp >= XP_MILESTONES[i].minXP && xp < XP_MILESTONES[i].maxXP) {
-            currentMilestone = XP_MILESTONES[i];
-            nextMilestone = i < XP_MILESTONES.length - 1 ? XP_MILESTONES[i + 1] : null;
-            break;
-        }
-    }
-    
-    // Calculate progress percentage to next milestone
-    const progressInCurrentLevel = xp - currentMilestone.minXP;
-    const totalLevelRange = Number.isFinite(currentMilestone.maxXP)
-        ? Math.max(1, currentMilestone.maxXP - currentMilestone.minXP)
-        : 1;
-    const progress = nextMilestone
-        ? Math.min(100, Math.round((progressInCurrentLevel / totalLevelRange) * 100))
-        : 100;
-    
-    return { current: currentMilestone, next: nextMilestone, progress };
+function getReadableTextColor(hexColor: string): string {
+    const hex = String(hexColor || '').replace('#', '');
+    if (!/^[0-9A-Fa-f]{6}$/.test(hex)) return '#111111';
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.58 ? '#111111' : '#FFFFFF';
 }
 
 export default function PlayerStatsPage() {
@@ -968,8 +922,29 @@ export default function PlayerStatsPage() {
         };
     }, [playerId, token, profileXPFallback]);
 
-    // Calculate current XP milestone
-    const xpMilestone = useMemo(() => getXPMilestone(xp), [xp]);
+    // XP status from revised 7-level table
+    const xpStatusTier = useMemo(() => getXPTier(xp), [xp]);
+
+    const nextXpStatusTier = useMemo(() => {
+        const safeXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
+        return XP_TIERS.find((tier) => tier.minXP > safeXp) ?? null;
+    }, [xp]);
+
+    const xpProgressToMax = useMemo(() => {
+        const safeXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
+        const cappedXp = Math.min(XP_STATUS_MAX_POINTS, safeXp);
+        return Math.max(0, Math.min(100, Math.round((cappedXp / XP_STATUS_MAX_POINTS) * 100)));
+    }, [xp]);
+
+    const xpRemainingToMax = useMemo(() => {
+        const safeXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
+        return Math.max(0, XP_STATUS_MAX_POINTS - safeXp);
+    }, [xp]);
+
+    const xpStatusTextColor = useMemo(
+        () => getReadableTextColor(xpStatusTier.cardColor),
+        [xpStatusTier.cardColor]
+    );
 
     // Compute season-wise stats for modal
     type SeasonStats = {
@@ -2402,7 +2377,15 @@ export default function PlayerStatsPage() {
                         {/* Right: XP + Badges */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'stretch', md: 'flex-end' }, gap: 0, width: { xs: '100%', md: 'auto' } }}>
                             <Box sx={{ width: { xs: '100%', md: 'fit-content' }, maxWidth: '100%' }}>
-                                {/* Top row: XP + Milestone Title */}
+                                {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, gap: 1 }}>
+                                    <Typography sx={{ color: '#bdbdbd', fontSize: { xs: 11, sm: 12, md: 13 }, fontWeight: 600 }}>
+                                        Total XP (All Leagues)
+                                    </Typography>
+                                    <Typography sx={{ color: '#8fd7c5', fontSize: { xs: 10, sm: 11 }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.45 }}>
+                                        XP Status
+                                    </Typography>
+                                </Box> */}
+                                {/* Top row: XP + Status Title */}
                                 <Box sx={{ display: 'flex', alignItems: 'stretch', gap: { xs: 1, md: 2 }, width: '100%' }}>
                                     <Paper sx={{ 
                                         bgcolor: '#383838', 
@@ -2421,42 +2404,65 @@ export default function PlayerStatsPage() {
                                         {xpLoading ? '...' : xp.toLocaleString()}
                                     </Paper>
                                     <Paper sx={{ 
-                                        bgcolor: xpMilestone.current.bgColor, 
-                                        color: xpMilestone.current.color, 
+                                        bgcolor: xpStatusTier.cardColor, 
+                                        color: xpStatusTextColor, 
                                         pl: { xs: 1, md: 1.5 },
                                         pr: { xs: 2, sm: 4, md: 10 },
                                         py: { xs: 0.6, md: 0.9 },
                                         borderRadius: 0,
-                                        fontWeight: 400,
+                                        fontWeight: 700,
                                         fontSize: { xs: 12, sm: 14, md: 16 },
                                         minWidth: { xs: 120, sm: 140, md: 170 },
                                         flex: { xs: 1, md: '0 0 auto' },
                                         transition: 'all 0.3s ease'
                                     }}>
-                                        {xpMilestone.current.title}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                                            <Typography sx={{ fontSize: { xs: 12, sm: 14, md: 16 }, fontWeight: 700, lineHeight: 1 }}>
+                                                {xpStatusTier.title}
+                                            </Typography>
+                                            {xpStatusTier.isGoat && (
+                                                <Box sx={{ position: 'relative', width: { xs: 18, sm: 20 }, height: { xs: 18, sm: 20 }, flexShrink: 0 }}>
+                                                    <Image src={GoatImg} alt="GOAT tier" fill sizes="20px" style={{ objectFit: 'contain' }} />
+                                                </Box>
+                                            )}
+                                        </Box>
                                     </Paper>
                                 </Box>
                                 {/* Progress bar */}
                                 <Box sx={{ width: '100%', display: 'flex', height: 6, borderRadius: 0, overflow: 'hidden', mt: 1 }}>
                                     <Box sx={{ 
-                                        bgcolor: xpMilestone.current.bgColor, 
-                                        width: `${xpMilestone.progress}%`, 
+                                        bgcolor: xpStatusTier.cardColor, 
+                                        width: `${xpProgressToMax}%`, 
                                         height: '100%',
                                         transition: 'width 0.3s ease'
                                     }} />
-                                    <Box sx={{ bgcolor: '#555', width: `${100 - xpMilestone.progress}%`, height: '100%' }} />
+                                    <Box sx={{ bgcolor: '#555', width: `${100 - xpProgressToMax}%`, height: '100%' }} />
                                 </Box>
-                                {/* Next milestone info */}
-                                {xpMilestone.next && (
+                                <Typography sx={{ color: '#a8a8a8', fontSize: 11, mt: 0.5, fontWeight: 500 }}>
+                                    {xpLoading
+                                        ? `0 / ${XP_STATUS_MAX_POINTS.toLocaleString()} XP`
+                                        : `${Math.max(0, xp).toLocaleString()} / ${XP_STATUS_MAX_POINTS.toLocaleString()} XP (${xpProgressToMax}%)`}
+                                </Typography>
+                                {/* {!xpLoading && nextXpStatusTier && (
                                     <Typography sx={{ 
                                         color: '#999', 
                                         fontSize: 11, 
-                                        mt: 0.5,
+                                        mt: 0.25,
                                         fontWeight: 400 
                                     }}>
-                                        {xpMilestone.next.minXP - xp} XP to {xpMilestone.next.title}
+                                        {Math.max(0, nextXpStatusTier.minXP - Math.max(0, xp)).toLocaleString()} XP to {nextXpStatusTier.title}
                                     </Typography>
-                                )}
+                                )} */}
+                                {/* {!xpLoading && !nextXpStatusTier && (
+                                    <Typography sx={{ color: '#d6c06a', fontSize: 11, mt: 0.25, fontWeight: 600 }}>
+                                        MAX XP reached ({XP_STATUS_MAX_POINTS.toLocaleString()}+)
+                                    </Typography>
+                                )} */}
+                                {/* {!xpLoading && xpRemainingToMax > 0 && (
+                                    <Typography sx={{ color: '#8f8f8f', fontSize: 10.5, mt: 0.15, fontWeight: 400 }}>
+                                        {xpRemainingToMax.toLocaleString()} XP remaining to max
+                                    </Typography>
+                                )} */}
                             </Box>
                             <Box
                                 sx={{
