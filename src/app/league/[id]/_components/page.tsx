@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback, forwardRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
     Box,
@@ -342,6 +342,53 @@ const getTopMotmPlayerName = (match: Match, fallbackPlayers: User[] = []): strin
     return winnerName || null;
 };
 
+const LEADERBOARD_METRIC_CONFIG = [
+    {
+        key: 'goals',
+        label: 'GOALS',
+        icon: Goals,
+        infoSummary: 'Ranks players by total goals in completed matches.',
+        infoFormula: 'Adds every goal recorded in match stats for the selected league and season.',
+    },
+    {
+        key: 'assists',
+        label: 'ASSISTS',
+        icon: Assist,
+        infoSummary: 'Ranks players by total assists in completed matches.',
+        infoFormula: 'Adds every assist recorded in match stats for the selected league and season.',
+    },
+    {
+        key: 'motm',
+        label: 'MOTM VOTES',
+        icon: MOTM,
+        infoSummary: 'Ranks players by Man of the Match votes received.',
+        infoFormula: 'Counts all votes where the player was selected as MOTM in the selected league and season.',
+    },
+    {
+        key: 'impact',
+        label: 'DEFENSIVE HERO VOTES',
+        icon: Imapct,
+        infoSummary: 'Ranks players by defensive hero selections.',
+        infoFormula: 'Counts captain defensive picks from both teams in RESULT_PUBLISHED matches.',
+    },
+    {
+        key: 'cleanSheet',
+        label: 'CLEAN SHEETS',
+        icon: CleanSheet,
+        infoSummary: 'Ranks players by clean sheets in completed matches.',
+        infoFormula: 'Adds clean-sheet entries saved in match stats for the selected league and season.',
+    },
+    {
+        key: 'contribution',
+        label: 'CONTRIBUTION INDEX %',
+        icon: Goals,
+        infoSummary: 'Shows overall contribution as a percentage.',
+        infoFormula: 'Uses the contribution value returned by leaderboard API for selected league/season and displays it as %.',
+    },
+] as const;
+
+type LeaderboardMetricKey = (typeof LEADERBOARD_METRIC_CONFIG)[number]['key'];
+
 
 
 
@@ -587,10 +634,15 @@ export default function LeagueDetailPage() {
     const [editMatchId, setEditMatchId] = useState<string | null>(null);
 
     // Leaderboard state
-    const [selectedMetric, setSelectedMetric] = useState('goals');
+    const [selectedMetric, setSelectedMetric] = useState<LeaderboardMetricKey>('goals');
     const [leaderboardPlayers, setLeaderboardPlayers] = useState<Array<{ id: string; name: string; positionType: string; value: number }>>([]);
     const [leaderboardLoading, setLeaderboardLoading] = useState(false);
     const [allLeaderboardData, setAllLeaderboardData] = useState<Record<string, Array<{ id: string; name: string; positionType: string; value: number }>>>({});
+    const [leaderboardInfoMetric, setLeaderboardInfoMetric] = useState<LeaderboardMetricKey | null>(null);
+    const selectedLeaderboardInfo = useMemo(
+        () => LEADERBOARD_METRIC_CONFIG.find((metric) => metric.key === leaderboardInfoMetric) || null,
+        [leaderboardInfoMetric]
+    );
 
     const [leagueWinners, setLeagueWinners] = useState<{ champion?: string; runnerUp?: string }>({});
     const [motmCounts, setMotmCounts] = useState<Record<string, number>>({});
@@ -1983,7 +2035,7 @@ export default function LeagueDetailPage() {
         if (!leagueId || !token) return;
         setLeaderboardLoading(true);
 
-        const metrics = ['goals', 'assists', 'motm', 'impact', 'cleanSheet', 'contribution'];
+        const metrics = LEADERBOARD_METRIC_CONFIG.map((metric) => metric.key);
         const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard`;
 
         const normalizeLeaderboardPlayers = (raw: unknown): Array<{ id: string; name: string; positionType: string; value: number }> => {
@@ -5296,14 +5348,7 @@ export default function LeagueDetailPage() {
                                             gap: 2,
                                         }}
                                     >
-                                        {[
-                                            { key: 'goals', label: 'GOALS', icon: Goals },
-                                            { key: 'assists', label: 'ASSISTS', icon: Assist },
-                                            { key: 'motm', label: 'MOTM VOTES', icon: MOTM },
-                                            { key: 'impact', label: 'DEFENSIVE HERO VOTES', icon: Imapct },
-                                            { key: 'cleanSheet', label: 'CLEAN SHEETS', icon: CleanSheet },
-                                            { key: 'contribution', label: 'CONTRIBUTION INDEX %', icon: Goals },
-                                        ].map((metric) => (
+                                        {LEADERBOARD_METRIC_CONFIG.map((metric) => (
                                             <Box
                                                 key={metric.key}
                                                 sx={{
@@ -5323,7 +5368,27 @@ export default function LeagueDetailPage() {
                                                         // borderBottom: '1px solid rgba(255,255,255,0.1)',
                                                     }}
                                                 >
-                                                    <Image src={InfoIcon} alt="Info" width={15} height={15} />
+                                                    <Tooltip title="How this metric is calculated" arrow>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                setLeaderboardInfoMetric(metric.key);
+                                                            }}
+                                                            sx={{
+                                                                p: 0.4,
+                                                                // border: '1px solid rgba(255,255,255,0.35)',
+                                                                // borderRadius: 1,
+                                                                color: '#fff',
+                                                                '&:hover': {
+                                                                    borderColor: '#fff',
+                                                                    backgroundColor: 'rgba(255,255,255,0.12)',
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Image src={InfoIcon} alt={`${metric.label} info`} width={13} height={13} />
+                                                        </IconButton>
+                                                    </Tooltip>
                                                     <Image src={metric.icon} alt={metric.label} width={38} height={38} />
                                                     <Typography
                                                         sx={{
@@ -5450,6 +5515,55 @@ export default function LeagueDetailPage() {
                                 </Box>
                             )}
                         </Paper>
+
+                        <Dialog
+                            open={Boolean(selectedLeaderboardInfo)}
+                            onClose={() => setLeaderboardInfoMetric(null)}
+                            fullWidth
+                            maxWidth="xs"
+                            PaperProps={{
+                                sx: {
+                                    bgcolor: '#1f1f1f',
+                                    color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.16)',
+                                    borderRadius: 2,
+                                }
+                            }}
+                        >
+                            <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+                                {selectedLeaderboardInfo?.label || 'Metric Info'}
+                            </DialogTitle>
+                            <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+                                <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.95rem', mb: 1.5 }}>
+                                    {selectedLeaderboardInfo?.infoSummary}
+                                </Typography>
+                                <Typography sx={{ color: '#10B981', fontWeight: 700, fontSize: '0.85rem', mb: 0.7 }}>
+                                    How it is calculated
+                                </Typography>
+                                <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                                    {selectedLeaderboardInfo?.infoFormula}
+                                </Typography>
+                                <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', mt: 2 }}>
+                                    Selected league and season filters are applied to this leaderboard.
+                                </Typography>
+                            </DialogContent>
+                            <DialogActions sx={{ px: 2, pb: 2 }}>
+                                <Button
+                                    onClick={() => setLeaderboardInfoMetric(null)}
+                                    variant="outlined"
+                                    sx={{
+                                        color: '#fff',
+                                        borderColor: 'rgba(255,255,255,0.35)',
+                                        '&:hover': {
+                                            borderColor: '#fff',
+                                            backgroundColor: 'rgba(255,255,255,0.08)',
+                                        }
+                                    }}
+                                >
+                                    Close
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
 
                         <Dialog open={teamModalOpen} onClose={handleCloseTeamModal} fullWidth maxWidth="sm">
                             <DialogTitle>Teams for {selectedMatch?.homeTeamName} vs {selectedMatch?.awayTeamName}</DialogTitle>
