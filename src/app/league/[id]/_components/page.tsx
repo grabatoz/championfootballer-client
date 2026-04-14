@@ -2868,13 +2868,14 @@ export default function LeagueDetailPage() {
 
             const fullPlayer = playerData?.success ? playerData.player : null;
             const matchStats = statsData?.success ? statsData.stats : null;
+            const overallXP = Number(fullPlayer?.xp ?? data.player?.xp ?? localMember?.xp ?? 0);
 
             const player: User & PlayerProfileLike = {
                 id: String(fullPlayer?.id ?? data.player?.id ?? playerId),
                 firstName: fullPlayer?.firstName ?? data.player?.firstName ?? localMember?.firstName ?? '',
                 lastName: fullPlayer?.lastName ?? data.player?.lastName ?? localMember?.lastName ?? '',
                 email: '',
-                xp: Number(fullPlayer?.xp ?? data.player?.xp ?? localMember?.xp ?? 0),
+                xp: overallXP,
                 position: fullPlayer?.position ?? data.player?.position ?? localMember?.position ?? undefined,
                 profilePicture: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? null,
                 preferredFoot: fullPlayer?.preferredFoot ?? data.player?.preferredFoot ?? null,
@@ -2910,7 +2911,7 @@ export default function LeagueDetailPage() {
                     assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
                 },
                 skills,
-                xp: getLeagueXpForMember(playerId, player?.xp),
+                xp: overallXP,
                 cleanSheets: Number(data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(data.defensiveImpact ?? 0),
