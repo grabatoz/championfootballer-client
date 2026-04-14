@@ -41,12 +41,18 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
 interface Player {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   profilePicture: string | null;
   rating: number;
   cpPoints?: number; // Preferred CP points field
   xpPoints?: number; // Added for XP points
   statsSum?: number; // Added for stats sum
   shirtNumber?: string; // Optional shirt number
+  style?: string | null;
+  playingStyle?: string | null;
+  position?: string | null;
+  positionType?: string | null;
 }
 
 type LeagueComputedStatus = {
@@ -132,6 +138,63 @@ const AllPlayersPage = () => {
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  const normalizePlayer = useCallback((raw: unknown): Player | null => {
+    if (!raw || typeof raw !== 'object') return null;
+    const rec = raw as Record<string, unknown>;
+    const nested = (rec.player && typeof rec.player === 'object') ? (rec.player as Record<string, unknown>) : null;
+    const from = (key: string) => (rec[key] ?? (nested ? nested[key] : undefined));
+    const pickString = (keys: string[]) => {
+      for (const k of keys) {
+        const v = from(k);
+        if (v != null && String(v).trim() !== '') return String(v);
+      }
+      return '';
+    };
+    const id = (from('id') != null ? String(from('id')) : '') || '';
+    if (!id) return null;
+    const firstName = pickString(['firstName', 'first_name']);
+    const lastName = pickString(['lastName', 'last_name']);
+    const fullName = pickString(['name']) || `${firstName} ${lastName}`.trim();
+    const normalized: Player = {
+      id,
+      name: fullName || 'Unknown Player',
+      firstName,
+      lastName,
+      profilePicture: from('profilePicture') == null ? null : String(from('profilePicture')),
+      rating: Number(from('rating') ?? 0),
+      cpPoints: typeof from('cpPoints') === 'number' ? (from('cpPoints') as number) : undefined,
+      xpPoints: typeof from('xpPoints') === 'number' ? (from('xpPoints') as number) : undefined,
+      statsSum: typeof from('statsSum') === 'number' ? (from('statsSum') as number) : undefined,
+      shirtNumber: from('shirtNumber') != null ? String(from('shirtNumber')) : undefined,
+      style: pickString(['style', 'playing_style', 'playerStyle', 'playStyle']),
+      playingStyle: pickString(['playingStyle', 'playing_style', 'playerStyle', 'playStyle']),
+      position: pickString(['position']),
+      positionType: pickString(['positionType', 'position_type', 'role']),
+    };
+    // Debug: confirm backend fields arrive
+    console.log('[All Players] Raw vs Normalized', {
+      id: normalized.id,
+      raw: {
+        style: from('style'),
+        playingStyle: from('playingStyle'),
+        playing_style: from('playing_style'),
+        playerStyle: from('playerStyle'),
+        playStyle: from('playStyle'),
+        position: from('position'),
+        positionType: from('positionType'),
+        position_type: from('position_type'),
+        role: from('role'),
+      },
+      normalized: {
+        style: normalized.style,
+        playingStyle: normalized.playingStyle,
+        position: normalized.position,
+        positionType: normalized.positionType,
+      },
+    });
+    return normalized;
+  }, []);
 
   useEffect(() => {
     dispatch(initializeFromStorage());
@@ -499,8 +562,9 @@ const AllPlayersPage = () => {
       // Add all players to map (avoiding duplicates)
       allPlayerData.forEach(data => {
         if (data?.success && data?.players) {
-          data.players.forEach((player: Player) => {
-            if (!allPlayersMap.has(player.id)) {
+          data.players.forEach((rawPlayer: unknown) => {
+            const player = normalizePlayer(rawPlayer);
+            if (player && !allPlayersMap.has(player.id)) {
               allPlayersMap.set(player.id, player);
             }
           });
@@ -513,7 +577,7 @@ const AllPlayersPage = () => {
     } catch (error) {
       console.error('Error fetching all leagues players:', error);
     }
-  }, [token, filteredLeagues, selectedSeason, dispatch]);
+  }, [token, filteredLeagues, selectedSeason, dispatch, normalizePlayer]);
 
   // Populate seasons when league changes
   useEffect(() => {
@@ -541,12 +605,17 @@ const AllPlayersPage = () => {
         .then(res => res.json())
         .then(data => {
           if (data?.success && data?.players) {
-            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: data.players });
+            const normalizedPlayers = Array.isArray(data.players)
+              ? data.players
+                  .map((rawPlayer: unknown) => normalizePlayer(rawPlayer))
+                  .filter((p: Player | null): p is Player => Boolean(p))
+              : [];
+            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: normalizedPlayers });
           }
         })
         .catch(err => console.error('Error fetching league players:', err));
     }
-  }, [dispatch, token, selectedLeague, selectedSeason, fetchAllLeaguesPlayers]);
+  }, [dispatch, token, selectedLeague, selectedSeason, fetchAllLeaguesPlayers, normalizePlayer]);
 
   useEffect(() => {
     if (error) {
@@ -555,8 +624,31 @@ const AllPlayersPage = () => {
   }, [error]);
 
   const sourcePlayers = selectedLeague === 'all' ? playedWithPlayers : leaguePlayers;
+
+  function getPlayerName(player: Player): string {
+    const full = (player.name || '').trim();
+    if (full) return full;
+    return `${player.firstName || ''} ${player.lastName || ''}`.trim() || 'Unknown Player';
+  }
+
+  function getPlayingStyle(player: Player): string {
+    const fromStyle = (player.style || '').toString().trim();
+    if (fromStyle) return fromStyle;
+    const fromPlayingStyle = (player.playingStyle || '').toString().trim();
+    if (fromPlayingStyle) return fromPlayingStyle;
+    return '-';
+  }
+
+  function getPositionLabel(player: Player): string {
+    const fromType = (player.positionType || '').toString().trim();
+    if (fromType) return fromType;
+    const fromPosition = (player.position || '').toString().trim();
+    if (fromPosition) return fromPosition;
+    return '-';
+  }
+
   const filteredPlayers = sourcePlayers.filter((player: Player) =>
-    player.name.toLowerCase().includes(searchTerm.toLowerCase())
+    getPlayerName(player).toLowerCase().includes(searchTerm.toLowerCase())
   );
   console.log('Filtered Players:', filteredPlayers);
 
@@ -591,7 +683,7 @@ const AllPlayersPage = () => {
     const statsA = getStatsSum(a);
     const statsB = getStatsSum(b);
     if (statsB !== statsA) return statsB - statsA;
-    return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
+    return getPlayerName(a).localeCompare(getPlayerName(b), undefined, { sensitivity: 'base' });
   });
 
   const handleAllPositionsSortToggle = () => {
@@ -1086,7 +1178,7 @@ const AllPlayersPage = () => {
                               whiteSpace: 'nowrap'
                             }}
                           >
-                            {player.name}
+                            {getPlayerName(player)}
                           </Typography>
                           <Typography sx={{ 
                             fontSize: { xs: 10, sm: 12 },
@@ -1094,7 +1186,7 @@ const AllPlayersPage = () => {
                             mt: 0.25,
                             fontFamily: '"Woodford Bourne Pro", sans-serif'
                           }}>
-                            Striker
+                            {getPositionLabel(player)}
                           </Typography>
                         </Box>
                       </Box>
@@ -1114,7 +1206,7 @@ const AllPlayersPage = () => {
                           color: 'rgba(255,255,255,0.9)',
                           fontFamily: '"Woodford Bourne Pro", sans-serif'
                         }}>
-                          Shield
+                          {getPlayingStyle(player)}
                         </Typography>
                       </Box>
                       
