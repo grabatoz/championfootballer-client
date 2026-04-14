@@ -2811,7 +2811,7 @@ export default function AllMatches() {
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                                 disabled={isDisabled && (isAdmin || !!isInMatch)}
-                                                                sx={{ ...resultCardActionButtonSx, pointerEvents: 'none', border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', '&.Mui-disabled': { color: 'white' } }}
+                                                                sx={{ ...resultCardActionButtonSx, border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c', '&.Mui-disabled': { color: 'white' } }}
                                                             >
                                                                 Add Stats
                                                             </Button>
