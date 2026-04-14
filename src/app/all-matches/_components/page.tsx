@@ -103,6 +103,7 @@ interface Match {
     manOfTheMatchVotes?: Record<string, string | number>;
     guests?: MatchGuest[];
     guestPlayers?: MatchGuest[];
+    seasonId?: string;
 }
 
 type LeagueComputedStatus = {
@@ -133,6 +134,78 @@ interface League {
     status?: string;
     maxGames?: number;
 }
+
+interface SeasonOption {
+    id: string;
+    name: string;
+    seasonNumber?: number | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    isMember?: boolean;
+    isActive?: boolean;
+    active?: boolean;
+    locked?: boolean;
+    status?: string | null;
+}
+
+const getSeasonDateMs = (value?: string | null): number => {
+    if (!value) return -Infinity;
+    const ms = new Date(value).getTime();
+    return Number.isFinite(ms) ? ms : -Infinity;
+};
+
+const parseSeasonNumber = (value: unknown): number | null => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+        const n = Number(value.trim());
+        if (Number.isFinite(n)) return n;
+    }
+    return null;
+};
+
+const isSeasonActiveLike = (season: SeasonOption): boolean => {
+    if (season.isActive === true || season.active === true) return true;
+
+    const status = String(season.status || '').trim().toLowerCase();
+    if (status === 'active' || status === 'current' || status === 'ongoing') return true;
+
+    // If season is explicitly locked, do not treat it as active.
+    if (season.locked === true || status === 'locked' || status === 'completed' || status === 'archived') {
+        return false;
+    }
+
+    // Active season often has no end date yet.
+    return !season.endDate;
+};
+
+const pickLatestSeasonId = (seasonOptions: SeasonOption[]): string => {
+    if (!Array.isArray(seasonOptions) || seasonOptions.length === 0) return 'all';
+
+    const valid = seasonOptions.filter((season) => Boolean(season?.id));
+    if (!valid.length) return 'all';
+
+    // Prefer active/current season first; fallback to latest by number/date.
+    const activeSeasons = valid.filter(isSeasonActiveLike);
+    const source = activeSeasons.length ? activeSeasons : valid;
+
+    const sorted = [...source].sort((a, b) => {
+        const aNumber = parseSeasonNumber(a.seasonNumber) ?? -Infinity;
+        const bNumber = parseSeasonNumber(b.seasonNumber) ?? -Infinity;
+        if (aNumber !== bNumber) return bNumber - aNumber;
+
+        const aStart = getSeasonDateMs(a.startDate);
+        const bStart = getSeasonDateMs(b.startDate);
+        if (aStart !== bStart) return bStart - aStart;
+
+        const aEnd = getSeasonDateMs(a.endDate);
+        const bEnd = getSeasonDateMs(b.endDate);
+        if (aEnd !== bEnd) return bEnd - aEnd;
+
+        return String(b.name || '').localeCompare(String(a.name || ''));
+    });
+
+    return sorted[0]?.id || 'all';
+};
 
 interface User {
     id: string;
@@ -280,6 +353,9 @@ export default function AllMatches() {
     const [matches, setMatches] = useState<Match[]>([]);
     const [leagues, setLeagues] = useState<League[]>([]);
     const [selectedLeague, setSelectedLeague] = useState<string>('all');
+    const [seasons, setSeasons] = useState<SeasonOption[]>([]);
+    const [selectedSeason, setSelectedSeason] = useState<string>('all');
+    const [seasonsLoading, setSeasonsLoading] = useState(false);
     const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures'>('all');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
@@ -619,6 +695,92 @@ export default function AllMatches() {
         }
     }, [selectedLeague, token, fetchMatchesByLeague]);
 
+    // Fetch seasons for selected league
+    useEffect(() => {
+        if (!token || selectedLeague === 'all') {
+            setSeasons([]);
+            setSelectedSeason('all');
+            setSeasonsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        // Reset season while loading; latest season is selected after seasons are fetched.
+        setSelectedSeason('all');
+        setSeasonsLoading(true);
+
+        const params = new URLSearchParams({ _t: String(Date.now()) });
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague}/seasons?${params.toString()}`, {
+            credentials: 'include',
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+        })
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`Failed seasons fetch: ${res.status}`);
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) return { seasons: [] };
+                return res.json();
+            })
+            .then((payload) => {
+                if (cancelled) return;
+
+                const payloadRecord = (payload && typeof payload === 'object')
+                    ? (payload as Record<string, unknown>)
+                    : {};
+
+                const nestedData = (payloadRecord.data && typeof payloadRecord.data === 'object')
+                    ? (payloadRecord.data as Record<string, unknown>)
+                    : {};
+
+                const raw = Array.isArray(payload)
+                    ? payload
+                    : (
+                        Array.isArray(payloadRecord.seasons)
+                            ? payloadRecord.seasons
+                            : (
+                                Array.isArray(payloadRecord.data)
+                                    ? payloadRecord.data
+                                    : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
+                            )
+                    );
+
+                const formatted: SeasonOption[] = raw.map((s: unknown) => {
+                    const season = s as Record<string, unknown>;
+                    const id = String(season.id ?? season._id ?? '');
+                    const seasonNumber = parseSeasonNumber(season.seasonNumber);
+                    return {
+                        id,
+                        name: String(season.name ?? (seasonNumber !== null ? `Season ${seasonNumber}` : 'Season')),
+                        seasonNumber,
+                        startDate: typeof season.startDate === 'string' ? season.startDate : null,
+                        endDate: typeof season.endDate === 'string' ? season.endDate : null,
+                        isMember: typeof season.isMember === 'boolean' ? season.isMember : true,
+                        isActive: typeof season.isActive === 'boolean' ? season.isActive : undefined,
+                        active: typeof season.active === 'boolean' ? season.active : undefined,
+                        locked: typeof season.locked === 'boolean' ? season.locked : undefined,
+                        status: typeof season.status === 'string' ? season.status : null,
+                    };
+                }).filter((s) => Boolean(s.id));
+
+                setSeasons(formatted);
+                // Auto-select latest season for selected league.
+                setSelectedSeason(pickLatestSeasonId(formatted));
+            })
+            .catch((err) => {
+                console.error('Failed to fetch seasons:', err);
+                if (cancelled) return;
+                setSeasons([]);
+                setSelectedSeason('all');
+            })
+            .finally(() => {
+                if (!cancelled) setSeasonsLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedLeague, token]);
+
     // Keep selected league metadata in sync without refetching full league payload.
     useEffect(() => {
         if (selectedLeague === 'all') {
@@ -683,6 +845,9 @@ export default function AllMatches() {
     const selectedLeagueName = selectedLeague === 'all'
         ? 'All Leagues'
         : leagues.find(league => league.id === selectedLeague)?.name || '';
+    const selectedSeasonName = selectedSeason === 'all'
+        ? 'All Seasons'
+        : (seasons.find((season) => season.id === selectedSeason)?.name || 'All Seasons');
 
     // const handleOpenTeamModal = (match: Match) => {
     //     setSelectedMatch(match);
@@ -735,6 +900,8 @@ export default function AllMatches() {
     const [isSubmittingStats, setIsSubmittingStats] = React.useState(false);
     const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
     const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
+    const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+    const [seasonDropdownAnchor, setSeasonDropdownAnchor] = useState<null | HTMLElement>(null);
     // View team modal state (used in buttons below)
     const [viewTeamOpen, setViewTeamOpen] = useState(false);
     const [viewTeamMatch, setViewTeamMatch] = useState<{ leagueId: string; matchId: string; matchNumber?: number } | null>(null);
@@ -949,6 +1116,22 @@ export default function AllMatches() {
         setLeaguesDropdownAnchor(null);
     };
 
+    const handleSeasonDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
+        if (selectedLeague === 'all' || seasonsLoading) return;
+        setSeasonDropdownAnchor(event.currentTarget);
+        setSeasonDropdownOpen(true);
+    };
+
+    const handleSeasonDropdownClose = () => {
+        setSeasonDropdownOpen(false);
+        setSeasonDropdownAnchor(null);
+    };
+
+    const handleSeasonSelect = (seasonId: string) => {
+        setSelectedSeason(seasonId);
+        handleSeasonDropdownClose();
+    };
+
     const LEAGUE_NAME_MAX = 20;
     const truncateLeagueName = (value: string): string => {
         const trimmed = value.trim();
@@ -1045,6 +1228,29 @@ export default function AllMatches() {
 
     const filteredMatches = React.useMemo(() => {
         const arr = (Array.isArray(matches) ? matches : []).filter(m => !m.archived);
+        const seasonFiltered = arr.filter((m) => {
+            if (selectedSeason === 'all') return true;
+
+            const matchSeasonId = normalizeId((m as { seasonId?: unknown }).seasonId);
+            if (matchSeasonId) return matchSeasonId === selectedSeason;
+
+            const selectedSeasonData = seasons.find((s) => s.id === selectedSeason);
+            if (!selectedSeasonData?.startDate) return true;
+
+            const matchTime = new Date((m.start ?? m.date) as string).getTime();
+            const seasonStart = new Date(selectedSeasonData.startDate).getTime();
+            if (!Number.isFinite(matchTime) || !Number.isFinite(seasonStart)) return false;
+
+            if (selectedSeasonData.endDate) {
+                const seasonEnd = new Date(selectedSeasonData.endDate).getTime();
+                if (Number.isFinite(seasonEnd)) {
+                    return matchTime >= seasonStart && matchTime <= seasonEnd;
+                }
+            }
+
+            // Active season with no endDate
+            return matchTime >= seasonStart;
+        });
 
         // Treat these as fixtures (upcoming) across possible backend variants
         const fixtureStatuses = new Set([
@@ -1065,15 +1271,15 @@ export default function AllMatches() {
         switch (matchFilter) {
             case 'results': {
                 // Everything that is not considered a fixture
-                return arr.filter(m => !isFixture(m));
+                return seasonFiltered.filter(m => !isFixture(m));
             }
             case 'fixtures':
-                return arr.filter(isFixture);
+                return seasonFiltered.filter(isFixture);
             case 'all':
             default:
-                return arr;
+                return seasonFiltered;
         }
-    }, [matches, matchFilter]);
+    }, [matches, matchFilter, selectedSeason, seasons]);
 
     const sortedMatches = React.useMemo(() => {
         return [...filteredMatches].sort(compareMatchesDesc);
@@ -1088,6 +1294,7 @@ export default function AllMatches() {
             // Persist preference so other pages/components (e.g., Match Stats Dialog) can auto-select this league
             try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(selectedLeagueId)); } catch {}
             setSelectedLeague(selectedLeagueId);
+            setSelectedSeason('all');
             setLoading(true); // effects will fetch matches and league details
         }
         handleLeaguesDropdownClose();
@@ -1104,6 +1311,16 @@ export default function AllMatches() {
         }
         return arr;
     }, [leagues, selectedLeague]);
+
+    const sortedSeasons = React.useMemo(() => {
+        if (!seasons?.length) return [];
+        return [...seasons].sort((a, b) => {
+            const an = parseSeasonNumber(a.seasonNumber) ?? -Infinity;
+            const bn = parseSeasonNumber(b.seasonNumber) ?? -Infinity;
+            if (an !== bn) return bn - an;
+            return String(a.name || '').localeCompare(String(b.name || ''));
+        });
+    }, [seasons]);
 
     const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
     const [archivedActionOpen, setArchivedActionOpen] = useState(false);
@@ -2072,6 +2289,133 @@ export default function AllMatches() {
                                     );
                                 })}
                             </Menu>
+
+                            <Button
+                                onClick={handleSeasonDropdownOpen}
+                                sx={{
+                                    textTransform: 'uppercase',
+                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1rem' },
+                                    fontWeight: 'bold',
+                                    minHeight: { xs: 44, md: 48 },
+                                    height: { xs: 44, md: 48 },
+                                    lineHeight: 1.2,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 1,
+                                    width: { xs: '100%', sm: 'min(42vw, 290px)', md: 'auto' },
+                                    minWidth: { xs: 0, sm: 180, md: 200 },
+                                    textAlign: { xs: 'left', md: 'left' },
+                                    backgroundColor: '#2B2B2B',
+                                    borderRadius: 2,
+                                    px: { xs: 1.75, sm: 2 },
+                                    py: { xs: 0.7, sm: 1 },
+                                    '&:hover': { backgroundColor: '#2B2B2B' },
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: { xs: 0.5, sm: 1 },
+                                    color: 'white',
+                                    '&.Mui-disabled': {
+                                        color: '#fff',
+                                        backgroundColor: '#2B2B2B',
+                                        opacity: 0.75
+                                    },
+                                }}
+                                endIcon={<ChevronDown size={20} />}
+                                disabled={selectedLeague === 'all' || seasonsLoading}
+                            >
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {selectedLeague === 'all'
+                                        ? 'All Seasons'
+                                        : seasonsLoading
+                                            ? 'Loading seasons...'
+                                            : selectedSeasonName}
+                                </Box>
+                            </Button>
+                            <Menu
+                                anchorEl={seasonDropdownAnchor}
+                                open={seasonDropdownOpen}
+                                onClose={handleSeasonDropdownClose}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                                marginThreshold={0}
+                                MenuListProps={{ sx: { p: 0 } }}
+                                PaperProps={{
+                                    sx: {
+                                        p: 0.5,
+                                        mt: 1,
+                                        minWidth: 220,
+                                        maxWidth: { xs: '92vw', sm: 320 },
+                                        bgcolor: 'rgba(15,15,15,0.92)',
+                                        color: '#E5E7EB',
+                                        borderRadius: 2.5,
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        backdropFilter: 'blur(10px)',
+                                        boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                        maxHeight: { xs: 260, sm: 320 },
+                                        overflowY: 'auto',
+                                    }
+                                }}
+                            >
+                                <MenuItem
+                                    selected={selectedSeason === 'all'}
+                                    onClick={() => handleSeasonSelect('all')}
+                                    sx={{
+                                        borderRadius: 1.5,
+                                        mx: 0.5,
+                                        my: 0.25,
+                                        py: 1.1,
+                                        px: 1.5,
+                                        fontWeight: selectedSeason === 'all' ? 700 : 500,
+                                    }}
+                                >
+                                    {/* All Seasons */}
+                                </MenuItem>
+
+                                {sortedSeasons.length === 0 ? (
+                                    <MenuItem
+                                        disabled
+                                        sx={{
+                                            borderRadius: 1.5,
+                                            mx: 0.5,
+                                            my: 0.25,
+                                            py: 1.1,
+                                            px: 1.5,
+                                            opacity: 0.8,
+                                        }}
+                                    >
+                                        No seasons found
+                                    </MenuItem>
+                                ) : (
+                                    sortedSeasons.map((season) => (
+                                        <MenuItem
+                                            key={season.id}
+                                            selected={selectedSeason === season.id}
+                                            onClick={() => handleSeasonSelect(season.id)}
+                                            sx={{
+                                                borderRadius: 1.5,
+                                                mx: 0.5,
+                                                my: 0.25,
+                                                py: 1.1,
+                                                px: 1.5,
+                                                fontWeight: selectedSeason === season.id ? 700 : 500,
+                                            }}
+                                        >
+                                            {season.name}
+                                        </MenuItem>
+                                    ))
+                                )}
+                            </Menu>
                         </Box>
 
                         {/* Filters: All | Results | Matches | Fixtures */}
@@ -2217,7 +2561,7 @@ export default function AllMatches() {
                             >
                                 <Typography variant="h6">No matches found</Typography>
                                 <Typography variant="body2">
-                                    No matches found in {selectedLeagueName}
+                                    No matches found in {selectedLeagueName}{selectedSeason !== 'all' ? ` (${selectedSeasonName})` : ''}
                                 </Typography>
                             </Paper>
                         </Box>
@@ -2241,7 +2585,7 @@ export default function AllMatches() {
                                         ? 'There are no upcoming fixtures for this league.'
                                         : matchFilter === 'results'
                                             ? 'No completed matches have been recorded yet.'
-                                            : `No matches found in ${selectedLeagueName}`}
+                                            : `No matches found in ${selectedLeagueName}${selectedSeason !== 'all' ? ` (${selectedSeasonName})` : ''}`}
                                 </Typography>
                             </Paper>
                         </Box>
