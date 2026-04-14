@@ -123,6 +123,8 @@ const AllPlayersPage = () => {
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedSeason, setSelectedSeason] = useState<string>('all');
+  const [allPositionsSortActive, setAllPositionsSortActive] = useState(false);
+  const [allPositionsSortDirection, setAllPositionsSortDirection] = useState<'asc' | 'desc'>('asc');
   const [seasons, setSeasons] = useState<Array<{id: string, name: string}>>([]);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
@@ -568,8 +570,15 @@ const AllPlayersPage = () => {
     return player.rating;
   }
 
-  // Sort players: first by XP points desc, then by stats sum desc
+  // Sort players:
+  // - default: XP desc, then stats desc
+  // - when All Positions sort is active: name asc/desc (tie-breaker remains XP/stats)
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    if (allPositionsSortActive) {
+      const nameCmp = String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
+      if (nameCmp !== 0) return allPositionsSortDirection === 'asc' ? nameCmp : -nameCmp;
+    }
+
     const xpA = getXpPoints(a);
     const xpB = getXpPoints(b);
     if (xpB !== xpA) return xpB - xpA;
@@ -578,6 +587,15 @@ const AllPlayersPage = () => {
     const statsB = getStatsSum(b);
     return statsB - statsA;
   });
+
+  const handleAllPositionsSortToggle = () => {
+    if (!allPositionsSortActive) {
+      setAllPositionsSortActive(true);
+      setAllPositionsSortDirection('asc');
+      return;
+    }
+    setAllPositionsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  };
 
   console.log('Sorted Players:', sortedPlayers);
 
@@ -627,13 +645,14 @@ const AllPlayersPage = () => {
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', md: 'center' },
           justifyContent: 'space-between',
           gap: { xs: 2, md: 3 },
-          px: { xs: 3, md: 3 },
+          // Offset PageHeader internal padding so controls align with table edges.
+          mx: { xs: -2, md: -3 },
+          px: { xs: 1, sm: 3, md: 7.5 },
           py: { xs: 1.5, md: 1.3 },
-          maxWidth: '1200px',
-          mx: 'auto',
+          width: 'auto',
        }}>
             {/* Search Input */}
             <TextField
@@ -676,7 +695,13 @@ const AllPlayersPage = () => {
             />
 
             {/* Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Box sx={{
+              display: 'flex',
+              gap: { xs: 0.8, md: 0.5 },
+              flexWrap: { xs: 'wrap', md: 'nowrap' },
+              justifyContent: { xs: 'center', md: 'flex-end' },
+              width: { xs: '100%', md: 'auto' },
+            }}>
               {/* Year Filter */}
               <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`}>
               <select
@@ -873,22 +898,42 @@ const AllPlayersPage = () => {
           borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}>
           {/* All Positions */}
-          <Box sx={{ minWidth: { xs: 152, sm: 180 }, display: 'flex', alignItems: 'center', mr: { xs: 1.2, sm: 6 } }}>
+          <Box
+            onClick={handleAllPositionsSortToggle}
+            sx={{
+            width: { xs: 196, sm: 280, md: 320 },
+            minWidth: { xs: 196, sm: 280, md: 320 },
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            pr: { xs: 1.2, sm: 2 },
+            cursor: 'pointer',
+            userSelect: 'none'
+          }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               ALL POSITIONS
             </Typography>
-            <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10 }}>▼</Typography>
+            <Typography sx={{ color: '#fff', ml: 0.5, fontSize: 10, lineHeight: 1 }}>
+              {allPositionsSortActive ? (allPositionsSortDirection === 'asc' ? '^' : 'v') : 'v'}
+            </Typography>
           </Box>
           
           {/* Playing Style */}
-          <Box sx={{ flex: { xs: '0 0 auto', sm: 1 }, minWidth: { xs: 90, sm: 150 }, mr: { xs: 0.5, sm: 2 }, display: 'block' }}>
+          <Box sx={{
+            width: { xs: 108, sm: 150, md: 180 },
+            minWidth: { xs: 108, sm: 150, md: 180 },
+            flexShrink: 0,
+            pr: { xs: 0.5, sm: 2 },
+            display: 'block',
+            textAlign: 'center'
+          }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               PLAYING STYLE
             </Typography>
           </Box>
           
           {/* Spacer */}
-          <Box sx={{ flex: 1, display: 'none' }} />
+          <Box sx={{ flex: 1 }} />
           
           {/* View Stats */}
           <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
@@ -965,7 +1010,7 @@ const AllPlayersPage = () => {
                         display: 'flex',
                         alignItems: 'center',
                         py: { xs: 0.7, sm: 0.7 },
-                        // px: { xs: 2, sm: 3 },
+                        px: { xs: 2, sm: 3 },
                         backgroundColor: rowBgColor,
                         borderBottom: '1px solid rgba(255,255,255,0.08)',
                         color: textColor,
@@ -977,56 +1022,73 @@ const AllPlayersPage = () => {
                         // }
                       }}
                     >
-                      {/* Player Avatar */}
-                      <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
-                        <Box sx={{ 
-                          position: 'relative', 
-                          width: { xs: 38, sm: 42 }, 
-                          height: { xs: 38, sm: 42 },
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          backgroundColor: 'rgba(255,255,255,0.1)'
-                        }}>
-                          {player.profilePicture ? (
-                            <Image 
-                              src={player.profilePicture} 
-                              alt={player.name} 
-                              fill 
-                              style={{ objectFit: 'cover' }} 
-                            />
-                          ) : (
-                            <Image src={ShirtImg} alt="Default" fill style={{ objectFit: 'contain' }} />
-                          )}
+                      {/* Avatar + Name column (fixed width for stable alignment) */}
+                      <Box sx={{
+                        width: { xs: 196, sm: 280, md: 320 },
+                        minWidth: { xs: 196, sm: 280, md: 320 },
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        pr: { xs: 1.2, sm: 2 }
+                      }}>
+                        <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
+                          <Box sx={{ 
+                            position: 'relative', 
+                            width: { xs: 38, sm: 42 }, 
+                            height: { xs: 38, sm: 42 },
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            backgroundColor: 'rgba(255,255,255,0.1)'
+                          }}>
+                            {player.profilePicture ? (
+                              <Image 
+                                src={player.profilePicture} 
+                                alt={player.name} 
+                                fill 
+                                style={{ objectFit: 'cover' }} 
+                              />
+                            ) : (
+                              <Image src={ShirtImg} alt="Default" fill style={{ objectFit: 'contain' }} />
+                            )}
+                          </Box>
+                        </ListItemAvatar>
+                        
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            noWrap
+                            sx={{ 
+                              fontWeight: 600, 
+                              fontSize: { xs: 12, sm: 15 },
+                              color: '#fff',
+                              lineHeight: 1.4,
+                              fontFamily: '"Woodford Bourne Pro", sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {player.name}
+                          </Typography>
+                          <Typography sx={{ 
+                            fontSize: { xs: 10, sm: 12 },
+                            color: 'rgba(255,255,255,0.6)',
+                            mt: 0.25,
+                            fontFamily: '"Woodford Bourne Pro", sans-serif'
+                          }}>
+                            Striker
+                          </Typography>
                         </Box>
-                      </ListItemAvatar>
-                      
-                      {/* Name and Position Column */}
-                      <Box sx={{ minWidth: { xs: 112, sm: 150 }, mr: { xs: 1.2, sm: 6 } }}>
-                        <Typography sx={{ 
-                          fontWeight: 600, 
-                          fontSize: { xs: 12, sm: 15 },
-                          color: '#fff',
-                          lineHeight: 1.4,
-                          fontFamily: '"Woodford Bourne Pro", sans-serif'
-                        }}>
-                          {player.name}
-                        </Typography>
-                        <Typography sx={{ 
-                          fontSize: { xs: 10, sm: 12 },
-                          color: 'rgba(255,255,255,0.6)',
-                          mt: 0.25,
-                          fontFamily: '"Woodford Bourne Pro", sans-serif'
-                        }}>
-                          Striker
-                        </Typography>
                       </Box>
                       
                       {/* Playing Style Column */}
                       <Box sx={{ 
-                        flex: { xs: '0 0 auto', sm: 1 },
-                        minWidth: { xs: 90, sm: 120 }, 
-                        display: 'block',
-                        mr: { xs: 0.5, sm: 2 }
+                        width: { xs: 108, sm: 150, md: 180 },
+                        minWidth: { xs: 108, sm: 150, md: 180 },
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pr: { xs: 0.5, sm: 2 }
                       }}>
                         <Typography sx={{ 
                           fontSize: { xs: 11, sm: 13 },
@@ -1038,7 +1100,7 @@ const AllPlayersPage = () => {
                       </Box>
                       
                       {/* Spacer */}
-                      <Box sx={{ flex: 1, display: 'none' }} />
+                      <Box sx={{ flex: 1 }} />
                       
                       {/* View Stats Icon */}
                       <Box sx={{ 
