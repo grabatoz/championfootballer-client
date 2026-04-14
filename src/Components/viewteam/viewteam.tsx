@@ -20,7 +20,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import FlagIcon from '@mui/icons-material/Flag';
-import Pitch from '@/Components/images/pitch.jpg';
 import Shirt from '@/Components/images/viewteamhome.png';
 import Shirtaway from '@/Components/images/viewteamaway.png';
 import FootballIcon from '@/Components/images/football.png';
@@ -361,6 +360,12 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const pitchRef = React.useRef<HTMLDivElement | null>(null);
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const [pitchW, setPitchW] = React.useState(850);
+  const PITCH_VIEWBOX_WIDTH = 1014;
+  const PITCH_VIEWBOX_HEIGHT = 1600;
+  const PITCH_PORTRAIT_RATIO = PITCH_VIEWBOX_WIDTH / PITCH_VIEWBOX_HEIGHT;
+  const DESKTOP_PITCH_MAX_WIDTH = 760;
+  const desktopPitchLongSide = Math.max(1, Math.min(pitchW, DESKTOP_PITCH_MAX_WIDTH)); // unrotated height
+  const desktopPitchShortSide = desktopPitchLongSide * PITCH_PORTRAIT_RATIO; // unrotated width
   React.useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -373,45 +378,6 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     setPitchW(el.getBoundingClientRect().width);
     return () => ro.disconnect();
   }, [viewMode]);
-  // Track natural size of the pitch image to compute drawn bounds when using background-size: contain
-  const pitchImgSizeRef = React.useRef<{ w: number; h: number } | null>(null);
-  React.useEffect(() => {
-    const img: HTMLImageElement = new Image();
-    img.src = Pitch.src;
-    const onload = () => {
-      const w = img.naturalWidth || img.width || 1;
-      const h = img.naturalHeight || img.height || 1;
-      pitchImgSizeRef.current = { w, h };
-    };
-    if (img.complete) onload(); else img.onload = onload;
-    return () => { img.onload = null; };
-  }, []);
-
-  // Given the container rect, return normalized [0..1] bounds of the drawn pitch image inside it
-  const getPitchBoundsNorm = React.useCallback((rect: DOMRect) => {
-    const nat = pitchImgSizeRef.current;
-    if (!nat || rect.width === 0 || rect.height === 0) return { left: 0, top: 0, right: 1, bottom: 1 };
-    const containerAspect = rect.width / rect.height;
-    const imageAspect = nat.w / nat.h;
-    let drawW = rect.width, drawH = rect.height, offX = 0, offY = 0;
-    if (containerAspect > imageAspect) {
-      // limited by height
-      drawH = rect.height;
-      drawW = drawH * imageAspect;
-      offX = (rect.width - drawW) / 2;
-    } else {
-      // limited by width
-      drawW = rect.width;
-      drawH = drawW / imageAspect;
-      offY = (rect.height - drawH) / 2;
-    }
-    return {
-      left: offX / rect.width,
-      right: (offX + drawW) / rect.width,
-      top: offY / rect.height,
-      bottom: (offY + drawH) / rect.height
-    };
-  }, []);
 
   // const isCaptain = React.useMemo(() => {
   //   return isHomeTeam ? (meId && meId === homeCaptainId) : (meId && meId === awayCaptainId);
@@ -1568,9 +1534,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             borderRadius: 1,
             bgcolor: '#2b2b2b',
             overflow: 'hidden',
-            mx: { xs: 0, sm: 1 },
+            mx: { xs: 0, sm: 1, md: 'auto' },
+            maxWidth: { md: `${DESKTOP_PITCH_MAX_WIDTH}px` },
             /* Desktop: horizontal pitch, Mobile: vertical pitch */
-            height: { xs: 500, sm: 500, md: 410 },
+            height: { xs: 500, sm: 500, md: `${desktopPitchShortSide}px` },
             position: 'relative',
           }}
         >
@@ -1581,29 +1548,55 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               position: 'absolute',
               top: { xs: 0, md: '50%' },
               left: { xs: 0, md: '50%' },
-              width: { xs: '100%', md: 405 },
-              height: { xs: '100%', md: `${pitchW}px` },
+              width: { xs: '100%', md: `${desktopPitchShortSide}px` },
+              height: { xs: '100%', md: `${desktopPitchLongSide}px` },
               transform: { xs: 'none', md: 'translate(-50%, -50%) rotate(-90deg)' },
               transformOrigin: { xs: 'top left', md: 'center center' },
               bgcolor: '#2b2b2b',
             }}
           >
-            {/* Pitch image: grayscale→invert→brightness turns white-bg→black and teal-lines→white;
-                mix-blend-mode:screen makes black transparent so #2b2b2b container shows through */}
-            <img
-              src={Pitch.src}
-              alt=""
+            {/* Vector pitch (no JPG): keeps circles/arcs perfectly shaped on all screen sizes */}
+            <svg
+              viewBox={`0 0 ${PITCH_VIEWBOX_WIDTH} ${PITCH_VIEWBOX_HEIGHT}`}
+              preserveAspectRatio="none"
               style={{
                 position: 'absolute',
-                top: 0, left: 0,
+                inset: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'fill',
-                filter: 'grayscale(1) invert(1) brightness(10) contrast(5)',
-                mixBlendMode: 'screen',
                 pointerEvents: 'none',
               }}
-            />
+              aria-hidden="true"
+            >
+              <g fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="butt" strokeLinejoin="miter">
+                <rect x="8" y="8" width="998" height="1584" />
+                <line x1="8" y1="800" x2="1006" y2="800" />
+                <circle cx="507" cy="800" r="165" />
+
+                <rect x="227" y="8" width="560" height="220" />
+                <rect x="332" y="8" width="350" height="120" />
+                <path d="M 352 228 A 155 155 0 0 0 662 228" />
+
+                <rect x="227" y="1372" width="560" height="220" />
+                <rect x="332" y="1472" width="350" height="120" />
+                <path d="M 352 1372 A 155 155 0 0 1 662 1372" />
+
+                {/* ===== Corner Edges (EDIT THESE 4 PATHS) =====
+                    Format:
+                    M startX startY A radiusX radiusY 0 0 sweepFlag endX endY
+                    - 8 = outer border inset
+                    - 30 = corner radius (increase/decrease for bigger/smaller curve)
+                */}
+                {/* Top-left corner edge */}
+                <path d="M 8 44 A 36 36 0 0 0 44 8" />
+                {/* Top-right corner edge */}
+                <path d="M 970 8 A 36 36 0 0 0 1006 44" />
+                {/* Bottom-left corner edge */}
+                <path d="M 8 1556 A 36 36 0 0 1 44 1592" />
+                {/* Bottom-right corner edge */}
+                <path d="M 970 1592 A 36 36 0 0 1 1006 1556" />
+              </g>
+            </svg>
             {awaitingTeams ? (
               <Box
                 sx={{
