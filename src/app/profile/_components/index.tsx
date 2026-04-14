@@ -1434,14 +1434,36 @@ const PlayerProfileCard = () => {
             <Modal open={cameraOpen} onClose={handleCloseCamera}>
               <Box sx={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                bgcolor: '#1f1f1f', color: '#fff', p: 2, borderRadius: 2, width: 'min(460px, 92vw)', maxWidth: '92vw',
-                border: `1px solid ${themeColors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                bgcolor: '#1f1f1f',
+                color: '#fff',
+                p: { xs: 1.5, sm: 2 },
+                borderRadius: 2,
+                width: 'min(460px, 92vw)',
+                maxWidth: '92vw',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                border: `1px solid ${themeColors.border}`,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}>
                 <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>Camera</Typography>
-                <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', bgcolor: '#000', mb: 2, borderRadius: 1 }}>
+                <Box sx={{
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: { xs: '4 / 5', sm: '3 / 4' },
+                  maxHeight: 'min(62vh, 560px)',
+                  bgcolor: '#000',
+                  mb: 2,
+                  borderRadius: 1,
+                  overflow: 'hidden'
+                }}>
                   <video ref={videoRef} playsInline autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
                 </Box>
-                <Stack direction="row" spacing={2} justifyContent="center">
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  justifyContent="center"
+                  sx={{ '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}
+                >
                   <Button onClick={handleTakePhoto} variant="contained" sx={{ textTransform: 'none', fontWeight: 700, background: themeColors.primaryGradient }}>Capture</Button>
                   <Button onClick={handleCloseCamera} variant="outlined" sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.primary, color: '#fff' }}>Close</Button>
                 </Stack>
