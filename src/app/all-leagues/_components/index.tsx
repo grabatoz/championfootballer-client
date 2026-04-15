@@ -3086,7 +3086,7 @@ function AllLeagues() {
                         </Grid>
 
                         {/* View Button - 4 */}
-                        <Grid item xs={12} md={4}>
+                        <Grid item xs={12} md={4} sx={{ position: 'relative', minHeight: { md: 96 } }}>
                           <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
                             {/* Image - 6 */}
                             <Grid item xs={6} md={6}>
@@ -3114,11 +3114,17 @@ function AllLeagues() {
                               <Box 
                                 sx={{ 
                                   display: 'flex', 
-                                  justifyContent: 'flex-start', 
+                                  justifyContent: { xs: 'flex-start', md: 'flex-end' }, 
                                   alignItems: 'center', 
                                   height: '100%',
                                   cursor: 'pointer',
-                                  mt: { xs: 1, md: 0 }
+                                  mt: { xs: 1, md: 0 },
+                                  ...(!isCompleted && {
+                                    position: { xs: 'static', md: 'absolute' },
+                                    top: { md: 46 },
+                                    right: { md: 6 },
+                                    zIndex: 4,
+                                  }),
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
