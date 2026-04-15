@@ -7,6 +7,7 @@ import {
   Typography,
   TextField,
   Select,
+  Menu,
   MenuItem,
   FormControl,
   OutlinedInput,
@@ -130,8 +131,8 @@ const AllPlayersPage = () => {
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedSeason, setSelectedSeason] = useState<string>('all');
-  const [allPositionsSortActive, setAllPositionsSortActive] = useState(false);
-  const [allPositionsSortDirection, setAllPositionsSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedPosition, setSelectedPosition] = useState<string>('all');
+  const [allPositionsMenuAnchor, setAllPositionsMenuAnchor] = useState<null | HTMLElement>(null);
   const [seasons, setSeasons] = useState<Array<{id: string, name: string}>>([]);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
@@ -646,10 +647,38 @@ const AllPlayersPage = () => {
     return '-';
   }
 
-  const filteredPlayers = sourcePlayers.filter((player: Player) =>
-    getPlayerName(player).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const positionOptions = React.useMemo(() => {
+    const positionsMap = new Map<string, string>();
+    sourcePlayers.forEach((player: Player) => {
+      const position = getPositionLabel(player);
+      if (position && position !== '-') {
+        const key = position.toLowerCase();
+        if (!positionsMap.has(key)) {
+          positionsMap.set(key, position);
+        }
+      }
+    });
+    return Array.from(positionsMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [sourcePlayers]);
+
+  const filteredPlayers = sourcePlayers.filter((player: Player) => {
+    const matchesSearch = getPlayerName(player).toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPosition =
+      selectedPosition === 'all' ||
+      getPositionLabel(player).toLowerCase() === selectedPosition.toLowerCase();
+    return matchesSearch && matchesPosition;
+  });
   console.log('Filtered Players:', filteredPlayers);
+
+  useEffect(() => {
+    if (selectedPosition === 'all') return;
+    const hasSelectedPosition = positionOptions.some(
+      (position) => position.toLowerCase() === selectedPosition.toLowerCase()
+    );
+    if (!hasSelectedPosition) {
+      setSelectedPosition('all');
+    }
+  }, [positionOptions, selectedPosition]);
 
   // Helper to get CP/XP points and stats sum for sorting
   function getCpPoints(player: Player) {
@@ -664,18 +693,10 @@ const AllPlayersPage = () => {
     return player.rating;
   }
 
-  // Sort players:
-  // - default: CP/XP desc, then stats desc
-  // - when sort toggle is active: CP/XP asc/desc
+  // Sort players: CP/XP desc, then stats desc
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
     const cpA = getCpPoints(a);
     const cpB = getCpPoints(b);
-
-    if (allPositionsSortActive) {
-      if (cpA !== cpB) {
-        return allPositionsSortDirection === 'asc' ? cpA - cpB : cpB - cpA;
-      }
-    }
 
     if (cpB !== cpA) return cpB - cpA;
     // If CP/XP points are equal, compare stats sum
@@ -685,13 +706,19 @@ const AllPlayersPage = () => {
     return getPlayerName(a).localeCompare(getPlayerName(b), undefined, { sensitivity: 'base' });
   });
 
-  const handleAllPositionsSortToggle = () => {
-    if (!allPositionsSortActive) {
-      setAllPositionsSortActive(true);
-      setAllPositionsSortDirection('asc');
-      return;
-    }
-    setAllPositionsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  const allPositionsMenuOpen = Boolean(allPositionsMenuAnchor);
+
+  const handleAllPositionsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAllPositionsMenuAnchor(event.currentTarget);
+  };
+
+  const handleAllPositionsMenuClose = () => {
+    setAllPositionsMenuAnchor(null);
+  };
+
+  const handlePositionChange = (position: string) => {
+    setSelectedPosition(position);
+    setAllPositionsMenuAnchor(null);
   };
 
   console.log('Sorted Players:', sortedPlayers);
@@ -936,6 +963,7 @@ const AllPlayersPage = () => {
                   setSelectedYear('all');
                   setSelectedLeague('all');
                   setSelectedSeason('all');
+                  setSelectedPosition('all');
                   setSeasons([]);
                 }}
                 style={{
@@ -996,7 +1024,9 @@ const AllPlayersPage = () => {
         }}>
           {/* All Positions */}
           <Box
-            onClick={handleAllPositionsSortToggle}
+            onClick={handleAllPositionsMenuOpen}
+            aria-haspopup="menu"
+            aria-expanded={allPositionsMenuOpen ? 'true' : undefined}
             sx={{
             width: { xs: 196, sm: 280, md: 320 },
             minWidth: { xs: 196, sm: 280, md: 320 },
@@ -1008,7 +1038,7 @@ const AllPlayersPage = () => {
             userSelect: 'none'
           }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-              ALL POSITIONS
+              {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
             </Typography>
             <Box
               sx={{
@@ -1018,15 +1048,49 @@ const AllPlayersPage = () => {
                 borderLeft: '6px solid transparent',
                 borderRight: '6px solid transparent',
                 borderTop: '8px solid #fff',
-                transform:
-                  allPositionsSortActive && allPositionsSortDirection === 'asc'
-                    ? 'rotate(180deg)'
-                    : 'rotate(0deg)',
+                transform: allPositionsMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                 transformOrigin: 'center',
                 transition: 'transform 0.3s ease',
               }}
             />
           </Box>
+          <Menu
+            anchorEl={allPositionsMenuAnchor}
+            open={allPositionsMenuOpen}
+            onClose={handleAllPositionsMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 0.5,
+                  minWidth: { xs: 180, sm: 220 },
+                  backgroundColor: '#1f1f1f',
+                  border: '1px solid #e56a16',
+                  borderRadius: '8px',
+                  color: '#fff',
+                },
+              },
+            }}
+          >
+            <MenuItem
+              selected={selectedPosition === 'all'}
+              onClick={() => handlePositionChange('all')}
+              sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+            >
+              All Positions
+            </MenuItem>
+            {positionOptions.map((position) => (
+              <MenuItem
+                key={position}
+                selected={selectedPosition === position}
+                onClick={() => handlePositionChange(position)}
+                sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+              >
+                {position}
+              </MenuItem>
+            ))}
+          </Menu>
           
           {/* Playing Style */}
           <Box sx={{
