@@ -3088,6 +3088,7 @@ export default function GlobalTrophyRoom() {
                       <Box sx={{
                         bgcolor: '#1a1a1f',
                         p: { xs: 1.25, sm: 2 },
+                        pr: { xs: 1.25, sm: 2, md: 2.4 },
                         minHeight: { xs: 'auto', sm: '230px' },
                       }}>
                         {leagueRows.length === 0 ? (
@@ -3101,9 +3102,20 @@ export default function GlobalTrophyRoom() {
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                                 gap: { xs: 1, sm: 1.4 },
+                                position: 'relative',
                                 pb: { xs: 1.3, sm: 1.8 },
-                                borderBottom: rowIdx < leagueRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
                                 mb: rowIdx < leagueRows.length - 1 ? { xs: 1.3, sm: 1.8 } : 0,
+                                ...(rowIdx < leagueRows.length - 1 && {
+                                  '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    left: { xs: 2, sm: 4 },
+                                    right: { xs: 2, sm: 4 },
+                                    bottom: 0,
+                                    height: '1px',
+                                    backgroundColor: 'rgba(255,255,255,0.42)',
+                                  },
+                                }),
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
@@ -3160,9 +3172,7 @@ export default function GlobalTrophyRoom() {
                     </Box>
 
                     {/* Individual Awards Section */}
-                    <Box sx={{
-                      borderLeft: { xs: 'none', md: '1px solid rgba(255,255,255,0.3)' }
-                    }}>
+                    <Box>
                       {/* Grey Header */}
                       <Box sx={{
                         bgcolor: '#a0a0a3',
@@ -3185,7 +3195,19 @@ export default function GlobalTrophyRoom() {
                       <Box sx={{
                         bgcolor: '#1a1a1f',
                         p: { xs: 1.25, sm: 2 },
+                        pl: { xs: 1.25, sm: 2, md: 2.4 },
                         minHeight: { xs: 'auto', sm: '230px' },
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          display: { xs: 'none', md: 'block' },
+                          position: 'absolute',
+                          left: 0,
+                          top: { md: 18 },
+                          bottom: { md: 28 },
+                          width: '2px',
+                          backgroundColor: '#FFFFFF',
+                        },
                       }}>
                         {individualRows.length === 0 ? (
                           <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
@@ -3198,9 +3220,20 @@ export default function GlobalTrophyRoom() {
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                                 gap: { xs: 1, sm: 1.4 },
+                                position: 'relative',
                                 pb: { xs: 1.3, sm: 1.8 },
-                                borderBottom: rowIdx < individualRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
                                 mb: rowIdx < individualRows.length - 1 ? { xs: 1.3, sm: 1.8 } : 0,
+                                ...(rowIdx < individualRows.length - 1 && {
+                                  '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    left: { xs: 2, sm: 4 },
+                                    right: { xs: 2, sm: 4 },
+                                    bottom: 0,
+                                    height: '1px',
+                                    backgroundColor: 'rgba(255,255,255,0.42)',
+                                  },
+                                }),
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
