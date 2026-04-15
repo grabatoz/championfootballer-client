@@ -46,7 +46,6 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').th
   ssr: false
 });
 import LeagueIcon from '@/Components/images/league icon.png'
-import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // import { achievementsAPI } from '@/lib/api';
 
@@ -3008,38 +3007,54 @@ export default function GlobalTrophyRoom() {
               <>
                 {/* Profile Card with Stars */}
                 <Paper sx={{
-                  background: '#1f1f1f',
-                  borderRadius: 4,
+                  background: '#1d1d22',
+                  borderRadius: { xs: '0 0 26px 26px', sm: '0 0 38px 38px' },
                   p: 0,
                   mb: 3,
-                  border: '2px solid rgba(255,255,255,0.8)',
+                  border: '1.5px solid rgba(255,255,255,0.75)',
                   overflow: 'hidden',
+                  maxWidth: 900,
+                  mx: 'auto',
                 }}>
                   {/* Profile Picture with Stars */}
                   <Box sx={{
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    gap: { xs: 1.5, sm: 3 },
-                    py: { xs: 1.5, sm: 2 },
-                    background: '#1f1f1f',
+                    gap: { xs: 2.2, sm: 3.5 },
+                    py: { xs: 1.2, sm: 1.5 },
+                    background: '#1d1d22',
+                    borderBottom: '1px solid rgba(255,255,255,0.3)',
                   }}>
-                    <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
+                    <Star
+                      size={isMobile ? 20 : 24}
+                      fill="#2f80ed"
+                      color="#2f80ed"
+                      strokeWidth={1.6}
+                      style={{ opacity: myProfileXP > 0 ? 1 : 0.7 }}
+                    />
                     <Avatar
-                      src={getProfileImage(user as any) || undefined}
+                      src={getProfileImage(user ?? undefined) || undefined}
                       alt={`${user?.firstName || ''} ${user?.lastName || ''}`}
                       sx={{
-                        width: { xs: 88, sm: 110 },
-                        height: { xs: 88, sm: 110 },
-                        fontSize: { xs: '2rem', sm: '2.5rem' },
+                        width: { xs: 70, sm: 86 },
+                        height: { xs: 70, sm: 86 },
+                        fontSize: { xs: '1.6rem', sm: '2rem' },
                         fontWeight: 700,
                         bgcolor: '#fff',
                         color: '#fff',
+                        border: '2px solid rgba(255,255,255,0.9)',
                       }}
                     >
-                      {!getProfileImage(user as any) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
+                      {!getProfileImage(user ?? undefined) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
                     </Avatar>
-                    <XPStarMilestoneCard height={isMobile ? 24 : 32} width={isMobile ? 24 : 32} xp={myProfileXP} />
+                    <Star
+                      size={isMobile ? 20 : 24}
+                      fill="#2f80ed"
+                      color="#2f80ed"
+                      strokeWidth={1.6}
+                      style={{ opacity: myProfileXP > 0 ? 1 : 0.7 }}
+                    />
                   </Box>
 
                   {/* Two Column Layout */}
@@ -3047,22 +3062,22 @@ export default function GlobalTrophyRoom() {
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
                     gap: 0,
-                    mt: 1,
+                    mt: 0,
                   }}>
                     {/* League Awards Section */}
                     <Box>
                       {/* Grey Header */}
                       <Box sx={{
-                        bgcolor: '#9c9a9a',
-                        py: 2,
-                        px: 3,
+                        bgcolor: '#a0a0a3',
+                        py: { xs: 1, sm: 1.2 },
+                        px: 2,
                       }}>
                         <Typography sx={{
-                          fontSize: { xs: '1.1rem', sm: '1.3rem' },
-                          fontWeight: 600,
+                          fontSize: { xs: '0.95rem', sm: '1.15rem' },
+                          fontWeight: 700,
                           color: '#fff',
                           textAlign: 'center',
-                          letterSpacing: 1,
+                          letterSpacing: 0.6,
                           textTransform: 'uppercase',
                         }}>
                           LEAGUE REWARDS
@@ -3071,9 +3086,9 @@ export default function GlobalTrophyRoom() {
 
                       {/* Dark Background with Trophies */}
                       <Box sx={{
-                        bgcolor: '#1a1a1a',
-                        p: { xs: 1.5, sm: 3 },
-                        minHeight: { xs: 'auto', sm: '400px' },
+                        bgcolor: '#1a1a1f',
+                        p: { xs: 1.25, sm: 2 },
+                        minHeight: { xs: 'auto', sm: '230px' },
                       }}>
                         {leagueRows.length === 0 ? (
                           <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
@@ -3085,10 +3100,10 @@ export default function GlobalTrophyRoom() {
                               <Box sx={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                                gap: { xs: 1.2, sm: 2 },
-                                pb: { xs: 2, sm: 3 },
+                                gap: { xs: 1, sm: 1.4 },
+                                pb: { xs: 1.3, sm: 1.8 },
                                 borderBottom: rowIdx < leagueRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                                mb: rowIdx < leagueRows.length - 1 ? { xs: 2, sm: 3 } : 0,
+                                mb: rowIdx < leagueRows.length - 1 ? { xs: 1.3, sm: 1.8 } : 0,
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
@@ -3107,9 +3122,9 @@ export default function GlobalTrophyRoom() {
                                   >
                                     <Box sx={{
                                       position: 'relative',
-                                      width: { xs: 40, sm: 50 },
-                                      height: { xs: 40, sm: 50 },
-                                      mb: { xs: 1, sm: 1.5 },
+                                      width: { xs: 34, sm: 42 },
+                                      height: { xs: 34, sm: 42 },
+                                      mb: { xs: 0.7, sm: 1 },
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -3117,8 +3132,8 @@ export default function GlobalTrophyRoom() {
                                       <Image
                                         src={trophy.image}
                                         alt={trophy.title}
-                                        width={isMobile ? 40 : 50}
-                                        height={isMobile ? 40 : 50}
+                                        width={isMobile ? 34 : 42}
+                                        height={isMobile ? 34 : 42}
                                         style={{
                                           objectFit: 'contain',
                                           maxWidth: '100%',
@@ -3127,10 +3142,11 @@ export default function GlobalTrophyRoom() {
                                       />
                                     </Box>
                                     <Typography sx={{
-                                      fontSize: { xs: '0.62rem', sm: '0.7rem' },
+                                      fontSize: { xs: '0.56rem', sm: '0.66rem' },
                                       color: '#fff',
                                       fontWeight: 600,
                                       textAlign: 'center',
+                                      lineHeight: 1.1,
                                     }}>
                                       {formatTrophyDate(trophy.leagueId)}
                                     </Typography>
@@ -3149,16 +3165,16 @@ export default function GlobalTrophyRoom() {
                     }}>
                       {/* Grey Header */}
                       <Box sx={{
-                        bgcolor: '#9c9a9a',
-                        py: 2,
-                        px: 3,
+                        bgcolor: '#a0a0a3',
+                        py: { xs: 1, sm: 1.2 },
+                        px: 2,
                       }}>
                         <Typography sx={{
-                          fontSize: { xs: '1.1rem', sm: '1.3rem' },
-                          fontWeight: 600,
+                          fontSize: { xs: '0.95rem', sm: '1.15rem' },
+                          fontWeight: 700,
                           color: '#fff',
                           textAlign: 'center',
-                          letterSpacing: 1,
+                          letterSpacing: 0.6,
                           textTransform: 'uppercase',
                         }}>
                           INDIVIDUAL REWARDS
@@ -3167,9 +3183,9 @@ export default function GlobalTrophyRoom() {
 
                       {/* Dark Background with Trophies */}
                       <Box sx={{
-                        bgcolor: '#1a1a1a',
-                        p: { xs: 1.5, sm: 3 },
-                        minHeight: { xs: 'auto', sm: '400px' },
+                        bgcolor: '#1a1a1f',
+                        p: { xs: 1.25, sm: 2 },
+                        minHeight: { xs: 'auto', sm: '230px' },
                       }}>
                         {individualRows.length === 0 ? (
                           <Typography sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', py: 4 }}>
@@ -3181,10 +3197,10 @@ export default function GlobalTrophyRoom() {
                               <Box sx={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                                gap: { xs: 1.2, sm: 2 },
-                                pb: { xs: 2, sm: 3 },
+                                gap: { xs: 1, sm: 1.4 },
+                                pb: { xs: 1.3, sm: 1.8 },
                                 borderBottom: rowIdx < individualRows.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                                mb: rowIdx < individualRows.length - 1 ? { xs: 2, sm: 3 } : 0,
+                                mb: rowIdx < individualRows.length - 1 ? { xs: 1.3, sm: 1.8 } : 0,
                               }}>
                                 {row.map((trophy, trophyIdx) => (
                                   <Box
@@ -3203,9 +3219,9 @@ export default function GlobalTrophyRoom() {
                                   >
                                     <Box sx={{
                                       position: 'relative',
-                                      width: { xs: 40, sm: 50 },
-                                      height: { xs: 40, sm: 50 },
-                                      mb: { xs: 1, sm: 1.5 },
+                                      width: { xs: 34, sm: 42 },
+                                      height: { xs: 34, sm: 42 },
+                                      mb: { xs: 0.7, sm: 1 },
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -3213,8 +3229,8 @@ export default function GlobalTrophyRoom() {
                                       <Image
                                         src={trophy.image}
                                         alt={trophy.title}
-                                        width={isMobile ? 40 : 50}
-                                        height={isMobile ? 40 : 50}
+                                        width={isMobile ? 34 : 42}
+                                        height={isMobile ? 34 : 42}
                                         style={{
                                           objectFit: 'contain',
                                           maxWidth: '100%',
@@ -3223,10 +3239,11 @@ export default function GlobalTrophyRoom() {
                                       />
                                     </Box>
                                     <Typography sx={{
-                                      fontSize: { xs: '0.62rem', sm: '0.7rem' },
+                                      fontSize: { xs: '0.56rem', sm: '0.66rem' },
                                       color: '#fff',
                                       fontWeight: 600,
                                       textAlign: 'center',
+                                      lineHeight: 1.1,
                                     }}>
                                       {formatTrophyDate(trophy.leagueId)}
                                     </Typography>
