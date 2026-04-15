@@ -1966,12 +1966,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </Box>
         </Box>
 
-        <Typography sx={{ fontSize: { xs: 12, sm: 17 }, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
-          <img src={BulbImg.src} alt="tip" width={16} height={16} style={{ objectFit: 'contain' }} />
-          {canEditAnyFormation
-            ? 'Admins/Captains can drag players and save formation.'
-            : 'Read-only view: formation can only be changed by Admin/Captains.'}
-        </Typography>
+        {viewMode === 'pitch' && (
+          <Typography sx={{ fontSize: { xs: 12, sm: 17 }, color: '#fff', mt: 1.5, lineHeight: 1.2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+            <img src={BulbImg.src} alt="tip" width={16} height={16} style={{ objectFit: 'contain' }} />
+            {canEditAnyFormation
+              ? 'Admins/Captains can drag players and save formation.'
+              : 'Read-only view: formation can only be changed by Admin/Captains.'}
+          </Typography>
+        )}
         <Box sx={{ height: { xs: 16, sm: 40 } }} />
         
       </Box>
