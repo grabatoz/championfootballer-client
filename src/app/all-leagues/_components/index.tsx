@@ -1478,16 +1478,18 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           ) : (
             onArchive && (
               <Button
-                variant="contained"
+                variant="outlined"
                 onClick={() => {
                   if (!window.confirm('Are you sure you want to archive this league? It will be hidden from active views.')) return;
                   onArchive();
                 }}
                 sx={{
-                  background: '#d32f2f',
+                  borderColor: 'rgba(211,47,47,0.6)',
+                  color: '#d32f2f',
                   width: { xs: '100%', md: 'auto' },
                   minHeight: { xs: 42, md: 'auto' },
-                  '&:hover': { background: '#ff0000' },
+                  '&:hover': { borderColor: '#d32f2f', bgcolor: 'rgba(211,47,47,0.08)' },
+                  bgcolor: 'transparent'
                 }}
               >
                 Archive League
