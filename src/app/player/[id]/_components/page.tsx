@@ -2547,7 +2547,7 @@ export default function PlayerStatsPage() {
                                             boxShadow: currentUserId ? '0 10px 22px rgba(0,0,0,0.45)' : '0 6px 16px rgba(0,0,0,0.35)',
                                             borderColor: currentUserId ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.4)',
                                         },
-                                        '&:hover .perf-icon-box': { bgcolor: currentUserId ? '#008c6b' : '#00a77f' },
+                                        '&:hover .perf-icon-box': { bgcolor: currentUserId ? '#E16419' : '#E16419' },
                                         '&:hover .perf-text-box': { bgcolor: currentUserId ? '#2f2f2f' : '#2b2b2b' },
                                         width: '100%',
                                         maxWidth: { xs: '100%', md: 238 },
@@ -2561,13 +2561,14 @@ export default function PlayerStatsPage() {
                                     }}
                                 >
                                     <Box className="perf-icon-box" sx={{
-                                        bgcolor: '#00a77f',
+                                        bgcolor: '#E16419',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         width: { xs: 38, sm: 40, md: 44 },
                                         borderRight: '1px solid rgba(255,255,255,0.25)',
-                                        py: { xs: 0.55, md: 0.7 }
+                                        py: { xs: 0.55, md: 0.7 },
+                                        // ":hover": {bgcolor:'#E16419'}
                                     }}>
                                         <SpaceDashboard sx={{ color: '#fff', fontSize: { xs: 24, md: 26 } }} />
                                     </Box>
