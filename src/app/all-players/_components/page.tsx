@@ -1117,7 +1117,7 @@ const AllPlayersPage = () => {
           </Box>
           
           {/* XP Points */}
-          <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
+          <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5 , md : 7.5 }, textAlign: 'center' }}>
             <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
               <span style={{ textTransform: 'lowercase' }}>xp</span> POINTS
             </Typography>
@@ -1295,6 +1295,7 @@ const AllPlayersPage = () => {
                       {/* XP Points */}
                       <Box sx={{ 
                         minWidth: { xs: 90, sm: 120 }, 
+                        ml: { xs: 1, sm: 1.5 ,md : 5.5 },
                         textAlign: 'center'
                       }}>
                         <Typography sx={{ 
