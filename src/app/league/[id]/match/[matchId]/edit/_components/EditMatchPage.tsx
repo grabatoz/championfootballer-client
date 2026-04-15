@@ -42,6 +42,29 @@ interface AvailabilityApiResponse {
   availableOrderMap?: Record<string, number>;
 }
 
+const isGuestLastName = (lastName?: string | null): boolean =>
+  String(lastName ?? '').trim().toLowerCase() === 'guest';
+
+const formatGuestAwarePlayerName = (player?: { firstName?: string | null; lastName?: string | null; isGuest?: boolean } | null): string => {
+  const first = String(player?.firstName ?? '').trim();
+  const last = String(player?.lastName ?? '').trim();
+
+  if (isGuestLastName(last)) {
+    return first ? `${first} (Guest)` : '(Guest)';
+  }
+
+  const full = `${first} ${last}`.trim();
+  if (!full) return player?.isGuest ? '(Guest)' : 'Player';
+  return player?.isGuest ? `${full} (Guest)` : full;
+};
+
+const formatGuestAwareShortName = (player?: { firstName?: string | null; lastName?: string | null }): string => {
+  const first = String(player?.firstName ?? '').trim();
+  const last = String(player?.lastName ?? '').trim();
+  if (isGuestLastName(last)) return first ? `${first} (Guest)` : '(Guest)';
+  return first || `${first} ${last}`.trim() || 'Player';
+};
+
 interface MapCandidate {
   lat: number;
   lng: number;
@@ -1688,7 +1711,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             multiple
                             options={homePlayerOptions}
                             disableCloseOnSelect
-                            getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
                             // List all players: do not disable by availability
                             getOptionDisabled={() => false}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
@@ -1809,7 +1832,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                       }}
                                     />
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
-                                      {opt.firstName}
+                                    {opt.firstName}
                                     </Typography>
                                     {isAvailable && Number.isFinite(availabilityOrder) && (
                                       <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, color: '#43a047' }}>
@@ -1868,7 +1891,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             multiple
                             options={awayPlayerOptions}
                             disableCloseOnSelect
-                            getOptionLabel={option => `${option.firstName} ${option.lastName}`}
+                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
                             // List all players: do not disable by availability
                             getOptionDisabled={() => false}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
@@ -1924,7 +1947,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                     }}
                                   />
                                   <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1 , color: isAvailable ? '#43a047' : '#fff' }}>
-                                    {option.firstName}
+                                     {option.firstName}
                                   </Typography>
                                   {isAvailable && Number.isFinite(availabilityOrder) && (
                                     <Typography sx={{ fontSize: '0.55rem', lineHeight: 1, color: '#43a047' }}>
@@ -1988,7 +2011,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                       }}
                                     />
                                     <Typography sx={{ fontSize: 10, maxWidth: 54, textAlign: 'center', lineHeight: 1.1, color: isAvailable ? '#43a047' : '#fff' }}>
-                                      {opt.firstName}
+                                     {opt.firstName}
                                     </Typography>
                                     {isAvailable && Number.isFinite(availabilityOrder) && (
                                       <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, color: '#43a047' }}>
@@ -2049,7 +2072,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             value={homeCaptain}
                             onChange={(_, val) => setHomeCaptain(val)}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
-                            getOptionLabel={o => `${o.firstName} ${o.lastName}`}
+                            getOptionLabel={(o) => formatGuestAwarePlayerName(o)}
                             disabled={!homeTeamUsers.length}
                             PaperComponent={BlackPaper}
                             
@@ -2108,7 +2131,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                   sx={{ width: 30, height: 30 }}
                                 />
                                 <Typography variant="body2" sx={{ flex: 1, color: '#fff' }}>
-                                  {option.firstName} {option.lastName}
+                                  {formatGuestAwarePlayerName(option)}
                                 </Typography>
                                 {!option.isGuest && (
                                   <Chip
@@ -2117,7 +2140,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                     sx={{ height: 20, fontSize: '0.65rem' }}
                                   />
                                 )}
-                                {option.isGuest && (
+                                {option.isGuest && !isGuestLastName(option.lastName) && (
                                   <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
                                 )}
                               </Box>
@@ -2131,7 +2154,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                             value={awayCaptain}
                             onChange={(_, val) => setAwayCaptain(val)}
                             isOptionEqualToValue={(o, v) => o.id === v.id}
-                            getOptionLabel={o => `${o.firstName} ${o.lastName}`}
+                            getOptionLabel={(o) => formatGuestAwarePlayerName(o)}
                             disabled={!awayTeamUsers.length}
                             PaperComponent={BlackPaper}
                             
@@ -2190,7 +2213,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                   sx={{ width: 30, height: 30 }}
                                 />
                                 <Typography variant="body2" sx={{ flex: 1, color: '#fff' }}>
-                                  {option.firstName} {option.lastName}
+                                  {formatGuestAwarePlayerName(option)}
                                 </Typography>
                                 {!option.isGuest && (
                                   <Chip
@@ -2199,7 +2222,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                     sx={{ height: 20, fontSize: '0.65rem' }}
                                   />
                                 )}
-                                {option.isGuest && (
+                                {option.isGuest && !isGuestLastName(option.lastName) && (
                                   <Chip size="small" color="warning" label="Guest" sx={{ height: 20, fontSize: '0.65rem' }} />
                                 )}
                               </Box>
@@ -2558,8 +2581,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                 gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              <span>{homeCaptain.firstName} {homeCaptain.lastName}</span>
-                              {homeCaptain.isGuest && (
+                              <span>{formatGuestAwarePlayerName(homeCaptain)}</span>
+                              {homeCaptain.isGuest && !isGuestLastName(homeCaptain.lastName) && (
                                 <Chip
                                   label="G"
                                   size="small"
@@ -2652,8 +2675,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                 gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              <span>{user.firstName} {user.lastName}</span>
-                              {user.isGuest && (
+                              <span>{formatGuestAwarePlayerName(user)}</span>
+                              {user.isGuest && !isGuestLastName(user.lastName) && (
                                 <Chip
                                   label="G"
                                   size="small"
@@ -2745,8 +2768,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                 gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              <span>{awayCaptain.firstName} {awayCaptain.lastName}</span>
-                              {awayCaptain.isGuest && (
+                              <span>{formatGuestAwarePlayerName(awayCaptain)}</span>
+                              {awayCaptain.isGuest && !isGuestLastName(awayCaptain.lastName) && (
                                 <Chip
                                   label="G"
                                   size="small"
@@ -2839,8 +2862,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
                                 gap: { xs: 0.3, sm: 0.5 }
                               }}
                             >
-                              <span>{user.firstName} {user.lastName}</span>
-                              {user.isGuest && (
+                              <span>{formatGuestAwarePlayerName(user)}</span>
+                              {user.isGuest && !isGuestLastName(user.lastName) && (
                                 <Chip
                                   label="G"
                                   size="small"
