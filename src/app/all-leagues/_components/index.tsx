@@ -1654,6 +1654,7 @@ function AllLeagues() {
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
+  const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -1933,6 +1934,71 @@ function AllLeagues() {
       setArchivedLeagueActionId(null);
     }
   }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues]);
+
+  const handleCreateSeasonForLeague = useCallback(async (league: LeagueWithStatus) => {
+    const leagueId = String(league.id);
+    if (!token) {
+      toast.error('Please login again and try.');
+      return;
+    }
+    if (!isLeagueAdminForCurrentUser(league)) {
+      toast.error('Only league admin can create a new season.');
+      return;
+    }
+    if (creatingSeasonLeagueId === leagueId) return;
+
+    setCreatingSeasonLeagueId(leagueId);
+    try {
+      const endpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`,
+      ];
+
+      let success = false;
+      let errorMessage = 'Failed to create new season';
+      let successMessage = '';
+
+      for (let i = 0; i < endpoints.length; i += 1) {
+        const response = await fetch(endpoints[i], {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ copyPlayers: true }),
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = (typeof payloadUnknown === 'object' && payloadUnknown !== null)
+          ? (payloadUnknown as { success?: boolean; message?: string })
+          : {};
+
+        if (response.ok && payload.success !== false) {
+          success = true;
+          successMessage = payload.message || `New season created for ${league.name}`;
+          break;
+        }
+
+        if (payload.message) errorMessage = payload.message;
+
+        // Try fallback endpoint only when the first one is not found.
+        const shouldTryFallback = i === 0 && response.status === 404;
+        if (!shouldTryFallback) break;
+      }
+
+      if (!success) {
+        throw new Error(errorMessage);
+      }
+
+      toast.success(successMessage);
+      await fetchAllLeagues();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create new season';
+      toast.error(message);
+    } finally {
+      setCreatingSeasonLeagueId(null);
+    }
+  }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -2828,6 +2894,8 @@ function AllLeagues() {
             leaguesToDisplay.map((league) => {
               const isCompleted = isLeagueCompleted(league);
               const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
+              const canCreateSeason = isLeagueAdminForCurrentUser(league);
+              const isCreatingSeason = creatingSeasonLeagueId === String(league.id);
               return (
                 <Box
                   key={league.id}
@@ -3110,6 +3178,42 @@ function AllLeagues() {
                                 Matches: {league.matches?.length || 0}
                               </Typography>
                             </Box>
+
+                            {canCreateSeason && (
+                              <Button
+                                size="small"
+                                disabled={isCreatingSeason}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleCreateSeasonForLeague(league);
+                                }}
+                                sx={{
+                                  alignSelf: 'flex-start',
+                                  mt: 0.4,
+                                  px: 1.25,
+                                  py: 0.2,
+                                  minHeight: 28,
+                                  borderRadius: 1,
+                                  textTransform: 'none',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 700,
+                                  fontSize: { xs: '11px', sm: '13px' },
+                                  color: isCompleted ? '#ffffff' : '#d1fae5',
+                                  border: isCompleted ? '1px solid #111827' : '1px solid rgba(39,171,131,0.85)',
+                                  backgroundColor: isCompleted ? '#111827' : 'rgba(39,171,131,0.2)',
+                                  '&:hover': {
+                                    backgroundColor: isCompleted ? '#1f2937' : 'rgba(39,171,131,0.32)',
+                                  },
+                                  '&:disabled': {
+                                    color: 'rgba(255,255,255,0.6)',
+                                    borderColor: 'rgba(255,255,255,0.25)',
+                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                  },
+                                }}
+                              >
+                                {isCreatingSeason ? 'Creating Season...' : '+ Add New Season'}
+                              </Button>
+                            )}
                           </Box>
                         </Grid>
 

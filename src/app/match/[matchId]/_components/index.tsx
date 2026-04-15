@@ -606,13 +606,19 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           {/* Match Result Label */}
           <Typography
             sx={{
-              textAlign: 'center',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: { xs: 16, sm: 20, md: 36 },
+            textAlign: 'center',
+            color: 'white',
+            fontFamily: '"Oswald", sans-serif !important',
+            fontWeight: 700,
+             fontSize: { xs: '32px', sm: '42px', md: '55px' },
+            textTransform: 'uppercase',
+            letterSpacing: '0px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            pt: { xs: 1, md: 1 },
+            pb: { xs: 3, md: 3 },
               mb: 1,
-              letterSpacing: 1,
-              textTransform: 'uppercase',
+              // letterSpacing: 1,
+              // textTransform: 'uppercase',
             }}
           >
             Match Result
@@ -1312,8 +1318,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
               onClick={handleSavePlayerStats}
               disabled={editStatsLoading || editStatsSaving}
               sx={{
-                bgcolor: '#e56a16',
-                '&:hover': { bgcolor: '#cf2326' },
+                bgcolor: '#27ab83',
+                '&:hover': { bgcolor: '#27ab83' },
                 textTransform: 'none',
                 fontWeight: 700,
                 px: 3,
