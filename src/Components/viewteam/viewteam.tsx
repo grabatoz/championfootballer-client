@@ -1361,7 +1361,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                 position: 'absolute',
                 top: { xs: '18px', sm: '25px' },
                 right: { xs: '-2px', sm: '-3px' },
-                backgroundColor: teamSide === 'home' ? 'green' : 'blue',
+                backgroundColor: teamSide === 'home' ? 'green' : 'red',
                 color: 'white',
                 fontSize: { xs: 6, sm: 8 },
                 fontWeight: 700,

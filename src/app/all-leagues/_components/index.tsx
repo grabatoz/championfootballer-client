@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import dynamic from 'next/dynamic';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, CloudUpload, CheckCircle, Search, ExpandMore } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, CloudUpload, CheckCircle, Search, ExpandMore, Add as AddIcon } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -3183,6 +3183,7 @@ function AllLeagues() {
                               <Button
                                 size="small"
                                 disabled={isCreatingSeason}
+                                startIcon={!isCreatingSeason ? <AddIcon sx={{ fontSize: 22 }} /> : undefined}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void handleCreateSeasonForLeague(league);
@@ -3190,28 +3191,30 @@ function AllLeagues() {
                                 sx={{
                                   alignSelf: 'flex-start',
                                   mt: 0.4,
-                                  px: 1.25,
-                                  py: 0.2,
+                                  // px: 1.25,
+                                  // py: 0.2,
                                   minHeight: 28,
                                   borderRadius: 1,
                                   textTransform: 'none',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 700,
-                                  fontSize: { xs: '11px', sm: '13px' },
-                                  color: isCompleted ? '#ffffff' : '#d1fae5',
-                                  border: isCompleted ? '1px solid #111827' : '1px solid rgba(39,171,131,0.85)',
-                                  backgroundColor: isCompleted ? '#111827' : 'rgba(39,171,131,0.2)',
-                                  '&:hover': {
-                                    backgroundColor: isCompleted ? '#1f2937' : 'rgba(39,171,131,0.32)',
-                                  },
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' },
+                                  // color: isCompleted ? '#ffffff' : '#d1fae5',
+                                  // border: isCompleted ? '1px solid #111827' : '1px solid rgba(39,171,131,0.85)',
+                                  // backgroundColor: isCompleted ? '#111827' : 'rgba(39,171,131,0.2)',
+                                  // '&:hover': {
+                                  //   backgroundColor: isCompleted ? '#1f2937' : 'rgba(39,171,131,0.32)',
+                                  // },
                                   '&:disabled': {
-                                    color: 'rgba(255,255,255,0.6)',
-                                    borderColor: 'rgba(255,255,255,0.25)',
-                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                    // color: 'rgba(255,255,255,0.6)',
+                                    // borderColor: 'rgba(255,255,255,0.25)',
+                                    // backgroundColor: 'rgba(255,255,255,0.08)',
                                   },
+                                  
                                 }}
                               >
-                                {isCreatingSeason ? 'Creating Season...' : '+ Add New Season'}
+                                {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
                               </Button>
                             )}
                           </Box>
