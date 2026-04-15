@@ -35,10 +35,10 @@ export default function LandingPage() {
 
   // Feature cards (id, title, image)
   const features = [
-    { id: '1', title: ' Design your player card', img: image9 },
-    { id: '2', title: 'Create and track your matches', img: image10 },
-    { id: '3', title: 'View your game stats', img: image11 },
-    { id: '4', title: 'Win awards', img: image12 },
+    { id: '1', title: 'CREATE YOUR PLAYER CARD', img: image9 },
+    { id: '2', title: 'CREATE LEAGUES & MATCHES', img: image10 },
+    { id: '3', title: 'TRACK YOUR PERFORMANCE', img: image11 },
+    { id: '4', title: 'WIN TROPHIES & REWARDS', img: image12 },
   ];
 
   return (
@@ -350,59 +350,68 @@ export default function LandingPage() {
             <Card
               key={f.id}
               elevation={0}
-                sx={{
-                  width: '100%',
+              sx={{
+                width: '100%',
                 height: { xs: 230, sm: 238, md: 238 },
                 minHeight: { xs: 230, sm: 238, md: 238 },
-                borderRadius: 2,
+                borderRadius: 0.5,
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                boxShadow: 'none',
-                bgcolor: '#eaeae8',
+                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)',
+                border: '2px solid #6a6f75',
+                // background: 'linear-gradient(180deg, #51565b 0%, #24292f 34%, #020407 100%)',
+                    background: 'linear-gradient(180deg, #3c4146 0%, #010305 100%)',
+
                 p: 0,
               }}
             >
               <Box
                 sx={{
                   width: '100%',
-                  px: { xs: 1.25, md: 1.8 },
-                  py: { xs: 0.65, md: 0.75 },
-                  minHeight: { xs: 42, md: 46 },
+                  px: { xs: 1.1, md: 1.25 },
+                  py: { xs: 0.75, md: 0.85 },
+                  minHeight: { xs: 36, md: 40 },
                   display: 'flex',
+                  justifyContent: 'center',
                   alignItems: 'center',
-                  bgcolor: '#eaeae8',
+                  // background: 'linear-gradient(180deg, #575b60 0%, #474b50 100%)',
                 }}
               >
                 <Typography
-                  variant="h6"
                   sx={{
-                    fontSize: { xs: '0.9rem', md: '1.1rem' },
-                    lineHeight: 1.2,
-                    color: '#000000',
-                    fontWeight: 700,
-                    whiteSpace: { xs: 'normal', md: 'nowrap' },
-                    overflow: { xs: 'visible', md: 'hidden' },
-                    textOverflow: { xs: 'clip', md: 'ellipsis' },
+                    fontFamily: 'var(--font-inter), Inter, sans-serif',
+                    fontSize: { xs: '0.98rem', md: '1.05rem' },
+                    lineHeight: 1.1,
+                    letterSpacing: '0.01em',
+                    color: '#ffff',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    textAlign: 'center',
+                    width: '100%',
+                    textShadow: '0 1px 0 rgba(0,0,0,0.55)',
                   }}
                 >
-                  {f.id}. {f.title}
+                  {f.title}
                 </Typography>
               </Box>
-              <Box
+              {/* <Box
                 sx={{
                   width: '100%',
-                  height: { xs: 10, md: 12 },
-                  bgcolor: '#000000',
+                  height: 2.5,
+                  bgcolor: '#0a0d10',
                 }}
-              />
+              /> */}
               <Box
                 sx={{
                   flex: 1,
                   width: '100%',
-                  p: { xs: 1.25, md: 1.5 },
-                  bgcolor: '#eaeae8',
+                  p: { xs: 1.15, md: 1.3 },
+                  bgcolor: 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -415,6 +424,7 @@ export default function LandingPage() {
                     height: '100%',
                     maxWidth: '100%',
                     mx: 'auto',
+                    // background: 'linear-gradient(180deg, #0b0f13 0%, #010305 100%)',
                   }}
                 >
                   <Image
@@ -422,7 +432,7 @@ export default function LandingPage() {
                     alt={f.title}
                     fill
                     sizes="(max-width: 600px) 90vw, 25vw"
-                    style={{ objectFit: 'contain' }}
+                    style={{ objectFit: 'contain', padding: '8px 14px' }}
                     loading="lazy"
                     placeholder="blur"
                   />
