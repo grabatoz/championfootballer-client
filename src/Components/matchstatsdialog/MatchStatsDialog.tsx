@@ -103,6 +103,24 @@ const normalizeMatch = (m: Partial<MatchWithGuests> | null | undefined): MatchWi
     };
 };
 
+const isGuestLastName = (lastName?: string | null): boolean =>
+    String(lastName ?? '').trim().toLowerCase() === 'guest';
+
+const formatGuestAwarePlayerName = (
+    player?: { firstName?: string | null; lastName?: string | null; isGuest?: boolean } | null
+): string => {
+    const first = String(player?.firstName ?? '').trim();
+    const last = String(player?.lastName ?? '').trim();
+
+    if (isGuestLastName(last)) {
+        return first ? `${first} (Guest)` : '(Guest)';
+    }
+
+    const full = `${first} ${last}`.trim();
+    if (!full) return player?.isGuest ? '(Guest)' : 'Player';
+    return player?.isGuest ? `${full} (Guest)` : full;
+};
+
 const dropdownPaperBaseSx = {
     mt: 0,
     maxHeight: { xs: 240, sm: 320 },
@@ -1798,7 +1816,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const playerNameById = useCallback((id?: string | null) => {
         if (!id) return '';
         const p = myTeamPlayers.find(u => String(u.id) === String(id));
-        return p ? `${p.firstName} ${p.lastName}` : '';
+        return p ? formatGuestAwarePlayerName(p) : '';
     }, [myTeamPlayers]);
 
     // NEW: Fetch existing stats for current user
@@ -2122,7 +2140,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 // ًں”„ Clear stats cache for this player to force fresh fetch
                 clearCacheByResource('stats', `${resolvedMatchId}_${selectedPlayerForAdmin.id}`);
                 
-                toast.success(`Stats added for ${selectedPlayerForAdmin.firstName} ${selectedPlayerForAdmin.lastName}`);
+                toast.success(`Stats added for ${formatGuestAwarePlayerName(selectedPlayerForAdmin)}`);
                 handleCloseAdminStatsModal();
                 
                 // Refetch match details to update UI
@@ -2604,7 +2622,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         renderValue: (selected) => {
                                             const selectedPlayer = allPlayersForVoting.find(p => p.id === selected);
                                             return selectedPlayer
-                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                ? formatGuestAwarePlayerName(selectedPlayer)
                                                 : 'Select Man Of The Match Player';
                                         },
                                         MenuProps: {
@@ -2682,9 +2700,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     />
                                                 </Box>
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
-                                                    {p.firstName} {p.lastName}
+                                                    {formatGuestAwarePlayerName(p)}
                                                 </Typography>
-                                                {p.isGuest && (
+                                                {p.isGuest && !isGuestLastName(p.lastName) && (
                                                     <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
                                                         (Guest)
                                                     </Typography>
@@ -2718,7 +2736,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         renderValue: (selected) => {
                                             const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
                                             return selectedPlayer
-                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                ? formatGuestAwarePlayerName(selectedPlayer)
                                                 : 'Select Defensive Impact Player';
                                         },
                                         MenuProps: {
@@ -2791,9 +2809,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
-                                                    {p.firstName} {p.lastName}
+                                                    {formatGuestAwarePlayerName(p)}
                                                 </Typography>
-                                                {p.isGuest && (
+                                                {p.isGuest && !isGuestLastName(p.lastName) && (
                                                     <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
                                                         (Guest)
                                                     </Typography>
@@ -2827,7 +2845,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         renderValue: (selected) => {
                                             const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
                                             return selectedPlayer
-                                                ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}${selectedPlayer.isGuest ? ' (Guest)' : ''}`
+                                                ? formatGuestAwarePlayerName(selectedPlayer)
                                                 : 'Select + Mentality Player';
                                         },
                                         MenuProps: {
@@ -2900,9 +2918,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
-                                                    {p.firstName} {p.lastName}
+                                                    {formatGuestAwarePlayerName(p)}
                                                 </Typography>
-                                                {p.isGuest && (
+                                                {p.isGuest && !isGuestLastName(p.lastName) && (
                                                     <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1, color: '#9CA3AF', fontSize: '0.6rem' }}>
                                                         (Guest)
                                                     </Typography>
@@ -2975,7 +2993,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         <Box
                                             component="img"
                                             src={motmPlayer.profilePicture}
-                                            alt={`${motmPlayer.firstName} ${motmPlayer.lastName}`}
+                                            alt={formatGuestAwarePlayerName(motmPlayer)}
                                             sx={{
                                                 width: { xs: 40, md: 48 },
                                                 height: { xs: 40, md: 48 },
@@ -3009,7 +3027,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
-                                        {motmPlayer ? `${motmPlayer.firstName} ${motmPlayer.lastName}${motmPlayer.isGuest ? ' (Guest)' : ''}` : 'Not selected'}
+                                        {motmPlayer ? formatGuestAwarePlayerName(motmPlayer) : 'Not selected'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -3024,7 +3042,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         <Box
                                             component="img"
                                             src={defensivePlayer.profilePicture}
-                                            alt={`${defensivePlayer.firstName} ${defensivePlayer.lastName}`}
+                                            alt={formatGuestAwarePlayerName(defensivePlayer)}
                                             sx={{
                                                 width: { xs: 40, md: 48 },
                                                 height: { xs: 40, md: 48 },
@@ -3058,9 +3076,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
-                                        {defensivePlayer
-                                            ? `${defensivePlayer.firstName} ${defensivePlayer.lastName}${defensivePlayer.isGuest ? ' (Guest)' : ''}`
-                                            : 'Not selected'}
+                                        {defensivePlayer ? formatGuestAwarePlayerName(defensivePlayer) : 'Not selected'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -3075,7 +3091,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         <Box
                                             component="img"
                                             src={mentalityPlayer.profilePicture}
-                                            alt={`${mentalityPlayer.firstName} ${mentalityPlayer.lastName}`}
+                                            alt={formatGuestAwarePlayerName(mentalityPlayer)}
                                             sx={{
                                                 width: { xs: 40, md: 48 },
                                                 height: { xs: 40, md: 48 },
@@ -3109,9 +3125,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontSize: { xs: '0.72rem', md: '0.875rem' },
                                         }}
                                     >
-                                        {mentalityPlayer
-                                            ? `${mentalityPlayer.firstName} ${mentalityPlayer.lastName}${mentalityPlayer.isGuest ? ' (Guest)' : ''}`
-                                            : 'Not selected'}
+                                        {mentalityPlayer ? formatGuestAwarePlayerName(mentalityPlayer) : 'Not selected'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -3165,7 +3179,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     '&:hover': { borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.08)' },
                                 }}
                             >
-                                {p.firstName} {p.lastName}{p.isGuest ? ' (Guest)' : ''}
+                                {formatGuestAwarePlayerName(p)}
                             </Button>
                         ))}
                         {captainPickCandidates.length === 0 && (
@@ -3378,7 +3392,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             {/* Admin Stats Modal */}
             {!selectedLeagueHasNoMatches && (
                 <Dialog open={isAdminStatsModalOpen} onClose={handleCloseAdminStatsModal} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaperSx }}>
-                    <DialogTitle sx={dialogTitleSx}>Admin Add Stats for {selectedPlayerForAdmin?.firstName} {selectedPlayerForAdmin?.lastName}</DialogTitle>
+                    <DialogTitle sx={dialogTitleSx}>Admin Add Stats for {formatGuestAwarePlayerName(selectedPlayerForAdmin)}</DialogTitle>
                     <DialogContent sx={dialogContentSx}>
                         <StatCounter
                             icon={<img src={Goals.src} alt="Goals" style={{ width: 24, height: 24 }} />}

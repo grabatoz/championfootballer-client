@@ -176,6 +176,15 @@ function normalizeGuestsForMatch(
   return Array.from(dedup.values());
 }
 
+function formatGuestDisplayName(guest: Pick<Guest, 'firstName' | 'lastName'>): string {
+  const first = String(guest?.firstName ?? '').trim();
+  const last = String(guest?.lastName ?? '').trim();
+  if (last.toLowerCase() === 'guest') {
+    return first ? `${first} (Guest)` : '(Guest)';
+  }
+  return `${first} ${last}`.trim() || 'Guest';
+}
+
 type BasicUser = { id: string; firstName: string; lastName?: string; shirtNumber?: string | null }; // added
 
 const primaryColor = 'rgb(229,106,22)';
@@ -1635,7 +1644,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                   <GuestDot
                     key={`home-guest-${g.id}`}
                     guestId={String(g.id)}
-                    name={`${g.firstName} ${g.lastName}`.trim()}
+                    name={formatGuestDisplayName(g)}
                     teamSide="home"
                   />
                 ))}
@@ -1646,7 +1655,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                   <GuestDot
                     key={`away-guest-${g.id}`}
                     guestId={String(g.id)}
-                    name={`${g.firstName} ${g.lastName}`.trim()}
+                    name={formatGuestDisplayName(g)}
                     teamSide="away"
                   />
                 ))}
@@ -1720,7 +1729,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'center', mt: -2 }}>
             {/* Home Team */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
-              {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+              {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = homeCaptainId === pid;
                 return (
@@ -1743,7 +1752,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <Box sx={{ width: { xs: '100%', sm: '1.5px' }, height: { xs: '1.5px', sm: 'auto' }, bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
             {/* Away Team */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
-              {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`.trim(), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+              {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = awayCaptainId === pid;
                 return (

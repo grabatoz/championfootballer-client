@@ -111,6 +111,22 @@ type MatchStatLite = {
   xpAwarded: number;
 };
 
+const isGuestLastName = (lastName?: string): boolean =>
+  String(lastName ?? '').trim().toLowerCase() === 'guest';
+
+const formatPlayerDisplayName = (player: { firstName?: string; lastName?: string; isGuest?: boolean }): string => {
+  const first = String(player.firstName ?? '').trim();
+  const last = String(player.lastName ?? '').trim();
+
+  if (isGuestLastName(last)) {
+    return first ? `${first} (Guest)` : '(Guest)';
+  }
+
+  const full = `${first} ${last}`.trim();
+  if (!full) return player.isGuest ? '(Guest)' : 'Player';
+  return player.isGuest ? `${full} (Guest)` : full;
+};
+
 
 export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string } = {}) {
   const params = useParams();
@@ -997,10 +1013,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                           }}
-                                          title={`${player.firstName} ${player.lastName}`}
+                                          title={formatPlayerDisplayName(player)}
                                         >
-                                          {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
-                                          {player.isGuest && (
+                                          {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
+                                          {player.isGuest && !isGuestLastName(player.lastName) && (
                                             <Chip
                                               label="G"
                                               size="small"
@@ -1079,9 +1095,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                               <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                             </Box>
                                           </Box>
-                                          <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 11, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${player.firstName} ${player.lastName}`}>
-                                            {player.firstName} {player.lastName}{isCaptain ? ' (C)' : ''}
-                                            {player.isGuest && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
+                                          <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 11, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={formatPlayerDisplayName(player)}>
+                                            {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
+                                            {player.isGuest && !isGuestLastName(player.lastName) && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
                                           </Typography>
 
                                         </Box>
@@ -1172,7 +1188,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         >
           <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
             <Typography fontWeight={700} fontSize={{ xs: 16, sm: 18 }}>
-              Edit Stats — {editingPlayer.firstName} {editingPlayer.lastName}
+              Edit Stats — {formatPlayerDisplayName(editingPlayer)}
             </Typography>
             <IconButton onClick={() => setEditingPlayer(null)} size="small" sx={{ color: '#fff' }}>
               <Close />
