@@ -4774,8 +4774,8 @@ export default function LeagueDetailPage() {
                                                 <Box
                                                     sx={{
                                                         position: 'absolute',
-                                                        top: { xs: '8%', sm: '9%', md: '10%', lg: '12%', xl: '12%' },
-                                                        left: { xs: '5%', sm: '8%', md: '10%', lg: '12%', xl: '12%' },
+                                                        top: { xs: '27%', sm: '24%', md: '24%', lg: '24%', xl: '25%' },
+                                                        left: { xs: '2%', sm: '10%', md: '18%', lg: '19%', xl: '20%' },
                                                         zIndex: 1,
                                                     }}
                                                 >
@@ -4783,7 +4783,7 @@ export default function LeagueDetailPage() {
                                                         sx={{
                                                             color: '#ffffff',
                                                             fontWeight: 600,
-                                                            fontSize: { xs: '14px', sm: '18px', md: '22px', lg: '24px', xl: '28px' },
+                                                            fontSize: { xs: '8px', sm: '18px', md: '22px', lg: '24px', xl: '28px' },
                                                             textTransform: 'uppercase',
                                                             letterSpacing: '2px',
                                                             // textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
