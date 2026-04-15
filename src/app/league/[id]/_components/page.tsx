@@ -4575,7 +4575,7 @@ export default function LeagueDetailPage() {
                                                                                     sx={{
                                                                                         ...cardActionButtonSx,
                                                                                         pointerEvents: 'none',
-                                                                                        border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
+                                                                                        border: '1.4px solid #F97316',
                                                                                         '&.Mui-disabled': { color: 'white' },
                                                                                     }}
                                                                                 >
@@ -4596,7 +4596,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
+                                                                                    border: '1.4px solid #F97316',
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -4609,7 +4609,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: idx === 0 ? '1.4px solid #F97316' : '1.4px solid #9c9c9c',
+                                                                                    border:'1.4px solid #F97316',
                                                                                     '&.Mui-disabled': { color: 'white' },
                                                                                 }}
                                                                             >
