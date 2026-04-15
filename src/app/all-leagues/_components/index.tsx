@@ -1392,7 +1392,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           gap: 1.25,
         }}
       >
-        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', md: 'auto' } }}>
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}>
           {currentUserId && (
             <Button
               variant="outlined"
@@ -1434,6 +1434,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               Leave League
             </Button>
           )}
+          <Button
+            variant="contained"
+            color="error"
+            onClick={onDelete}
+            sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}
+          >
+            Delete League
+          </Button>
         </Box>
         <Box
           sx={{
@@ -1442,6 +1450,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'none' },
             gap: 1,
             flexWrap: 'wrap',
+            ml: { md: 'auto' },
           }}
         >
           <Button
@@ -1502,9 +1511,6 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             sx={{ bgcolor: '#27ab83', width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' }, '&:hover': { bgcolor: '#1e8463' } }}
           >
             Update League
-          </Button>
-          <Button variant="contained" color="error" onClick={onDelete} sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}>
-            Delete League
           </Button>
         </Box>
       </DialogActions>
