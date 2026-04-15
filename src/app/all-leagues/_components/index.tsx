@@ -2805,7 +2805,8 @@ function AllLeagues() {
                   key={league.id}
                   onClick={() => router.push(`/league/${league.id}`)}
                   sx={{
-                    p: { xs: 3, md: 3 },
+                    px: { xs: 3, md: 3 },
+                    py: { xs: 2.6, md: 2.8 },
                     borderRadius: 3,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
@@ -2815,6 +2816,8 @@ function AllLeagues() {
                       : 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                     position: 'relative',
                     minHeight: { xs: '140px', md: '160px' },
+                    display: 'flex',
+                    alignItems: 'center',
                     '&:hover': {
                       backgroundColor: isCompleted ? '#d4d4d4' : 'rgba(30, 58, 138, 1)',
                       transform: isCompleted ? 'none' : 'translateY(-3px)',
@@ -2876,10 +2879,10 @@ function AllLeagues() {
                   )}
 
                   {/* Grid Layout - 6/6 Split */}
-                  <Grid container spacing={{ xs: 1, md: 2 }}>
+                  <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
                     {/* Left Column - Trophy, Title, Players, Created */}
                     <Grid item xs={12} md={6}>
-                      <Grid container spacing={{ xs: 1, md: 2 }}>
+                      <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
                         {/* Trophy Icon - 4 */}
                         <Grid item xs={12} md={3}>
                           <Box sx={{
@@ -2918,7 +2921,7 @@ function AllLeagues() {
 
                         {/* Title and Details - 8 */}
                         <Grid item xs={12} md={9}>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: { xs: 'center', md: 'flex-start' } }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
                             {/* League Title */}
                             <Typography sx={{
                               color: isCompleted ? '#111827' : 'white',
@@ -2998,14 +3001,15 @@ function AllLeagues() {
 
                     {/* Right Column - Code, Matches, Share, View */}
                     <Grid item xs={12} md={6}>
-                      <Grid container spacing={0}>
+                      <Grid container spacing={0} alignItems="center">
                         {/* Code and Matches - 8 */}
                         <Grid item xs={12} md={8}>
                           <Box sx={{ 
                             display: 'flex', 
                             flexDirection: 'column', 
+                            justifyContent: 'center',
                             gap: 1,
-                            mt: { xs: 0.5, md: 6 },
+                            mt: { xs: 0.5, md: 0 },
                             height: '100%'
                           }}>
                             {/* Invite Code with Copy and Share */}
@@ -3083,14 +3087,14 @@ function AllLeagues() {
 
                         {/* View Button - 4 */}
                         <Grid item xs={12} md={4}>
-                          <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 2 }} >
+                          <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
                             {/* Image - 6 */}
                             <Grid item xs={6} md={6}>
                               <Box
                                 sx={{
                                   display: 'flex',
                                   justifyContent: { xs: 'flex-start', md: 'flex-start' },
-                                  alignItems: 'start',
+                                  alignItems: 'center',
                                   height: '100%',
                                   ml: { xs: 0, md: -5 }
                                 }}
@@ -3114,7 +3118,7 @@ function AllLeagues() {
                                   alignItems: 'center', 
                                   height: '100%',
                                   cursor: 'pointer',
-                                  mt: { xs: 1, md: 3 }
+                                  mt: { xs: 1, md: 0 }
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -3192,13 +3196,16 @@ function AllLeagues() {
                   <Box
                     key={league.id}
                     sx={{
-                      p: { xs: 3, md: 3 },
+                      px: { xs: 3, md: 3 },
+                      py: { xs: 2.6, md: 2.8 },
                       borderRadius: 3,
                       cursor: 'not-allowed',
                       transition: 'all 0.3s ease',
                       background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                       position: 'relative',
                       minHeight: { xs: '140px', md: '160px' },
+                      display: 'flex',
+                      alignItems: 'center',
                       opacity: 0.75,
                       '&:hover': {
                         opacity: 0.75,
@@ -3279,10 +3286,10 @@ function AllLeagues() {
                     </Box>
 
                     {/* Grid Layout - 6/6 Split (same as live league card) */}
-                    <Grid container spacing={{ xs: 1, md: 2 }}>
+                    <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
                       {/* Left Column - Trophy, Title, Players, Created */}
                       <Grid item xs={12} md={6}>
-                        <Grid container spacing={{ xs: 1, md: 2 }}>
+                        <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
                           {/* Trophy Icon - 4 */}
                           <Grid item xs={12} md={3}>
                             <Box sx={{
@@ -3321,7 +3328,7 @@ function AllLeagues() {
 
                           {/* Title and Details - 8 */}
                           <Grid item xs={12} md={9}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: { xs: 'center', md: 'flex-start' } }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
                               {/* League Title */}
                               <Typography sx={{
                                 color: 'white',
@@ -3400,14 +3407,15 @@ function AllLeagues() {
 
                       {/* Right Column - Matches, View */}
                       <Grid item xs={12} md={6}>
-                        <Grid container spacing={0}>
+                        <Grid container spacing={0} alignItems="center">
                           {/* Matches - 8 */}
                           <Grid item xs={12} md={8}>
                             <Box sx={{ 
                               display: 'flex', 
                               flexDirection: 'column', 
+                              justifyContent: 'center',
                               gap: 1,
-                              mt: { xs: 0.5, md: 6 },
+                              mt: { xs: 0.5, md: 0 },
                               height: '100%'
                             }}>
                               {/* Matches */}
@@ -3427,14 +3435,14 @@ function AllLeagues() {
 
                           {/* View Button - 4 */}
                           <Grid item xs={12} md={4}>
-                            <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 2 }}>
+                            <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
                               {/* Image - 6 */}
                               <Grid item xs={6} md={6}>
                                 <Box
                                   sx={{
                                     display: 'flex',
                                     justifyContent: { xs: 'flex-start', md: 'flex-start' },
-                                    alignItems: 'start',
+                                    alignItems: 'center',
                                     height: '100%',
                                     ml: { xs: 0, md: -5 }
                                   }}
@@ -3452,14 +3460,14 @@ function AllLeagues() {
                               {/* View Text - 6 */}
                               <Grid item xs={6} md={6}>
                                 <Box 
-                                  sx={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'flex-start', 
-                                    alignItems: 'center', 
-                                    height: '100%',
-                                    cursor: 'not-allowed',
-                                    mt: { xs: 1, md: 3 }
-                                  }}
+                                sx={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'flex-start', 
+                                  alignItems: 'center', 
+                                  height: '100%',
+                                  cursor: 'not-allowed',
+                                  mt: { xs: 1, md: 0 }
+                                }}
                                 >
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography sx={{
