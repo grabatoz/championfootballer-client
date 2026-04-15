@@ -1278,14 +1278,34 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     onChange={(e) => setSeasonShowPoints(e.target.checked)}
                     disabled={!selectedSeasonId}
                     sx={{
-                      '& .MuiSwitch-track': { backgroundColor: 'rgba(255,255,255,0.3)' },
-                      '& .Mui-checked': { color: '#27ab83' },
-                      '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#27ab83' },
+                      '& .MuiSwitch-switchBase': {
+                        color: '#9CA3AF',
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        opacity: 1,
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#27ab83',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: '#27ab83',
+                        opacity: 1,
+                      },
                     }}
                   />
                 }
-                label={`CF Advance Point Scoring for ${currentSeason ? currentSeason.name : 'this season'}`}
-                sx={{ color: '#E5E7EB' }}
+                label={
+                  seasonShowPoints
+                    ? `CF Advance xp Points Scoring for ${currentSeason ? currentSeason.name : 'this season'}`
+                    : `Classic League Points Scoring for ${currentSeason ? currentSeason.name : 'this season'}`
+                }
+                sx={{
+                  '& .MuiFormControlLabel-label': {
+                    color: seasonShowPoints ? '#E5E7EB' : '#E5E7EB',
+                    fontWeight: 600,
+                  },
+                }}
               />
             </Box>
           </Grid>
