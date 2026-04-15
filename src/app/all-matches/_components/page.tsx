@@ -1150,7 +1150,7 @@ export default function AllMatches() {
         const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
 
         // Return formatted name with initials in brackets
-        return truncateLeagueName(`${capitalizedName} (${initials})`);
+        return truncateLeagueName(`${capitalizedName}`);
     };
 
     // Sort helper: prefer numeric match index descending, fallback to latest date
