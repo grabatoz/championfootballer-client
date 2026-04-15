@@ -16,8 +16,13 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   loading: () => <></>,
   ssr: false
 });
+const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
+  loading: () => <CircularProgress />,
+  ssr: false
+});
 import ShirtImg from '@/Components/images/shirtimg.png';
 import EditImg from '@/Components/images/edit.png';
+import FootBallIcon from '@/Components/images/cardfootball.png';
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -124,6 +129,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   const [isAdmin, setIsAdmin] = useState(false);
   // Admin edit mode - when true, clicking a player opens stats editor
   const [adminEditMode, setAdminEditMode] = useState(false);
+  const [viewTeamOpen, setViewTeamOpen] = useState(false);
   // Admin player stats editor dialog
   const [editingPlayer, setEditingPlayer] = useState<(User & { __team?: 'home' | 'away' }) | null>(null);
   const [editStats, setEditStats] = useState({ goals: 0, assists: 0, cleanSheets: 0 });
@@ -547,6 +553,12 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   //   }
   // }, [router, match]);
 
+  const currentMatchNumber = (() => {
+    if (!league || !match) return null;
+    const idx = league.matches?.findIndex(m => m.id === match.id) ?? -1;
+    return idx >= 0 ? idx + 1 : null;
+  })();
+
   return (
     <Box
       sx={{
@@ -634,7 +646,18 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             mb: { xs: 0.5, sm: 0.75 },
             px: { xs: 1, sm: 2 },
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              onClick={() => setViewTeamOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setViewTeamOpen(true);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}
+            >
               <Groups sx={{ color: '#fff', fontSize: { xs: 22, sm: 26, md: 50 } }} />
               <Typography sx={{ color: '#fff',mt: 1,fontWeight: 600, fontSize: { xs: 14, sm: 16, md: 18 } }}>
                 Teams View
@@ -1086,6 +1109,50 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           </Box>
         </>
       )}
+
+      <Dialog
+        open={viewTeamOpen}
+        onClose={() => setViewTeamOpen(false)}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            bgcolor: '#2b2b2b',
+            width: { xs: '100%', sm: '90%', md: 'min(980px, 62vw)' },
+            maxWidth: { xs: '100%', sm: '90%', md: '980px' },
+            borderRadius: { xs: 0, sm: 2 }
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#d1d1d1',
+          position: 'relative',
+          py: 0.5,
+          minHeight: 0,
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
+            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.1rem' }}>TEAMS</span>
+            <Image src={FootBallIcon} alt="Football" width={24} height={24} />
+            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.1rem' }}>MATCH {currentMatchNumber ?? '-'}</span>
+          </Box>
+          <IconButton
+            onClick={() => setViewTeamOpen(false)}
+            size="small"
+            sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0, '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+          <TeamPreviewScreen
+            leagueId={String(match?.leagueId || league?.id || '') || undefined}
+            matchId={match?.id}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Admin Player Stats Edit Dialog */}
       {editingPlayer && (
