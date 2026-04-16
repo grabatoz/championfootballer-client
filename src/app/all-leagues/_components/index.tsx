@@ -2710,9 +2710,10 @@ function AllLeagues() {
             <Box
               sx={{
                 display: 'flex',
-                gap: { xs: 1, md: 1 },
+                columnGap: { xs: 0.25, md: 0.50 },
+                rowGap: { xs: 0.25, md: 0.50 },
                 alignItems: 'center',
-                flexWrap: 'wrap',
+                flexWrap: { xs: 'wrap', md: 'nowrap' },
                 width: { xs: '100%', md: 'auto' }
               }}
             >
