@@ -2687,7 +2687,7 @@ function AllLeagues() {
                   size="small"
                   autoComplete="off" 
                   sx={{
-                    width: { xs: '62%', sm: 160 },
+                    width: { xs: '62%', sm: 160 , md:160  },
                     '& .MuiOutlinedInput-root': { 
                       color: '#333', 
                       backgroundColor: 'white', 
