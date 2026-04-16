@@ -457,7 +457,7 @@ export default function WorldRankingTable() {
             justifyContent: { xs: 'flex-start', md: 'flex-end' }
           }}>
             {/* Position */}
-            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 150 }}>
+            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
               <Select
                 value={filters.positionType || ''}
                 onOpen={handleFilterDropdownOpen}
@@ -475,7 +475,7 @@ export default function WorldRankingTable() {
             </FormControl>
 
             {/* Year */}
-            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 120 }}>
+            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
               <Select
                 value={filters.year || ''}
                 onOpen={handleFilterDropdownOpen}
@@ -492,7 +492,7 @@ export default function WorldRankingTable() {
             </FormControl>
 
             {/* Country */}
-            <FormControl className="wr-filter-control" size="small" sx={{ minWidth: 150 }}>
+            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
               <Select
                 value={filters.country || ''}
                 onOpen={handleFilterDropdownOpen}
