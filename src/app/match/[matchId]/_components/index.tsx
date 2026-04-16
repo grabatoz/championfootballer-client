@@ -21,6 +21,7 @@ const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam')
   ssr: false
 });
 import ShirtImg from '@/Components/images/shirtimg.png';
+import RightShirtImg from '@/Components/images/awayteamshirt.png';
 import EditImg from '@/Components/images/edit.png';
 import FootBallIcon from '@/Components/images/cardfootball.png';
 import React from "react";
@@ -953,6 +954,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               const stats: Partial<MatchStatLite> = perPlayerStats[player.id] || embedded;
                               const isHome = player.__team === 'home';
                               const isCaptain = player.id === (isHome ? match.homeCaptainId : match.awayCaptainId);
+                              const playerShirtImg = player.__team === 'away' ? RightShirtImg : ShirtImg;
                               const textColor = '#fff';
                               const fontWeight = idx === 0 ? 700 : 500;
                               return (
@@ -1000,7 +1002,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             width: { xs: 28, sm: 32, md: 40 }, 
                                             height: { xs: 28, sm: 32, md: 40 } 
                                           }}>
-                                            <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                            <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                           </Box>
                                         </Box>
                                         <Typography
@@ -1092,7 +1094,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
                                           <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 0.5, sm: 1, md: 2 }, minWidth: { xs: 28, sm: 36, md: 44 } }}>
                                             <Box sx={{ position: 'relative', width: { xs: 28, sm: 32, md: 40 }, height: { xs: 28, sm: 32, md: 40 } }}>
-                                              <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                              <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                             </Box>
                                           </Box>
                                           <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 11, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={formatPlayerDisplayName(player)}>
