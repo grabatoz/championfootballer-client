@@ -2777,8 +2777,8 @@ function AllLeagues() {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 size="small"
                 sx={{
-                   minWidth: 105,
-                  width: { xs: '100%', sm: 180, md: 105 },
+                   minWidth: 130,
+                  width: { xs: '100%', sm: 180, md: 130 },
                   '& .MuiOutlinedInput-root': { 
                     color: 'white',
                     borderRadius: 6,

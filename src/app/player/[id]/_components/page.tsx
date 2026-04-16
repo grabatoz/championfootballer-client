@@ -1897,7 +1897,7 @@ export default function PlayerStatsPage() {
                             }}
                         >
                             {/* Year Filter */}
-                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 105 : '100%' }}>
+                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"

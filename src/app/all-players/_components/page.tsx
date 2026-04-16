@@ -834,7 +834,7 @@ const AllPlayersPage = () => {
               flexWrap: { xs: 'wrap', md: 'nowrap' },
             }}>
               {/* Year Filter */}
-              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 105 : '100%' }}>
+              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedYear}
