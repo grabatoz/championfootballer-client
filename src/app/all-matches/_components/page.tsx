@@ -2093,8 +2093,9 @@ export default function AllMatches() {
                                 onClick={handleLeaguesDropdownOpen}
                                 sx={{
                                     textTransform: 'uppercase',
-                                    fontSize: { xs: '0.95rem', sm: '1.25rem', md: '1.2rem' },
+                                    fontFamily: 'Arial, Helvetica, sans-serif',
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
                                     minHeight: { xs: 44, md: 48 },
                                     height: { xs: 44, md: 48 },
                                     lineHeight: 1.2,
@@ -2294,8 +2295,9 @@ export default function AllMatches() {
                                 onClick={handleSeasonDropdownOpen}
                                 sx={{
                                     textTransform: 'uppercase',
-                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1rem' },
+                                    fontFamily: 'Arial, Helvetica, sans-serif',
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
                                     minHeight: { xs: 44, md: 48 },
                                     height: { xs: 44, md: 48 },
                                     lineHeight: 1.2,

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import {
   Container,
   Typography,
+  Button,
   TextField,
   Select,
   Menu,
@@ -120,6 +121,7 @@ interface LeagueOption {
 const AllPlayersPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const dispatch = useDispatch<AppDispatch>();
   const { playedWithPlayers, leaguePlayers, loading, error } = useSelector((state: RootState) => state.user);
   const { token } = useSelector((state: RootState) => state.auth);
@@ -820,14 +822,19 @@ const AllPlayersPage = () => {
 
             {/* Filter Buttons */}
             <Box sx={{
-              display: 'flex',
-              gap: { xs: 0.8, md: 0.5 },
-              flexWrap: { xs: 'wrap', md: 'nowrap' },
-              justifyContent: { xs: 'center', md: 'flex-end' },
+              display: { xs: 'grid', md: 'flex' },
+              gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
+              alignItems: 'center',
+              justifyContent: { xs: 'stretch', md: 'flex-end' },
+              columnGap: { xs: 0.25, md: 0.50 },
+              rowGap: { xs: 0.25, md: 0.50 },
               width: { xs: '100%', md: 'auto' },
+              maxWidth: { xs: 340, sm: 520, md: 'none' },
+              mx: { xs: 'auto', md: 0 },
+              flexWrap: { xs: 'wrap', md: 'nowrap' },
             }}>
               {/* Year Filter */}
-              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`}>
+              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 105 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedYear}
@@ -839,8 +846,8 @@ const AllPlayersPage = () => {
                 onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
                 style={{
                   height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                  marginLeft: isMobile ? '0px' : '4px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 28px 0 12px',
+                  marginLeft: 0,
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
@@ -848,12 +855,13 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: 'pointer',
                   outline: 'none',
-                  width: isMobile ? '112px' : 'auto',
-                  minWidth: isMobile ? '112px' : '100px',
+                  width: '100%',
+                  display: 'block',
+                  boxSizing: 'border-box',
                   appearance: 'none',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
-                  fontWeight: 600,
+                  fontWeight: isMobile ? 400 : 400,
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
@@ -868,7 +876,7 @@ const AllPlayersPage = () => {
               </div>
 
               {/* League Filter */}
-              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`}>
+              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedLeague}
@@ -883,8 +891,8 @@ const AllPlayersPage = () => {
                 disabled={noLeagues || filteredLeagues.length === 0}
                 style={{
                   height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                  marginLeft: isMobile ? '0px' : '4px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
+                  marginLeft: 0,
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
@@ -892,14 +900,16 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  width: isMobile ? '112px' : 'auto',
-                  minWidth: isMobile ? '112px' : '110px',
+                  width: '100%',
+                  display: 'block',
+                  boxSizing: 'border-box',
                   opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
-                  fontWeight: 600,
+                  fontWeight: isMobile ? 400 : 400,
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
@@ -910,7 +920,7 @@ const AllPlayersPage = () => {
               </div>
 
               {/* Season Filter */}
-              <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`}>
+              <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedSeason}
@@ -927,8 +937,8 @@ const AllPlayersPage = () => {
                 disabled={selectedLeague === 'all'}
                 style={{
                   height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 36px 0 12px',
-                  marginLeft: isMobile ? '0px' : '4px',
+                  padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
+                  marginLeft: 0,
                   backgroundColor: 'transparent',
                   color: '#fff',
                   border: '1.5px solid #e56a16',
@@ -936,13 +946,14 @@ const AllPlayersPage = () => {
                   fontSize: isMobile ? '13px' : '17px',
                   cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
                   outline: 'none',
-                  width: isMobile ? '112px' : 'auto',
-                  minWidth: isMobile ? '112px' : '110px',
+                  width: '100%',
+                  display: 'block',
+                  boxSizing: 'border-box',
                   opacity: selectedLeague === 'all' ? 0.6 : 1,
                   appearance: 'none',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
-                  fontWeight: 600,
+                  fontWeight: isMobile ? 400 : 400,
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
                 }}
               >
@@ -956,7 +967,8 @@ const AllPlayersPage = () => {
               </div>
 
               {/* Clear Button */}
-              <button
+              <Button
+                variant="outlined"
                 onClick={() => {
                   setSearchQuery('');
                   setSearchTerm('');
@@ -966,24 +978,28 @@ const AllPlayersPage = () => {
                   setSelectedPosition('all');
                   setSeasons([]);
                 }}
-                style={{
-                  height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 10px' : '0 17px',
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: '2px solid rgba(255,255,255,0.5)',
-                  borderRadius: '24px',
-                  fontSize: isMobile ? '13px' : '17px',
-                  width: isMobile ? '112px' : 'auto',
-                  minWidth: isMobile ? '112px' : 'auto',
-                  cursor: 'pointer',
-                  outline: 'none',
+                sx={{
+                  color: 'white',
+                  height: { xs: 34, md: 39 },
+                  borderRadius: 6,
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderWidth: '3px',
+                  px: 2.5,
+                  py: 1,
+                  width: { xs: '100%', sm: 'auto' },
+                  fontSize: { xs: '13px', md: '17px' },
                   fontFamily: '"Woodford Bourne Pro", sans-serif',
-                  fontWeight: 600,
+                  fontWeight: 'bold',
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    borderWidth: '3px',
+                    bgcolor: 'rgba(255,255,255,0.05)'
+                  }
                 }}
               >
                 Clear
-              </button>
+              </Button>
             </Box>
         </Box>
       </PageHeader>

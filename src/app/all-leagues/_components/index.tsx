@@ -1655,6 +1655,8 @@ function AllLeagues() {
   const [showArchived, setShowArchived] = useState(false);
   const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
+  const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
+  const [pendingSeasonLeague, setPendingSeasonLeague] = useState<LeagueWithStatus | null>(null);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
@@ -1999,6 +2001,23 @@ function AllLeagues() {
       setCreatingSeasonLeagueId(null);
     }
   }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues]);
+
+  const openCreateSeasonConfirm = useCallback((league: LeagueWithStatus) => {
+    setPendingSeasonLeague(league);
+    setSeasonConfirmOpen(true);
+  }, []);
+
+  const closeCreateSeasonConfirm = useCallback(() => {
+    setSeasonConfirmOpen(false);
+    setPendingSeasonLeague(null);
+  }, []);
+
+  const confirmCreateSeason = useCallback(async () => {
+    if (!pendingSeasonLeague) return;
+    await handleCreateSeasonForLeague(pendingSeasonLeague);
+    setSeasonConfirmOpen(false);
+    setPendingSeasonLeague(null);
+  }, [pendingSeasonLeague, handleCreateSeasonForLeague]);
 
   const handleCreateLeague = async () => {
     if (!leagueName.trim()) {
@@ -3187,7 +3206,7 @@ function AllLeagues() {
                                 startIcon={!isCreatingSeason ? <AddIcon sx={{ fontSize: 22 }} /> : undefined}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  void handleCreateSeasonForLeague(league);
+                                  openCreateSeasonConfirm(league);
                                 }}
                                 sx={{
                                   alignSelf: 'flex-start',
@@ -3201,6 +3220,8 @@ function AllLeagues() {
                                 fontFamily: '"League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' },
+                                  textDecoration: 'underline',
+                                  textUnderlineOffset: '3px',
                                   // color: isCompleted ? '#ffffff' : '#d1fae5',
                                   // border: isCompleted ? '1px solid #111827' : '1px solid rgba(39,171,131,0.85)',
                                   // backgroundColor: isCompleted ? '#111827' : 'rgba(39,171,131,0.2)',
@@ -3635,6 +3656,50 @@ function AllLeagues() {
             )}
           </Box>
         )}
+
+        <Dialog
+          open={seasonConfirmOpen}
+          onClose={closeCreateSeasonConfirm}
+          fullWidth
+          maxWidth="xs"
+          PaperProps={{
+            sx: {
+              bgcolor: 'rgba(15,15,15,0.96)',
+              color: '#E5E7EB',
+              borderRadius: 2,
+              border: '1px solid rgba(255,255,255,0.08)',
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: '#E5E7EB', fontWeight: 700 }}>
+            Create New Season
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ color: '#9CA3AF' }}>
+              Do you want to create a new season?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 2 }}>
+            <Button onClick={closeCreateSeasonConfirm} sx={{ color: '#E5E7EB' }}>
+              No
+            </Button>
+            <Button
+              variant="contained"
+              onClick={confirmCreateSeason}
+              disabled={
+                !!pendingSeasonLeague && creatingSeasonLeagueId === String(pendingSeasonLeague.id)
+              }
+              sx={{
+                bgcolor: '#27ab83',
+                '&:hover': { bgcolor: '#1e8463' },
+              }}
+            >
+              {!!pendingSeasonLeague && creatingSeasonLeagueId === String(pendingSeasonLeague.id)
+                ? 'Creating...'
+                : 'Yes'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Create League Dialog */}
         <Dialog
