@@ -148,6 +148,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   const [dropdownOffsetY, setDropdownOffsetY] = useState(0);
   const [networkDone, setNetworkDone] = useState(false);
   const [isCreatingSeason, setIsCreatingSeason] = useState(false);
+  const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const { token } = useAuth();
@@ -356,6 +357,20 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     } finally {
       setIsCreatingSeason(false);
     }
+  };
+
+  const openCreateSeasonConfirm = () => {
+    if (!selectedLeague || isCreatingSeason || isFetching) return;
+    setSeasonConfirmOpen(true);
+  };
+
+  const closeCreateSeasonConfirm = () => {
+    setSeasonConfirmOpen(false);
+  };
+
+  const confirmCreateSeason = async () => {
+    await handleCreateNewSeason();
+    setSeasonConfirmOpen(false);
   };
 
   // Format league name function
@@ -1054,7 +1069,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       {selectedLeague && selectedLeague.userRole === 'ADMIN' && (
         <Button
         disabled={isCreatingSeason || isFetching}
-        onClick={handleCreateNewSeason}
+        onClick={openCreateSeasonConfirm}
            variant="contained"
                    fullWidth
                    startIcon={<span style={{ fontSize: '20px'}}>+</span>}
@@ -1084,6 +1099,46 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
         </Button>
       )}
+
+      <Dialog
+        open={seasonConfirmOpen}
+        onClose={closeCreateSeasonConfirm}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(15,15,15,0.96)',
+            color: '#E5E7EB',
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.08)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: '#E5E7EB', fontWeight: 700 }}>
+          Create New Season
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: '#9CA3AF' }}>
+            Do you want to create a new season?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button onClick={closeCreateSeasonConfirm} sx={{ color: '#E5E7EB' }}>
+            No
+          </Button>
+          <Button
+            variant="contained"
+            onClick={confirmCreateSeason}
+            disabled={isCreatingSeason}
+            sx={{
+              bgcolor: '#27ab83',
+              '&:hover': { bgcolor: '#1e8463' },
+            }}
+          >
+            {isCreatingSeason ? 'Creating...' : 'Yes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
