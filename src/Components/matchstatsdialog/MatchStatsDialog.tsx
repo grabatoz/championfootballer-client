@@ -2936,11 +2936,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 </TextField>
                             </Box>
 
-                            {!isCaptainUser && (
+                            {/* {!isCaptainUser && (
                                 <Typography variant="caption" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.7)' }}>
                                     Only the captain from each team can select Defensive Impact and + Mentality players.
                                 </Typography>
-                            )}
+                            )} */}
                         </Box>
                     </Box>
 
