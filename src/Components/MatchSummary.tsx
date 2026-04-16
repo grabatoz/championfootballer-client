@@ -261,10 +261,11 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               width: "100%",
               mt: { xs: embeddedInDialog ? 2.6 : 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
               // mb: { xs: 1, md: 2 },
+              fontFamily: 'Woodford Bourne Pro'
             }}
           >
             <span className="">{leagueName}</span>
-            <span style={{ display: 'block', lineHeight: 1.2, marginTop: '-2px', fontSize: '0.75em' }}>Match {currentMatch} of {totalMatches}</span>
+            <span style={{ display: 'block', lineHeight: 1.2, marginTop: '-2px', fontSize: '0.75em' }}>Match: {currentMatch}/{totalMatches}</span>
           </Typography>
         </Link>
 
@@ -351,7 +352,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               fontWeight={700}
               sx={{ fontSize: { xs: embeddedInDialog ? 28 : 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: embeddedInDialog ? -2 : -3, sm: 0, md: 0 }, fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase' }}
             >
-              VS
+              V/S
             </Typography>
             <Typography
               variant="caption"
