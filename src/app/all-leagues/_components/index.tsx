@@ -2710,7 +2710,7 @@ function AllLeagues() {
             <Box
               sx={{
                 display: 'flex',
-                gap: { xs: 1, md: 2 },
+                gap: { xs: 1, md: 1 },
                 alignItems: 'center',
                 flexWrap: 'wrap',
                 width: { xs: '100%', md: 'auto' }
@@ -2722,8 +2722,8 @@ function AllLeagues() {
                 onChange={(e) => setSelectedLeagueId(e.target.value)}
                 size="small"
                 sx={{
-                  minWidth: 150,
-                  width: { xs: '100%', sm: 180, md: 'auto' },
+                  minWidth: 130,
+                  width: { xs: '100%', sm: 180, md: 130 },
                   '& .MuiOutlinedInput-root': { 
                     color: 'white',
                     borderRadius: 6,
@@ -2757,8 +2757,8 @@ function AllLeagues() {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 size="small"
                 sx={{
-                  minWidth: 130,
-                  width: { xs: '100%', sm: 150, md: 'auto' },
+                   minWidth: 105,
+                  width: { xs: '100%', sm: 180, md: 105 },
                   '& .MuiOutlinedInput-root': { 
                     color: 'white',
                     borderRadius: 6,
