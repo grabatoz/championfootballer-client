@@ -1457,7 +1457,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           <Button
             variant="contained"
             color="error"
-            onClick={onDelete}
+            // onClick={onDelete}
+             onClick={() => {
+                  if (!window.confirm('This match will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues actions..')) return;
+                  onArchive?.();
+                }}
             sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}
           >
             Delete League
@@ -1492,7 +1496,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 variant="contained"
                 onClick={() => {
                   if (!window.confirm('Restore this league from archive? It will become active again.')) return;
-                  onUnarchive();
+                  onUnarchive?.();
                 }}
                 sx={{
                   bgcolor: '#27ab83',
@@ -1510,7 +1514,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 variant="outlined"
                 onClick={() => {
                   if (!window.confirm('Are you sure you want to archive this league? It will be hidden from active views.')) return;
-                  onArchive();
+                  onArchive?.();
                 }}
                 sx={{
                   borderColor: 'rgba(211,47,47,0.6)',

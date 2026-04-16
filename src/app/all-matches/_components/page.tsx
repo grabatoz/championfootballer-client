@@ -2463,7 +2463,7 @@ export default function AllMatches() {
                                 variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'results' ? '#00a77f' : 'transparent',
+                                    backgroundColor: matchFilter === 'results' ? '#444' : 'transparent',
                                     color: 'white',
                                     border: '1px solid #b75512',
                                     borderColor: '#b75512',
@@ -2474,13 +2474,13 @@ export default function AllMatches() {
                                     minHeight: { xs: 36, md: 48 },
                                     height: { xs: 36, md: 48 },
                                     minWidth: 0,
-                                    width: { xs: '100%', sm: 'auto' },
+                                    width: { xs: '100%', sm: 'auto' , md: 130 },
                                     px: { xs: 0.35, sm: 1.5, md: 2.25 },
                                     py: { xs: 0.75, sm: 0.8 },
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'results' ? '#00a77f' : 'rgba(183,85,18,0.08)',
+                                        backgroundColor: matchFilter === 'results' ? '#444' : 'rgba(183,85,18,0.08)',
                                         borderColor: '#b75512',
                                     },
                                 }}
@@ -2492,7 +2492,7 @@ export default function AllMatches() {
                                 variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('fixtures')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'fixtures' ? '#00a77f' : 'transparent',
+                                    backgroundColor: matchFilter === 'fixtures' ? '#444' : 'transparent',
                                     color: 'white',
                                     border: '1px solid #b75512',
                                     borderColor: '#b75512',
@@ -2503,13 +2503,13 @@ export default function AllMatches() {
                                     minHeight: { xs: 36, md: 48 },
                                     height: { xs: 36, md: 48 },
                                     minWidth: 0,
-                                    width: { xs: '100%', sm: 'auto' },
+                                    width: { xs: '100%', sm: 'auto' , md: 130},
                                     px: { xs: 0.35, sm: 1.5, md: 2.25 },
                                     py: { xs: 0.75, sm: 0.8 },
                                     whiteSpace: 'nowrap',
                                     lineHeight: 1.1,
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'fixtures' ? '#00a77f' : 'rgba(183,85,18,0.08)',
+                                        backgroundColor: matchFilter === 'fixtures' ? '#444' : 'rgba(183,85,18,0.08)',
                                         borderColor: '#b75512',
                                     },
                                 }}

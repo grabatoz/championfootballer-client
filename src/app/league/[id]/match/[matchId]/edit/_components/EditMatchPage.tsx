@@ -2354,7 +2354,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Time</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Start Time</Typography>
                       <TimePicker
                         value={startTime}
                         onChange={(nv: Dayjs | null) => setStartTime(nv)}
@@ -2374,7 +2374,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration (Min)</Typography>
                       <TextField
                         type='number'
                         value={duration}

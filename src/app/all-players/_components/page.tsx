@@ -24,8 +24,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/store';
+import { useDispatch } from 'react-redux';
+import { AppDispatch, useAppSelector } from '@/lib/store';
 import { fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
 import { useRouter } from 'next/navigation';
@@ -123,8 +123,8 @@ const AllPlayersPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const dispatch = useDispatch<AppDispatch>();
-  const { playedWithPlayers, leaguePlayers, loading, error } = useSelector((state: RootState) => state.user);
-  const { token } = useSelector((state: RootState) => state.auth);
+  const { playedWithPlayers, leaguePlayers, loading, error } = useAppSelector((state) => state.user);
+  const token = useAppSelector((state) => state.auth.token);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState(''); // Actual search term after hitting Enter
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
