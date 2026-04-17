@@ -93,6 +93,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string): 
   localStorage.setItem('isAuthenticated', 'true');
   localStorage.setItem('user', JSON.stringify(user));
   localStorage.setItem('userData', JSON.stringify(userData));
+  localStorage.setItem('token', token);
 
   const expiryDate = new Date();
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
@@ -148,36 +149,67 @@ export const authStorage = {
       const user = localStorage.getItem('user');
       const userData = localStorage.getItem('userData');
       const sessionExpiry = localStorage.getItem('sessionExpiry');
-      const token = Cookies.get('token') || Cookies.get('auth_token');
+      const cookieToken = Cookies.get('token') || Cookies.get('auth_token');
+      const localToken = localStorage.getItem('token') || undefined;
 
-      console.log('🔍 Getting auth data:', {
-        isAuthenticated,
-        hasUser: !!user,
-        hasUserData: !!userData,
-        hasToken: !!token,
-        tokenLength: token?.length,
-        cookiesAvailable: document.cookie.includes('token')
-      });
+      const restoreTokenCookies = (tokenToRestore: string): string => {
+        Cookies.set('token', tokenToRestore, { expires: 365, path: '/', sameSite: 'lax' });
+        Cookies.set('auth_token', tokenToRestore, { expires: 365, path: '/', sameSite: 'lax' });
+        localStorage.setItem('token', tokenToRestore);
+        return tokenToRestore;
+      };
+
+      const getTokenFromBackup = (): string | undefined => {
+        if (localToken) return localToken;
+
+        const localAuthData = localStorage.getItem('authData');
+        if (localAuthData) {
+          try {
+            const parsed = JSON.parse(localAuthData) as Partial<AuthData>;
+            if (typeof parsed.token === 'string' && parsed.token.length > 0) return parsed.token;
+          } catch {
+            // ignore malformed local authData
+          }
+        }
+
+        const sessionAuthData = sessionStorage.getItem('authData');
+        if (sessionAuthData) {
+          try {
+            const parsed = JSON.parse(sessionAuthData) as Partial<AuthData>;
+            if (typeof parsed.token === 'string' && parsed.token.length > 0) return parsed.token;
+          } catch {
+            // ignore malformed session authData
+          }
+        }
+
+        return undefined;
+      };
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[AUTH-STORAGE] getAuth snapshot:', {
+          isAuthenticated,
+          hasUser: !!user,
+          hasUserData: !!userData,
+          hasCookieToken: !!cookieToken,
+          hasLocalToken: !!localToken,
+        });
+      }
 
       if (isAuthenticated === 'true' && user && userData) {
+        let token = cookieToken;
+
         if (!token) {
-          console.error('❌ User authenticated but no token found in cookies!');
-          // Try to get from localStorage backup
-          const authData = localStorage.getItem('authData');
-          if (authData) {
-            const parsed = JSON.parse(authData) as AuthData;
-            if (parsed.token) {
-              console.log('✅ Recovered token from authData backup');
-              // Restore to cookies
-              Cookies.set('token', parsed.token, { expires: 365, path: '/' });
-              return {
-                token: parsed.token,
-                user: JSON.parse(user) as UserProfile,
-                userData: JSON.parse(userData) as UserDataShape,
-                isAuthenticated: true,
-                sessionExpiry: sessionExpiry || undefined,
-              };
+          const recoveredToken = getTokenFromBackup();
+          if (recoveredToken) {
+            token = restoreTokenCookies(recoveredToken);
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[AUTH-STORAGE] Token missing in cookies, recovered from backup storage.');
             }
+          } else {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[AUTH-STORAGE] Auth state exists but token is missing; returning null.');
+            }
+            return null;
           }
         }
 
@@ -193,10 +225,9 @@ export const authStorage = {
       const local = localStorage.getItem('authData');
       if (local) {
         const parsed = JSON.parse(local) as AuthData;
-        // Restore token to cookies if missing
-        if (parsed.token && !Cookies.get('token')) {
-          console.log('✅ Restoring token to cookies from authData');
-          Cookies.set('token', parsed.token, { expires: 365, path: '/' });
+        if (!parsed.token) return null;
+        if (!cookieToken) {
+          restoreTokenCookies(parsed.token);
         }
         return {
           token: parsed.token,
@@ -210,10 +241,9 @@ export const authStorage = {
       const session = sessionStorage.getItem('authData');
       if (session) {
         const parsed = JSON.parse(session) as AuthData;
-        // Restore token to cookies if missing
-        if (parsed.token && !Cookies.get('token')) {
-          console.log('✅ Restoring token to cookies from sessionStorage');
-          Cookies.set('token', parsed.token, { expires: 365, path: '/' });
+        if (!parsed.token) return null;
+        if (!cookieToken) {
+          restoreTokenCookies(parsed.token);
         }
         return {
           token: parsed.token,
@@ -224,10 +254,9 @@ export const authStorage = {
         };
       }
 
-      console.log('❌ No auth data found anywhere');
       return null;
     } catch (e) {
-      console.error('[AUTH-STORAGE] getAuth error', e);
+      console.warn('[AUTH-STORAGE] getAuth error', e);
       return null;
     }
   },

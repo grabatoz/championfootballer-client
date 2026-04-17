@@ -137,6 +137,8 @@ const dropdownMenuBaseProps = {
 
 interface User {
     id: string;
+    userId?: string;
+    _id?: string;
     firstName: string;
     lastName: string;
     // shirtNumber?: string;
@@ -379,6 +381,17 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // --- NEW: Captain Picks state ---
     const [captainPicks, setCaptainPicks] = useState<CaptainPicks>({});
+    const [matchCaptainPicks, setMatchCaptainPicks] = useState<{ home: CaptainPicks; away: CaptainPicks }>({
+        home: {},
+        away: {},
+    });
+    const [matchCategoryVoteCounts, setMatchCategoryVoteCounts] = useState<{
+        defence: Record<string, number>;
+        influence: Record<string, number>;
+    }>({
+        defence: {},
+        influence: {},
+    });
     const [isPickDialogOpen, setIsPickDialogOpen] = useState(false);
     const [pickCategory, setPickCategory] = useState<CaptainPickCategory | null>(null);
     const [savingPick, setSavingPick] = useState(false);
@@ -387,7 +400,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // --- end captain picks state ---
 
     const { user, token } = useAuth();
-    const currentUserId = String((user as { id?: string; userId?: string } | undefined)?.id || (user as { id?: string; userId?: string } | undefined)?.userId || '');
+    const currentAuthUser = user as { id?: string; userId?: string; _id?: string } | undefined;
+    const currentUserId = String(currentAuthUser?.id || currentAuthUser?.userId || currentAuthUser?._id || '');
     const params = useParams();
     const router = useRouter();
     const theme = useTheme();
@@ -1620,6 +1634,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             // 3. Save Captain Picks (if user is captain)
             if ((isHomeCaptain || isAwayCaptain) && captainApiAvailable) {
                 try {
+                    captainPicksSuccess = true;
                     // Save Defensive Impact pick
                     if (captainPicks.defence) {
                         const defResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
@@ -1629,6 +1644,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         });
                         if (defResponse.status === 404 || defResponse.status === 405) {
                             setCaptainApiAvailable(false);
+                        } else if (!defResponse.ok) {
+                            const defData = await defResponse.json().catch(() => ({} as { message?: string }));
+                            errors.push(defData.message || 'Failed to save Defensive Impact pick');
+                            captainPicksSuccess = false;
                         }
                     }
 
@@ -1641,10 +1660,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         });
                         if (menResponse.status === 404 || menResponse.status === 405) {
                             setCaptainApiAvailable(false);
+                        } else if (!menResponse.ok) {
+                            const menData = await menResponse.json().catch(() => ({} as { message?: string }));
+                            errors.push(menData.message || 'Failed to save + Mentality pick');
+                            captainPicksSuccess = false;
                         }
                     }
-                    captainPicksSuccess = true;
                 } catch {
+                    captainPicksSuccess = false;
                     errors.push('Failed to save captain picks');
                 }
             } else {
@@ -1789,35 +1812,42 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         return false;
     }, [user, match, isAdmin, isHomeCaptain, isAwayCaptain]);
 
-    const myTeamPlayers: (User & { isGuest?: boolean })[] = useMemo(() => {
+    const captainPickCandidates: (User & { isGuest?: boolean })[] = useMemo(() => {
         if (!match) return [];
-        const teamSide: 'home' | 'away' | null = isHomeCaptain ? 'home' : isAwayCaptain ? 'away' : null;
-        if (!teamSide) return [];
 
-        const teamUsers = (teamSide === 'home' ? match.homeTeamUsers : match.awayTeamUsers) ?? [];
-        const guestUsers = (match.guests || [])
-            .filter(g => g.team === teamSide)
+        const guestUsersHome: (User & { isGuest: true })[] = (match.guests || [])
+            .filter(g => g.team === 'home')
             .map(g => ({
                 id: `guest-${g.id}`,
                 guestId: g.id,
                 firstName: g.firstName,
                 lastName: g.lastName,
-                isGuest: true,
+                isGuest: true
             } as User & { isGuest: true }));
 
-        return [...teamUsers, ...guestUsers];
-    }, [match, isHomeCaptain, isAwayCaptain]);
+        const guestUsersAway: (User & { isGuest: true })[] = (match.guests || [])
+            .filter(g => g.team === 'away')
+            .map(g => ({
+                id: `guest-${g.id}`,
+                guestId: g.id,
+                firstName: g.firstName,
+                lastName: g.lastName,
+                isGuest: true
+            } as User & { isGuest: true }));
 
-    const captainPickCandidates = useMemo(
-        () => myTeamPlayers.filter(p => String(p.id) !== currentUserId),
-        [myTeamPlayers, currentUserId]
-    );
+        return [
+            ...(match.homeTeamUsers ?? []),
+            ...guestUsersHome,
+            ...(match.awayTeamUsers ?? []),
+            ...guestUsersAway
+        ];
+    }, [match]);
 
     const playerNameById = useCallback((id?: string | null) => {
         if (!id) return '';
-        const p = myTeamPlayers.find(u => String(u.id) === String(id));
+        const p = captainPickCandidates.find(u => String(u.id) === String(id));
         return p ? formatGuestAwarePlayerName(p) : '';
-    }, [myTeamPlayers]);
+    }, [captainPickCandidates]);
 
     // NEW: Fetch existing stats for current user
     const fetchUserStats = useCallback(async () => {
@@ -1870,16 +1900,26 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     useEffect(() => {
         const loadPicks = async () => {
+            setMatchCaptainPicks({ home: {}, away: {} });
+            setMatchCategoryVoteCounts({ defence: {}, influence: {} });
             if (!token || !resolvedMatchId) {
-                console.log('âڈ­ï¸ڈ Skipping captain picks load - missing token or matchId');
+                console.log('Skipping captain picks load - missing token or matchId');
                 return;
             }
 
-            console.log('ًں”„ Loading captain picks for match:', resolvedMatchId);
+            console.log('Loading captain picks for match:', resolvedMatchId);
 
-            // Determine which team the user is captain of
             const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
             const storageKey = teamKey ? `captain_picks_${resolvedMatchId}_${teamKey}` : null;
+
+            const normalizeTeamPicks = (raw: unknown): CaptainPicks => {
+                if (!raw || typeof raw !== 'object') return {};
+                const obj = raw as Record<string, unknown>;
+                return {
+                    defence: typeof obj.defence === 'string' ? obj.defence : undefined,
+                    influence: typeof obj.influence === 'string' ? obj.influence : undefined,
+                };
+            };
 
             // 1) Try local storage first so UI shows something even if API is missing
             if (storageKey && typeof window !== 'undefined') {
@@ -1887,13 +1927,21 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (raw) {
                     try {
                         const ls = JSON.parse(raw) as CaptainPicks;
-                        console.log('ًں’¾ Loaded captain picks from localStorage:', ls);
                         setCaptainPicks({
                             defence: ls.defence || undefined,
                             influence: ls.influence || undefined,
                         });
+                        if (teamKey) {
+                            setMatchCaptainPicks((prev) => ({
+                                ...prev,
+                                [teamKey]: {
+                                    defence: ls.defence || undefined,
+                                    influence: ls.influence || undefined,
+                                }
+                            }));
+                        }
                     } catch (err) {
-                        console.error('â‌Œ Failed to parse localStorage picks:', err);
+                        console.error('Failed to parse localStorage picks:', err);
                     }
                 }
             }
@@ -1904,50 +1952,73 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                console.log('ًں“، Captain picks API response:', res.status);
-
-                // Only disable API if endpoint doesn't exist (405 Method Not Allowed)
-                // 404 might just mean no picks saved yet, which is normal
                 if (res.status === 405) {
-                    console.warn('âڑ ï¸ڈ Captain picks endpoint not implemented');
                     setCaptainApiAvailable(false);
                     return;
                 }
 
                 if (!res.ok) {
-                    console.warn('âڑ ï¸ڈ Failed to load captain picks:', res.status);
-                    // Don't disable API, picks might just not exist yet
                     return;
                 }
 
                 setCaptainApiAvailable(true);
                 const data = await res.json();
-                console.log('ًںژ¯ Captain picks loaded from backend:', data);
-                
-                // Expecting shape like { home: { defence, influence }, away: { defence, influence } }
-                const picks = teamKey ? data?.[teamKey] : data?.picks;
-                
-                if (picks && typeof picks === 'object') {
-                    console.log('âœ… Setting captain picks from backend:', picks);
+
+                const readVoteMap = (raw: unknown): Record<string, number> => {
+                    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+                    const out: Record<string, number> = {};
+                    Object.entries(raw as Record<string, unknown>).forEach(([id, value]) => {
+                        const n = Number(value);
+                        if (!Number.isNaN(n) && n > 0) out[id] = n;
+                    });
+                    return out;
+                };
+
+                setMatchCategoryVoteCounts({
+                    defence: readVoteMap(
+                        (data as Record<string, unknown>)?.defenceVotes ??
+                        (data as Record<string, unknown>)?.defensiveVotes ??
+                        ((data as Record<string, unknown>)?.votes as Record<string, unknown> | undefined)?.defence ??
+                        ((data as Record<string, unknown>)?.votes as Record<string, unknown> | undefined)?.defensive
+                    ),
+                    influence: readVoteMap(
+                        (data as Record<string, unknown>)?.influenceVotes ??
+                        (data as Record<string, unknown>)?.mentalityVotes ??
+                        ((data as Record<string, unknown>)?.votes as Record<string, unknown> | undefined)?.influence ??
+                        ((data as Record<string, unknown>)?.votes as Record<string, unknown> | undefined)?.mentality
+                    ),
+                });
+
+                const homePicks = normalizeTeamPicks(data?.home);
+                const awayPicks = normalizeTeamPicks(data?.away);
+                setMatchCaptainPicks({ home: homePicks, away: awayPicks });
+
+                const picks = teamKey ? normalizeTeamPicks(data?.[teamKey]) : normalizeTeamPicks(data?.picks);
+
+                if ((picks.defence || picks.influence)) {
                     setCaptainPicks({
                         defence: picks.defence || undefined,
                         influence: picks.influence || undefined,
                     });
-                    
-                    // Also update localStorage for offline capability
+                    if (teamKey) {
+                        setMatchCaptainPicks((prev) => ({
+                            ...prev,
+                            [teamKey]: {
+                                defence: picks.defence || undefined,
+                                influence: picks.influence || undefined,
+                            }
+                        }));
+                    }
+
                     if (storageKey && typeof window !== 'undefined') {
                         localStorage.setItem(storageKey, JSON.stringify({
                             defence: picks.defence || undefined,
                             influence: picks.influence || undefined,
                         }));
-                        console.log('ًں’¾ Synced captain picks to localStorage');
                     }
-                } else {
-                    console.log('â„¹ï¸ڈ No captain picks found for team:', teamKey);
                 }
             } catch (err) {
-                console.error('â‌Œ Failed to load captain picks:', err);
-                // keep local-only mode
+                console.error('Failed to load captain picks:', err);
                 setCaptainApiAvailable(false);
             }
         };
@@ -1956,8 +2027,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // --- NEW: open pick dialog handler ---
     const openPickDialog = (category: CaptainPickCategory) => {
-        if (!isCaptainUser) {
-            toast.error('Only the team captain can make this selection.');
+        if (!isUserAssignedToTeam) {
+            toast.error('You must be assigned to a team to make this selection.');
             return;
         }
         if (!league?.active) {
@@ -1981,42 +2052,48 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             return;
         }
         if (!captainPickCandidates.some(p => String(p.id) === String(playerId))) {
-            toast.error('Please select a valid player from your team.');
+            toast.error('Please select a valid player from this match.');
             return;
         }
 
-        console.log('ًںژ¯ Saving captain pick:', { category, playerId, resolvedMatchId });
+        console.log('Saving captain pick:', { category, playerId, resolvedMatchId });
 
-        // Local update + localStorage persist
+        // Local update + localStorage persist (always immediate)
         const applyLocal = () => {
             setCaptainPicks(prev => {
                 const updated = { ...prev, [category]: playerId };
-                console.log('ًں“‌ Updated captain picks state:', updated);
                 return updated;
             });
-            
+
             const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            if (teamKey) {
+                setMatchCaptainPicks((prev) => ({
+                    ...prev,
+                    [teamKey]: {
+                        ...(prev[teamKey] || {}),
+                        [category]: playerId,
+                    }
+                }));
+            }
             if (teamKey && typeof window !== 'undefined') {
                 const key = `captain_picks_${resolvedMatchId}_${teamKey}`;
                 const next = { ...captainPicks, [category]: playerId };
                 localStorage.setItem(key, JSON.stringify(next));
-                console.log('ًں’¾ Saved to localStorage:', { key, pick: next });
             }
         };
 
-        // If API was previously marked unavailable, avoid POST 404 entirely
+        applyLocal();
+        setIsPickDialogOpen(false);
+        setPickCategory(null);
+
+        // Keep API sync as best effort; UI selection should not fail if API fails.
         if (!captainApiAvailable) {
-            console.log('âڑ ï¸ڈ Captain picks API not available, saving locally only');
-            applyLocal();
-            toast.success('Saved locally (captain picks API not enabled).');
-            setIsPickDialogOpen(false);
-            setPickCategory(null);
+            toast.success('Captain pick selected (local mode).');
             return;
         }
 
         setSavingPick(true);
         try {
-            console.log('ًں“، Sending captain pick to backend:', { category, playerId });
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
                 method: 'POST',
                 headers: {
@@ -2026,37 +2103,27 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 body: JSON.stringify({ category, playerId })
             });
 
-            // If endpoint doesn't exist, mark as unavailable for future calls
             if (res.status === 404 || res.status === 405) {
-                console.error('â‌Œ Captain picks endpoint not found:', res.status);
                 setCaptainApiAvailable(false);
-                applyLocal();
-                toast.error('Captain picks API not available. Saved locally.');
+                toast.success('Captain pick selected (local mode).');
                 return;
             }
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                console.error('â‌Œ Failed to save captain pick:', res.status, errorData);
-                throw new Error(errorData.message || 'Failed to save pick');
+                toast.error(errorData.message || 'Captain pick selected locally, backend sync failed.');
+                return;
             }
 
-            const responseData = await res.json();
-            console.log('âœ… Captain pick saved to backend:', responseData);
-
-            applyLocal();
             toast.success(`${category === 'defence' ? 'Defensive Impact' : '+ Mentality'} captain pick saved!`);
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message :
                     typeof err === 'string' ? err :
-                        'Failed to save pick';
-            console.error('â‌Œ Error saving captain pick:', err);
+                        'Captain pick selected locally, backend sync failed.';
             toast.error(message);
         } finally {
             setSavingPick(false);
-            setIsPickDialogOpen(false);
-            setPickCategory(null);
         }
     };
 
@@ -2320,13 +2387,96 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     // Players eligible for voting / dropdowns (include guests)
     const allPlayersForVoting: (User & { isGuest?: boolean })[] = [...homePlayersAll, ...awayPlayersAll];
-    // Summary row selections
-    const motmPlayer = votedForId ? allPlayersForVoting.find(p => p.id === votedForId) : undefined;
-    const defensivePlayer = captainPicks.defence ? allPlayersForVoting.find(p => p.id === captainPicks.defence) : undefined;
-    const mentalityPlayer = captainPicks.influence ? allPlayersForVoting.find(p => p.id === captainPicks.influence) : undefined;
-    // Debug log to verify state after refresh and voting
-    console.log('votedForId:', votedForId, 'playerVotes:', playerVotes);
-    console.log('ًں”چ All Players for Voting:', allPlayersForVoting.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, votes: playerVotes[p.id] || 0 })));
+
+    // Summary row: show highest-voted players across the full match
+    const toDisplayPlayerId = (rawId?: string | null): string | null => {
+        if (!rawId) return null;
+        const id = String(rawId);
+
+        const direct = allPlayersForVoting.find((p) => String(p.id) === id);
+        if (direct) return String(direct.id);
+
+        const guestAlias = allPlayersForVoting.find((p) => {
+            const pid = String(p.id);
+            return pid.startsWith('guest-') && pid.slice(6) === id;
+        });
+        if (guestAlias) return String(guestAlias.id);
+
+        return null;
+    };
+
+    const motmVoteCounts: Record<string, number> = {};
+    const defensiveVoteCounts: Record<string, number> = {};
+    const mentalityVoteCounts: Record<string, number> = {};
+
+    allPlayersForVoting.forEach((p) => {
+        const pid = String(p.id);
+        motmVoteCounts[pid] = 0;
+        defensiveVoteCounts[pid] = 0;
+        mentalityVoteCounts[pid] = 0;
+    });
+
+    Object.entries(playerVotes || {}).forEach(([rawId, count]) => {
+        const pid = toDisplayPlayerId(rawId);
+        if (!pid) return;
+        motmVoteCounts[pid] = (motmVoteCounts[pid] || 0) + (Number(count) || 0);
+    });
+
+    const backendDefenceEntries = Object.entries(matchCategoryVoteCounts.defence || {});
+    if (backendDefenceEntries.length > 0) {
+        backendDefenceEntries.forEach(([rawId, count]) => {
+            const pid = toDisplayPlayerId(rawId);
+            if (!pid) return;
+            defensiveVoteCounts[pid] = (defensiveVoteCounts[pid] || 0) + (Number(count) || 0);
+        });
+    } else {
+        [matchCaptainPicks.home?.defence, matchCaptainPicks.away?.defence].forEach((rawId) => {
+            const pid = toDisplayPlayerId(rawId);
+            if (!pid) return;
+            defensiveVoteCounts[pid] = (defensiveVoteCounts[pid] || 0) + 1;
+        });
+    }
+
+    const backendInfluenceEntries = Object.entries(matchCategoryVoteCounts.influence || {});
+    if (backendInfluenceEntries.length > 0) {
+        backendInfluenceEntries.forEach(([rawId, count]) => {
+            const pid = toDisplayPlayerId(rawId);
+            if (!pid) return;
+            mentalityVoteCounts[pid] = (mentalityVoteCounts[pid] || 0) + (Number(count) || 0);
+        });
+    } else {
+        [matchCaptainPicks.home?.influence, matchCaptainPicks.away?.influence].forEach((rawId) => {
+            const pid = toDisplayPlayerId(rawId);
+            if (!pid) return;
+            mentalityVoteCounts[pid] = (mentalityVoteCounts[pid] || 0) + 1;
+        });
+    }
+
+    const getTopVotedPlayerId = (voteCounts: Record<string, number>, fallbackId?: string | null): string | null => {
+        const entries = Object.entries(voteCounts || {});
+        if (!entries.length) return toDisplayPlayerId(fallbackId);
+
+        const maxVotes = entries.reduce((max, [, votes]) => Math.max(max, Number(votes) || 0), 0);
+        if (maxVotes <= 0) return toDisplayPlayerId(fallbackId);
+
+        const leaders = entries
+            .filter(([, votes]) => (Number(votes) || 0) === maxVotes)
+            .map(([pid]) => pid);
+
+        const preferred = toDisplayPlayerId(fallbackId);
+        if (preferred && leaders.includes(preferred)) return preferred;
+
+        const orderedLeader = allPlayersForVoting.find((p) => leaders.includes(String(p.id)));
+        return orderedLeader ? String(orderedLeader.id) : leaders[0] || null;
+    };
+
+    const motmWinnerId = getTopVotedPlayerId(motmVoteCounts, votedForId);
+    const defensiveWinnerId = getTopVotedPlayerId(defensiveVoteCounts, captainPicks.defence);
+    const mentalityWinnerId = getTopVotedPlayerId(mentalityVoteCounts, captainPicks.influence);
+
+    const motmPlayer = motmWinnerId ? allPlayersForVoting.find((p) => String(p.id) === motmWinnerId) : undefined;
+    const defensivePlayer = defensiveWinnerId ? allPlayersForVoting.find((p) => String(p.id) === defensiveWinnerId) : undefined;
+    const mentalityPlayer = mentalityWinnerId ? allPlayersForVoting.find((p) => String(p.id) === mentalityWinnerId) : undefined;
 
     const content = (
         <Box sx={{ 
@@ -2727,14 +2877,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     value={captainPicks.defence || ''}
                                     onChange={(e) => handleSelectPick(e.target.value, 'defence')}
                                     disabled={
-                                        !isCaptainUser ||
+                                        !baseCanSubmit ||
                                         !league?.active ||
-                                        !baseCanSubmit
+                                        !isUserAssignedToTeam ||
+                                        savingPick
                                     }
                                     SelectProps={{
                                         displayEmpty: true,
                                         renderValue: (selected) => {
-                                            const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
+                                            const selectedPlayer = captainPickCandidates.find(p => p.id === selected);
                                             return selectedPlayer
                                                 ? formatGuestAwarePlayerName(selectedPlayer)
                                                 : 'Select Defensive Impact Player';
@@ -2773,10 +2924,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 >
                                     {captainPickCandidates.map((p) => {
                                         const selected = captainPicks.defence === p.id;
+                                        const isSelf = String(p.id) === currentUserId;
                                         return (
                                             <MenuItem 
                                                 key={p.id} 
                                                 value={p.id}
+                                                disabled={isSelf}
                                                 sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -2836,14 +2989,15 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     value={captainPicks.influence || ''}
                                     onChange={(e) => handleSelectPick(e.target.value, 'influence')}
                                     disabled={
-                                        !isCaptainUser ||
+                                        !baseCanSubmit ||
                                         !league?.active ||
-                                        !baseCanSubmit
+                                        !isUserAssignedToTeam ||
+                                        savingPick
                                     }
                                     SelectProps={{
                                         displayEmpty: true,
                                         renderValue: (selected) => {
-                                            const selectedPlayer = myTeamPlayers.find(p => p.id === selected);
+                                            const selectedPlayer = captainPickCandidates.find(p => p.id === selected);
                                             return selectedPlayer
                                                 ? formatGuestAwarePlayerName(selectedPlayer)
                                                 : 'Select + Mentality Player';
@@ -2882,10 +3036,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 >
                                     {captainPickCandidates.map((p) => {
                                         const selected = captainPicks.influence === p.id;
+                                        const isSelf = String(p.id) === currentUserId;
                                         return (
                                             <MenuItem 
                                                 key={p.id} 
                                                 value={p.id}
+                                                disabled={isSelf}
                                                 sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -3170,7 +3326,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             <Button
                                 key={p.id}
                                 onClick={() => handleSelectPick(p.id)}
-                                disabled={savingPick}
+                                disabled={savingPick || String(p.id) === currentUserId}
                                 variant="outlined"
                                 sx={{
                                     justifyContent: 'flex-start',
@@ -4126,3 +4282,6 @@ const StatCounter = ({ label, value, onIncrement, onDecrement, icon, compact = f
         </Box>
     </Box>
 );
+
+
+

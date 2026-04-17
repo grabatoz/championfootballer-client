@@ -79,8 +79,12 @@ const PlayerCardSection: React.FC = () => {
             });
           }
           
-          // ✨ Verify token is accessible
-          const verifyToken = Cookies.get('token');
+          // Verify token availability from cookie first, then storage fallback
+          const verifyToken =
+            Cookies.get('token') ||
+            Cookies.get('auth_token') ||
+            window.localStorage.getItem('token') ||
+            authData.token;
           console.log('[HOME] Token verification:', {
             hasToken: !!verifyToken,
             tokenLength: verifyToken?.length
@@ -89,13 +93,26 @@ const PlayerCardSection: React.FC = () => {
           // ✨ Wait extra time for cookie to be fully accessible
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          // Double check token is now available
-          const finalToken = Cookies.get('token');
+          // Double check token is now available (cookie or storage fallback)
+          const finalToken =
+            Cookies.get('token') ||
+            Cookies.get('auth_token') ||
+            window.localStorage.getItem('token');
           if (finalToken) {
             console.log('[HOME] ✅ Token confirmed ready!');
             setTokenReady(true);
           } else {
-            console.error('[HOME] ❌ Token not accessible after wait!');
+            // Last fallback: ask unified auth storage to restore again
+            const recovered = authStorage.getAuth();
+            const recoveredToken = recovered?.token || window.localStorage.getItem('token');
+            if (recoveredToken) {
+              setTokenReady(true);
+              console.warn('[HOME] Token recovered via storage fallback after wait.');
+            } else {
+              // Avoid hard error noise and loading deadlock; auth guards can handle unauth state.
+              setTokenReady(true);
+              console.warn('[HOME] Token not accessible after wait; continuing with auth fallback flow.');
+            }
           }
           
           // Use the initializeFromStorage action instead of manual dispatch
