@@ -2816,7 +2816,7 @@ export default function GlobalTrophyRoom() {
                     <Typography sx={{ fontSize: '1rem', fontWeight: 300, color: 'white' }}>
                       Last Updated:
                     </Typography>
-                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 400, color: 'white' }}>
+                    <Typography sx={{ fontSize: '0.92rem', fontWeight: 400, color: 'white' }}>
                       {lastUpdatedLabel}
                     </Typography>
                   </Box>

@@ -1431,6 +1431,7 @@ export default function CareerPage() {
   };
   const dashboardTitle = playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD';
   const isLongDashboardTitle = dashboardTitle.length > 30;
+  const desktopFilterWidth = '131.5px';
 
   return (
     <Box
@@ -1648,10 +1649,11 @@ export default function CareerPage() {
                         fontSize: '17px',
                         cursor: 'pointer',
                         outline: 'none',
-                        minWidth: '100px',
+                        width: desktopFilterWidth,
+                        minWidth: desktopFilterWidth,
                         appearance: 'none',
                         WebkitAppearance: 'none',
-                        fontWeight: 600,
+                        fontWeight: 400,
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 12px center',
@@ -1769,10 +1771,11 @@ export default function CareerPage() {
                         fontSize: '17px',
                         cursor: 'pointer',
                         outline: 'none',
-                        minWidth: '110px',
+                        width: desktopFilterWidth,
+                        minWidth: desktopFilterWidth,
                         appearance: 'none',
                         WebkitAppearance: 'none',
-                        fontWeight: 600,
+                        fontWeight: 400,
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 12px center',
@@ -1892,10 +1895,11 @@ export default function CareerPage() {
                         fontSize: '17px',
                         cursor: 'pointer',
                         outline: 'none',
-                        minWidth: '110px',
+                        width: desktopFilterWidth,
+                        minWidth: desktopFilterWidth,
                         appearance: 'none',
                         WebkitAppearance: 'none',
-                        fontWeight: 600,
+                        fontWeight: 400,
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 12px center',
@@ -1904,7 +1908,7 @@ export default function CareerPage() {
                       <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
                       {availableSeasons.map(season => (
                         <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                          {season.name}{season.isActive ? ' (Active)' : ''}
+                          {season.name}
                         </option>
                       ))}
                     </select>

@@ -430,8 +430,8 @@ export default function LeagueDetailPage() {
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [section, setSection] = useState<'members' | 'matches' | 'dream-team' | 'results' | 'table' | 'leaderboard'>('table');
-    const [allPositionsSortActive, setAllPositionsSortActive] = useState(false);
-    const [allPositionsSortDirection, setAllPositionsSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [selectedMemberPosition, setSelectedMemberPosition] = useState<string>('all');
+    const [memberPositionMenuAnchor, setMemberPositionMenuAnchor] = useState<null | HTMLElement>(null);
     const tableScrollRef = React.useRef<HTMLDivElement | null>(null);
     const [tableScrollPercent, setTableScrollPercent] = useState(0);
     const [tableHasHorizontalOverflow, setTableHasHorizontalOverflow] = useState(false);
@@ -550,18 +550,31 @@ export default function LeagueDetailPage() {
         // League page must show league-specific XP only (from league XP map), not global profile XP.
         return mapValue ?? 0;
     }, [userLeagueXP]);
+    const getMemberPositionLabel = useCallback((member: User): string => {
+        const fromPosition = (member.position ?? '').toString().trim();
+        if (fromPosition) return fromPosition;
+        const fromPositionType = String((member as unknown as { positionType?: unknown })?.positionType ?? '').trim();
+        if (fromPositionType) return fromPositionType;
+        return '-';
+    }, []);
+    const memberPositionOptions = useMemo(() => {
+        const positionMap = new Map<string, string>();
+        (league?.members || []).forEach((member: User) => {
+            const position = getMemberPositionLabel(member);
+            if (!position || position === '-') return;
+            const key = position.toLowerCase();
+            if (!positionMap.has(key)) {
+                positionMap.set(key, position);
+            }
+        });
+        return Array.from(positionMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }, [league?.members, getMemberPositionLabel]);
     const sortedMembersForTable = React.useMemo(() => {
         const members = league?.members ? [...league.members] : [];
 
         members.sort((a: User, b: User) => {
             const xpA = getLeagueXpForMember(a?.id, a?.xp);
             const xpB = getLeagueXpForMember(b?.id, b?.xp);
-
-            if (allPositionsSortActive) {
-                if (xpA !== xpB) {
-                    return allPositionsSortDirection === 'asc' ? xpA - xpB : xpB - xpA;
-                }
-            }
 
             if (xpB !== xpA) return xpB - xpA;
 
@@ -571,15 +584,33 @@ export default function LeagueDetailPage() {
         });
 
         return members;
-    }, [league?.members, getLeagueXpForMember, allPositionsSortActive, allPositionsSortDirection]);
-    const handleAllPositionsSortToggle = useCallback(() => {
-        if (!allPositionsSortActive) {
-            setAllPositionsSortActive(true);
-            setAllPositionsSortDirection('asc');
-            return;
+    }, [league?.members, getLeagueXpForMember]);
+    const filteredMembersForTable = useMemo(() => {
+        if (selectedMemberPosition === 'all') return sortedMembersForTable;
+        return sortedMembersForTable.filter((member: User) =>
+            getMemberPositionLabel(member).toLowerCase() === selectedMemberPosition.toLowerCase()
+        );
+    }, [sortedMembersForTable, selectedMemberPosition, getMemberPositionLabel]);
+    useEffect(() => {
+        if (selectedMemberPosition === 'all') return;
+        const hasSelectedPosition = memberPositionOptions.some(
+            (position) => position.toLowerCase() === selectedMemberPosition.toLowerCase()
+        );
+        if (!hasSelectedPosition) {
+            setSelectedMemberPosition('all');
         }
-        setAllPositionsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    }, [allPositionsSortActive]);
+    }, [memberPositionOptions, selectedMemberPosition]);
+    const memberPositionMenuOpen = Boolean(memberPositionMenuAnchor);
+    const handleMemberPositionMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
+        setMemberPositionMenuAnchor(event.currentTarget);
+    }, []);
+    const handleMemberPositionMenuClose = useCallback(() => {
+        setMemberPositionMenuAnchor(null);
+    }, []);
+    const handleMemberPositionChange = useCallback((position: string) => {
+        setSelectedMemberPosition(position);
+        setMemberPositionMenuAnchor(null);
+    }, []);
     const [showPointsAlert, setShowPointsAlert] = useState(false);
     const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
     const [activeMatchId,] = React.useState<string | null>(null);
@@ -3667,13 +3698,13 @@ export default function LeagueDetailPage() {
                                             <div className="grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-6 py-4 bg-[#2b2b2b] border-b border-[#444] text-white">
                                                 <button
                                                     type="button"
-                                                    onClick={handleAllPositionsSortToggle}
+                                                    onClick={handleMemberPositionMenuOpen}
                                                     className="text-left flex items-center gap-2 font-semibold text-sm uppercase tracking-wide cursor-pointer select-none bg-transparent border-0 p-0 m-0"
                                                 >
-                                                    ALL POSITIONS
+                                                    {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
                                                     <ChevronDown
                                                         size={14}
-                                                        className={`transition-transform duration-300 ${allPositionsSortActive && allPositionsSortDirection === 'asc' ? 'rotate-180' : ''}`}
+                                                        className={`transition-transform duration-300 ${memberPositionMenuOpen ? 'rotate-180' : ''}`}
                                                     />
                                                 </button>
                                                 <div className="text-left font-semibold text-sm uppercase tracking-wide pl-8">PLAYING STYLE</div>
@@ -3681,10 +3712,47 @@ export default function LeagueDetailPage() {
                                                 <div className="text-center font-semibold text-sm uppercase tracking-wide">VIEW STATS</div>
                                                 <div className="text-center font-semibold text-sm uppercase tracking-wide"><span style={{ fontSize: '0.6rem' }}>xp</span> POINTS</div>
                                             </div>
+                                            <Menu
+                                                anchorEl={memberPositionMenuAnchor}
+                                                open={memberPositionMenuOpen}
+                                                onClose={handleMemberPositionMenuClose}
+                                                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                                slotProps={{
+                                                    paper: {
+                                                        sx: {
+                                                            mt: 0.5,
+                                                            minWidth: 200,
+                                                            backgroundColor: '#1f1f1f',
+                                                            border: '1px solid #e56a16',
+                                                            borderRadius: '8px',
+                                                            color: '#fff',
+                                                        },
+                                                    },
+                                                }}
+                                            >
+                                                <MenuItem
+                                                    selected={selectedMemberPosition === 'all'}
+                                                    onClick={() => handleMemberPositionChange('all')}
+                                                    sx={{ fontSize: { xs: 13, sm: 15 } }}
+                                                >
+                                                    All Positions
+                                                </MenuItem>
+                                                {memberPositionOptions.map((position) => (
+                                                    <MenuItem
+                                                        key={position}
+                                                        selected={selectedMemberPosition.toLowerCase() === position.toLowerCase()}
+                                                        onClick={() => handleMemberPositionChange(position)}
+                                                        sx={{ fontSize: { xs: 13, sm: 15 } }}
+                                                    >
+                                                        {position}
+                                                    </MenuItem>
+                                                ))}
+                                            </Menu>
 
                                             {/* Table Rows */}
                                             <div>
-                                                {sortedMembersForTable
+                                                {filteredMembersForTable
                                                     .map((member, index, arr) => {
                                                         const firstName = member.firstName || '';
                                                         const lastName = member.lastName || '';
@@ -3709,7 +3777,7 @@ export default function LeagueDetailPage() {
                                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                                             <span className="text-foreground font-semibold truncate">{formatMatchName(firstName)} {formatMatchName(lastName)}</span>
                                                                         </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs">{member.position || 'Striker'}</span>
+                                                                        <span className="text-muted-foreground font-normal text-xs">{getMemberPositionLabel(member) === '-' ? 'Striker' : getMemberPositionLabel(member)}</span>
                                                                     </div>
                                                                 </div>
 
