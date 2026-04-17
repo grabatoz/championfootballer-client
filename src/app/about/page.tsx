@@ -1,15 +1,6 @@
-"use client";
-
-import { useEffect } from "react";
 import Link from "next/link";
 
 export default function AboutCF() {
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, []);
-
   return (
     <main
       className="min-h-screen p-6"

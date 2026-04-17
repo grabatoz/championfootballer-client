@@ -1,13 +1,8 @@
-"use client";
 import React from 'react'
 import AllMatches from './_components/page'
 
-function page() {
-  return (
-    <div>
-      <AllMatches/>     
-    </div>
-  )
+function Page() {
+  return <AllMatches />;
 }
 
-export default page
+export default Page

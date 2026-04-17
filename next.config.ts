@@ -4,6 +4,7 @@ import type { NextConfig } from 'next';
 // when build workers are not available in the current environment.
 // Enable by setting NEXT_ENABLE_PARALLEL=1 in environments that support it.
 const enableParallel = process.env.NEXT_ENABLE_PARALLEL === '1';
+const isProd = process.env.NODE_ENV === 'production';
 
 const nextConfig: NextConfig = {
   // Enable production optimizations
@@ -183,33 +184,31 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(), geolocation=()',
           },
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
+          // HTML/doc responses: revalidate quickly in prod; disable cache in dev for easier debugging.
+          ...(isProd
+            ? [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }]
+            : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
         ],
       },
-      // Disable cache for static assets too
+      // Static Next.js assets should be aggressively cached in production.
       {
         source: '/_next/static/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
+          ...(isProd
+            ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+            : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
         ],
       },
-      // Disable cache for public assets
+      // Public assets (images/icons) can also be cached in production.
       {
         source: '/assets/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
+          ...(isProd
+            ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+            : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
         ],
       },
-      // Disable cache for API routes
+      // Keep API routes non-cached by default.
       {
         source: '/api/:path*',
         headers: [
