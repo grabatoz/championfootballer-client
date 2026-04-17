@@ -775,10 +775,11 @@ const AllPlayersPage = () => {
           justifyContent: 'space-between',
           gap: { xs: 2, md: 3 },
           // Offset PageHeader internal padding so controls align with table edges.
-          mx: { xs: -2, md: -3 },
+          // mx: { xs: -2, md: -3 },
           px: { xs: 1, sm: 3, md: 7.5 },
           py: { xs: 1.5, md: 1.3 },
-          width: 'auto',
+           maxWidth: '1280px',
+                        mx: 'auto',
        }}>
             {/* Search Input */}
             <TextField
@@ -1009,6 +1010,8 @@ const AllPlayersPage = () => {
         maxWidth={false}
         sx={{
           width: '100%',
+          maxWidth: 1280,
+          mx: 'auto',
           px: { xs: 1, sm: 3, md: 7.5 },
           pb: 4
         }}
