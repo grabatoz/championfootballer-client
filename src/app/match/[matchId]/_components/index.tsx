@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Divider, SxProps, Theme, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, useMediaQuery, useTheme } from "@mui/material";
 import { Groups, Edit, Close } from "@mui/icons-material";
 import GoalsIcon from '@/Components/images/goal.png';
 import AssistIcon from '@/Components/images/Assist.png';
@@ -139,6 +139,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away' | null>(null);
   const [league, setLeague] = useState<League | null>(null);
+      const theme = useTheme();
+   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
   const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
   const [, setVotedForId] = useState<string | null>(null);
@@ -1132,34 +1134,28 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         open={viewTeamOpen}
         onClose={() => setViewTeamOpen(false)}
         maxWidth={false}
-        PaperProps={{
-          sx: {
-            bgcolor: '#2b2b2b',
-            width: { xs: '100%', sm: '90%', md: 'min(980px, 62vw)' },
-            maxWidth: { xs: '100%', sm: '90%', md: '980px' },
-            borderRadius: { xs: 0, sm: 2 }
-          }
-        }}
+                fullScreen={isMobile}
+                PaperProps={{ sx: { bgcolor: '#2b2b2b', width: { xs: '100%', sm: '90%', md: '65%' }, maxWidth: { xs: '100%', sm: '90%', md: '65%' }, borderRadius: { xs: 0, sm: 2 } } }}
       >
         <DialogTitle sx={{
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: '#d1d1d1',
-          position: 'relative',
-          py: 0.5,
-          minHeight: 0,
+         fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: '#d1d1d1',
+                    position: 'relative',
+                    py: 0.5,
+                    minHeight: 0,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
-            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.1rem' }}>TEAMS</span>
+            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>TEAMS</span>
             <Image src={FootBallIcon} alt="Football" width={24} height={24} />
-            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: '1.1rem' }}>MATCH {currentMatchNumber ?? '-'}</span>
+            <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>MATCH {currentMatchNumber ?? '-'}</span>
           </Box>
           <IconButton
             onClick={() => setViewTeamOpen(false)}
             size="small"
-            sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
+             sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
           >
             <Close />
           </IconButton>

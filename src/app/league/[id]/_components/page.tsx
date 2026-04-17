@@ -939,15 +939,16 @@ export default function LeagueDetailPage() {
 
     console.log('league', league)
 
-    const fetchLeagueDetails = useCallback(async () => {
+    const fetchLeagueDetails = useCallback(async (seasonIdOverride?: string | null) => {
         try {
             console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
 
             // 🔄 Add cache busting to force fresh data from backend
             const params = new URLSearchParams();
             params.set('_t', String(Date.now()));
-            if (selectedSeasonId) {
-                params.set('seasonId', selectedSeasonId);
+            const seasonIdForRequest = seasonIdOverride ?? selectedSeasonId;
+            if (seasonIdForRequest) {
+                params.set('seasonId', seasonIdForRequest);
             }
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?${params.toString()}`, {
                 method: 'GET',
@@ -1410,7 +1411,7 @@ export default function LeagueDetailPage() {
         // 🔄 Refresh league data to get latest season settings
         if (token && leagueId) {
             console.log('🔄 Refreshing league data after season selection...');
-            await fetchLeagueDetails();
+            await fetchLeagueDetails(seasonId);
         }
     };
 

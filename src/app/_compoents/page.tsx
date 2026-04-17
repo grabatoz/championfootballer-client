@@ -152,7 +152,7 @@ export default function LandingPage() {
                   sx={{
                     fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
                     fontWeight: '400 !important',
-                    fontSize: { xs: '1.05rem', md: '42px' },
+                    fontSize: { xs: '1.05rem', md: '40px' },
                     lineHeight: { xs: 1.05, md: '100% !important' },
                     letterSpacing: '0% !important',
                     textTransform: 'uppercase',
@@ -160,7 +160,22 @@ export default function LandingPage() {
                     mt: { xs: 0, md: 1 },
                   }}
                 >
-                  BUT WINNING AIN'T ONE!
+                  BUT WINNING
+                </Typography>   <Typography
+                  component="span"
+                  className="landing-hero-display"
+                  sx={{
+                    fontFamily: 'var(--font-geist-anton), Anton, sans-serif !important',
+                    fontWeight: '400 !important',
+                    fontSize: { xs: '1.05rem', md: '44px' },
+                    lineHeight: { xs: 1.05, md: '100% !important' },
+                    letterSpacing: '0% !important',
+                    textTransform: 'uppercase',
+                    ml: { xs: 0.35, md: 1 },
+                    mt: { xs: 0, md: 1 },
+                  }}
+                >
+                  AIN'T ONE!
                 </Typography>
               </Box>
             </Box>
