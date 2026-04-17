@@ -46,6 +46,7 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').th
   ssr: false
 });
 import LeagueIcon from '@/Components/images/league icon.png'
+import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // import { achievementsAPI } from '@/lib/api';
 
@@ -3026,13 +3027,7 @@ export default function GlobalTrophyRoom() {
                     background: '#1d1d22',
                     borderBottom: '1px solid rgba(255,255,255,0.3)',
                   }}>
-                    <Star
-                      size={isMobile ? 20 : 24}
-                      fill="#2f80ed"
-                      color="#2f80ed"
-                      strokeWidth={1.6}
-                      style={{ opacity: myProfileXP > 0 ? 1 : 0.7 }}
-                    />
+                     <XPStarMilestoneCard height={24} width={24} xp={myProfileXP} />
                     <Avatar
                       src={getProfileImage(user ?? undefined) || undefined}
                       alt={`${user?.firstName || ''} ${user?.lastName || ''}`}
@@ -3048,13 +3043,8 @@ export default function GlobalTrophyRoom() {
                     >
                       {!getProfileImage(user ?? undefined) && `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
                     </Avatar>
-                    <Star
-                      size={isMobile ? 20 : 24}
-                      fill="#2f80ed"
-                      color="#2f80ed"
-                      strokeWidth={1.6}
-                      style={{ opacity: myProfileXP > 0 ? 1 : 0.7 }}
-                    />
+                             <XPStarMilestoneCard height={24} width={24} xp={myProfileXP} />
+
                   </Box>
 
                   {/* Two Column Layout */}

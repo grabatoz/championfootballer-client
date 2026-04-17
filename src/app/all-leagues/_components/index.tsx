@@ -1459,7 +1459,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             color="error"
             // onClick={onDelete}
              onClick={() => {
-                  if (!window.confirm('This match will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues actions..')) return;
+                  if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
                   onArchive?.();
                 }}
             sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}

@@ -818,7 +818,7 @@ export default function ScheduleMatchPage() {
       }
       
       toast.success('Match created');
-      router.push(`/league/${league.id}`);
+      router.push(`/league/${league.id}?tab=matches`);
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : 'Unable to create match';
       setError(errorMsg);
