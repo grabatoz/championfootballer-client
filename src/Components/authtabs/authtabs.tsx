@@ -36,6 +36,7 @@ import toast from "react-hot-toast"
 import { Visibility, VisibilityOff, Facebook, Apple, Close as CloseIcon } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
+import { buildSocialAuthUrl } from "@/lib/clientApiBase"
 import type { User } from "@/types/user"
 import { Country, State, City } from 'country-state-city'
 import {
@@ -1457,9 +1458,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
             {/* Social auth buttons (desktop: to the right of Register; next row: FB/Apple) */}
             {(() => {
-              const API = process.env.NEXT_PUBLIC_API_URL
               const go = (provider: string) => {
-                window.location.href = `${API}/auth/${provider}?next=/home`
+                window.location.href = buildSocialAuthUrl(provider, '/home')
               }
 
               const socialBase = {

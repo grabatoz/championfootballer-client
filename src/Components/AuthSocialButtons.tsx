@@ -2,11 +2,11 @@
 
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook, FaApple } from 'react-icons/fa';
+import { buildSocialAuthUrl } from '@/lib/clientApiBase';
 
 export default function AuthSocialButtons() {
-  const API = process.env.NEXT_PUBLIC_API_URL;
   const go = (provider: string) => {
-    window.location.href = `${API}/auth/${provider}?next=/home`;
+    window.location.href = buildSocialAuthUrl(provider, '/home');
   };
   
   const buttonStyle = {

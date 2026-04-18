@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { decodeJwt } from '@/lib/auth';
 import { authStorage, type UserProfile, type UserDataShape } from '@/lib/authStorage';
+import { getClientApiBaseUrl } from '@/lib/clientApiBase';
 
 // Define interfaces for API responses
 interface DecodedToken {
@@ -66,8 +67,6 @@ interface AuthDataResponse {
 function sleep(ms: number): Promise<void> { 
   return new Promise(r => setTimeout(r, ms)); 
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Helper function to normalize backend user data to UserDataShape
 const normalizeUserData = (fullUser: BackendUser): UserDataShape => {
@@ -152,9 +151,10 @@ function CallbackHandler() {
   useEffect(() => {
     (async () => {
       try {
+        const apiBase = getClientApiBaseUrl();
         console.log('[CALLBACK] Starting OAuth callback process');
         console.log('[CALLBACK] Current URL:', window.location.href);
-        console.log('[CALLBACK] API Base:', API_BASE);
+        console.log('[CALLBACK] API Base:', apiBase);
         
         const url = new URL(window.location.href);
         const hash = url.hash.startsWith('#') ? url.hash.slice(1) : '';
@@ -206,8 +206,8 @@ function CallbackHandler() {
         // Try to get user data from API
         let fullUser: BackendUser | null = null;
         try {
-          console.log('[CALLBACK] Fetching user data from:', `${API_BASE}/auth/data`);
-          const res = await fetch(`${API_BASE}/auth/data`, {
+          console.log('[CALLBACK] Fetching user data from:', `${apiBase}/auth/data`);
+          const res = await fetch(`${apiBase}/auth/data`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
