@@ -33,7 +33,7 @@ import {
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import toast from "react-hot-toast"
-import { Visibility, VisibilityOff, Facebook, Apple, Close as CloseIcon } from "@mui/icons-material"
+import { Visibility, VisibilityOff, Facebook, Apple, Close as CloseIcon, CheckCircleOutline } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import { buildSocialAuthUrl } from "@/lib/clientApiBase"
@@ -114,6 +114,9 @@ const forgotPopupTheme = {
   border: "rgba(255,255,255,0.12)",
   text: "#ffffff",
   textDim: "rgba(255,255,255,0.72)",
+  outlineHover: "rgba(0,167,127,0.18)",
+  buttonShadow: "0 4px 14px rgba(0,167,127,0.28)",
+  buttonDisabled: "rgba(0,167,127,0.45)",
 }
 
 // Helper to normalize User to UserProfile
@@ -537,7 +540,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           const saved = authStorage.saveAuthExact(normalizedUser, userData, result.token)
           console.log("[AuthTabs] Token saved:", saved)
           
-          // ✨ Wait for cookies to be set properly
+          // Wait for cookies to be set properly
           await new Promise(resolve => setTimeout(resolve, 100))
           
           // Verify token was saved
@@ -549,7 +552,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         }
         toast.success(result.message || "Login successful!")
         
-        // ✨ Small delay before redirect to ensure cookies are set
+        // Small delay before redirect to ensure cookies are set
         setTimeout(() => {
           window.location.href = "/home"
         }, 150)
@@ -1543,18 +1546,22 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: '12px',
+            borderRadius: 2,
             overflow: 'hidden',
             bgcolor: forgotPopupTheme.surface,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
             border: `1px solid ${forgotPopupTheme.border}`,
+            width: 'min(420px, 92vw)',
+            maxHeight: '92vh',
           },
         }}
       >
         {/* Header */}
         <Box sx={{
           background: forgotPopupTheme.surface,
-          px: 3, pt: 3, pb: 3.5,
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 3 },
+          pb: { xs: 2.5, sm: 3.5 },
           position: 'relative',
           textAlign: 'center',
         }}>
@@ -1595,7 +1602,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           </Typography>
         </Box>
 
-        <DialogContent sx={{ px: 3, pt: 3, pb: 4, bgcolor: forgotPopupTheme.surface }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: 3, pb: 4, bgcolor: forgotPopupTheme.surface }}>
           {forgotDialogMessage && (
             <Alert
               severity={forgotDialogError ? 'error' : 'success'}
@@ -1611,7 +1618,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Alert>
           )}
 
-          {/* â”€â”€ Step 1: Email â”€â”€ */}
+          {/* Step 1: Email */}
           {forgotStep === 1 && (
             <Box>
               <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1652,9 +1659,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
-                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
+                  '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Send Verification Code'}
@@ -1662,7 +1669,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Box>
           )}
 
-          {/* â”€â”€ Step 2: OTP Only â”€â”€ */}
+          {/* Step 2: OTP */}
           {forgotStep === 2 && (
             <Box>
               <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1718,9 +1725,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
-                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
+                  '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Verify Code'}
@@ -1731,14 +1738,14 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 variant="text"
                 onClick={handleSendOtp}
                 disabled={forgotLoading || forgotResendTimer > 0}
-                sx={{ mt: 1.5, color: forgotPopupTheme.primary, textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(0,167,127,0.14)' }, '&:disabled': { color: 'rgba(0,167,127,0.45)' } }}
+                sx={{ mt: 1.5, color: forgotPopupTheme.primary, textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: forgotPopupTheme.outlineHover }, '&:disabled': { color: forgotPopupTheme.buttonDisabled } }}
               >
                 {forgotResendTimer > 0 ? `Resend code in ${forgotResendTimer}s` : "Didn't receive code? Resend"}
               </Button>
             </Box>
           )}
 
-          {/* â”€â”€ Step 3: New Password â”€â”€ */}
+          {/* Step 3: New Password */}
           {forgotStep === 3 && (
             <Box>
               <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
@@ -1837,9 +1844,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
-                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
+                  '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Set New Password'}
@@ -1847,7 +1854,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             </Box>
           )}
 
-          {/* â”€â”€ Step 4: Success â”€â”€ */}
+          {/* Step 4: Success */}
           {forgotStep === 4 && (
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box sx={{
@@ -1857,7 +1864,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 mx: 'auto', mb: 2,
                 boxShadow: '0 4px 20px rgba(0,167,127,0.3)',
               }}>
-                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>âœ“</Typography>
+                <CheckCircleOutline sx={{ color: '#fff', fontSize: '2rem' }} />
               </Box>
               <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#fff', mb: 1, fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif' }}>
                 Password Reset Successful
@@ -1878,7 +1885,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                 }}
               >
@@ -1929,7 +1936,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 mx: 'auto', mb: 2,
               }}>
-                <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>âœ“</Typography>
+                <CheckCircleOutline sx={{ color: '#fff', fontSize: '2rem' }} />
               </Box>
               <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
                 Welcome to CF!
