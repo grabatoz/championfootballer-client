@@ -1416,7 +1416,7 @@ const PlayerProfileCard = () => {
                   <Button variant="outlined" onClick={openGalleryPicker} sx={{ textTransform: 'none', fontWeight: 700, borderColor: themeColors.primary, color: '#fff' }}>
                     Upload a new photo
                   </Button>
-                  {imgSrc && imgSrc !== fallbackImgSrc && (
+                  {/* {imgSrc && imgSrc !== fallbackImgSrc && (
                     <Button
                       variant="outlined"
                       onClick={handleDeleteProfilePicture}
@@ -1425,7 +1425,7 @@ const PlayerProfileCard = () => {
                     >
                       Delete image
                     </Button>
-                  )}
+                  )} */}
                 </Stack>
               </Box>
             </Modal>

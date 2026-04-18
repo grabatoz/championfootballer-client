@@ -8,6 +8,7 @@ import {
   Modal,
   Button,
   IconButton,
+  Stack,
 } from '@mui/material';
 import ShareIcon from '@mui/icons-material/Share';
 import Foot from '@/Components/images/foot.png'
@@ -146,6 +147,11 @@ const vectorMap: Record<string, StaticImageData> = {
   Gold: vectorGold,
   Black: vectorBlack,
 };
+
+const popupPrimary = '#00a77f';
+const popupGradient = 'linear-gradient(135deg,#00a77f 0%,#00a77f 100%)';
+const popupBorder = 'rgba(255,255,255,0.12)';
+const popupTextMuted = 'rgba(255,255,255,0.72)';
 
 const PlayerCard = ({
   name,
@@ -735,63 +741,51 @@ const PlayerCard = ({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            boxShadow: 24,
+            bgcolor: '#1f1f1f',
+            color: '#fff',
+            p: { xs: 2, sm: 3 },
             borderRadius: 2,
-            minWidth: 350,
-            background: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-            p: 1,
+            width: 'min(420px, 92vw)',
+            minWidth: 'auto',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            border: `1px solid ${popupBorder}`,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           }}
         >
-          <Box sx={{ bgcolor: '#2B2B2B', borderRadius: 2, p: 4 }}>
-            <Typography
-              variant="h6"
-              component="h2"
-              sx={{
-                mb: 1.5,
-                textAlign: 'center',
-                background: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Update Profile Image
-            </Typography>
-
-          <Typography sx={{ mb: 2, fontSize: 14, color: 'white', textAlign: 'center' }}>
+          <Typography variant="h6" component="h2" sx={{ mb: 1.2, fontWeight: 800 }}>
+            Update Profile Image
+          </Typography>
+          <Typography sx={{ mb: 2.2, fontSize: 14, color: popupTextMuted }}>
             Choose how you want to add your photo.
           </Typography>
 
-          {/* Option buttons */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 2 }}>
+          <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ mb: 2.2 }}>
             <Button
               variant="contained"
-              color="primary"
               onClick={handleOpenCamera}
               sx={{
                 textTransform: 'none',
-                fontWeight: 'bold',
-                backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                color: '#fff',
-                '&:hover': { opacity: 0.95, backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' }
+                fontWeight: 700,
+                background: popupGradient,
               }}
             >
               Take a new photo
             </Button>
             <Button
               variant="outlined"
-              color="primary"
               onClick={openGalleryPicker}
               sx={{
                 textTransform: 'none',
-                fontWeight: 'bold',
-                color: '#E56A16',
-                borderColor: '#E56A16',
-                '&:hover': { backgroundColor: 'rgba(229,106,22,0.08)', borderColor: '#E56A16' }
+                fontWeight: 700,
+                borderColor: popupPrimary,
+                color: '#fff',
+                '&:hover': { borderColor: popupPrimary, background: 'rgba(0,167,127,0.18)' }
               }}
             >
               Upload a new photo
             </Button>
-          </Box>
+          </Stack>
 
           {/* Hidden inputs: camera (fallback) and gallery */}
           <input
@@ -811,36 +805,35 @@ const PlayerCard = ({
           />
 
           {imagePreview && (
-            <Box sx={{ mb: 3, textAlign: 'center' }}>
+            <Box sx={{ mb: 2.2, textAlign: 'center' }}>
               <img
                 src={imagePreview}
                 alt="Preview"
                 style={{
-                  width: 120,
-                  height: 120,
+                  width: 132,
+                  height: 132,
                   objectFit: 'cover',
-                  borderRadius: '8px',
-                  border: '2px solid #E56A16'
+                  borderRadius: '10px',
+                  border: `2px solid ${popupPrimary}`
                 }}
               />
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            justifyContent="center"
+            sx={{ '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}
+          >
             <Button
               onClick={handleUploadImage}
               disabled={uploading || !imageFile}
               variant="contained"
-              color="primary"
               sx={{
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 'bold',
                 textTransform: 'none',
-                backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                color: '#fff',
-                '&:hover': { opacity: 0.95, backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' }
+                fontWeight: 700,
+                background: popupGradient,
               }}
             >
               {uploading ? 'Uploading...' : 'Upload'}
@@ -848,22 +841,17 @@ const PlayerCard = ({
             <Button
               onClick={handleModalClose}
               variant="outlined"
-              color="primary"
               sx={{
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 'bold',
                 textTransform: 'none',
-                color: '#E56A16',
-                borderColor: '#E56A16',
-                '&:hover': { backgroundColor: 'rgba(229,106,22,0.08)', borderColor: '#E56A16' }
+                fontWeight: 700,
+                borderColor: popupPrimary,
+                color: '#fff',
+                '&:hover': { borderColor: popupPrimary, background: 'rgba(0,167,127,0.18)' }
               }}
             >
               Cancel
             </Button>
-          </Box>
-          </Box>
+          </Stack>
         </Box>
       </Modal>
 
@@ -875,55 +863,67 @@ const PlayerCard = ({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            boxShadow: 24,
+            bgcolor: '#1f1f1f',
+            color: '#fff',
+            p: { xs: 1.5, sm: 2 },
             borderRadius: 2,
-            width: 360,
-            maxWidth: '90vw',
-            background: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-            p: 1,
+            width: 'min(460px, 92vw)',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            border: `1px solid ${popupBorder}`,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           }}
         >
-          <Box sx={{ bgcolor: '#2B2B2B', borderRadius: 2, p: 2 }}>
-            <Typography
-              variant="h6"
+          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 800 }}>
+            Camera
+          </Typography>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: { xs: '4 / 5', sm: '3 / 4' },
+              maxHeight: 'min(62vh, 560px)',
+              bgcolor: '#000',
+              mb: 2,
+              borderRadius: 1,
+              overflow: 'hidden'
+            }}
+          >
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+            />
+          </Box>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            justifyContent="center"
+            sx={{ '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}
+          >
+            <Button
+              onClick={handleTakePhoto}
+              variant="contained"
+              sx={{ textTransform: 'none', fontWeight: 700, background: popupGradient }}
+            >
+              Capture
+            </Button>
+            <Button
+              onClick={handleCloseCamera}
+              variant="outlined"
               sx={{
-                mb: 1.5,
-                textAlign: 'center',
-                background: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                textTransform: 'none',
+                fontWeight: 700,
+                borderColor: popupPrimary,
+                color: '#fff',
+                '&:hover': { borderColor: popupPrimary, background: 'rgba(0,167,127,0.18)' }
               }}
             >
-              Camera
-            </Typography>
-            <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', bgcolor: '#000', mb: 2 }}>
-              <video
-                ref={videoRef}
-                playsInline
-                autoPlay
-                muted
-                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-              <Button
-                onClick={handleTakePhoto}
-                variant="contained"
-                color="primary"
-                sx={{ textTransform: 'none', fontWeight: 'bold', backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)', color: '#fff', '&:hover': { opacity: 0.95, backgroundImage: 'linear-gradient(177deg, rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%)' } }}
-              >
-                Capture
-              </Button>
-              <Button
-                onClick={handleCloseCamera}
-                variant="outlined"
-                color="primary"
-                sx={{ textTransform: 'none', fontWeight: 'bold', color: '#E56A16', borderColor: '#E56A16', '&:hover': { backgroundColor: 'rgba(229,106,22,0.08)', borderColor: '#E56A16' } }}
-              >
-                Close
-              </Button>
-            </Box>
-          </Box>
+              Close
+            </Button>
+          </Stack>
         </Box>
       </Modal>
     </Box>

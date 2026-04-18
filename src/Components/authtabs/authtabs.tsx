@@ -106,6 +106,16 @@ const dropdownMenuBaseProps = {
   marginThreshold: 0,
 }
 
+const forgotPopupTheme = {
+  primary: "#00a77f",
+  primaryGradient: "linear-gradient(135deg,#00a77f 0%,#00a77f 100%)",
+  surface: "#1f1f1f",
+  surfaceAlt: "#171717",
+  border: "rgba(255,255,255,0.12)",
+  text: "#ffffff",
+  textDim: "rgba(255,255,255,0.72)",
+}
+
 // Helper to normalize User to UserProfile
 const normalizeUserForStorage = (user: User): UserProfile => {
   return {
@@ -1535,22 +1545,22 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           sx: {
             borderRadius: '12px',
             overflow: 'hidden',
-            bgcolor: '#101010',
+            bgcolor: forgotPopupTheme.surface,
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: `1px solid ${forgotPopupTheme.border}`,
           },
         }}
       >
-        {/* Header with orange-red gradient */}
+        {/* Header */}
         <Box sx={{
-          background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+          background: forgotPopupTheme.surface,
           px: 3, pt: 3, pb: 3.5,
           position: 'relative',
           textAlign: 'center',
         }}>
           <IconButton
             onClick={handleForgotDialogClose}
-            sx={{ position: 'absolute', right: 8, top: 8, color: 'rgba(255,255,255,0.8)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.15)' } }}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'rgba(255,255,255,0.8)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.12)' } }}
           >
             <CloseIcon />
           </IconButton>
@@ -1564,20 +1574,20 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   width: forgotStep === s ? 24 : 8,
                   height: 8,
                   borderRadius: '4px',
-                  bgcolor: forgotStep >= s ? '#fff' : 'rgba(255,255,255,0.3)',
+                  bgcolor: forgotStep >= s ? forgotPopupTheme.primary : 'rgba(255,255,255,0.25)',
                   transition: 'all 0.3s ease',
                 }}
               />
             ))}
           </Box>
 
-          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+          <Typography sx={{ color: forgotPopupTheme.text, fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
             {forgotStep === 1 && 'Reset Password'}
             {forgotStep === 2 && 'Enter Verification Code'}
             {forgotStep === 3 && 'Create New Password'}
             {forgotStep === 4 && 'All Done!'}
           </Typography>
-          <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+          <Typography sx={{ color: forgotPopupTheme.textDim, fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
             {forgotStep === 1 && 'Enter your email to get a verification code'}
             {forgotStep === 2 && 'Check your email for the 5-digit code'}
             {forgotStep === 3 && 'Choose a strong new password'}
@@ -1585,7 +1595,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           </Typography>
         </Box>
 
-        <DialogContent sx={{ px: 3, pt: 3, pb: 4, bgcolor: '#101010' }}>
+        <DialogContent sx={{ px: 3, pt: 3, pb: 4, bgcolor: forgotPopupTheme.surface }}>
           {forgotDialogMessage && (
             <Alert
               severity={forgotDialogError ? 'error' : 'success'}
@@ -1617,12 +1627,12 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: forgotPopupTheme.surfaceAlt,
                     borderRadius: '7px',
                     color: '#fff',
                     '& fieldset': { borderColor: '#404040' },
-                    '&:hover fieldset': { borderColor: '#E56A16' },
-                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '&:hover fieldset': { borderColor: forgotPopupTheme.primary },
+                    '&.Mui-focused fieldset': { borderColor: forgotPopupTheme.primary, borderWidth: 2 },
                     '& input': { color: '#fff', fontSize: '0.95rem' },
                   },
                   '& input::placeholder': { color: '#757575', opacity: 1 },
@@ -1634,7 +1644,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 disabled={forgotLoading}
                 onClick={handleSendOtp}
                 sx={{
-                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  background: forgotPopupTheme.primaryGradient,
                   color: '#fff',
                   fontWeight: 700,
                   py: 1.4,
@@ -1642,9 +1652,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
-                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
-                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
+                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Send Verification Code'}
@@ -1656,7 +1666,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           {forgotStep === 2 && (
             <Box>
               <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
-                We sent a 5-digit code to <span style={{ color: '#E56A16', fontWeight: 600 }}>{forgotEmail}</span>
+                We sent a 5-digit code to <span style={{ color: forgotPopupTheme.primary, fontWeight: 600 }}>{forgotEmail}</span>
               </Typography>
 
               {/* OTP boxes */}
@@ -1676,18 +1686,18 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                         fontSize: '1.6rem',
                         fontWeight: 700,
                         padding: '12px 0',
-                        color: '#E56A16',
+                        color: forgotPopupTheme.primary,
                         fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif',
                       },
                     }}
                     sx={{
                       width: 54,
                       '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#1a1a1a',
+                        backgroundColor: forgotPopupTheme.surfaceAlt,
                         borderRadius: '7px',
                         '& fieldset': { borderColor: '#404040' },
-                        '&:hover fieldset': { borderColor: '#E56A16' },
-                        '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                        '&:hover fieldset': { borderColor: forgotPopupTheme.primary },
+                        '&.Mui-focused fieldset': { borderColor: forgotPopupTheme.primary, borderWidth: 2 },
                       },
                     }}
                   />
@@ -1700,7 +1710,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 disabled={forgotLoading}
                 onClick={handleVerifyOtp}
                 sx={{
-                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  background: forgotPopupTheme.primaryGradient,
                   color: '#fff',
                   fontWeight: 700,
                   py: 1.4,
@@ -1708,9 +1718,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
-                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
-                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
+                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Verify Code'}
@@ -1721,7 +1731,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 variant="text"
                 onClick={handleSendOtp}
                 disabled={forgotLoading || forgotResendTimer > 0}
-                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' }, '&:disabled': { color: 'rgba(229,106,22,0.4)' } }}
+                sx={{ mt: 1.5, color: forgotPopupTheme.primary, textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(0,167,127,0.14)' }, '&:disabled': { color: 'rgba(0,167,127,0.45)' } }}
               >
                 {forgotResendTimer > 0 ? `Resend code in ${forgotResendTimer}s` : "Didn't receive code? Resend"}
               </Button>
@@ -1755,12 +1765,12 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 sx={{
                   mb: 2,
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: forgotPopupTheme.surfaceAlt,
                     borderRadius: '7px',
                     color: '#fff',
                     '& fieldset': { borderColor: '#404040' },
-                    '&:hover fieldset': { borderColor: '#E56A16' },
-                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '&:hover fieldset': { borderColor: forgotPopupTheme.primary },
+                    '&.Mui-focused fieldset': { borderColor: forgotPopupTheme.primary, borderWidth: 2 },
                     '& input': { color: '#fff', fontSize: '0.95rem' },
                   },
                   '& input::placeholder': { color: '#757575', opacity: 1 },
@@ -1794,12 +1804,12 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: forgotPopupTheme.surfaceAlt,
                     borderRadius: '7px',
                     color: '#fff',
                     '& fieldset': { borderColor: '#404040' },
-                    '&:hover fieldset': { borderColor: '#E56A16' },
-                    '&.Mui-focused fieldset': { borderColor: '#E56A16', borderWidth: 2 },
+                    '&:hover fieldset': { borderColor: forgotPopupTheme.primary },
+                    '&.Mui-focused fieldset': { borderColor: forgotPopupTheme.primary, borderWidth: 2 },
                     '& input': { color: '#fff', fontSize: '0.95rem' },
                   },
                   '& input::placeholder': { color: '#757575', opacity: 1 },
@@ -1819,7 +1829,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 disabled={forgotLoading}
                 onClick={handleVerifyAndReset}
                 sx={{
-                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  background: forgotPopupTheme.primaryGradient,
                   color: '#fff',
                   fontWeight: 700,
                   py: 1.4,
@@ -1827,9 +1837,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
-                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
-                  '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
+                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
+                  '&:disabled': { background: 'rgba(0,167,127,0.45)', color: 'rgba(255,255,255,0.5)' },
                 }}
               >
                 {forgotLoading ? <CircularProgress size={22} color="inherit" /> : 'Set New Password'}
@@ -1842,10 +1852,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box sx={{
                 width: 64, height: 64, borderRadius: '50%',
-                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                background: forgotPopupTheme.primaryGradient,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 mx: 'auto', mb: 2,
-                boxShadow: '0 4px 20px rgba(229,106,22,0.3)',
+                boxShadow: '0 4px 20px rgba(0,167,127,0.3)',
               }}>
                 <Typography sx={{ color: '#fff', fontSize: '2rem', fontWeight: 700 }}>âœ“</Typography>
               </Box>
@@ -1860,7 +1870,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 variant="contained"
                 onClick={handleForgotDialogClose}
                 sx={{
-                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  background: forgotPopupTheme.primaryGradient,
                   color: '#fff',
                   fontWeight: 700,
                   py: 1.4,
@@ -1868,8 +1878,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   textTransform: 'none',
                   fontSize: '0.95rem',
                   fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
-                  boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
-                  '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
+                  boxShadow: '0 4px 14px rgba(0,167,127,0.28)',
+                  '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                 }}
               >
                 Back to Login
