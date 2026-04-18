@@ -74,6 +74,8 @@ interface Match {
   end?: string;
 }
 
+const WORLD_RANKING_POSITION_OPTIONS = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper'] as const;
+
 // League option used by the UI select
 interface LeagueOption { 
   id: string; 
@@ -649,25 +651,66 @@ const AllPlayersPage = () => {
     return '-';
   }
 
-  const positionOptions = React.useMemo(() => {
-    const positionsMap = new Map<string, string>();
-    sourcePlayers.forEach((player: Player) => {
-      const position = getPositionLabel(player);
-      if (position && position !== '-') {
-        const key = position.toLowerCase();
-        if (!positionsMap.has(key)) {
-          positionsMap.set(key, position);
-        }
-      }
-    });
-    return Array.from(positionsMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-  }, [sourcePlayers]);
+  function normalizeToWorldRankingPosition(positionLabel: string): string {
+    const value = (positionLabel || '').toLowerCase().trim();
+    if (!value || value === '-') return '-';
+
+    if (
+      value.includes('goalkeeper') ||
+      value.includes('(gk)')
+    ) {
+      return 'Goalkeeper';
+    }
+
+    if (
+      value.includes('defender') ||
+      value.includes('back') ||
+      value.includes('wing-back') ||
+      value.includes('(cb)') ||
+      value.includes('(rb)') ||
+      value.includes('(lb)') ||
+      value.includes('(rwb)') ||
+      value.includes('(lwb)')
+    ) {
+      return 'Defender';
+    }
+
+    if (
+      value.includes('midfielder') ||
+      value.includes('(cm)') ||
+      value.includes('(cdm)') ||
+      value.includes('(cam)') ||
+      value.includes('(rm)') ||
+      value.includes('(lm)')
+    ) {
+      return 'Midfielder';
+    }
+
+    if (
+      value.includes('forward') ||
+      value.includes('striker') ||
+      value.includes('winger') ||
+      value.includes('(st)') ||
+      value.includes('(cf)') ||
+      value.includes('(rf)') ||
+      value.includes('(lf)') ||
+      value.includes('(rw)') ||
+      value.includes('(lw)')
+    ) {
+      return 'Forward';
+    }
+
+    return positionLabel;
+  }
+
+  const positionOptions = WORLD_RANKING_POSITION_OPTIONS;
 
   const filteredPlayers = sourcePlayers.filter((player: Player) => {
     const matchesSearch = getPlayerName(player).toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedPosition = normalizeToWorldRankingPosition(getPositionLabel(player));
     const matchesPosition =
       selectedPosition === 'all' ||
-      getPositionLabel(player).toLowerCase() === selectedPosition.toLowerCase();
+      normalizedPosition.toLowerCase() === selectedPosition.toLowerCase();
     return matchesSearch && matchesPosition;
   });
   console.log('Filtered Players:', filteredPlayers);
@@ -1083,7 +1126,7 @@ const AllPlayersPage = () => {
               paper: {
                 sx: {
                   mt: 0.5,
-                  minWidth: { xs: 180, sm: 220 },
+                  minWidth: { xs: 180, sm: 140 },
                   backgroundColor: '#1f1f1f',
                   border: '1px solid #e56a16',
                   borderRadius: '8px',

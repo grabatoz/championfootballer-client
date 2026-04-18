@@ -126,6 +126,7 @@ import cflogo from '@/Components/images/champion football logo 3 (1).png';
 type Foot = 'L' | 'R';
 type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
 type FIFAStats = { DRI: string; SHO: string; PAS: string; PAC: string; DEF: string; PHY: string };
+const WORLD_RANKING_POSITION_OPTIONS = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper'] as const;
 
 type PlayerCardProps = {
     name: string;
@@ -557,18 +558,53 @@ export default function LeagueDetailPage() {
         if (fromPositionType) return fromPositionType;
         return '-';
     }, []);
-    const memberPositionOptions = useMemo(() => {
-        const positionMap = new Map<string, string>();
-        (league?.members || []).forEach((member: User) => {
-            const position = getMemberPositionLabel(member);
-            if (!position || position === '-') return;
-            const key = position.toLowerCase();
-            if (!positionMap.has(key)) {
-                positionMap.set(key, position);
-            }
-        });
-        return Array.from(positionMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    }, [league?.members, getMemberPositionLabel]);
+    const normalizeToWorldRankingPosition = useCallback((positionLabel: string): string => {
+        const value = (positionLabel || '').toLowerCase().trim();
+        if (!value || value === '-') return '-';
+
+        if (value.includes('goalkeeper') || value.includes('(gk)')) return 'Goalkeeper';
+
+        if (
+            value.includes('defender') ||
+            value.includes('back') ||
+            value.includes('wing-back') ||
+            value.includes('(cb)') ||
+            value.includes('(rb)') ||
+            value.includes('(lb)') ||
+            value.includes('(rwb)') ||
+            value.includes('(lwb)')
+        ) {
+            return 'Defender';
+        }
+
+        if (
+            value.includes('midfielder') ||
+            value.includes('(cm)') ||
+            value.includes('(cdm)') ||
+            value.includes('(cam)') ||
+            value.includes('(rm)') ||
+            value.includes('(lm)')
+        ) {
+            return 'Midfielder';
+        }
+
+        if (
+            value.includes('forward') ||
+            value.includes('striker') ||
+            value.includes('winger') ||
+            value.includes('(st)') ||
+            value.includes('(cf)') ||
+            value.includes('(rf)') ||
+            value.includes('(lf)') ||
+            value.includes('(rw)') ||
+            value.includes('(lw)')
+        ) {
+            return 'Forward';
+        }
+
+        return positionLabel;
+    }, []);
+    const memberPositionOptions = WORLD_RANKING_POSITION_OPTIONS;
     const sortedMembersForTable = React.useMemo(() => {
         const members = league?.members ? [...league.members] : [];
 
@@ -588,9 +624,9 @@ export default function LeagueDetailPage() {
     const filteredMembersForTable = useMemo(() => {
         if (selectedMemberPosition === 'all') return sortedMembersForTable;
         return sortedMembersForTable.filter((member: User) =>
-            getMemberPositionLabel(member).toLowerCase() === selectedMemberPosition.toLowerCase()
+            normalizeToWorldRankingPosition(getMemberPositionLabel(member)).toLowerCase() === selectedMemberPosition.toLowerCase()
         );
-    }, [sortedMembersForTable, selectedMemberPosition, getMemberPositionLabel]);
+    }, [sortedMembersForTable, selectedMemberPosition, getMemberPositionLabel, normalizeToWorldRankingPosition]);
     useEffect(() => {
         if (selectedMemberPosition === 'all') return;
         const hasSelectedPosition = memberPositionOptions.some(
@@ -3722,7 +3758,7 @@ export default function LeagueDetailPage() {
                                                     paper: {
                                                         sx: {
                                                             mt: 0.5,
-                                                            minWidth: 200,
+                                                            minWidth: 140,
                                                             backgroundColor: '#1f1f1f',
                                                             border: '1px solid #e56a16',
                                                             borderRadius: '8px',
