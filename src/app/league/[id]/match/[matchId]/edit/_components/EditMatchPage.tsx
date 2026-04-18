@@ -65,6 +65,95 @@ const formatGuestAwareShortName = (player?: { firstName?: string | null; lastNam
   return first || `${first} ${last}`.trim() || 'Player';
 };
 
+const toRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
+};
+
+const normalizeEntityId = (value: unknown): string => String(value ?? '').trim();
+
+const toNumberOrNull = (value: unknown): number | null => {
+  const parsed = typeof value === 'number' ? value : (typeof value === 'string' ? Number(value) : NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const toTimeOrNull = (value: unknown): number | null => {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const compareNullableDesc = (a: number | null, b: number | null): number => {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return b - a;
+};
+
+const getSeasonMemberIds = (seasonLike: unknown): Set<string> => {
+  const seasonObj = toRecord(seasonLike);
+  const memberIds = new Set<string>();
+  if (!seasonObj) return memberIds;
+
+  const seasonMembers = seasonObj.members;
+  if (!Array.isArray(seasonMembers)) return memberIds;
+
+  seasonMembers.forEach((memberLike) => {
+    const memberObj = toRecord(memberLike);
+    const id = normalizeEntityId(memberObj?.id ?? memberObj?._id);
+    if (id) memberIds.add(id);
+  });
+
+  return memberIds;
+};
+
+const pickLatestSeason = (seasons: Record<string, unknown>[]): Record<string, unknown> | null => {
+  if (!seasons.length) return null;
+
+  const activeSeasons = seasons.filter((seasonObj) => seasonObj.isActive === true || seasonObj.active === true);
+  const source = activeSeasons.length ? activeSeasons : seasons;
+
+  const sorted = [...source].sort((a, b) => {
+    const bySeasonNumber = compareNullableDesc(toNumberOrNull(a.seasonNumber), toNumberOrNull(b.seasonNumber));
+    if (bySeasonNumber !== 0) return bySeasonNumber;
+
+    const byStartDate = compareNullableDesc(toTimeOrNull(a.startDate), toTimeOrNull(b.startDate));
+    if (byStartDate !== 0) return byStartDate;
+
+    return compareNullableDesc(toTimeOrNull(a.createdAt), toTimeOrNull(b.createdAt));
+  });
+
+  return sorted[0] || null;
+};
+
+const resolveLatestSeasonMemberIds = (leagueLike: unknown): Set<string> => {
+  const leagueObj = toRecord(leagueLike);
+  if (!leagueObj) return new Set<string>();
+
+  const seasonsRaw = Array.isArray(leagueObj.seasons) ? leagueObj.seasons : [];
+  const seasons = seasonsRaw
+    .map((seasonLike) => toRecord(seasonLike))
+    .filter((seasonObj): seasonObj is Record<string, unknown> => Boolean(seasonObj));
+
+  const currentSeason = toRecord(leagueObj.currentSeason);
+  if (currentSeason) {
+    const fromCurrent = getSeasonMemberIds(currentSeason);
+    if (fromCurrent.size > 0) return fromCurrent;
+
+    const currentSeasonId = normalizeEntityId(currentSeason.id ?? currentSeason._id);
+    if (currentSeasonId && seasons.length) {
+      const matchingSeason = seasons.find(
+        (seasonObj) => normalizeEntityId(seasonObj.id ?? seasonObj._id) === currentSeasonId
+      );
+      const fromMatchingSeason = getSeasonMemberIds(matchingSeason);
+      if (fromMatchingSeason.size > 0) return fromMatchingSeason;
+    }
+  }
+
+  const latestSeason = pickLatestSeason(seasons);
+  return getSeasonMemberIds(latestSeason);
+};
+
 interface MapCandidate {
   lat: number;
   lng: number;
@@ -1379,19 +1468,32 @@ const clampLocation = (value: string) => value.slice(0, 120);
       return aName.localeCompare(bName);
     }, [availableOrderMap]);
 
+    const latestSeasonMembers = React.useMemo<User[]>(() => {
+      const allLeagueMembers = league?.members || [];
+      if (!allLeagueMembers.length) return [];
+
+      const latestSeasonMemberIds = resolveLatestSeasonMemberIds(league);
+      if (!latestSeasonMemberIds.size) return allLeagueMembers;
+
+      const filtered = allLeagueMembers.filter((member) =>
+        latestSeasonMemberIds.has(normalizeEntityId(member.id))
+      );
+      return filtered.length ? filtered : allLeagueMembers;
+    }, [league]);
+
     const homePlayerOptions: PlayerOption[] = React.useMemo(() => {
-      const members = [...(league?.members || [])]
+      const members = [...latestSeasonMembers]
         .filter(m => !awayTeamUsers.some(p => p.id === m.id))
         .sort(compareByAcceptanceThenName);
       return [...members, ...homeGuests.map(guestToPlayer)];
-    }, [league?.members, awayTeamUsers, homeGuests, compareByAcceptanceThenName]);
+    }, [latestSeasonMembers, awayTeamUsers, homeGuests, compareByAcceptanceThenName]);
 
     const awayPlayerOptions: PlayerOption[] = React.useMemo(() => {
-      const members = [...(league?.members || [])]
+      const members = [...latestSeasonMembers]
         .filter(m => !homeTeamUsers.some(p => p.id === m.id))
         .sort(compareByAcceptanceThenName);
       return [...members, ...awayGuests.map(guestToPlayer)];
-    }, [league?.members, homeTeamUsers, awayGuests, compareByAcceptanceThenName]);
+    }, [latestSeasonMembers, homeTeamUsers, awayGuests, compareByAcceptanceThenName]);
 
     // When teams change (by content, not only count), re-fetch prediction
     const homeIdsKey = React.useMemo(() => homeTeamUsers.map(u => u.id).join('|'), [homeTeamUsers]);
