@@ -1554,6 +1554,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
     const handleCloseStatsModal = () => setIsStatsModalOpen(false);
 
+    const closeParentDialogAfterSave = useCallback(() => {
+        if (typeof open === 'boolean' && onClose) {
+            onClose();
+        }
+    }, [open, onClose]);
+
+    const parseJsonSafely = useCallback(async (response: Response): Promise<Record<string, unknown> | null> => {
+        try {
+            const parsed = await response.json();
+            if (parsed && typeof parsed === 'object') return parsed as Record<string, unknown>;
+            return null;
+        } catch {
+            return null;
+        }
+    }, []);
+
     const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
         setStats(prev => {
             const newValue = prev[stat] + increment;
@@ -1590,22 +1606,28 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }),
             });
 
+            const statsData = await parseJsonSafely(statsResponse);
             if (statsResponse.status === 404 || statsResponse.status === 405) {
                 errors.push('Stats API not available');
             } else {
-                const statsData = await statsResponse.json();
-                if (statsData.success) {
+                const statsApiSuccess = statsData?.success;
+                if (statsResponse.ok && statsApiSuccess !== false) {
                     statsSuccess = true;
-                    if (statsData.updatedStats) {
-                        Object.entries(statsData.updatedStats).forEach(([metric, value]) => {
+                    const updatedStats = statsData?.updatedStats;
+                    if (updatedStats && typeof updatedStats === 'object') {
+                        Object.entries(updatedStats).forEach(([metric, value]) => {
                             if (typeof value === 'number') {
-                                cacheManager.updateLeaderboardCache(statsData.playerId, value, metric as keyof LeaderboardPlayer);
+                                const playerId = String(statsData?.playerId ?? currentUserId);
+                                cacheManager.updateLeaderboardCache(playerId, value, metric as keyof LeaderboardPlayer);
                             }
                         });
                     }
                     clearCacheByResource('stats', `${resolvedMatchId}_${currentUserId}`);
                 } else {
-                    errors.push(statsData.message || 'Failed to save stats');
+                    const message = typeof statsData?.message === 'string' && statsData.message
+                        ? statsData.message
+                        : 'Failed to save stats';
+                    errors.push(message);
                 }
             }
 
@@ -1617,12 +1639,19 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify({ votedForId }),
                     });
-                    const voteData = await voteResponse.json();
-                    if (voteData.success) {
+                    const voteData = await parseJsonSafely(voteResponse);
+                    const voteApiSuccess = voteData?.success;
+                    if (voteResponse.ok && voteApiSuccess !== false) {
                         voteSuccess = true;
                         if (typeof window !== 'undefined') {
                             window.dispatchEvent(new CustomEvent('refresh-notifications'));
                         }
+                    } else {
+                        errors.push(
+                            typeof voteData?.message === 'string' && voteData.message
+                                ? voteData.message
+                                : 'Failed to save MOTM vote'
+                        );
                     }
                 } catch {
                     errors.push('Failed to save MOTM vote');
@@ -1645,8 +1674,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         if (defResponse.status === 404 || defResponse.status === 405) {
                             setCaptainApiAvailable(false);
                         } else if (!defResponse.ok) {
-                            const defData = await defResponse.json().catch(() => ({} as { message?: string }));
-                            errors.push(defData.message || 'Failed to save Defensive Impact pick');
+                            const defData = await parseJsonSafely(defResponse);
+                            errors.push(
+                                typeof defData?.message === 'string' && defData.message
+                                    ? defData.message
+                                    : 'Failed to save Defensive Impact pick'
+                            );
                             captainPicksSuccess = false;
                         }
                     }
@@ -1661,8 +1694,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         if (menResponse.status === 404 || menResponse.status === 405) {
                             setCaptainApiAvailable(false);
                         } else if (!menResponse.ok) {
-                            const menData = await menResponse.json().catch(() => ({} as { message?: string }));
-                            errors.push(menData.message || 'Failed to save + Mentality pick');
+                            const menData = await parseJsonSafely(menResponse);
+                            errors.push(
+                                typeof menData?.message === 'string' && menData.message
+                                    ? menData.message
+                                    : 'Failed to save + Mentality pick'
+                            );
                             captainPicksSuccess = false;
                         }
                     }
@@ -1685,8 +1722,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setIsStatsModalOpen(false);
                 setShowInlineStats(false);
                 await fetchLeagueAndMatchDetails(true);
+                closeParentDialogAfterSave();
             } else if (errors.length > 0) {
                 toast.error(errors.join('. '));
+            } else {
+                toast.error('Unable to save stats. Please try again.');
             }
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : String(err));
@@ -2201,9 +2241,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 return;
             }
 
-            const data = await response.json();
+            const data = await parseJsonSafely(response);
+            const apiSuccess = data?.success;
 
-            if (data.success) {
+            if (response.ok && apiSuccess !== false) {
                 // ًں”„ Clear stats cache for this player to force fresh fetch
                 clearCacheByResource('stats', `${resolvedMatchId}_${selectedPlayerForAdmin.id}`);
                 
@@ -2212,8 +2253,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 
                 // Refetch match details to update UI
                 await fetchLeagueAndMatchDetails(true);
+                closeParentDialogAfterSave();
             } else {
-                toast.error(data.message || 'Failed to add stats');
+                const message = typeof data?.message === 'string' && data.message ? data.message : 'Failed to add stats';
+                toast.error(message);
             }
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : String(err));

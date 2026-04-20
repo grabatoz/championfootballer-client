@@ -356,7 +356,7 @@ export default function AllMatches() {
     const [seasons, setSeasons] = useState<SeasonOption[]>([]);
     const [selectedSeason, setSelectedSeason] = useState<string>('all');
     const [seasonsLoading, setSeasonsLoading] = useState(false);
-    const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures'>('results');
+    const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures' | 'archived'>('results');
     const [loading, setLoading] = useState(true);
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -1226,31 +1226,36 @@ export default function AllMatches() {
         return st.includes('UPLOAD') || st.includes('REVISION') || (st.includes('CONFIRM') && !st.includes('CONFIRMED'));
     };
 
-    const filteredMatches = React.useMemo(() => {
-        const arr = (Array.isArray(matches) ? matches : []).filter(m => !m.archived);
-        const seasonFiltered = arr.filter((m) => {
-            if (selectedSeason === 'all') return true;
+    const matchBelongsToSelectedSeason = useCallback((m: Match): boolean => {
+        if (selectedSeason === 'all') return true;
 
-            const matchSeasonId = normalizeId((m as { seasonId?: unknown }).seasonId);
-            if (matchSeasonId) return matchSeasonId === selectedSeason;
+        const matchSeasonId = normalizeId((m as { seasonId?: unknown }).seasonId);
+        if (matchSeasonId) return matchSeasonId === selectedSeason;
 
-            const selectedSeasonData = seasons.find((s) => s.id === selectedSeason);
-            if (!selectedSeasonData?.startDate) return true;
+        const selectedSeasonData = seasons.find((s) => s.id === selectedSeason);
+        if (!selectedSeasonData?.startDate) return true;
 
-            const matchTime = new Date((m.start ?? m.date) as string).getTime();
-            const seasonStart = new Date(selectedSeasonData.startDate).getTime();
-            if (!Number.isFinite(matchTime) || !Number.isFinite(seasonStart)) return false;
+        const matchTime = new Date((m.start ?? m.date) as string).getTime();
+        const seasonStart = new Date(selectedSeasonData.startDate).getTime();
+        if (!Number.isFinite(matchTime) || !Number.isFinite(seasonStart)) return false;
 
-            if (selectedSeasonData.endDate) {
-                const seasonEnd = new Date(selectedSeasonData.endDate).getTime();
-                if (Number.isFinite(seasonEnd)) {
-                    return matchTime >= seasonStart && matchTime <= seasonEnd;
-                }
+        if (selectedSeasonData.endDate) {
+            const seasonEnd = new Date(selectedSeasonData.endDate).getTime();
+            if (Number.isFinite(seasonEnd)) {
+                return matchTime >= seasonStart && matchTime <= seasonEnd;
             }
+        }
 
-            // Active season with no endDate
-            return matchTime >= seasonStart;
-        });
+        // Active season with no endDate
+        return matchTime >= seasonStart;
+    }, [selectedSeason, seasons]);
+
+    const filteredMatches = React.useMemo(() => {
+        const allMatches = Array.isArray(matches) ? matches : [];
+        const shouldShowArchived = matchFilter === 'archived';
+        const sourceMatches = allMatches.filter((m) => shouldShowArchived ? Boolean(m.archived) : !m.archived);
+
+        const seasonFiltered = sourceMatches.filter(matchBelongsToSelectedSeason);
 
         // Treat these as fixtures (upcoming) across possible backend variants
         const fixtureStatuses = new Set([
@@ -1269,6 +1274,8 @@ export default function AllMatches() {
         };
 
         switch (matchFilter) {
+            case 'archived':
+                return seasonFiltered;
             case 'results': {
                 // Everything that is not considered a fixture
                 return seasonFiltered.filter(m => !isFixture(m));
@@ -1279,7 +1286,18 @@ export default function AllMatches() {
             default:
                 return seasonFiltered;
         }
-    }, [matches, matchFilter, selectedSeason, seasons]);
+    }, [matches, matchFilter, matchBelongsToSelectedSeason]);
+
+    const archivedMatchesCount = React.useMemo(() => {
+        const allMatches = Array.isArray(matches) ? matches : [];
+        return allMatches.filter((m) => Boolean(m.archived) && matchBelongsToSelectedSeason(m)).length;
+    }, [matches, matchBelongsToSelectedSeason]);
+
+    useEffect(() => {
+        if (matchFilter === 'archived' && archivedMatchesCount === 0) {
+            setMatchFilter('results');
+        }
+    }, [matchFilter, archivedMatchesCount]);
 
     const sortedMatches = React.useMemo(() => {
         return [...filteredMatches].sort(compareMatchesDesc);
@@ -2459,6 +2477,37 @@ export default function AllMatches() {
                             >
                                 All Matches
                             </Button> */}
+                            {(archivedMatchesCount > 0 || matchFilter === 'archived') && (
+                                <Button
+                                    variant={matchFilter === 'archived' ? 'contained' : 'outlined'}
+                                    onClick={() => setMatchFilter('archived')}
+                                    sx={{
+                                        backgroundColor: matchFilter === 'archived' ? '#444' : 'transparent',
+                                        color: 'white',
+                                        border: '1px solid #b75512',
+                                        borderColor: '#b75512',
+                                        borderRadius: '9999px',
+                                        textTransform: 'none',
+                                        fontWeight: 'bold',
+                                        fontSize: { xs: '12.5px', sm: '14px' },
+                                        minHeight: { xs: 36, md: 48 },
+                                        height: { xs: 36, md: 48 },
+                                        minWidth: 0,
+                                        width: { xs: '100%', sm: 'auto', md: 130 },
+                                        px: { xs: 0.35, sm: 1.5, md: 2.25 },
+                                        py: { xs: 0.75, sm: 0.8 },
+                                        whiteSpace: 'nowrap',
+                                        lineHeight: 1.1,
+                                        '&:hover': {
+                                            backgroundColor: matchFilter === 'archived' ? '#444' : 'rgba(183,85,18,0.08)',
+                                            borderColor: '#b75512',
+                                        },
+                                    }}
+                                >
+                                    Archived Matches 
+                                </Button>
+                            )}
+
                             <Button
                                 variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
@@ -2580,13 +2629,21 @@ export default function AllMatches() {
                                 }}
                             >
                                 <Typography variant="h6">
-                                    {matchFilter === 'fixtures' ? 'No fixtures found' : matchFilter === 'results' ? 'No results yet' : 'No matches found'}
+                                    {matchFilter === 'fixtures'
+                                        ? 'No fixtures found'
+                                        : matchFilter === 'results'
+                                            ? 'No results yet'
+                                            : matchFilter === 'archived'
+                                                ? 'No archived matches found'
+                                                : 'No matches found'}
                                 </Typography>
                                 <Typography variant="body2">
                                     {matchFilter === 'fixtures'
                                         ? 'There are no upcoming fixtures for this league.'
                                         : matchFilter === 'results'
                                             ? 'No completed matches have been recorded yet.'
+                                            : matchFilter === 'archived'
+                                                ? 'No archived matches found for this league.'
                                             : `No matches found in ${selectedLeagueName}${selectedSeason !== 'all' ? ` (${selectedSeasonName})` : ''}`}
                                 </Typography>
                             </Paper>
@@ -2757,6 +2814,10 @@ export default function AllMatches() {
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',
                                                             '&:hover': { backgroundColor: '#444' },
+                                                            '&.Mui-disabled': {
+                                                                color: 'rgba(255,255,255,0.68)',
+                                                                borderColor: 'rgba(249,115,22,0.45)',
+                                                            },
                                                             '& .MuiButton-startIcon': {
                                                                 mr: { xs: 0.2, sm: 0.35 },
                                                                 ml: 0,
@@ -2784,9 +2845,11 @@ export default function AllMatches() {
                                                             const isDisabled =
                                                                 !league?.active ||
                                                                 match.archived;
+                                                            const canUseAddStats = (isAdmin || !!isInMatch) && !isDisabled;
                                                             return (
                                                             <Box
                                                                 onClick={() => {
+                                                                    if (match.archived) return;
                                                                     if (!isAdmin && !isInMatch) {
                                                                         toast('You are not added to this match', {
                                                                             icon: '⚠️',
@@ -2803,16 +2866,16 @@ export default function AllMatches() {
                                                                         });
                                                                         return;
                                                                     }
-                                                                    if (!isDisabled) {
+                                                                    if (canUseAddStats) {
                                                                         setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true);
                                                                     }
                                                                 }}
-                                                                sx={{ cursor: 'pointer', width: '100%' }}
+                                                                sx={{ cursor: canUseAddStats ? 'pointer' : 'not-allowed', width: '100%' }}
                                                             >
                                                             <Button
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
-                                                                disabled={isDisabled && (isAdmin || !!isInMatch)}
+                                                                disabled={!canUseAddStats}
                                                                 sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316', '&.Mui-disabled': { color: 'white' } }}
                                                             >
                                                                 Add Stats
@@ -2824,6 +2887,7 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                             startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
+                                                            disabled={match.archived}
                                                             sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316' }}
                                                         >
                                                             View Teams
@@ -2832,6 +2896,7 @@ export default function AllMatches() {
                                                             size="small"
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
+                                                            disabled={match.archived}
                                                             sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316', '&.Mui-disabled': { color: 'white' } }}
                                                         >
                                                             Results
@@ -2849,15 +2914,38 @@ export default function AllMatches() {
                                                             <Button
                                                                 onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(true); setMatchStatsOpen(true); }}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
-                                                                sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 1 } }}
+                                                                disabled={match.archived || !league?.active}
+                                                                sx={{
+                                                                    color: '#fff',
+                                                                    justifyContent: 'flex-start',
+                                                                    textTransform: 'none',
+                                                                    p: 0,
+                                                                    ml: '5px',
+                                                                    fontSize: '0.6rem',
+                                                                    whiteSpace: 'nowrap',
+                                                                    textDecoration: 'underline',
+                                                                    '& .MuiButton-startIcon': { mr: 1 },
+                                                                    '&.Mui-disabled': { color: 'rgba(255,255,255,0.68)' },
+                                                                }}
                                                             >
                                                                 Add Score
                                                             </Button>
                                                             <Button
                                                                 onClick={(e) => { e.stopPropagation(); setEditMatchLeagueId(String(match.leagueId)); setEditMatchId(match.id); setEditMatchOpen(true); }}
-                                                                disabled={!league?.active}
+                                                                disabled={!league?.active || match.archived}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
-                                                                sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
+                                                                sx={{
+                                                                    color: '#fff',
+                                                                    justifyContent: 'flex-start',
+                                                                    textTransform: 'none',
+                                                                    p: 0,
+                                                                    ml: '5px',
+                                                                    fontSize: '0.6rem',
+                                                                    whiteSpace: 'nowrap',
+                                                                    textDecoration: 'underline',
+                                                                    '& .MuiButton-startIcon': { mr: 0.5 },
+                                                                    '&.Mui-disabled': { color: 'rgba(255,255,255,0.68)' },
+                                                                }}
                                                             >
                                                                 Edit Match
                                                             </Button>
@@ -2952,7 +3040,19 @@ export default function AllMatches() {
                                                         size="small"
                                                         onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                         startIcon={<Image src={ViewTeamImg} alt="View Teams" width={20} height={20} />}
-                                                        sx={{ color: 'white', fontSize: '0.65rem', textTransform: 'none', p: 0, minWidth: 'auto', textDecoration: 'underline', whiteSpace: 'nowrap', '&:hover': { color: '#ccc' }, '& .MuiButton-startIcon': { mr: 1 } }}
+                                                        disabled={match.archived}
+                                                        sx={{
+                                                            color: 'white',
+                                                            fontSize: '0.65rem',
+                                                            textTransform: 'none',
+                                                            p: 0,
+                                                            minWidth: 'auto',
+                                                            textDecoration: 'underline',
+                                                            whiteSpace: 'nowrap',
+                                                            '&:hover': { color: '#ccc' },
+                                                            '& .MuiButton-startIcon': { mr: 1 },
+                                                            '&.Mui-disabled': { color: 'rgba(255,255,255,0.68)' },
+                                                        }}
                                                     >
                                                         View Teams
                                                     </Button>
@@ -2969,7 +3069,7 @@ export default function AllMatches() {
                                                             variant="contained"
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); handleToggleAvailability(match.id, false); }}
-                                                            disabled={availabilityLoading[match.id] || !league?.active}
+                                                            disabled={availabilityLoading[match.id] || !league?.active || match.archived}
                                                             sx={{
                                                                 background: '#00af80', color: 'white', textTransform: 'none', fontWeight: 500, fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: 0.35, px: 1.25, whiteSpace: 'nowrap', minWidth: { xs: 'calc(50% - 4px)', sm: '100px' },
                                                                 boxShadow: isUserAvailable ? '0 0 12px 3px rgba(0, 175, 128, 0.7), 0 0 20px rgba(0, 255, 180, 0.4)' : 'none',
@@ -2983,7 +3083,7 @@ export default function AllMatches() {
                                                             variant="contained"
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); handleToggleAvailability(match.id, true); }}
-                                                            disabled={availabilityLoading[match.id] || !league?.active}
+                                                            disabled={availabilityLoading[match.id] || !league?.active || match.archived}
                                                             sx={{
                                                                 background: '#c62828', color: 'white', textTransform: 'none', fontWeight: 500, fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: 0.35, px: 1.25, whiteSpace: 'nowrap', minWidth: { xs: 'calc(50% - 4px)', sm: '100px' },
                                                                 boxShadow: !isUserAvailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
@@ -3004,18 +3104,32 @@ export default function AllMatches() {
                                                         <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>For Admin Only</Typography>
                                                         <Button
                                                             onClick={(e) => { e.stopPropagation(); setEditMatchLeagueId(String(match.leagueId)); setEditMatchId(match.id); setEditMatchOpen(true); }}
-                                                            disabled={!league?.active}
+                                                            disabled={!league?.active || match.archived}
                                                             startIcon={<Edit size={16} />}
-                                                            sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, fontSize: '0.65rem', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' }, '& .MuiButton-startIcon': { mr: 0.5 } }}
+                                                            sx={{
+                                                                color: '#fff',
+                                                                justifyContent: 'flex-start',
+                                                                textTransform: 'none',
+                                                                p: 0,
+                                                                fontSize: '0.65rem',
+                                                                whiteSpace: 'nowrap',
+                                                                '&:hover': { textDecoration: 'underline' },
+                                                                '& .MuiButton-startIcon': { mr: 0.5 },
+                                                                '&.Mui-disabled': { color: 'rgba(255,255,255,0.68)' },
+                                                            }}
                                                         >
                                                             Edit Match
                                                         </Button>
                                                         <Button
-                                                            onClick={(e) => { e.stopPropagation(); handleRequestDeleteMatch(match); }}
-                                                            startIcon={<Trash2 size={16} />}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (match.archived) { setArchivedActionMatch(match); setArchivedActionOpen(true); }
+                                                                else { handleRequestDeleteMatch(match); }
+                                                            }}
+                                                            startIcon={match.archived ? <Undo2 size={16} /> : <Trash2 size={16} />}
                                                             sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, fontSize: '0.65rem', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' }, '& .MuiButton-startIcon': { mr: 0.5 } }}
                                                         >
-                                                            Delete Match
+                                                            {match.archived ? 'Restore' : 'Delete Match'}
                                                         </Button>
                                                     </>
                                                 ) : (
