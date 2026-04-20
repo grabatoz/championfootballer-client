@@ -1755,13 +1755,22 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         sx={{
           p: { xs: 2, sm: 3 },
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'center' },
-          justifyContent: 'space-between',
+          flexDirection: 'column',
+          alignItems: 'stretch',
           gap: 1.25,
         }}
       >
-        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            gap: 1,
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'stretch',
+            justifyContent: { xs: 'stretch', md: 'stretch' },
+            flexWrap: 'wrap',
+          }}
+        >
           {currentUserId && (
             <Button
               variant="outlined"
@@ -1796,6 +1805,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 borderColor: 'rgba(229,106,22,0.6)',
                 color: '#e56a16',
                 width: { xs: '100%', md: 'auto' },
+                flex: { md: 1 },
                 minHeight: { xs: 42, md: 'auto' },
                 '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' }
               }}
@@ -1804,18 +1814,6 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             </Button>
           )}
           <Button
-            variant="contained"
-            color="error"
-            // onClick={onDelete}
-             onClick={() => {
-                  if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
-                  onArchive?.();
-                }}
-            sx={{ width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' } }}
-          >
-            Delete League
-          </Button>
-          <Button
             variant="outlined"
             onClick={openArchiveSeasonConfirm}
             disabled={!currentSeason || seasonArchiveLoading}
@@ -1823,24 +1821,26 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               borderColor: 'rgba(255,107,107,0.55)',
               color: '#ff6b6b',
               width: { xs: '100%', md: 'auto' },
+              flex: { md: 1 },
               minHeight: { xs: 42, md: 'auto' },
               '&:hover': { borderColor: '#ff6b6b', bgcolor: 'rgba(255,107,107,0.08)' },
               '&:disabled': { borderColor: 'rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.45)' },
             }}
           >
-            {seasonArchiveLoading ? 'Archiving Season...' : 'Archive Season'}
+            {seasonArchiveLoading ? 'Archiving Season...' : 'Delete Season'}
           </Button>
-        </Box>
-        <Box
-          sx={{
-            width: { xs: '100%', md: 'auto' },
-            display: { xs: 'grid', md: 'flex' },
-            gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'none' },
-            gap: 1,
-            flexWrap: 'wrap',
-            ml: { md: 'auto' },
-          }}
-        >
+          <Button
+            variant="contained"
+            color="error"
+            // onClick={onDelete}
+             onClick={() => {
+                 if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
+                  onArchive?.();
+                }}
+            sx={{ width: { xs: '100%', md: 'auto' }, flex: { md: 1 }, minHeight: { xs: 42, md: 'auto' } }}
+            >
+            Delete League
+          </Button>
           {/* <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
@@ -1893,7 +1893,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               </Button>
             )
           )} */}
-          <Button
+          {/* <Button
             variant="outlined"
             onClick={() => setArchivedSeasonsOpen(true)}
             sx={{
@@ -1905,11 +1905,17 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             }}
           >
             Archived Seasons ({archivedSeasons.length})
-          </Button>
+          </Button> */}
           <Button
             onClick={handleUpdate}
             variant="contained"
-            sx={{ bgcolor: '#27ab83', width: { xs: '100%', md: 'auto' }, minHeight: { xs: 42, md: 'auto' }, '&:hover': { bgcolor: '#1e8463' } }}
+            sx={{
+              bgcolor: '#27ab83',
+              width: { xs: '100%', md: 'auto' },
+              flex: { md: 1 },
+              minHeight: { xs: 42, md: 'auto' },
+              '&:hover': { bgcolor: '#1e8463' },
+            }}
           >
             Update League
           </Button>
