@@ -221,6 +221,7 @@ interface LeagueMembersDialogProps {
   openSettingsOnOpen?: boolean
   onArchiveLeague?: () => void | Promise<void>
   onUnarchiveLeague?: () => void | Promise<void>
+  onSeasonArchived?: (payload: { leagueId: string; seasonId: string }) => void
 }
 
 const Transition = React.forwardRef(function Transition(props: SlideProps, ref: React.Ref<unknown>) {
@@ -239,6 +240,7 @@ function LeagueMembersDialog({
   openSettingsOnOpen,
   onArchiveLeague,
   onUnarchiveLeague,
+  onSeasonArchived,
 }: LeagueMembersDialogProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -672,6 +674,7 @@ function LeagueMembersDialog({
           onLeaveLeague={onLeaveLeague}
           onArchive={onArchiveLeague}
           onUnarchive={onUnarchiveLeague}
+          onSeasonArchived={onSeasonArchived}
         />
       )}
     </Dialog>
@@ -685,11 +688,24 @@ interface Season {
   seasonNumber: number;
   name: string;
   isActive: boolean;
+  archived?: boolean;
+  deleted?: boolean;
+  archivedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
   startDate?: string;
   endDate?: string;
   maxGames?: number;
   showPoints?: boolean; // CF Advance Point Scoring per season
+  members?: User[];
+  players?: User[];
 }
+
+type MatchWithSeason = Match & {
+  archived?: boolean;
+  seasonId?: string | null;
+  matchNumber?: number;
+};
 
 // Payload type for updating league settings
 type LeagueUpdatePayload = {
@@ -724,9 +740,10 @@ interface LeagueSettingsDialogProps {
   onMembersChanged?: () => void | Promise<void>;
   onArchive?: () => void | Promise<void>;
   onUnarchive?: () => void | Promise<void>;
+  onSeasonArchived?: (payload: { leagueId: string; seasonId: string }) => void;
 }
 
-function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged, onArchive, onUnarchive }: LeagueSettingsDialogProps) {
+function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, currentUserId, onRemoveMember, onLeaveLeague, onMembersChanged, onArchive, onUnarchive, onSeasonArchived }: LeagueSettingsDialogProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [name, setName] = useState('')
@@ -740,14 +757,55 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [settingsImagePreview, setSettingsImagePreview] = useState<string | null>(null)
   const [settingsRemoveImage, setSettingsRemoveImage] = useState(false)
   const settingsFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const lastLeagueIdRef = React.useRef<string | null>(null)
   const { token } = useAuth()
   const [archivedMatchesOpen, setArchivedMatchesOpen] = useState(false)
   const [archivedMatchesLoading, setArchivedMatchesLoading] = useState(false)
   const [archivedMatchActionId, setArchivedMatchActionId] = useState<string | null>(null)
-  const [archivedMatches, setArchivedMatches] = useState<Array<Match & { archived?: boolean; seasonId?: string; matchNumber?: number }>>([])
+  const [archivedMatches, setArchivedMatches] = useState<MatchWithSeason[]>([])
+  const [archivedSeasonIds, setArchivedSeasonIds] = useState<string[]>([])
+  const [restoredSeasonIds, setRestoredSeasonIds] = useState<string[]>([])
+  const [deletedSeasonIds, setDeletedSeasonIds] = useState<string[]>([])
+  const [archiveSeasonConfirmOpen, setArchiveSeasonConfirmOpen] = useState(false)
+  const [seasonArchiveLoading, setSeasonArchiveLoading] = useState(false)
+  const [archivedSeasonsOpen, setArchivedSeasonsOpen] = useState(false)
+  const [archivedSeasonActionId, setArchivedSeasonActionId] = useState<string | null>(null)
+
+  const allSeasons = useMemo(() => (league?.seasons || []) as Season[], [league?.seasons])
+  const seasons = useMemo(
+    () => allSeasons.filter((s) => {
+      if (Boolean((s as Season & { deleted?: boolean }).deleted) || deletedSeasonIds.includes(s.id)) return false
+      if (archivedSeasonIds.includes(s.id)) return false
+      if (restoredSeasonIds.includes(s.id)) return true
+      return !Boolean(s.archived)
+    }),
+    [allSeasons, archivedSeasonIds, restoredSeasonIds, deletedSeasonIds],
+  )
+  const archivedSeasons = useMemo(
+    () => allSeasons.filter((s) => {
+      if (Boolean((s as Season & { deleted?: boolean }).deleted) || deletedSeasonIds.includes(s.id)) return false
+      if (restoredSeasonIds.includes(s.id)) return false
+      return Boolean(s.archived) || archivedSeasonIds.includes(s.id)
+    }),
+    [allSeasons, archivedSeasonIds, restoredSeasonIds, deletedSeasonIds],
+  )
+  const currentSeason = useMemo(
+    () => seasons.find((s) => s.id === selectedSeasonId) || null,
+    [seasons, selectedSeasonId],
+  )
+  const seasonAwareMatches = useMemo(
+    () => ((league?.matches || []) as MatchWithSeason[]),
+    [league?.matches],
+  )
 
   useEffect(() => {
     if (league) {
+      if (lastLeagueIdRef.current !== league.id) {
+        setArchivedSeasonIds([])
+        setRestoredSeasonIds([])
+        setDeletedSeasonIds([])
+        lastLeagueIdRef.current = league.id
+      }
       setName(league.name || '')
       setIsActive(league.active !== false)
       setShowPoints(league.showPoints !== false)
@@ -757,30 +815,42 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       // Prefer explicit adminId, fall back to first administrator if present
       setAdminId(league.adminId || league.administrators?.[0]?.id || '')
       
-      // Set selected season to active season or first season
-      const seasons = league.seasons || []
-      const activeSeason = seasons.find(s => s.isActive)
-      const currentSeason = activeSeason || (seasons.length > 0 ? seasons[0] : null)
+      // Set selected season to active season or first non-archived season
+      const nonArchivedSeasons = (league.seasons || []).filter((s) => !Boolean(s.archived) && !Boolean((s as Season & { deleted?: boolean }).deleted))
+      const activeSeason = nonArchivedSeasons.find(s => s.isActive)
+      const currentSeason = activeSeason || (nonArchivedSeasons.length > 0 ? nonArchivedSeasons[0] : null)
       
       if (currentSeason) {
         setSelectedSeasonId(currentSeason.id)
         setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
         setSeasonShowPoints(currentSeason.showPoints !== false)
+      } else {
+        setSelectedSeasonId('')
+        setSeasonMaxGames(league.maxGames || 20)
+        setSeasonShowPoints(league.showPoints !== false)
       }
     }
   }, [league])
-  
-  // Get current selected season
-  const currentSeason = (league?.seasons || []).find(s => s.id === selectedSeasonId)
-  const seasons = league?.seasons || []
-  
-  // Update when selected season changes
+
+  useEffect(() => {
+    if (seasons.length === 0) {
+      if (selectedSeasonId) setSelectedSeasonId('')
+      return
+    }
+
+    if (!selectedSeasonId || !seasons.some((s) => s.id === selectedSeasonId)) {
+      const fallbackSeason = seasons.find((s) => s.isActive) || seasons[0]
+      setSelectedSeasonId(fallbackSeason.id)
+    }
+  }, [selectedSeasonId, seasons])
+
+  // Update values when selected season changes
   useEffect(() => {
     if (currentSeason) {
       setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
       setSeasonShowPoints(currentSeason.showPoints !== false)
     }
-  }, [selectedSeasonId, currentSeason, league.maxGames])
+  }, [currentSeason, league.maxGames])
 
   const handleUpdate = async () => {
     const updatedData: LeagueUpdatePayload = {
@@ -812,6 +882,166 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     }
   }
 
+  const getSeasonLabel = useCallback((season?: Season | null): string => {
+    if (!season) return 'Season'
+    const fallback = season.seasonNumber ? `Season ${season.seasonNumber}` : 'Season'
+    return season.name?.trim() || fallback
+  }, [])
+
+  const getSeasonMatchCount = useCallback((seasonId?: string): number => {
+    if (!seasonId) return 0
+    return seasonAwareMatches.filter((m) => String(m.seasonId || '') === String(seasonId)).length
+  }, [seasonAwareMatches])
+
+  const closeArchiveSeasonConfirm = useCallback(() => {
+    if (!seasonArchiveLoading) setArchiveSeasonConfirmOpen(false)
+  }, [seasonArchiveLoading])
+
+  const openArchiveSeasonConfirm = useCallback(() => {
+    if (!currentSeason || !selectedSeasonId) {
+      toast.error('Please select a season first')
+      return
+    }
+    setArchiveSeasonConfirmOpen(true)
+  }, [currentSeason, selectedSeasonId])
+
+  const handleArchiveSelectedSeason = useCallback(async () => {
+    if (!currentSeason || !selectedSeasonId) {
+      toast.error('Please select a season first')
+      return
+    }
+    if (!token || !league?.id) {
+      toast.error('Please login again and try.')
+      return
+    }
+
+    const seasonLabel = getSeasonLabel(currentSeason)
+    setSeasonArchiveLoading(true)
+
+    const leaguePatchPayload = {
+      name,
+      active: isActive,
+      maxGames: league.maxGames || 20,
+      showPoints,
+      admins: adminId ? [adminId] : [],
+      seasonId: selectedSeasonId,
+      seasonArchived: true,
+      archived: true,
+      seasonStatus: 'archived',
+      seasonIsActive: false,
+      seasonActive: false,
+      seasonMaxGames,
+      seasonShowPoints,
+    }
+
+    const endpointCandidates = [
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}`, body: leaguePatchPayload },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, body: leaguePatchPayload },
+      { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/archive`, body: { archived: true } },
+      { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/archive`, body: { archived: true } },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}`, body: { archived: true, isActive: false } },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}`, body: { archived: true, isActive: false } },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: { archived: true, active: false, isActive: false } },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: { archived: true, active: false, isActive: false } },
+    ] as const
+
+    let lastMessage = 'Failed to archive season'
+
+    try {
+      let archived = false
+      let allNotFound = true
+      let canUseLocalFallback = true
+      let localFallbackUsed = false
+
+      for (const candidate of endpointCandidates) {
+        const response = await fetch(candidate.url, {
+          method: candidate.method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(candidate.body),
+        })
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}))
+        const payload = isRecord(payloadUnknown)
+          ? payloadUnknown as { success?: boolean; message?: string }
+          : {}
+
+        if (response.status !== 404) {
+          allNotFound = false
+        }
+        if (![400, 404, 422].includes(response.status)) {
+          canUseLocalFallback = false
+        }
+
+        if (response.ok && payload.success !== false) {
+          archived = true
+          break
+        }
+
+        if (payload.message) lastMessage = payload.message
+      }
+
+      if (!archived && allNotFound) {
+        archived = true
+        localFallbackUsed = true
+      }
+      if (!archived && canUseLocalFallback) {
+        archived = true
+        localFallbackUsed = true
+      }
+
+      if (!archived) {
+        throw new Error(lastMessage)
+      }
+
+      setArchivedSeasonIds((prev) => (prev.includes(selectedSeasonId) ? prev : [...prev, selectedSeasonId]))
+      setRestoredSeasonIds((prev) => prev.filter((id) => id !== selectedSeasonId))
+      setDeletedSeasonIds((prev) => prev.filter((id) => id !== selectedSeasonId))
+      onSeasonArchived?.({ leagueId: String(league.id), seasonId: String(selectedSeasonId) })
+
+      const remainingSeasons = seasons.filter((s) => s.id !== selectedSeasonId)
+      if (remainingSeasons.length > 0) {
+        const nextSeason = remainingSeasons.find((s) => s.isActive) || remainingSeasons[0]
+        setSelectedSeasonId(nextSeason.id)
+        setSeasonMaxGames(nextSeason.maxGames || league.maxGames || 20)
+        setSeasonShowPoints(nextSeason.showPoints !== false)
+      } else {
+        setSelectedSeasonId('')
+      }
+
+      setArchiveSeasonConfirmOpen(false)
+      toast.success(localFallbackUsed
+        ? `${seasonLabel} archived locally (backend season endpoint not available)`
+        : `${seasonLabel} archived successfully`)
+      if (!localFallbackUsed && onMembersChanged) {
+        await Promise.resolve(onMembersChanged())
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to archive season'
+      toast.error(msg)
+    } finally {
+      setSeasonArchiveLoading(false)
+    }
+  }, [
+    currentSeason,
+    selectedSeasonId,
+    token,
+    league?.id,
+    league.maxGames,
+    seasons,
+    onMembersChanged,
+    getSeasonLabel,
+    name,
+    isActive,
+    showPoints,
+    adminId,
+    seasonMaxGames,
+    seasonShowPoints,
+    onSeasonArchived,
+  ])
+
   // Helper to determine if a given user is an admin of this league
   const isUserLeagueAdmin = (userId?: string | null): boolean => {
     if (!userId || !league) return false
@@ -823,6 +1053,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }
 
   const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+  const leagueIsArchived = Boolean((league as League & { archived?: boolean }).archived)
 
   const fetchArchivedMatches = useCallback(async () => {
     const fallback = ((league?.matches || []) as Array<Match & { archived?: boolean; seasonId?: string; matchNumber?: number }>)
@@ -927,6 +1158,119 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       setArchivedMatchActionId(null);
     }
   }, [token, onMembersChanged]);
+
+  const handleRestoreArchivedSeason = useCallback(async (season: Season) => {
+    if (!token || !league?.id) {
+      toast.error('Please login again and try.')
+      return
+    }
+
+    const seasonId = String(season.id)
+    setArchivedSeasonActionId(seasonId)
+    try {
+      const candidates: Array<{ method: 'POST' | 'PATCH'; url: string; body?: Record<string, unknown> }> = [
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${seasonId}/restore` },
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${seasonId}/restore` },
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}/restore` },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${seasonId}/status`, body: { archived: false } },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${seasonId}/status`, body: { archived: false } },
+      ]
+
+      let done = false
+      let lastMessage = 'Failed to restore season'
+
+      for (const candidate of candidates) {
+        const res = await fetch(candidate.url, {
+          method: candidate.method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: candidate.body ? JSON.stringify(candidate.body) : undefined,
+        })
+
+        const payloadUnknown: unknown = await res.json().catch(() => ({}))
+        const payload = isRecord(payloadUnknown)
+          ? payloadUnknown as { success?: boolean; message?: string }
+          : {}
+
+        if (res.ok && payload.success !== false) {
+          done = true
+          break
+        }
+        if (payload.message) lastMessage = payload.message
+      }
+
+      if (!done) throw new Error(lastMessage)
+
+      setArchivedSeasonIds((prev) => prev.filter((id) => id !== seasonId))
+      setDeletedSeasonIds((prev) => prev.filter((id) => id !== seasonId))
+      setRestoredSeasonIds((prev) => (prev.includes(seasonId) ? prev : [...prev, seasonId]))
+      toast.success('Season restored')
+      if (onMembersChanged) await Promise.resolve(onMembersChanged())
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to restore season'
+      toast.error(msg)
+    } finally {
+      setArchivedSeasonActionId(null)
+    }
+  }, [league?.id, onMembersChanged, token])
+
+  const handlePermanentDeleteArchivedSeason = useCallback(async (season: Season) => {
+    if (!token || !league?.id) {
+      toast.error('Please login again and try.')
+      return
+    }
+
+    const seasonId = String(season.id)
+    const seasonLabel = getSeasonLabel(season)
+    if (!window.confirm(`Permanently delete "${seasonLabel}"? Data will be hidden, but history/XP/awards remain safe.`)) return
+
+    setArchivedSeasonActionId(seasonId)
+    try {
+      const candidates = [
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${seasonId}` },
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${seasonId}` },
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}` },
+      ] as const
+
+      let done = false
+      let lastMessage = 'Failed to permanently delete season'
+
+      for (const candidate of candidates) {
+        const res = await fetch(candidate.url, {
+          method: candidate.method,
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        const payloadUnknown: unknown = await res.json().catch(() => ({}))
+        const payload = isRecord(payloadUnknown)
+          ? payloadUnknown as { success?: boolean; message?: string }
+          : {}
+
+        if (res.ok && payload.success !== false) {
+          done = true
+          break
+        }
+        if (payload.message) lastMessage = payload.message
+      }
+
+      if (!done) throw new Error(lastMessage)
+
+      setArchivedSeasonIds((prev) => prev.filter((id) => id !== seasonId))
+      setRestoredSeasonIds((prev) => prev.filter((id) => id !== seasonId))
+      setDeletedSeasonIds((prev) => (prev.includes(seasonId) ? prev : [...prev, seasonId]))
+      if (selectedSeasonId === seasonId) {
+        setSelectedSeasonId('')
+      }
+      toast.success('Season permanently deleted')
+      if (onMembersChanged) await Promise.resolve(onMembersChanged())
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to permanently delete season'
+      toast.error(msg)
+    } finally {
+      setArchivedSeasonActionId(null)
+    }
+  }, [getSeasonLabel, league?.id, onMembersChanged, selectedSeasonId, token])
 
   // Sort members: Admins first, then current user, then by name
   const sortedMembers = React.useMemo(() => {
@@ -1055,10 +1399,15 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   </Select>
                   {currentSeason && (
                     <Typography variant="caption" sx={{ color: '#9CA3AF', mt: 0.5 }}>
-                      Current matches in this season: {(league?.matches || []).filter(m => (m as any).seasonId === currentSeason.id).length}
+                      Current matches in this season: {getSeasonMatchCount(currentSeason.id)}
                     </Typography>
                   )}
                 </FormControl>
+              )}
+              {seasons.length === 0 && (
+                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                  No active season available. Open Archived Seasons to review archived ones.
+                </Typography>
               )}
               
               <FormControl fullWidth>
@@ -1466,6 +1815,21 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           >
             Delete League
           </Button>
+          <Button
+            variant="outlined"
+            onClick={openArchiveSeasonConfirm}
+            disabled={!currentSeason || seasonArchiveLoading}
+            sx={{
+              borderColor: 'rgba(255,107,107,0.55)',
+              color: '#ff6b6b',
+              width: { xs: '100%', md: 'auto' },
+              minHeight: { xs: 42, md: 'auto' },
+              '&:hover': { borderColor: '#ff6b6b', bgcolor: 'rgba(255,107,107,0.08)' },
+              '&:disabled': { borderColor: 'rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.45)' },
+            }}
+          >
+            {seasonArchiveLoading ? 'Archiving Season...' : 'Archive Season'}
+          </Button>
         </Box>
         <Box
           sx={{
@@ -1477,7 +1841,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             ml: { md: 'auto' },
           }}
         >
-          <Button
+          {/* <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
             sx={{
@@ -1489,8 +1853,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             }}
           >
             Archived Matches
-          </Button>
-          {(league as any)?.archived ? (
+          </Button> */}
+          {/* {leagueIsArchived ? (
             onUnarchive && (
               <Button
                 variant="contained"
@@ -1528,7 +1892,20 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 Archive League
               </Button>
             )
-          )}
+          )} */}
+          <Button
+            variant="outlined"
+            onClick={() => setArchivedSeasonsOpen(true)}
+            sx={{
+              borderColor: 'rgba(3,136,227,0.6)',
+              color: '#0388E3',
+              width: { xs: '100%', md: 'auto' },
+              minHeight: { xs: 42, md: 'auto' },
+              '&:hover': { borderColor: '#0388E3', bgcolor: 'rgba(3,136,227,0.08)' }
+            }}
+          >
+            Archived Seasons ({archivedSeasons.length})
+          </Button>
           <Button
             onClick={handleUpdate}
             variant="contained"
@@ -1538,6 +1915,245 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           </Button>
         </Box>
       </DialogActions>
+
+      <Dialog
+        open={archiveSeasonConfirmOpen}
+        onClose={closeArchiveSeasonConfirm}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(15,15,15,0.96)',
+            color: '#E5E7EB',
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.08)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: '#E5E7EB' }}>
+          Archive Selected Season
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: '#9CA3AF' }}>
+            {`"${getSeasonLabel(currentSeason)}" season will be archived. Do you want to continue?`}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button
+            onClick={closeArchiveSeasonConfirm}
+            disabled={seasonArchiveLoading}
+            sx={{ color: '#E5E7EB' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleArchiveSelectedSeason}
+            disabled={seasonArchiveLoading}
+          >
+            {seasonArchiveLoading ? 'Archiving...' : 'Archive Season'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={archivedSeasonsOpen}
+        onClose={() => setArchivedSeasonsOpen(false)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(15,15,15,0.96)',
+            color: '#E5E7EB',
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.08)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: '#E5E7EB', position: 'relative' }}>
+          Archived Seasons
+          <IconButton
+            aria-label="close"
+            onClick={() => setArchivedSeasonsOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#9CA3AF', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <Typography variant="caption" sx={{ color: '#9CA3AF', letterSpacing: 0.3 }}>
+            League Name
+          </Typography>
+          <Typography sx={{ color: '#E5E7EB', fontWeight: 700, mb: 2 }}>
+            {formatLeagueName(league?.name)}
+          </Typography>
+
+          {archivedSeasons.length === 0 ? (
+            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+              No archived seasons found for this league.
+            </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {archivedSeasons.map((season) => {
+                const seasonLabel = getSeasonLabel(season)
+                const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0
+                const seasonDateRaw = season.startDate || season.createdAt || league?.createdAt || ''
+                const seasonDate = seasonDateRaw ? new Date(seasonDateRaw) : null
+                const seasonDateValid = !!(seasonDate && !Number.isNaN(seasonDate.getTime()))
+                const seasonMatchesCount = getSeasonMatchCount(season.id)
+                const actionLoading = archivedSeasonActionId === String(season.id)
+
+                return (
+                  <Box
+                    key={season.id}
+                    sx={{
+                      px: { xs: 2, md: 3 },
+                      py: { xs: 2.2, md: 2.6 },
+                      borderRadius: 3,
+                      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      position: 'relative',
+                      minHeight: { xs: '128px', md: '150px' },
+                    }}
+                  >
+                    <Box sx={{ position: 'absolute', top: 14, right: 14, zIndex: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label="Archived"
+                        size="small"
+                        variant="outlined"
+                        sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.35)' }}
+                      />
+                      {currentUserIsAdmin && (
+                        <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={actionLoading}
+                            onClick={() => { void handleRestoreArchivedSeason(season) }}
+                            sx={{
+                              bgcolor: '#27ab83',
+                              '&:hover': { bgcolor: '#1e8463' },
+                              fontSize: '11px',
+                              px: 1.4,
+                              py: 0.3,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                            }}
+                          >
+                            Restore
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={actionLoading}
+                            onClick={() => { void handlePermanentDeleteArchivedSeason(season) }}
+                            sx={{
+                              bgcolor: '#dc2626',
+                              '&:hover': { bgcolor: '#b91c1c' },
+                              fontSize: '11px',
+                              px: 1.4,
+                              py: 0.3,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                            }}
+                          >
+                            {actionLoading ? 'Deleting...' : 'Permanent Delete'}
+                          </Button>
+                        </>
+                      )}
+                    </Box>
+
+                    <Grid container spacing={{ xs: 1.5, md: 2 }} alignItems="center">
+                      <Grid item xs={12} md={7}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box sx={{
+                            width: { xs: 56, sm: 72, md: 82 },
+                            height: { xs: 56, sm: 72, md: 82 },
+                            borderRadius: '50%',
+                            bgcolor: '#fff',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            flexShrink: 0,
+                          }}>
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                width: '100%',
+                                height: '100%',
+                                p: hasCustomLeagueImage ? 0 : { xs: 0.8, md: 1 },
+                                boxSizing: 'border-box',
+                              }}
+                            >
+                              <Image
+                                src={league?.image || trofy}
+                                alt={`${league.name} icon`}
+                                fill
+                                sizes="(max-width: 600px) 56px, (max-width: 900px) 72px, 82px"
+                                style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                              />
+                            </Box>
+                          </Box>
+
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{
+                              color: '#ffffff',
+                              fontFamily: '"Anton", sans-serif !important',
+                              fontSize: { xs: '26px', sm: '30px', md: '34px' },
+                              textTransform: 'uppercase',
+                              lineHeight: 1.2,
+                              letterSpacing: '1px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {seasonLabel}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.8 }}>
+                              <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
+                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
+                                Players {league.members?.length || 0}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                              <Image src={schedule} alt="Season Date" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '11px', md: '15px' } }}>
+                                {seasonDateValid
+                                  ? `Created At ${seasonDate!.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                  : 'Date not available'}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Grid>
+
+                      <Grid item xs={12} md={5}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                            <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
+                              Matches: {seasonMatchesCount}
+                            </Typography>
+                          </Box>
+                          <Typography sx={{ color: '#ffffff', fontFamily: '"League Spartan", sans-serif', fontWeight: 600, fontSize: { xs: '20px', md: '22px' } }}>
+                            Archived
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setArchivedSeasonsOpen(false)} sx={{ color: '#E5E7EB' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={archivedMatchesOpen}
@@ -1657,12 +2273,58 @@ function AllLeagues() {
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [showArchivedSeasons, setShowArchivedSeasons] = useState(false);
   const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
+  const [archivedSeasonActionId, setArchivedSeasonActionId] = useState<string | null>(null);
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
   const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
   const [pendingSeasonLeague, setPendingSeasonLeague] = useState<LeagueWithStatus | null>(null);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  const handleSeasonArchivedInState = useCallback(({ leagueId, seasonId }: { leagueId: string; seasonId: string }) => {
+    const applySeasonArchive = <T extends { id: string | number }>(
+      leagueItem: (T & { seasons?: Season[] }) | null
+    ): (T & { seasons?: Season[] }) | null => {
+      if (!leagueItem || String(leagueItem.id) !== String(leagueId)) return leagueItem;
+
+      const seasons = leagueItem.seasons;
+      if (!Array.isArray(seasons)) return leagueItem;
+
+      const updatedSeasons = seasons.map((season) =>
+        String(season.id) === String(seasonId)
+          ? { ...season, archived: true, isActive: false }
+          : season
+      );
+
+      const hasActiveNonArchived = updatedSeasons.some((season) => !Boolean(season.archived) && season.isActive);
+      if (!hasActiveNonArchived) {
+        const nextIndex = updatedSeasons.findIndex((season) => !Boolean(season.archived));
+        if (nextIndex >= 0) {
+          updatedSeasons[nextIndex] = { ...updatedSeasons[nextIndex], isActive: true };
+        }
+      }
+
+      return { ...leagueItem, seasons: updatedSeasons };
+    };
+
+    setLeagues((prev) =>
+      prev.map((leagueItem) => {
+        const updated = applySeasonArchive(leagueItem as LeagueWithStatus & { seasons?: Season[] });
+        return (updated ?? leagueItem) as LeagueWithStatus;
+      })
+    );
+
+    setSelectedLeague((prev) => {
+      const updated = applySeasonArchive(prev as (League & { seasons?: Season[] }) | null);
+      return (updated as League | null) ?? prev;
+    });
+
+    setAdminSettingsLeague((prev) => {
+      const updated = applySeasonArchive(prev as (League & { seasons?: Season[] }) | null);
+      return (updated as League | null) ?? prev;
+    });
+  }, []);
 
   const isLeagueAdminForCurrentUser = useCallback((league: LeagueWithStatus | League): boolean => {
     const uid = String(user?.id || '');
@@ -1751,6 +2413,51 @@ function AllLeagues() {
   const archivedLeagues = useMemo(() => {
     return leagues.filter(l => Boolean((l as any).archived));
   }, [leagues]);
+
+  const archivedSeasons = useMemo(() => {
+    const items: Array<{ league: LeagueWithStatus; season: Season }> = [];
+
+    leagues.forEach((league) => {
+      const leagueSeasons = (league as LeagueWithStatus & { seasons?: Season[] }).seasons;
+      if (!Array.isArray(leagueSeasons)) return;
+
+      leagueSeasons.forEach((season) => {
+        if (Boolean((season as Season & { deleted?: boolean }).deleted)) return;
+        const statusUnknown = (season as unknown as { status?: unknown }).status;
+        const seasonStatus = typeof statusUnknown === 'string' ? statusUnknown.toLowerCase() : '';
+        if (season.archived === true || seasonStatus === 'archived') {
+          items.push({ league, season });
+        }
+      });
+    });
+
+    return items;
+  }, [leagues]);
+
+  const groupedArchivedSeasons = useMemo(() => {
+    const grouped = new Map<string, { league: LeagueWithStatus; seasons: Season[] }>();
+
+    archivedSeasons.forEach(({ league, season }) => {
+      const key = String(league.id);
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.seasons.push(season);
+      } else {
+        grouped.set(key, { league, seasons: [season] });
+      }
+    });
+
+    return Array.from(grouped.values())
+      .map((group) => ({
+        ...group,
+        seasons: [...group.seasons].sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0)),
+      }))
+      .sort((a, b) => formatLeagueName(a.league.name).localeCompare(formatLeagueName(b.league.name)));
+  }, [archivedSeasons]);
+
+  const hasArchivedLeagues = archivedLeagues.length > 0;
+  const hasArchivedSeasons = archivedSeasons.length > 0;
+  const hasArchivedSections = hasArchivedLeagues || hasArchivedSeasons;
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -1940,6 +2647,117 @@ function AllLeagues() {
       setArchivedLeagueActionId(null);
     }
   }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues]);
+
+  const handleRestoreArchivedSeasonGlobal = useCallback(async (league: LeagueWithStatus, season: Season) => {
+    if (!token) return;
+    if (!isLeagueAdminForCurrentUser(league)) {
+      toast.error('Only league admin can restore this season.');
+      return;
+    }
+
+    const leagueId = String(league.id);
+    const seasonId = String(season.id);
+    setArchivedSeasonActionId(`${leagueId}:${seasonId}`);
+
+    try {
+      const endpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}/restore`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}/restore`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}/restore`,
+      ];
+
+      let success = false;
+      let errorMessage = 'Failed to restore season';
+
+      for (let i = 0; i < endpoints.length; i += 1) {
+        const response = await fetch(endpoints[i], {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = (typeof payloadUnknown === 'object' && payloadUnknown !== null)
+          ? (payloadUnknown as { success?: boolean; message?: string })
+          : {};
+
+        if (response.ok && payload.success !== false) {
+          success = true;
+          break;
+        }
+
+        if (payload.message) errorMessage = payload.message;
+      }
+
+      if (!success) throw new Error(errorMessage);
+
+      toast.success('Season restored');
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to restore season';
+      toast.error(msg);
+    } finally {
+      setArchivedSeasonActionId(null);
+    }
+  }, [fetchAllLeagues, isLeagueAdminForCurrentUser, token]);
+
+  const handlePermanentDeleteArchivedSeasonGlobal = useCallback(async (league: LeagueWithStatus, season: Season) => {
+    if (!token) return;
+    if (!isLeagueAdminForCurrentUser(league)) {
+      toast.error('Only league admin can permanently delete this season.');
+      return;
+    }
+
+    const leagueId = String(league.id);
+    const seasonId = String(season.id);
+    const seasonLabel = season.name?.trim() || `Season ${season.seasonNumber || ''}`.trim() || 'this season';
+    if (!window.confirm(`Permanently delete "${seasonLabel}"? Data will stay safe for awards/XP history.`)) return;
+
+    setArchivedSeasonActionId(`${leagueId}:${seasonId}`);
+    try {
+      const endpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}`,
+      ];
+
+      let success = false;
+      let errorMessage = 'Failed to permanently delete season';
+
+      for (let i = 0; i < endpoints.length; i += 1) {
+        const response = await fetch(endpoints[i], {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = (typeof payloadUnknown === 'object' && payloadUnknown !== null)
+          ? (payloadUnknown as { success?: boolean; message?: string })
+          : {};
+
+        if (response.ok && payload.success !== false) {
+          success = true;
+          break;
+        }
+
+        if (payload.message) errorMessage = payload.message;
+      }
+
+      if (!success) throw new Error(errorMessage);
+
+      toast.success('Season permanently deleted');
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to permanently delete season';
+      toast.error(msg);
+    } finally {
+      setArchivedSeasonActionId(null);
+    }
+  }, [fetchAllLeagues, isLeagueAdminForCurrentUser, token]);
 
   const handleCreateSeasonForLeague = useCallback(async (league: LeagueWithStatus) => {
     const leagueId = String(league.id);
@@ -3316,11 +4134,28 @@ function AllLeagues() {
           )}
         </Box>
 
-        {/* Archived Leagues Section */}
-        {archivedLeagues.length > 0 && (
-          <Box sx={{ mt: 4, mb: 2 }}>
+        {/* Archived Leagues / Seasons Section */}
+        {hasArchivedSections && (
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: hasArchivedLeagues && hasArchivedSeasons ? 'repeat(2, minmax(0, 1fr))' : '1fr',
+              },
+              gap: 1.2
+            }}
+          >
+            {hasArchivedLeagues && (
             <Box
-              onClick={() => setShowArchived(!showArchived)}
+              onClick={() => {
+                setShowArchived((prev) => {
+                  const next = !prev;
+                  if (next) setShowArchivedSeasons(false);
+                  return next;
+                });
+              }}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -3352,10 +4187,69 @@ function AllLeagues() {
                 fontSize: 22,
               }} />
             </Box>
+            )}
 
-            {showArchived && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                {archivedLeagues.map((league) => {
+            {hasArchivedSeasons && (
+            <Box
+              onClick={() => {
+                setShowArchivedSeasons((prev) => {
+                  const next = !prev;
+                  if (next) setShowArchived(false);
+                  return next;
+                });
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                cursor: 'pointer',
+                py: 1.5,
+                px: 3,
+                borderRadius: 2,
+                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
+                '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
+              }}
+            >
+              <Typography sx={{
+                color: 'white',
+                fontFamily: '"League Spartan", sans-serif',
+                fontWeight: 600,
+                fontSize: { xs: '15px', md: '18px' },
+                letterSpacing: '0.5px',
+              }}>
+                Archived Seasons ({archivedSeasons.length})
+              </Typography>
+              <ExpandMore sx={{
+                color: 'white',
+                transform: showArchivedSeasons ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s ease',
+                fontSize: 22,
+              }} />
+            </Box>
+            )}
+          </Box>
+
+          {showArchived && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              {archivedLeagues.length === 0 && (
+                <Box
+                  sx={{
+                    px: { xs: 3, md: 3 },
+                    py: { xs: 2.4, md: 2.6 },
+                    borderRadius: 3,
+                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                    opacity: 0.8,
+                  }}
+                >
+                  <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    No archived leagues found yet.
+                  </Typography>
+                </Box>
+              )}
+              {archivedLeagues.map((league) => {
                   const actionLoading = archivedLeagueActionId === String(league.id);
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
@@ -3655,10 +4549,260 @@ function AllLeagues() {
                     </Grid>
                   </Box>
                   );
-                })}
-              </Box>
-            )}
-          </Box>
+              })}
+            </Box>
+          )}
+
+          {showArchivedSeasons && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, mt: 2 }}>
+              {archivedSeasons.length === 0 && (
+                <Box
+                  sx={{
+                    px: { xs: 3, md: 3 },
+                    py: { xs: 2.4, md: 2.6 },
+                    borderRadius: 3,
+                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                    opacity: 0.8,
+                  }}
+                >
+                  <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    No archived seasons found yet.
+                  </Typography>
+                </Box>
+              )}
+
+              {groupedArchivedSeasons.map(({ league, seasons }) => (
+                <Box key={`archived-league-${league.id}`} sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                  <Box sx={{ px: { xs: 1, md: 1.5 } }}>
+                    <Typography
+                      sx={{
+                        color: '#E5E7EB',
+                        fontFamily: '"League Spartan", sans-serif',
+                        fontWeight: 700,
+                        fontSize: { xs: '16px', md: '20px' },
+                        letterSpacing: '0.4px',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {formatLeagueName(league.name)}
+                    </Typography>
+                  </Box>
+
+                  {seasons.map((season) => {
+                    const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
+                    const seasonLabel = season.name?.trim() || `Season ${season.seasonNumber || ''}`.trim();
+                    const seasonCreatedAt = season.startDate || season.createdAt || league.createdAt;
+                    const seasonMatches = (league.matches || []).filter((m) => String(m.seasonId || '') === String(season.id)).length;
+                    const seasonPlayersCount = (season.members?.length || season.players?.length || 0);
+                    const seasonActionLoading = archivedSeasonActionId === `${league.id}:${season.id}`;
+
+                    return (
+                      <Box
+                        key={`${league.id}-${season.id}`}
+                        sx={{
+                          px: { xs: 3, md: 3 },
+                          py: { xs: 2.6, md: 2.8 },
+                          borderRadius: 3,
+                          transition: 'all 0.3s ease',
+                          background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                          position: 'relative',
+                          minHeight: { xs: '140px', md: '160px' },
+                          display: 'flex',
+                          alignItems: 'center',
+                          opacity: 0.8,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 14,
+                            right: 14,
+                            zIndex: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Chip label="Archived Season" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
+                          {isLeagueAdminForCurrentUser(league) && (
+                            <>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={seasonActionLoading}
+                                onClick={() => { void handleRestoreArchivedSeasonGlobal(league, season); }}
+                                sx={{
+                                  bgcolor: '#27ab83',
+                                  '&:hover': { bgcolor: '#1e8463' },
+                                  fontSize: '11px',
+                                  px: 1.5,
+                                  py: 0.3,
+                                  minWidth: 'auto',
+                                  textTransform: 'none',
+                                }}
+                              >
+                                Restore
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={seasonActionLoading}
+                                onClick={() => { void handlePermanentDeleteArchivedSeasonGlobal(league, season); }}
+                                sx={{
+                                  bgcolor: '#dc2626',
+                                  '&:hover': { bgcolor: '#b91c1c' },
+                                  fontSize: '11px',
+                                  px: 1.5,
+                                  py: 0.3,
+                                  minWidth: 'auto',
+                                  textTransform: 'none',
+                                }}
+                              >
+                                {seasonActionLoading ? 'Deleting...' : 'Permanent Delete'}
+                              </Button>
+                            </>
+                          )}
+                        </Box>
+
+                        <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
+                          <Grid item xs={12} md={6}>
+                            <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
+                              <Grid item xs={12} md={3}>
+                                <Box sx={{
+                                  width: { xs: 60, sm: 80, md: 100 },
+                                  height: { xs: 60, sm: 80, md: 100 },
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  mx: { xs: 'auto', md: 0 },
+                                  flexShrink: 0,
+                                  position: 'relative',
+                                  bgcolor: 'white',
+                                  borderRadius: '50%',
+                                  overflow: 'hidden',
+                                }}>
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      width: '100%',
+                                      height: '100%',
+                                      p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
+                                      boxSizing: 'border-box',
+                                    }}
+                                  >
+                                    <Image
+                                      src={league?.image || trofy}
+                                      alt={`${league.name} icon`}
+                                      fill
+                                      priority
+                                      sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                      style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                    />
+                                  </Box>
+                                </Box>
+                              </Grid>
+
+                              <Grid item xs={12} md={9}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
+                                  <Typography sx={{
+                                    color: 'white',
+                                    fontFamily: '"Anton", sans-serif !important',
+                                    fontSize: { xs: '28px', sm: '32px', md: '36px' },
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: 'semi-bold',
+                                    lineHeight: 1.3,
+                                    letterSpacing: '1px',
+                                    textTransform: 'uppercase',
+                                    textAlign: { xs: 'center', md: 'left' },
+                                    width: '100%'
+                                  }}>
+                                    {seasonLabel}
+                                  </Typography>
+
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Image src={faceicon} alt="Players" width={16} height={16} style={{ flexShrink: 0 }} />
+                                    <Typography sx={{
+                                      color: 'rgba(255,255,255,0.9)',
+                                      fontFamily: '"League Spartan", sans-serif',
+                                      fontWeight: 300,
+                                      fontSize: { xs: '10px', sm: '16px' }
+                                    }}>
+                                      Players: {seasonPlayersCount}
+                                    </Typography>
+                                  </Box>
+
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                                    <Typography sx={{
+                                      color: 'rgba(255,255,255,0.9)',
+                                      fontFamily: '"League Spartan", sans-serif',
+                                      fontWeight: 300,
+                                      fontSize: { xs: '10px', sm: '16px' }
+                                    }}>
+                                      Created At {new Date(seasonCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </Grid>
+
+                          <Grid item xs={12} md={6}>
+                            <Grid container spacing={0} alignItems="center">
+                              <Grid item xs={12} md={8}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1, mt: { xs: 0.5, md: 0 }, height: '100%' }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                                    <Typography sx={{
+                                      color: 'rgba(255,255,255,0.9)',
+                                      fontFamily: '"League Spartan", sans-serif',
+                                      fontWeight: 300,
+                                      fontSize: { xs: '10px', sm: '16px' }
+                                    }}>
+                                      Matches: {seasonMatches}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Grid>
+
+                              <Grid item xs={12} md={4}>
+                                <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
+                                  <Grid item xs={6} md={6}>
+                                    <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-start' }, alignItems: 'center', height: '100%', ml: { xs: 0, md: -5 } }}>
+                                      <Image
+                                        src={playerfull}
+                                        alt="Archived"
+                                        width={70}
+                                        height={70}
+                                        style={{ flexShrink: 0, width: 'clamp(50px, 12vw, 70px)', height: 'clamp(50px, 12vw, 70px)' }}
+                                      />
+                                    </Box>
+                                  </Grid>
+
+                                  <Grid item xs={6} md={6}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '100%', mt: { xs: 1, md: 0 } }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography sx={{ color: 'white', fontFamily: '"League Spartan", sans-serif', fontWeight: 'semi-bold', fontSize: { xs: '22px', md: '22px' } }}>
+                                          Archived
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Grid>
+                                </Grid>
+                              </Grid>
+                            </Grid>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
         )}
 
         <Dialog
@@ -4102,6 +5246,7 @@ function AllLeagues() {
           onLeaveLeague={handleLeaveLeague}
           onArchive={handleArchiveLeagueFromAdminSettings}
           onUnarchive={handleUnarchiveLeagueFromAdminSettings}
+          onSeasonArchived={handleSeasonArchivedInState}
         />
       )}
       <LeagueMembersDialog
@@ -4116,6 +5261,7 @@ function AllLeagues() {
         openSettingsOnOpen={Boolean(selectedLeague && (selectedLeague.adminId || selectedLeague.administrators?.[0]?.id) === (user?.id || ''))}
         onArchiveLeague={handleArchiveLeagueFromSettings}
         onUnarchiveLeague={handleUnarchiveLeagueFromSettings}
+        onSeasonArchived={handleSeasonArchivedInState}
       />
     </Box>
   )
