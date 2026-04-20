@@ -5985,7 +5985,7 @@ export default function LeagueDetailPage() {
                         startIcon={<Undo2 size={16} />}
                         sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                     >
-                        Undo
+                        Restore
                     </Button>
 
                     <Tooltip

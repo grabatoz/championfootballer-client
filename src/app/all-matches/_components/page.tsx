@@ -3417,7 +3417,7 @@ export default function AllMatches() {
                         startIcon={<Undo2 size={16} />}
                         sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
-                        Undo
+                        Restore
                     </Button>
                     {/* <Tooltip
                                                 title={
