@@ -2718,6 +2718,13 @@ export default function LeagueDetailPage() {
         setConfirmDeleteOpen(false);
 
         try {
+            const isFixtureMatch = !isResultLikeStatus(m.status);
+            if (isFixtureMatch) {
+                // Upcoming/fixture matches should be hard-deleted directly.
+                await handlePermanentDelete(m);
+                return;
+            }
+
             // Always archive from main delete action.
             // Permanent delete is available only in Archived Match actions.
             console.log('🗑️ Archiving match:', m.id);
@@ -2763,6 +2770,10 @@ export default function LeagueDetailPage() {
             setMatchHasData(null);
         }
     };
+
+    const pendingDeleteIsFixture = Boolean(
+        matchPendingDelete && !isResultLikeStatus(matchPendingDelete.status)
+    );
 
     const handleUndo = async () => {
         if (!undoInfo || !token) return;
@@ -5899,7 +5910,11 @@ export default function LeagueDetailPage() {
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.2rem' }, px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, pb: { xs: 0.8, sm: 1.2 } }}>
-                    {matchDeleteChecking ? 'Checking match...' : 'Archive Match'}
+                    {matchDeleteChecking
+                        ? 'Checking match...'
+                        : pendingDeleteIsFixture
+                            ? 'Delete Match Permanently'
+                            : 'Archive Match'}
                 </DialogTitle>
                 <DialogContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 1, sm: 2 } }}>
                     {matchDeleteChecking ? (
@@ -5909,7 +5924,9 @@ export default function LeagueDetailPage() {
                         </Box>
                     ) : (
                         <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '0.85rem', sm: '0.95rem' }, lineHeight: 1.45 }}>
-                            {'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
+                            {pendingDeleteIsFixture
+                                ? 'This upcoming fixture will be permanently deleted and will not appear in Match Results.'
+                                : 'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
                         </Typography>
                     )}
                 </DialogContent>
@@ -5924,7 +5941,7 @@ export default function LeagueDetailPage() {
                         disabled={matchDeleteChecking}
                         sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                     >
-                        Archive Match
+                        {pendingDeleteIsFixture ? 'Delete Permanently' : 'Archive Match'}
                     </Button>
                 </DialogActions>
             </Dialog>

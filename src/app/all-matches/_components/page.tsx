@@ -1400,6 +1400,13 @@ export default function AllMatches() {
         setConfirmDeleteOpen(false);
 
         try {
+            const isFixtureMatch = !isResultLikeStatus(m.status);
+            if (isFixtureMatch) {
+                // Upcoming/fixture matches should be hard-deleted directly.
+                await handlePermanentDelete(m);
+                return;
+            }
+
             // Always archive from main delete action.
             // Permanent delete is only available from Archived actions.
             const res = await mutateWithRefresh(
@@ -1516,6 +1523,10 @@ export default function AllMatches() {
             toast.error('Failed to permanently delete match');
         }
     };
+
+    const pendingDeleteIsFixture = Boolean(
+        matchPendingDelete && !isResultLikeStatus(matchPendingDelete.status)
+    );
 
 
     const tryHardDeleteFromDialog = useCallback(async () => {
@@ -3329,7 +3340,11 @@ export default function AllMatches() {
 
             <Dialog open={confirmDeleteOpen} onClose={() => { setConfirmDeleteOpen(false); setMatchPendingDelete(null); setMatchHasData(null); }} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ fontWeight: 'bold' }}>
-                    {matchDeleteChecking ? 'Checking match...' : 'Archive Match'}
+                    {matchDeleteChecking
+                        ? 'Checking match...'
+                        : pendingDeleteIsFixture
+                            ? 'Delete Match Permanently'
+                            : 'Archive Match'}
                 </DialogTitle>
                 <DialogContent>
                     {matchDeleteChecking ? (
@@ -3339,7 +3354,9 @@ export default function AllMatches() {
                         </Box>
                     ) : (
                         <Typography variant="body2" sx={{ mt: 1 }}>
-                            {'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
+                            {pendingDeleteIsFixture
+                                ? 'This upcoming fixture will be permanently deleted and will not appear in Match Results.'
+                                : 'This match will be moved to Archived Matches. You can restore it or permanently delete it later from Archived Match actions.'}
                         </Typography>
                     )}
                 </DialogContent>
@@ -3354,7 +3371,7 @@ export default function AllMatches() {
                         disabled={matchDeleteChecking}
                         sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
-                        Archive Match
+                        {pendingDeleteIsFixture ? 'Delete Permanently' : 'Archive Match'}
                     </Button>
                 </DialogActions>
             </Dialog>
