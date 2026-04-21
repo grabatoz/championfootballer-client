@@ -1945,7 +1945,7 @@ export default function AllMatches() {
                     sx={{
                         mb: { xs: 3, md: 5 },
                         bgcolor: '#000',
-                        px: { xs: 2, sm: 3, md: 4 },
+                        px: { xs: 1, sm: 2, md: 3 },
                         py: { xs: 2, md: 2.5 },
                         borderRadius: 0,
                         minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
@@ -1996,7 +1996,7 @@ export default function AllMatches() {
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'stretch', sm: 'center' },
                         justifyContent: { xs: 'flex-start', sm: 'space-between' },
-                        px: { xs: 2, sm: 3, md: 3 },
+                        px: { xs: 0.5, sm: 1.5, md: 2 },
                         maxWidth: '1200px',
                         mx: 'auto',
                         width: '100%',
@@ -2411,11 +2411,16 @@ export default function AllMatches() {
                         {/* Filters: All | Results | Matches | Fixtures */}
                         <Box sx={{
                             display: { xs: 'grid', sm: 'flex' },
-                            gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', sm: 'none' },
+                            gridTemplateColumns: {
+                                xs: (archivedMatchesCount > 0 || matchFilter === 'archived')
+                                    ? 'minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr)'
+                                    : 'repeat(2, minmax(0, 1fr))',
+                                sm: 'none'
+                            },
                             gap: { xs: 0.75, sm: 1 },
                             flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
                             alignItems: 'center',
-                            justifyContent: { xs: 'center', sm: 'flex-end' },
+                            justifyContent: { xs: 'center', sm: 'center' },
                             width: { xs: '100%', sm: 'auto' },
                             mt: { xs: 1, sm: 0 }
                         }}>
@@ -2459,12 +2464,12 @@ export default function AllMatches() {
                                         borderRadius: '9999px',
                                         textTransform: 'none',
                                         fontWeight: 'bold',
-                                        fontSize: { xs: '12.5px', sm: '14px' },
+                                        fontSize: { xs: '11.5px', sm: '14px' },
                                         minHeight: { xs: 36, md: 48 },
                                         height: { xs: 36, md: 48 },
                                         minWidth: 0,
-                                        width: { xs: '100%', sm: 'auto', md: 130 },
-                                        px: { xs: 0.35, sm: 1.5, md: 2.25 },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        px: { xs: 0.2, sm: 1.5, md: 2.25 },
                                         py: { xs: 0.75, sm: 0.8 },
                                         whiteSpace: 'nowrap',
                                         lineHeight: 1.1,
@@ -2474,7 +2479,7 @@ export default function AllMatches() {
                                         },
                                     }}
                                 >
-                                    Archived Matches 
+                                    Archived Matches
                                 </Button>
                             )}
 
