@@ -1807,17 +1807,18 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             </Button>
           )}
           <Button
-            variant="outlined"
+            variant="contained"
+            color="error"
             onClick={openArchiveSeasonConfirm}
             disabled={!currentSeason || seasonArchiveLoading}
             sx={{
-              borderColor: 'rgba(255,107,107,0.55)',
-              color: '#ff6b6b',
+              // borderColor: 'rgba(255,107,107,0.55)',
+              // color: '#ff6b6b',
               width: { xs: '100%', md: 'auto' },
               flex: { md: 1 },
               minHeight: { xs: 42, md: 'auto' },
-              '&:hover': { borderColor: '#ff6b6b', bgcolor: 'rgba(255,107,107,0.08)' },
-              '&:disabled': { borderColor: 'rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.45)' },
+              // '&:hover': { borderColor: '#ff6b6b', bgcolor: 'rgba(255,107,107,0.08)' },
+              // '&:disabled': { borderColor: 'rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.45)' },
             }}
           >
             {seasonArchiveLoading ? 'Archiving Season...' : 'Delete Season'}
@@ -2454,9 +2455,7 @@ function AllLeagues() {
       .sort((a, b) => formatLeagueName(a.league.name).localeCompare(formatLeagueName(b.league.name)));
   }, [archivedSeasons]);
 
-  const hasArchivedLeagues = archivedLeagues.length > 0;
-  const hasArchivedSeasons = archivedSeasons.length > 0;
-  const hasArchivedSections = hasArchivedLeagues || hasArchivedSeasons;
+  const hasArchivedSections = archivedLeagues.length > 0 || archivedSeasons.length > 0;
 
   const handleJoinLeague = async () => {
     if (!inviteCode.trim()) {
@@ -4141,12 +4140,11 @@ function AllLeagues() {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: hasArchivedLeagues && hasArchivedSeasons ? 'repeat(2, minmax(0, 1fr))' : '1fr',
+                sm: 'repeat(2, minmax(0, 1fr))',
               },
               gap: 1.2
             }}
           >
-            {hasArchivedLeagues && (
             <Box
               onClick={() => {
                 setShowArchived((prev) => {
@@ -4186,9 +4184,7 @@ function AllLeagues() {
                 fontSize: 22,
               }} />
             </Box>
-            )}
 
-            {hasArchivedSeasons && (
             <Box
               onClick={() => {
                 setShowArchivedSeasons((prev) => {
@@ -4228,7 +4224,6 @@ function AllLeagues() {
                 fontSize: 22,
               }} />
             </Box>
-            )}
           </Box>
 
           {showArchived && (
@@ -4583,7 +4578,7 @@ function AllLeagues() {
                         textTransform: 'uppercase',
                       }}
                     >
-                      {formatLeagueName(league.name)}
+                     League Name : {formatLeagueName(league.name)}
                     </Typography>
                   </Box>
 

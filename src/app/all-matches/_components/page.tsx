@@ -2949,6 +2949,7 @@ export default function AllMatches() {
                                                     display: 'grid',
                                                     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                                                     borderTop: '2px solid #fff',
+                                                    backgroundColor: '#F97316',
                                                 }}
                                             >
                                                 <Button
@@ -2959,14 +2960,14 @@ export default function AllMatches() {
                                                     startIcon={<Undo2 size={16} />}
                                                     sx={{
                                                         borderRadius: 0,
-                                                        color: '#FCD9B6',
-                                                        backgroundColor: 'rgba(0,0,0,0.35)',
+                                                        color: '#fff',
+                                                        backgroundColor: '#F97316',
                                                         textTransform: 'none',
                                                         fontWeight: 700,
                                                         fontSize: { xs: '0.86rem', sm: '0.95rem' },
                                                         py: 1.1,
-                                                        borderRight: '1px solid #F97316',
-                                                        '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                        borderRight: '1px solid rgba(255,255,255,0.45)',
+                                                        '&:hover': { backgroundColor: '#EA580C' },
                                                     }}
                                                 >
                                                     Restore
@@ -2980,15 +2981,18 @@ export default function AllMatches() {
                                                     disabled={archivedActionDeleting}
                                                     sx={{
                                                         borderRadius: 0,
-                                                        color: '#FCD9B6',
-                                                        backgroundColor: 'rgba(0,0,0,0.35)',
+                                                        color: '#fff',
+                                                        backgroundColor: '#F97316',
                                                         textTransform: 'none',
                                                         fontWeight: 700,
                                                         fontSize: { xs: '0.82rem', sm: '0.92rem' },
                                                         py: 1.1,
-                                                        borderLeft: '1px solid #F97316',
-                                                        '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
-                                                        '&.Mui-disabled': { color: 'rgba(252,217,182,0.55)' },
+                                                        borderLeft: '1px solid rgba(255,255,255,0.45)',
+                                                        '&:hover': { backgroundColor: '#EA580C' },
+                                                        '&.Mui-disabled': {
+                                                            color: 'rgba(255,255,255,0.72)',
+                                                            backgroundColor: '#C2410C',
+                                                        },
                                                     }}
                                                 >
                                                     Permanent Delete
@@ -3176,6 +3180,7 @@ export default function AllMatches() {
                                                 display: 'grid',
                                                 gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                                                 borderTop: '2px solid #fff',
+                                                backgroundColor: '#F97316',
                                             }}
                                         >
                                             <Button
@@ -3186,14 +3191,14 @@ export default function AllMatches() {
                                                 startIcon={<Undo2 size={16} />}
                                                 sx={{
                                                     borderRadius: 0,
-                                                    color: '#FCD9B6',
-                                                    backgroundColor: 'rgba(0,0,0,0.35)',
+                                                    color: '#fff',
+                                                    backgroundColor: '#F97316',
                                                     textTransform: 'none',
                                                     fontWeight: 700,
                                                     fontSize: { xs: '0.86rem', sm: '0.95rem' },
                                                     py: 1.1,
-                                                    borderRight: '1px solid #F97316',
-                                                    '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                    borderRight: '1px solid rgba(255,255,255,0.45)',
+                                                    '&:hover': { backgroundColor: '#EA580C' },
                                                 }}
                                             >
                                                 Restore
@@ -3207,15 +3212,18 @@ export default function AllMatches() {
                                                 disabled={archivedActionDeleting}
                                                 sx={{
                                                     borderRadius: 0,
-                                                    color: '#FCD9B6',
-                                                    backgroundColor: 'rgba(0,0,0,0.35)',
+                                                    color: '#fff',
+                                                    backgroundColor: '#F97316',
                                                     textTransform: 'none',
                                                     fontWeight: 700,
                                                     fontSize: { xs: '0.82rem', sm: '0.92rem' },
                                                     py: 1.1,
-                                                    borderLeft: '1px solid #F97316',
-                                                    '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
-                                                    '&.Mui-disabled': { color: 'rgba(252,217,182,0.55)' },
+                                                    borderLeft: '1px solid rgba(255,255,255,0.45)',
+                                                    '&:hover': { backgroundColor: '#EA580C' },
+                                                    '&.Mui-disabled': {
+                                                        color: 'rgba(255,255,255,0.72)',
+                                                        backgroundColor: '#C2410C',
+                                                    },
                                                 }}
                                             >
                                                 Permanent Delete
