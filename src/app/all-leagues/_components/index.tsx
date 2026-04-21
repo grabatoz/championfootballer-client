@@ -1104,7 +1104,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         },
         body: JSON.stringify({ archived: false }),
       });
-      if (!res.ok) throw new Error('Failed to restore match');
+      if (!res.ok) {
+        let msg = 'Failed to restore match';
+        try {
+          const payload = await res.json();
+          if (payload?.message) msg = payload.message;
+        } catch {}
+        throw new Error(msg);
+      }
       setArchivedMatches(prev => prev.filter(m => m.id !== matchId));
       toast.success('Match restored');
       if (onMembersChanged) await Promise.resolve(onMembersChanged());
@@ -1118,23 +1125,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
 
   const handlePermanentDeleteArchivedMatch = useCallback(async (matchId: string) => {
     if (!token) return;
-    if (!window.confirm('Permanently delete this archived match? This cannot be undone.')) return;
+    if (!window.confirm('Permanently delete this archived match? It cannot be restored later, but player stats/history will stay preserved.')) return;
     setArchivedMatchActionId(matchId);
     try {
-      const hasStatsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (hasStatsRes.ok) {
-        const hasStatsUnknown: unknown = await hasStatsRes.json().catch(() => ({}));
-        const hasStatsJson = (typeof hasStatsUnknown === 'object' && hasStatsUnknown !== null)
-          ? hasStatsUnknown as { hasStats?: boolean }
-          : {};
-        if (hasStatsJson.hasStats) {
-          toast.error('This archived match has player stats and cannot be permanently deleted.');
-          return;
-        }
-      }
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

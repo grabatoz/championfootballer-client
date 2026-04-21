@@ -693,8 +693,6 @@ export default function LeagueDetailPage() {
 
     const [archivedActionOpen, setArchivedActionOpen] = useState(false);
     const [archivedActionMatch, setArchivedActionMatch] = useState<Match | null>(null);
-    const [archivedActionChecking, setArchivedActionChecking] = useState(false);
-    const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
 
     // Edit Match Dialog state
     const [editMatchDialogOpen, setEditMatchDialogOpen] = useState(false);
@@ -794,46 +792,6 @@ export default function LeagueDetailPage() {
         };
     }, [token, leagueId, selectedSeasonId, league]);
 
-    const checkCanHardDelete = useCallback(async (matchId: string) => {
-        if (!token) return;
-        setArchivedActionChecking(true);
-        setArchivedActionHasStats(null);
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('check failed');
-            const data = await res.json();
-            setArchivedActionHasStats(!!data.hasStats);
-        } catch {
-            // fail-safe: if unknown, prevent hard delete
-            setArchivedActionHasStats(true);
-        } finally {
-            setArchivedActionChecking(false);
-        }
-    }, [token]);
-
-    useEffect(() => {
-        if (archivedActionOpen && archivedActionMatch?.id) {
-            checkCanHardDelete(archivedActionMatch.id);
-        }
-    }, [archivedActionOpen, archivedActionMatch, checkCanHardDelete]);
-
-
-    const getHasStats = useCallback(async (matchId: string): Promise<boolean> => {
-        if (!token) return true; // default safe
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) return true;
-            const data = await res.json();
-            return !!data.hasStats;
-        } catch {
-            return true; // safe default
-        }
-    }, [token]);
-
     const handlePermanentDelete = useCallback(async (match: Match) => {
         // if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
         //     return;
@@ -844,18 +802,6 @@ export default function LeagueDetailPage() {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-
-            if (res.status === 400) {
-                // Backend says cannot delete (likely stats exist)
-                let msg = 'Cannot permanently delete this match. It may have player stats.';
-                try {
-                    const err = await res.json();
-                    if (err?.message) msg = err.message;
-                } catch { }
-                toast.error(msg);
-                setArchivedActionHasStats(true);
-                return;
-            }
 
             if (!res.ok) {
                 throw new Error('Failed to permanently delete match');
@@ -878,37 +824,17 @@ export default function LeagueDetailPage() {
 
     const tryHardDeleteFromDialog = useCallback(async () => {
         if (!archivedActionMatch) return;
+        const ok = window.confirm('Permanently delete this archived match? It cannot be restored later, but player stats/history will stay preserved.');
+        if (!ok) return;
+        await handlePermanentDelete(archivedActionMatch);
+        setArchivedActionOpen(false);
+    }, [archivedActionMatch, handlePermanentDelete]);
 
-        // If already confirmed no stats, proceed
-        if (archivedActionHasStats === false) {
-            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-            if (ok) {
-                await handlePermanentDelete(archivedActionMatch);
-                setArchivedActionOpen(false);
-            }
-            return;
-        }
-
-        // Unknown or previously blocked: re-check now
-        setArchivedActionChecking(true);
-        try {
-            const hasStats = await getHasStats(archivedActionMatch.id);
-            setArchivedActionHasStats(hasStats);
-
-            if (hasStats) {
-                toast.error('Player stats exist. Permanent delete is disabled.');
-                return;
-            }
-
-            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-            if (ok) {
-                await handlePermanentDelete(archivedActionMatch);
-                setArchivedActionOpen(false);
-            }
-        } finally {
-            setArchivedActionChecking(false);
-        }
-    }, [archivedActionMatch, archivedActionHasStats, getHasStats, handlePermanentDelete]);
+    const handlePermanentDeleteFromArchivedCard = useCallback(async (match: Match) => {
+        const ok = window.confirm('Permanently delete this archived match? It cannot be restored later, but player stats/history will stay preserved.');
+        if (!ok) return;
+        await handlePermanentDelete(match);
+    }, [handlePermanentDelete]);
 
     // Example stat change handler
     const handleStatChange = (stat: keyof typeof stats, increment: number, max: number) => {
@@ -2794,7 +2720,12 @@ export default function LeagueDetailPage() {
 
                 if (!res.ok) {
                     console.error('❌ Restore failed');
-                    throw new Error('Failed to restore match');
+                    let message = 'Failed to restore match';
+                    try {
+                        const err = await res.json();
+                        if (err?.message) message = err.message;
+                    } catch { }
+                    throw new Error(message);
                 }
 
                 const data = await res.json();
@@ -2856,6 +2787,8 @@ export default function LeagueDetailPage() {
     };
 
     const handleRestoreMatch = async (match: Match) => {
+        const ok = window.confirm('Restore this archived match?');
+        if (!ok) return;
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${match.id}`, {
                 method: 'PUT',
@@ -2867,7 +2800,12 @@ export default function LeagueDetailPage() {
             });
 
             if (!res.ok) {
-                throw new Error('Failed to restore match');
+                let message = 'Failed to restore match';
+                try {
+                    const err = await res.json();
+                    if (err?.message) message = err.message;
+                } catch { }
+                throw new Error(message);
             }
 
             // Update local state
@@ -4757,6 +4695,7 @@ export default function LeagueDetailPage() {
                                                                                         setShouldShowAdminGoals(true);
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
+                                                                                    disabled={match.archived || !league?.active}
                                                                                     startIcon={<Edit size={14}  color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
@@ -4778,7 +4717,7 @@ export default function LeagueDetailPage() {
                                                                                         setEditMatchId(match.id);
                                                                                         setEditMatchDialogOpen(true);
                                                                                     }}
-                                                                                    disabled={!league?.active}
+                                                                                    disabled={!league?.active || match.archived}
                                                                                     startIcon={<Edit size={14} color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
@@ -4828,6 +4767,56 @@ export default function LeagueDetailPage() {
                                                                     </Box>
                                                                 </Box>
                                                             </CardContent>
+                                                            {isAdmin && match.archived && (
+                                                                <Box
+                                                                    sx={{
+                                                                        display: 'grid',
+                                                                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                                                        borderTop: '2px solid #fff',
+                                                                    }}
+                                                                >
+                                                                    <Button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            void handleRestoreMatch(match);
+                                                                        }}
+                                                                        startIcon={<Undo2 size={16} />}
+                                                                        sx={{
+                                                                            borderRadius: 0,
+                                                                            color: '#FCD9B6',
+                                                                            backgroundColor: 'rgba(0,0,0,0.35)',
+                                                                            textTransform: 'none',
+                                                                            fontWeight: 700,
+                                                                            fontSize: { xs: '0.86rem', sm: '0.95rem' },
+                                                                            py: 1.1,
+                                                                            borderRight: '1px solid #F97316',
+                                                                            '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                                        }}
+                                                                    >
+                                                                        Restore
+                                                                    </Button>
+                                                                    <Button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            void handlePermanentDeleteFromArchivedCard(match);
+                                                                        }}
+                                                                        startIcon={<Trash2 size={16} />}
+                                                                        sx={{
+                                                                            borderRadius: 0,
+                                                                            color: '#FCD9B6',
+                                                                            backgroundColor: 'rgba(0,0,0,0.35)',
+                                                                            textTransform: 'none',
+                                                                            fontWeight: 700,
+                                                                            fontSize: { xs: '0.82rem', sm: '0.92rem' },
+                                                                            py: 1.1,
+                                                                            borderLeft: '1px solid #F97316',
+                                                                            '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                                        }}
+                                                                    >
+                                                                        Permanent Delete
+                                                                    </Button>
+                                                                </Box>
+                                                            )}
                                                         </Card>
                                                     );
                                                 })}
@@ -5949,7 +5938,10 @@ export default function LeagueDetailPage() {
             {/* // ...existing code... */}
             <Dialog
                 open={archivedActionOpen}
-                onClose={() => setArchivedActionOpen(false)}
+                onClose={() => {
+                    setArchivedActionOpen(false);
+                    setArchivedActionMatch(null);
+                }}
                 maxWidth="sm"
                 fullWidth
                 PaperProps={{
@@ -5965,14 +5957,9 @@ export default function LeagueDetailPage() {
                     <Typography variant="body2" sx={{ mb: 1, fontSize: { xs: '0.85rem', sm: '0.95rem' }, lineHeight: 1.4 }}>
                         Choose an action for this archived match.
                     </Typography>
-                    {archivedActionChecking && (
-                        <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Checking deletable status...</Typography>
-                    )}
-                    {archivedActionHasStats === true && (
-                        <Alert severity="warning" sx={{ mt: 1 }}>
-                            This match has player stats. Permanent delete is disabled.
-                        </Alert>
-                    )}
+                    <Alert severity="info" sx={{ mt: 1 }}>
+                        Permanent delete will hide this match forever. Player stats and historical records stay preserved in the database.
+                    </Alert>
                 </DialogContent>
                 <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
                     <Button
@@ -5988,32 +5975,17 @@ export default function LeagueDetailPage() {
                         Restore
                     </Button>
 
-                    <Tooltip
-                        title={
-                            archivedActionHasStats === true
-                                ? 'Match has player stats. Permanent delete is disabled.'
-                                : archivedActionHasStats === null
-                                    ? 'Status unknown. Click to check and delete if possible.'
-                                    : ''
-                        }
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                            tryHardDeleteFromDialog();
+                        }}
+                        startIcon={<Trash2 size={16} />}
+                        sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
                     >
-                        <span>
-                            <Button
-                                variant="contained"
-                                color="error"
-                                // Disable only while checking, or if we KNOW stats exist
-                                disabled={archivedActionChecking || archivedActionHasStats === true}
-                                onClick={() => {
-                                    // Re-check if needed, then delete
-                                    tryHardDeleteFromDialog();
-                                }}
-                                startIcon={<Trash2 size={16} />}
-                                sx={{ width: { xs: '100%', sm: 'auto' }, minHeight: 40 }}
-                            >
-                                {archivedActionChecking ? 'Checking...' : 'Permanently Delete'}
-                            </Button>
-                        </span>
-                    </Tooltip>
+                        Permanently Delete
+                    </Button>
                     {/* // ...existing code... */}
                 </DialogActions>
             </Dialog>

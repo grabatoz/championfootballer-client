@@ -1,5 +1,5 @@
 'use client';
-import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Tooltip, Chip, Alert, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Chip, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { Calendar, ChevronDown, Crown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -1344,9 +1344,7 @@ export default function AllMatches() {
     const [archivedActionOpen, setArchivedActionOpen] = useState(false);
     const [, setUndoInfo] = useState<{ match: Match; action: 'archive' | 'delete' } | null>(null);
 
-    const [archivedActionChecking, setArchivedActionChecking] = useState(false);
     const [archivedActionDeleting, setArchivedActionDeleting] = useState(false);
-    const [archivedActionHasStats, setArchivedActionHasStats] = useState<boolean | null>(null);
 
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [matchPendingDelete, setMatchPendingDelete] = useState<Match | null>(null);
@@ -1457,23 +1455,9 @@ export default function AllMatches() {
             setMatchHasData(null);
         }
     };
-    const getHasStats = useCallback(async (matchId: string): Promise<boolean> => {
-        if (!token) return true; // default safe
-        try {
-            // 🚀 Use optimizedFetch with 2-minute cache for stats check
-            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/has-stats`, {
-                headers: { Authorization: `Bearer ${token}` },
-                cacheTTL: 120000 // 2 minutes TTL
-            });
-            if (!data || !data.success) return true;
-            return !!data.hasStats;
-        } catch {
-            return true; // safe default
-        }
-    }, [token]);
 
 
-    const handlePermanentDelete = async (match: Match) => {
+    const handlePermanentDelete = useCallback(async (match: Match) => {
         // if (!window.confirm('Are you sure you want to PERMANENTLY delete this match? This action cannot be undone and all match data will be lost forever.')) {
         //     return;
         // }
@@ -1489,18 +1473,6 @@ export default function AllMatches() {
                 'match',
                 match.id
             );
-
-            if (res.status === 400) {
-                // Backend says cannot delete (likely stats exist)
-                let msg = 'Cannot permanently delete this match. It may have player stats.';
-                try {
-                    const err = await res.json();
-                    if (err?.message) msg = err.message;
-                } catch { }
-                toast.error(msg);
-                setArchivedActionHasStats(true);
-                return;
-            }
 
             if (!res.ok) {
                 throw new Error('Failed to permanently delete match');
@@ -1522,7 +1494,7 @@ export default function AllMatches() {
             console.error('Permanent delete failed:', error);
             toast.error('Failed to permanently delete match');
         }
-    };
+    }, [token, selectedLeague, fetchMatchesByLeague]);
 
     const pendingDeleteIsFixture = Boolean(
         matchPendingDelete && !isResultLikeStatus(matchPendingDelete.status)
@@ -1531,50 +1503,32 @@ export default function AllMatches() {
 
     const tryHardDeleteFromDialog = useCallback(async () => {
         if (!archivedActionMatch || archivedActionDeleting) return;
-
-        // If already confirmed no stats, proceed immediately to delete
-        if (archivedActionHasStats === false) {
-            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-            if (ok) {
-                try {
-                    setArchivedActionDeleting(true);
-                    await handlePermanentDelete(archivedActionMatch);
-                    setArchivedActionOpen(false);
-                } finally {
-                    setArchivedActionDeleting(false);
-                }
-            }
-            return;
-        }
-
-        // Unknown or previously blocked: re-check now
-        setArchivedActionChecking(true);
+        const ok = window.confirm('Permanently delete this archived match? It cannot be restored later, but player stats/history will stay preserved.');
+        if (!ok) return;
         try {
-            const hasStats = await getHasStats(archivedActionMatch.id);
-            setArchivedActionHasStats(hasStats);
-
-            if (hasStats) {
-                toast.error('Player stats exist. Permanent delete is disabled.');
-                return;
-            }
-
-            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-            if (ok) {
-                try {
-                    setArchivedActionDeleting(true);
-                    await handlePermanentDelete(archivedActionMatch);
-                    setArchivedActionOpen(false);
-                } finally {
-                    setArchivedActionDeleting(false);
-                }
-            }
+            setArchivedActionDeleting(true);
+            await handlePermanentDelete(archivedActionMatch);
+            setArchivedActionOpen(false);
         } finally {
-            setArchivedActionChecking(false);
+            setArchivedActionDeleting(false);
         }
-    }, [archivedActionMatch, archivedActionHasStats, archivedActionDeleting, getHasStats, handlePermanentDelete]);
+    }, [archivedActionMatch, archivedActionDeleting, handlePermanentDelete]);
+
+    const handlePermanentDeleteFromArchivedCard = useCallback(async (match: Match) => {
+        const ok = window.confirm('Permanently delete this archived match? It cannot be restored later, but player stats/history will stay preserved.');
+        if (!ok) return;
+        try {
+            setArchivedActionDeleting(true);
+            await handlePermanentDelete(match);
+        } finally {
+            setArchivedActionDeleting(false);
+        }
+    }, [handlePermanentDelete]);
 
 
     const handleRestoreMatch = async (match: Match) => {
+        const ok = window.confirm('Restore this archived match?');
+        if (!ok) return;
         try {
             // 🚀 Use mutateWithRefresh for automatic cache invalidation
             const res = await mutateWithRefresh(
@@ -1592,7 +1546,12 @@ export default function AllMatches() {
             );
 
             if (!res.ok) {
-                throw new Error('Failed to restore match');
+                let message = 'Failed to restore match';
+                try {
+                    const err = await res.json();
+                    if (err?.message) message = err.message;
+                } catch { }
+                throw new Error(message);
             }
 
             // Update local state (league.matches and matches list)
@@ -2963,10 +2922,14 @@ export default function AllMatches() {
                                                             <Button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                if (match.archived) { setArchivedActionMatch(match); setArchivedActionOpen(true); }
-                                                                else { handleRequestDeleteMatch(match); }
-                                                            }}
-                                                            startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
+                                                                    if (match.archived) {
+                                                                        setArchivedActionMatch(match);
+                                                                        setArchivedActionOpen(true);
+                                                                    } else {
+                                                                        handleRequestDeleteMatch(match);
+                                                                    }
+                                                                }}
+                                                                startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
                                                                 sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
                                                             >
                                                                 {match.archived ? 'Restore' : 'Delete Match'}
@@ -2980,6 +2943,58 @@ export default function AllMatches() {
                                                 </Box>
                                             </Box>
                                         </CardContent>
+                                        {isAdmin && match.archived && (
+                                            <Box
+                                                sx={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                                    borderTop: '2px solid #fff',
+                                                }}
+                                            >
+                                                <Button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        void handleRestoreMatch(match);
+                                                    }}
+                                                    startIcon={<Undo2 size={16} />}
+                                                    sx={{
+                                                        borderRadius: 0,
+                                                        color: '#FCD9B6',
+                                                        backgroundColor: 'rgba(0,0,0,0.35)',
+                                                        textTransform: 'none',
+                                                        fontWeight: 700,
+                                                        fontSize: { xs: '0.86rem', sm: '0.95rem' },
+                                                        py: 1.1,
+                                                        borderRight: '1px solid #F97316',
+                                                        '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                    }}
+                                                >
+                                                    Restore
+                                                </Button>
+                                                <Button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        void handlePermanentDeleteFromArchivedCard(match);
+                                                    }}
+                                                    startIcon={<Trash2 size={16} />}
+                                                    disabled={archivedActionDeleting}
+                                                    sx={{
+                                                        borderRadius: 0,
+                                                        color: '#FCD9B6',
+                                                        backgroundColor: 'rgba(0,0,0,0.35)',
+                                                        textTransform: 'none',
+                                                        fontWeight: 700,
+                                                        fontSize: { xs: '0.82rem', sm: '0.92rem' },
+                                                        py: 1.1,
+                                                        borderLeft: '1px solid #F97316',
+                                                        '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                        '&.Mui-disabled': { color: 'rgba(252,217,182,0.55)' },
+                                                    }}
+                                                >
+                                                    Permanent Delete
+                                                </Button>
+                                            </Box>
+                                        )}
                                     </Card>
                                 );
                             }
@@ -3134,8 +3149,12 @@ export default function AllMatches() {
                                                         <Button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (match.archived) { setArchivedActionMatch(match); setArchivedActionOpen(true); }
-                                                                else { handleRequestDeleteMatch(match); }
+                                                                if (match.archived) {
+                                                                    setArchivedActionMatch(match);
+                                                                    setArchivedActionOpen(true);
+                                                                } else {
+                                                                    handleRequestDeleteMatch(match);
+                                                                }
                                                             }}
                                                             startIcon={match.archived ? <Undo2 size={16} /> : <Trash2 size={16} />}
                                                             sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, fontSize: '0.65rem', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' }, '& .MuiButton-startIcon': { mr: 0.5 } }}
@@ -3151,6 +3170,58 @@ export default function AllMatches() {
                                             </Box>
                                         </Box>
                                     </CardContent>
+                                    {isAdmin && match.archived && (
+                                        <Box
+                                            sx={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                                borderTop: '2px solid #fff',
+                                            }}
+                                        >
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void handleRestoreMatch(match);
+                                                }}
+                                                startIcon={<Undo2 size={16} />}
+                                                sx={{
+                                                    borderRadius: 0,
+                                                    color: '#FCD9B6',
+                                                    backgroundColor: 'rgba(0,0,0,0.35)',
+                                                    textTransform: 'none',
+                                                    fontWeight: 700,
+                                                    fontSize: { xs: '0.86rem', sm: '0.95rem' },
+                                                    py: 1.1,
+                                                    borderRight: '1px solid #F97316',
+                                                    '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                }}
+                                            >
+                                                Restore
+                                            </Button>
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void handlePermanentDeleteFromArchivedCard(match);
+                                                }}
+                                                startIcon={<Trash2 size={16} />}
+                                                disabled={archivedActionDeleting}
+                                                sx={{
+                                                    borderRadius: 0,
+                                                    color: '#FCD9B6',
+                                                    backgroundColor: 'rgba(0,0,0,0.35)',
+                                                    textTransform: 'none',
+                                                    fontWeight: 700,
+                                                    fontSize: { xs: '0.82rem', sm: '0.92rem' },
+                                                    py: 1.1,
+                                                    borderLeft: '1px solid #F97316',
+                                                    '&:hover': { backgroundColor: 'rgba(249,115,22,0.18)' },
+                                                    '&.Mui-disabled': { color: 'rgba(252,217,182,0.55)' },
+                                                }}
+                                            >
+                                                Permanent Delete
+                                            </Button>
+                                        </Box>
+                                    )}
                                 </Card>
                             );
                         })
@@ -3385,8 +3456,6 @@ export default function AllMatches() {
                 onClose={() => {
                     setArchivedActionOpen(false);
                     setArchivedActionMatch(null);
-                    setArchivedActionHasStats(null);
-                    setArchivedActionChecking(false);
                     setArchivedActionDeleting(false);
                 }}
                 maxWidth="sm"
@@ -3397,14 +3466,9 @@ export default function AllMatches() {
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         Choose an action for this archived match.
                     </Typography>
-                    {archivedActionChecking && (
-                        <Typography variant="body2">Checking deletable status…</Typography>
-                    )}
-                    {archivedActionHasStats === true && (
-                        <Alert severity="warning" sx={{ mt: 1 }}>
-                            This match has player stats. Permanent delete is disabled.
-                        </Alert>
-                    )}
+                    <Alert severity="info" sx={{ mt: 1 }}>
+                        Permanent delete will hide this match forever. Player stats and historical records stay preserved in the database.
+                    </Alert>
                 </DialogContent>
                 <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
                     <Button
@@ -3419,88 +3483,18 @@ export default function AllMatches() {
                     >
                         Restore
                     </Button>
-                    {/* <Tooltip
-                                                title={
-                                                    archivedActionHasStats ? 'Match has stats. Cannot permanently delete.' : ''
-                                                }
-                                            >
-                                                <span>
-                                                    <Button
-                                                        variant="contained"
-                                                        color="error"
-                                                        disabled={archivedActionChecking || archivedActionHasStats === true}
-                                                        onClick={() => {
-                                                            if (!archivedActionMatch) return;
-                                                            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-                                                            if (ok) {
-                                                                handlePermanentDelete(archivedActionMatch);
-                                                                setArchivedActionOpen(false);
-                                                            }
-                                                        }}
-                                                        startIcon={<Trash2 size={16} />}
-                                                    >
-                                                        Permanently Delete
-                                                    </Button>
-                                                </span>
-                                            </Tooltip> */}
-                    {/* // ...existing code... */}
-                    {/* <Tooltip
-                                                title={
-                                                    archivedActionHasStats !== false
-                                                        ? 'Match cannot be permanently deleted (stats present or status unknown).'
-                                                        : ''
-                                                }
-                                            >
-                                                <span>
-                                                    <Button
-                                                        variant="contained"
-                                                        color="error"
-                                                        disabled={archivedActionChecking || archivedActionHasStats !== false}
-                                                        onClick={() => {
-                                                            if (!archivedActionMatch) return;
-                                                            const ok = window.confirm('Are you sure you want to permanently delete this match? This action cannot be undone.');
-                                                            if (ok) {
-                                                                handlePermanentDelete(archivedActionMatch);
-                                                                setArchivedActionOpen(false);
-                                                            }
-                                                        }}
-                                                        startIcon={<Trash2 size={16} />}
-                                                    >
-                                                        Permanently Delete
-                                                    </Button>
-                                                </span>
-                                            </Tooltip> */}
-                    <Tooltip
-                        title={
-                            archivedActionHasStats === true
-                                ? 'Match has player stats. Permanent delete is disabled.'
-                                : archivedActionHasStats === null
-                                    ? 'Status unknown. Click to check and delete if possible.'
-                                    : ''
-                        }
+                    <Button
+                        variant="contained"
+                        color="error"
+                        disabled={archivedActionDeleting}
+                        onClick={() => {
+                            tryHardDeleteFromDialog();
+                        }}
+                        startIcon={<Trash2 size={16} />}
+                        sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
-                        <span>
-                            <Button
-                                variant="contained"
-                                color="error"
-                                // Disable only while checking, or if we KNOW stats exist
-                                disabled={archivedActionChecking || archivedActionDeleting || archivedActionHasStats === true}
-                                onClick={() => {
-                                    // Re-check if needed, then delete
-                                    tryHardDeleteFromDialog();
-                                }}
-                                startIcon={<Trash2 size={16} />}
-                                sx={{ width: { xs: '100%', sm: 'auto' } }}
-                            >
-                                {archivedActionDeleting
-                                    ? 'Deleting…'
-                                    : archivedActionChecking
-                                        ? 'Checking…'
-                                        : 'Permanently Delete'}
-                            </Button>
-                        </span>
-                    </Tooltip>
-                    {/* // ...existing code... */}
+                        {archivedActionDeleting ? 'Deleting...' : 'Permanently Delete'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 
