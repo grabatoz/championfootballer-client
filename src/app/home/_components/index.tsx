@@ -798,6 +798,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       position: 'relative',
       zIndex: 1000,
     }} ref={dropdownRef}>
+      <Box sx={{ width: '100%', position: 'relative' }}>
       <Button
         variant="contained"
         sx={{
@@ -1064,6 +1065,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           })}
         </Box>
       )}
+      </Box>
 
       {/* Add New Season Button */}
       {selectedLeague && selectedLeague.userRole === 'ADMIN' && (
