@@ -397,7 +397,7 @@ export default function LandingPage() {
                 <Typography
                   sx={{
                     fontFamily: 'var(--font-inter), Inter, sans-serif',
-                    fontSize: { xs: '0.98rem', md: '1rem' },
+                    fontSize: { xs: '0.98rem', md: '0.97rem' },
                     lineHeight: 1.1,
                     letterSpacing: '0.01em',
                     color: '#ffff',

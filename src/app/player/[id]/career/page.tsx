@@ -202,6 +202,13 @@ interface InfluenceEntry {
 // Replace the empty extending interface with a type alias to satisfy eslint
 type StrengthEntry = InfluenceEntry;
 
+interface LeagueComparisonRow {
+  metric: string;
+  yourTotal: number;
+  yourDisplay: string;
+  deltaPercent: number;
+}
+
 // ---------- DYNAMIC RECHARTS ----------
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
 const ComposedChart = dynamic(() => import('recharts').then(m => m.ComposedChart), { ssr: false });
@@ -332,6 +339,23 @@ function calcPoints(ps: PlayerMatchStats | undefined): number {
   // Canonical dashboard points = per-match XP already calculated by backend.
   return typeof ps.xpAwarded === 'number' ? ps.xpAwarded : 0;
 }
+
+const toRoundedInt = (value: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value);
+};
+
+const toPercentDelta = (playerValue: number, leagueValue: number): number => {
+  if (!Number.isFinite(playerValue) || !Number.isFinite(leagueValue)) return 0;
+  const player = Number(playerValue.toFixed(4));
+  const league = Number(leagueValue.toFixed(4));
+  if (Math.abs(player - league) < 0.005) return 0;
+  if (league <= 0.0001) {
+    if (player <= 0.0001) return 0;
+    return 100;
+  }
+  return Math.round(((player - league) / league) * 100);
+};
 
 function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L' | 'D' | null {
   const explicit = match.playerStats?.result || match.result || match.outcome;
@@ -883,16 +907,6 @@ export default function CareerPage() {
     };
   }, [strengths]);
 
-  // Derive friendly lines for the top line below the table
-  const topStrengthNote = useMemo(() => {
-    if (!strengths.length) return '';
-    const s = strengths[0];
-    // rough percentile mapping from scaled value
-    const pct = Math.max(1, Math.min(99, s.scaled));
-    const metricName = s.metric;
-    return `${metricName}: You're outperforming ${pct}% of players in your leagues!`;
-  }, [strengths]);
-
   // --- Focus Area suggestion ---
   const focusSuggestion = useMemo(() => {
     if (!filteredMatches.length || !influence.length) {
@@ -1032,6 +1046,87 @@ export default function CareerPage() {
     
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
+
+  // One consistent comparison model used by IMPACT + Top Strengths
+  const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
+    const matchesCount = Math.max(yourStats.n, 1);
+    const hasLeagueAverage = Boolean(impactLeagueAvg);
+    const leaguePerMatch = {
+      goals: impactLeagueAvg?.goals ?? 0,
+      assists: impactLeagueAvg?.assists ?? 0,
+      cleanSheets: impactLeagueAvg?.cleanSheets ?? 0,
+      motmVotes: impactLeagueAvg?.motmVotes ?? 0,
+      defensiveImpactVotes: impactLeagueAvg?.defensiveImpactVotes ?? 0,
+      impact: impactLeagueAvg?.impact ?? 0,
+    };
+
+    const rows = [
+      {
+        metric: 'Goals',
+        yourTotal: toRoundedInt(yourStats.goals),
+        yourDisplay: String(toRoundedInt(yourStats.goals)),
+        playerPerMatch: matchesCount > 0 ? yourStats.goals / matchesCount : 0,
+        leaguePerMatch: leaguePerMatch.goals,
+      },
+      {
+        metric: 'Assists',
+        yourTotal: toRoundedInt(yourStats.assists),
+        yourDisplay: String(toRoundedInt(yourStats.assists)),
+        playerPerMatch: matchesCount > 0 ? yourStats.assists / matchesCount : 0,
+        leaguePerMatch: leaguePerMatch.assists,
+      },
+      {
+        metric: 'Clean Sheets',
+        yourTotal: toRoundedInt(yourStats.cleanSheets),
+        yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
+        playerPerMatch: matchesCount > 0 ? yourStats.cleanSheets / matchesCount : 0,
+        leaguePerMatch: leaguePerMatch.cleanSheets,
+      },
+      {
+        metric: 'MOTM Votes',
+        yourTotal: toRoundedInt(yourStats.motmVotes),
+        yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
+        playerPerMatch: matchesCount > 0 ? yourStats.motmVotes / matchesCount : 0,
+        leaguePerMatch: leaguePerMatch.motmVotes,
+      },
+      {
+        metric: 'Defensive Impact Votes',
+        yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
+        yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
+        playerPerMatch: matchesCount > 0 ? yourStats.defensiveImpactVotes / matchesCount : 0,
+        leaguePerMatch: leaguePerMatch.defensiveImpactVotes,
+      },
+      {
+        metric: 'Game Contribution Index',
+        yourTotal: toRoundedInt(yourStats.impactAvg),
+        yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
+        playerPerMatch: yourStats.impactAvg,
+        leaguePerMatch: leaguePerMatch.impact,
+      },
+    ];
+
+    return rows.map((r) => ({
+      metric: r.metric,
+      yourTotal: r.yourTotal,
+      yourDisplay: r.yourDisplay,
+      deltaPercent: hasLeagueAverage ? toPercentDelta(r.playerPerMatch, r.leaguePerMatch) : 0,
+    }));
+  }, [yourStats, impactLeagueAvg]);
+
+  const topStrengthRows = useMemo(
+    () => [...leagueComparisonRows].sort((a, b) => b.deltaPercent - a.deltaPercent).slice(0, 3),
+    [leagueComparisonRows]
+  );
+
+  const topStrengthNote = useMemo(() => {
+    if (!topStrengthRows.length) return '';
+    const best = topStrengthRows[0];
+    if (best.deltaPercent === 0) {
+      return `${best.metric}: You are on par with league average.`;
+    }
+    const direction = best.deltaPercent > 0 ? 'above' : 'below';
+    return `${best.metric}: You are ${Math.abs(best.deltaPercent)}% ${direction} league average.`;
+  }, [topStrengthRows]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
@@ -2586,67 +2681,54 @@ export default function CareerPage() {
 	                        </TableHead>
                         <TableBody>
                           {(() => {
-                            const current = yourStats;
-                            const n = current.n || 1;
-                            const goals = current.goals || 0;
-                            const assists = current.assists || 0;
-                            const cleanSheets = current.cleanSheets || 0;
-                            const motmVotes = current.motmVotes || 0;
-                            const defensiveImpactVotes = current.defensiveImpactVotes || 0;
-                            const contributionIndex = current.impactAvg;
-                            
-                            // Use real league averages (per game * total matches) for comparison
-                            const avg = impactLeagueAvg;
-                            const avgGoals = avg ? +(avg.goals * n).toFixed(1) : 0;
-                            const avgAssists = avg ? +(avg.assists * n).toFixed(1) : 0;
-                            const avgCleanSheets = avg ? +(avg.cleanSheets * n).toFixed(1) : 0;
-                            const avgMotm = avg ? +(avg.motmVotes * n).toFixed(1) : 0;
-                            const avgDefImpact = avg ? +((avg.defensiveImpactVotes || 0) * n).toFixed(1) : 0;
-
-                            const diffCell = (playerVal: number, leagueAvgVal: number) => {
-                              const diff = +(playerVal - leagueAvgVal).toFixed(1);
-                              const isPositive = diff >= 0;
+                            return leagueComparisonRows.map((row) => {
+                              const isContribution = row.metric === 'Game Contribution Index';
+                              const deltaColor =
+                                row.deltaPercent === 0
+                                  ? themeColors.textDim
+                                  : row.deltaPercent > 0
+                                    ? themeColors.success
+                                    : themeColors.danger;
                               return (
-                                <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: isPositive ? themeColors.success : '#f44336', borderBottom: `1px solid ${themeColors.border}` }}>
-                                  {isPositive ? '+' : ''}{diff}
-                                </TableCell>
+                                <TableRow key={row.metric} sx={isContribution ? { bgcolor: '#383a3e' } : undefined}>
+                                  <TableCell
+                                    sx={{
+                                      fontSize: 11,
+                                      py: 0.8,
+                                      color: themeColors.text,
+                                      borderBottom: `1px solid ${themeColors.border}`,
+                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                    }}
+                                  >
+                                    {row.metric}
+                                  </TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{
+                                      fontSize: 11,
+                                      py: 0.8,
+                                      color: themeColors.text,
+                                      borderBottom: `1px solid ${themeColors.border}`,
+                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                    }}
+                                  >
+                                    {row.yourDisplay}
+                                  </TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{
+                                      fontSize: 11,
+                                      py: 0.8,
+                                      color: deltaColor,
+                                      borderBottom: `1px solid ${themeColors.border}`,
+                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                    }}
+                                  >
+                                    {row.deltaPercent > 0 ? '+' : ''}{row.deltaPercent}%
+                                  </TableCell>
+                                </TableRow>
                               );
-                            };
-                            
-                            return (
-                              <>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Goals</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goals}</TableCell>
-                                  {diffCell(goals, avgGoals)}
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Assists</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assists}</TableCell>
-                                  {diffCell(assists, avgAssists)}
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Clean Sheets</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheets}</TableCell>
-                                  {diffCell(cleanSheets, avgCleanSheets)}
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>MOTM Votes</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{motmVotes}</TableCell>
-                                  {diffCell(motmVotes, avgMotm)}
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Defensive Impact Votes</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{defensiveImpactVotes}</TableCell>
-                                  {diffCell(defensiveImpactVotes, avgDefImpact)}
-                                </TableRow>
-                                <TableRow sx={{ bgcolor: '#383a3e' }}>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Game Contribution Index</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{contributionIndex.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.success, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>+{Math.max(0, contributionIndex - 30).toFixed(0)}</TableCell>
-                                </TableRow>
-                              </>
-                            );
+                            });
                           })()}
                         </TableBody>
                       </Table>
@@ -2695,22 +2777,24 @@ export default function CareerPage() {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {strengths.map((s) => {
-                            const n = Math.max(filteredMatches.length, 1);
-                            const youVal = (s.value / n).toFixed(2);
-                            const pctDiff = Math.round(s.scaled - 80);
-                            const diff = `${pctDiff >= 0 ? '+' : ''}${pctDiff}%`;
-                            const up = pctDiff >= 0;
+                          {topStrengthRows.map((row) => {
+                            const up = row.deltaPercent > 0;
+                            const isNeutral = row.deltaPercent === 0;
+                            const diff = `${row.deltaPercent > 0 ? '+' : ''}${row.deltaPercent}%`;
                             return (
-                              <TableRow key={s.metric}>
-                                <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{s.metric}</TableCell>
-                                <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{youVal}</TableCell>
+                              <TableRow key={row.metric}>
+                                <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.metric}</TableCell>
+                                <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.yourDisplay}</TableCell>
                                 <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                    <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: up ? themeColors.success : themeColors.danger }}>
+                                    <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: isNeutral ? themeColors.textDim : up ? themeColors.success : themeColors.danger }}>
                                       {diff}
                                     </Typography>
-                                    {up ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} /> : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />}
+                                    {!isNeutral && (
+                                      up
+                                        ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} />
+                                        : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />
+                                    )}
                                   </Box>
                                 </TableCell>
                               </TableRow>
