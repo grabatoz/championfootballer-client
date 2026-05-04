@@ -350,6 +350,8 @@ const toPercentDelta = (playerValue: number, leagueValue: number): number => {
   const player = Number(playerValue.toFixed(4));
   const league = Number(leagueValue.toFixed(4));
   if (Math.abs(player - league) < 0.005) return 0;
+  // Product decision: do not show negative % when player's stat is zero.
+  if (player <= 0.0001) return 0;
   if (league <= 0.0001) {
     if (player <= 0.0001) return 0;
     return 100;
