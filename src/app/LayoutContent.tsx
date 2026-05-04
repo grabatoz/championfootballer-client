@@ -67,27 +67,28 @@ const toSkeletonName = (pathname: string) => {
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMainPage = pathname === '/';
-  const isHomeDashboard = pathname === '/home';
-  const isAllLeaguesPage = pathname === '/all-leagues';
-  const isAllMatchesPage = pathname === '/all-matches';
-  const isAllPlayersPage = pathname === '/all-players';
-  const isRewardsPage = pathname === '/rewards';
-  const isTrophyRoomPage = pathname === '/trophy-room';
-  const isWorldRankingPage = pathname === '/world-ranking';
-  const isProfileSettingsPage = pathname === '/profile';
-  const isDreamTeamPage = pathname === '/dream-team';
-  const isLeaderBoardPage = pathname === '/leader-board';
-  const isContactPage = pathname === '/contact';
-  const isLegalPage = pathname === '/about' || pathname === '/privacy' || pathname === '/terms';
-  const isLeagueDetailPage = /^\/league\/[^/]+$/.test(pathname);
-  const isLeagueTrophyRoomPage = /^\/league\/[^/]+\/trophy-room$/.test(pathname);
-  const isScheduleMatchPage = /^\/league\/[^/]+\/match$/.test(pathname);
-  const isLeagueEditMatchPage = /^\/league\/[^/]+\/match\/[^/]+\/edit$/.test(pathname);
-  const isLeaguePlayMatchPage = /^\/league\/[^/]+\/match\/[^/]+\/play$/.test(pathname);
-  const isMatchResultPage = /^\/match\/[^/]+$/.test(pathname);
-  const isPlayerProfilePage = /^\/player\/[^/]+$/.test(pathname);
-  const isPlayerCareerPage = /^\/player\/[^/]+\/career$/.test(pathname);
+  const resolvedPathname = pathname ?? '';
+  const isMainPage = resolvedPathname === '/';
+  const isHomeDashboard = resolvedPathname === '/home';
+  const isAllLeaguesPage = resolvedPathname === '/all-leagues';
+  const isAllMatchesPage = resolvedPathname === '/all-matches';
+  const isAllPlayersPage = resolvedPathname === '/all-players';
+  const isRewardsPage = resolvedPathname === '/rewards';
+  const isTrophyRoomPage = resolvedPathname === '/trophy-room';
+  const isWorldRankingPage = resolvedPathname === '/world-ranking';
+  const isProfileSettingsPage = resolvedPathname === '/profile';
+  const isDreamTeamPage = resolvedPathname === '/dream-team';
+  const isLeaderBoardPage = resolvedPathname === '/leader-board';
+  const isContactPage = resolvedPathname === '/contact';
+  const isLegalPage = resolvedPathname === '/about' || resolvedPathname === '/privacy' || resolvedPathname === '/terms';
+  const isLeagueDetailPage = /^\/league\/[^/]+$/.test(resolvedPathname);
+  const isLeagueTrophyRoomPage = /^\/league\/[^/]+\/trophy-room$/.test(resolvedPathname);
+  const isScheduleMatchPage = /^\/league\/[^/]+\/match$/.test(resolvedPathname);
+  const isLeagueEditMatchPage = /^\/league\/[^/]+\/match\/[^/]+\/edit$/.test(resolvedPathname);
+  const isLeaguePlayMatchPage = /^\/league\/[^/]+\/match\/[^/]+\/play$/.test(resolvedPathname);
+  const isMatchResultPage = /^\/match\/[^/]+$/.test(resolvedPathname);
+  const isPlayerProfilePage = /^\/player\/[^/]+$/.test(resolvedPathname);
+  const isPlayerCareerPage = /^\/player\/[^/]+\/career$/.test(resolvedPathname);
 
   const shouldUseRouteSkeleton =
     isMainPage ||
@@ -167,9 +168,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }, PAGE_SKELETON_MIN_DURATION_MS);
 
     return () => window.clearTimeout(timer);
-  }, [pathname, shouldUseRouteSkeleton]);
+  }, [resolvedPathname, shouldUseRouteSkeleton]);
 
-  const skeletonName = useMemo(() => toSkeletonName(pathname), [pathname]);
+  const skeletonName = useMemo(() => toSkeletonName(resolvedPathname), [resolvedPathname]);
 
   return (
     <>
