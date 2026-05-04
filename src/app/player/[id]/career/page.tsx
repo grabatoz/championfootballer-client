@@ -539,6 +539,24 @@ export default function CareerPage() {
     return matches.filter(m => byLeague(m) && byYear(m) && bySeason(m));
   }, [matches, filters.leagueId, filters.year, seasonFilter, availableSeasons]);
 
+  // For chart cards: respect global year/season filters, while league is controlled by each card toggle.
+  const timeSeasonFilteredMatches = useMemo(() => {
+    const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
+    const bySeason = (m: LeagueMatch) => {
+      if (!seasonFilter || seasonFilter === 'all') return true;
+      if (m.seasonId) return m.seasonId === seasonFilter;
+      const selectedSeason = availableSeasons.find((s) => s.id === seasonFilter);
+      if (selectedSeason?.startDate) {
+        const matchDate = dayjs(m.date);
+        const start = dayjs(selectedSeason.startDate);
+        const end = selectedSeason.endDate ? dayjs(selectedSeason.endDate) : dayjs();
+        return matchDate.isAfter(start.subtract(1, 'day')) && matchDate.isBefore(end.add(1, 'day'));
+      }
+      return true;
+    };
+    return matches.filter((m) => byYear(m) && bySeason(m));
+  }, [matches, filters.year, seasonFilter, availableSeasons]);
+
   // ------------- Independent league filters per chart card -------------
   const [chartLeague, setChartLeague] = useState<string>('all');
   const [influenceLeague, setInfluenceLeague] = useState<string>('all');
@@ -631,14 +649,20 @@ export default function CareerPage() {
 
   // Locally filtered matches for each card (independent of global Redux league filter)
   const chartMatches = useMemo(() =>
-    chartLeague === 'all' ? matches : matches.filter(m => m.leagueId === chartLeague),
-    [matches, chartLeague]);
+    chartLeague === 'all'
+      ? timeSeasonFilteredMatches
+      : timeSeasonFilteredMatches.filter((m) => m.leagueId === chartLeague),
+    [timeSeasonFilteredMatches, chartLeague]);
   const influenceMatches = useMemo(() =>
-    influenceLeague === 'all' ? matches : matches.filter(m => m.leagueId === influenceLeague),
-    [matches, influenceLeague]);
+    influenceLeague === 'all'
+      ? timeSeasonFilteredMatches
+      : timeSeasonFilteredMatches.filter((m) => m.leagueId === influenceLeague),
+    [timeSeasonFilteredMatches, influenceLeague]);
   const winLossMatches = useMemo(() =>
-    winLossLeague === 'all' ? matches : matches.filter(m => m.leagueId === winLossLeague),
-    [matches, winLossLeague]);
+    winLossLeague === 'all'
+      ? timeSeasonFilteredMatches
+      : timeSeasonFilteredMatches.filter((m) => m.leagueId === winLossLeague),
+    [timeSeasonFilteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
   const [groupMode, setGroupMode] = useState<'weekly'|'monthly'>('weekly');
@@ -790,7 +814,7 @@ export default function CareerPage() {
   // Reset range if data length changes
   useEffect(() => {
     setRange(null);
-  }, [groupingType]);
+  }, [groupingType, chartMatches.length]);
 
   const influence: InfluenceEntry[] = useMemo(() => {
     // accumulate raw totals
@@ -1077,11 +1101,11 @@ export default function CareerPage() {
     // Calculate per-game averages for player
     const matchCount = Math.max(influenceMatches.length, 1);
     const playerAvgPerGame = {
-      Goals: +(playerTotals.Goals / matchCount).toFixed(1),
-      Assists: +(playerTotals.Assists / matchCount).toFixed(1),
-      'Clean Sheets': +(playerTotals['Clean Sheets'] / matchCount).toFixed(1),
-      'Defensive Impact': +(playerTotals['Defensive Impact'] / matchCount).toFixed(1),
-      'MOTM Votes': +(playerTotals['MOTM Votes'] / matchCount).toFixed(1)
+      Goals: Math.round(playerTotals.Goals / matchCount),
+      Assists: Math.round(playerTotals.Assists / matchCount),
+      'Clean Sheets': Math.round(playerTotals['Clean Sheets'] / matchCount),
+      'Defensive Impact': Math.round(playerTotals['Defensive Impact'] / matchCount),
+      'MOTM Votes': Math.round(playerTotals['MOTM Votes'] / matchCount)
     };
 
     // Use real league averages from backend if available
@@ -1105,7 +1129,7 @@ export default function CareerPage() {
     return Object.keys(playerAvgPerGame).map(metric => ({
       metric,
       [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
-      'League Avg': +(leagueAvg[metric as keyof typeof leagueAvg]).toFixed(1)
+      'League Avg': Math.round(leagueAvg[metric as keyof typeof leagueAvg])
     }));
   }, [influenceMatches, playerName, currentInfluenceLeagueAvg]);
 
@@ -1386,6 +1410,15 @@ export default function CareerPage() {
     return (league as LeagueWithMatches & { name?: string })?.name || null;
   }, [preferredLeagueId, availableLeagues]);
 
+  const currentCardLeagueId = useMemo(() => {
+    const candidate =
+      filters.leagueId && filters.leagueId !== 'all'
+        ? filters.leagueId
+        : preferredLeagueId;
+    if (!candidate) return null;
+    return availableLeagues.some((l) => l.id === candidate) ? candidate : null;
+  }, [filters.leagueId, preferredLeagueId, availableLeagues]);
+
   // If no league is passed in URL, auto-select preferredLeagueId on this page
   useEffect(() => {
     if (preferredAppliedRef.current) return;
@@ -1398,6 +1431,19 @@ export default function CareerPage() {
     }
     preferredAppliedRef.current = true;
   }, [urlLeagueId, preferredLeagueId, filters.leagueId, availableLeagues, dispatch]);
+
+  // Auto-select "Current" on card toggles whenever top filters change.
+  useEffect(() => {
+    if (currentCardLeagueId) {
+      setChartLeague(currentCardLeagueId);
+      setInfluenceLeague(currentCardLeagueId);
+      setWinLossLeague(currentCardLeagueId);
+      return;
+    }
+    setChartLeague('all');
+    setInfluenceLeague('all');
+    setWinLossLeague('all');
+  }, [filters.year, filters.leagueId, seasonFilter, currentCardLeagueId]);
 
   const selectedSeasonLabel = useMemo(() => {
     if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';
@@ -2246,6 +2292,7 @@ export default function CareerPage() {
                               tick={{ fontSize: 7, fill: themeColors.textFaint }}
                               tickCount={5}
                               angle={90}
+                              allowDecimals={false}
                               domain={[0, 'dataMax + 1']}
                             />
                             
