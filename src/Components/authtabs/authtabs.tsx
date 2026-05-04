@@ -1,6 +1,6 @@
 ﻿"use client"
 import type React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAppDispatch, useAuth } from "@/lib/hooks"
 import { login, register } from "@/lib/features/authSlice"
@@ -283,13 +283,17 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     [phoneCountryCode]
   )
   const phoneDigitsLabel = formatPhoneDigitRule(selectedPhoneRule)
-  const phoneRuleHint = `Required ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+  const phoneRuleHint = `Required ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}. Do not start with 0.`
 
-  const getPhoneLengthError = (digits: string): string => {
+  const getPhoneValidationError = useCallback((digitsInput: string): string => {
+    const digits = sanitizePhoneDigits(digitsInput).slice(0, selectedPhoneRule.max)
     if (!digits) return ""
+    if (digits.startsWith("0")) {
+      return `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+    }
     if (isPhoneDigitsValidForRule(digits, selectedPhoneRule)) return ""
     return `Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
-  }
+  }, [phoneCountryCode, phoneDigitsLabel, selectedPhoneRule])
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
@@ -423,7 +427,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     if (name === "phone") {
       const digits = sanitizePhoneDigits(value).slice(0, selectedPhoneRule.max)
       setRegisterData((prev) => ({ ...prev, phone: digits }))
-      setPhoneError(getPhoneLengthError(digits))
+      setPhoneError(getPhoneValidationError(digits))
       return
     }
 
@@ -454,13 +458,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       return
     }
 
-    if (isPhoneDigitsValidForRule(trimmed, selectedPhoneRule)) {
-      setPhoneError("")
-      return
-    }
-
-    setPhoneError(`Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`)
-  }, [phoneCountryCode, registerData.phone, selectedPhoneRule, phoneDigitsLabel])
+    setPhoneError(getPhoneValidationError(trimmed))
+  }, [registerData.phone, selectedPhoneRule.max, getPhoneValidationError])
 
   // Derived lists from country-state-city library
   const countries = Country.getAllCountries()
@@ -605,6 +604,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const validateRegisterForm = () => {
     const age = Number.parseInt(registerData.age)
     const phoneDigits = sanitizePhoneDigits(registerData.phone || "")
+    const phoneValidationError = getPhoneValidationError(phoneDigits)
     let msg = ""
     if (
       !registerData.email ||
@@ -630,8 +630,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       setConfirmError("Passwords do not match")
     }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) msg = "Invalid email"
-    else if (!isPhoneDigitsValidForRule(phoneDigits, selectedPhoneRule)) {
-      msg = `Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+    else if (phoneValidationError) {
+      msg = phoneValidationError
       setPhoneError(msg)
     }
     else if (isNaN(age) || age < 18 || age > 65) msg = "Age must be between 18 and 65"
