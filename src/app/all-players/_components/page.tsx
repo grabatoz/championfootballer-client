@@ -33,6 +33,7 @@ import Image from 'next/image';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import SearchIcon from '@/Components/images/searchicon.png';
 import TableGraphIcon from '@/Components/images/tablegrapicon.png';
+import AllPlayersLoadingSkeleton from '@/Components/loading/AllPlayersLoadingSkeleton';
 
 // Lazy load CloseButton
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -126,7 +127,7 @@ const AllPlayersPage = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const dispatch = useDispatch<AppDispatch>();
   const { playedWithPlayers, leaguePlayers, loading, error } = useAppSelector((state) => state.user);
-  const token = useAppSelector((state) => state.auth.token);
+  const token = useAppSelector((state) => state?.auth.token);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState(''); // Actual search term after hitting Enter
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -878,7 +879,7 @@ const AllPlayersPage = () => {
               flexWrap: { xs: 'wrap', md: 'nowrap' },
             }}>
               {/* Year Filter */}
-              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+              <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedYear}
@@ -920,7 +921,7 @@ const AllPlayersPage = () => {
               </div>
 
               {/* League Filter */}
-              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedLeague}
@@ -964,7 +965,7 @@ const AllPlayersPage = () => {
               </div>
 
               {/* Season Filter */}
-              <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+              <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
               <select
                 className="filter-select"
                 value={selectedSeason}
@@ -1195,8 +1196,8 @@ const AllPlayersPage = () => {
           </Box>
         )}
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
-            <CircularProgress sx={{ color: '#e56a16' }} />
+          <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', p: 1.5 }}>
+            <AllPlayersLoadingSkeleton compact />
           </Box>
         ) : noLeagues ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>

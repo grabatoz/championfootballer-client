@@ -591,7 +591,7 @@ const PlayerCard = ({
 
         <Typography
           fontSize="16px"
-          fontWeight="semi-bold"
+          fontWeight="bold"
           color="#fff"
           sx={{
             mt: { xs: 0.45, sm: disableImagePopup ? 1.05 : 0.5 },
@@ -606,9 +606,9 @@ const PlayerCard = ({
         <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
           {/* Left Side Stats */}
           <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-            <Typography fontSize="14px" color={'#fff'}>{stats?.DRI} DRI</Typography>
-            <Typography fontSize="13px" color={'#fff'}>{stats?.SHO} SHO</Typography>
-            <Typography fontSize="14px" color={'#fff'}>{stats?.PAS} PAS</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.DRI} DRI</Typography>
+            <Typography fontSize="13px" fontWeight={'bold'} color={'#fff'}>{stats?.SHO} SHO</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PAS} PAS</Typography>
           </Box>
 
           {/* Vertical Line */}
@@ -623,9 +623,9 @@ const PlayerCard = ({
 
           {/* Right Side Stats */}
           <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
-            <Typography fontSize="14px" color={'#fff'}>{stats?.PAC} PAC</Typography>
-            <Typography fontSize="14px" color={'#fff'}>{stats?.DEF} DEF</Typography>
-            <Typography fontSize="14px" color={'#fff'}>{stats?.PHY} PHY</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PAC} PAC</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.DEF} DEF</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PHY} PHY</Typography>
           </Box>
         </Box>
 

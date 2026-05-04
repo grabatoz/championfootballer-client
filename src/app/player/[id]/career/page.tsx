@@ -35,6 +35,7 @@ import { styled, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '@/lib/useAuth';
 import CloseButton from '@/Components/CloseButton';
+import PlayerCareerLoadingSkeleton from '@/Components/loading/PlayerCareerLoadingSkeleton';
 // import api from '@/lib/api'; // Adjust the import based on your project structure
 
 // ---------- THEME (Brand) ----------
@@ -1431,7 +1432,7 @@ export default function CareerPage() {
   };
   const dashboardTitle = playerName ? `${playerName} PERFORMANCE DASHBOARD` : 'PERFORMANCE DASHBOARD';
   const isLongDashboardTitle = dashboardTitle.length > 30;
-  const desktopFilterWidth = '131.5px';
+  const desktopFilterWidth = '150px';
 
   return (
     <Box
@@ -1942,9 +1943,7 @@ export default function CareerPage() {
           {/* Main Content */}
           <Box sx={{ maxWidth: '1130px', mx: 'auto', px: { xs: 2, sm: 2, md: 3 } }}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress sx={{ color: themeColors.primary }} />
-            </Box>
+            <PlayerCareerLoadingSkeleton />
           ) : (
             <Box>
               {/* Performance Over Time Chart */}

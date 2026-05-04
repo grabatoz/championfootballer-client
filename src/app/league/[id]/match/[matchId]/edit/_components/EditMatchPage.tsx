@@ -21,6 +21,7 @@ import CalendarIcon from '@/Components/images/calander.png';
 import ClockIcon from '@/Components/images/clock.png';
 import GlassIcon from '@/Components/images/glass.png';
 import LocationIcon from '@/Components/images/location.png';
+import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
 
   interface User { id: string; firstName: string; lastName: string; email: string; profilePicture?: string; shirtNumber?: string; skills?: { dribbling?: number; shooting?: number; passing?: number; pace?: number; defending?: number; physical?: number; }; preferredFoot?: 'right' | 'left'; }
   interface League { id: string; name: string; members: User[]; active: boolean; }
@@ -1730,7 +1731,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
       } finally { setIsSubmitting(false); }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: isDialog ? '50vh' : '100vh' }}><CircularProgress /></Box>;
+    if (loading) return <EditMatchPopupLoadingSkeleton mode={isDialog ? 'dialog' : 'page'} />;
     if (error || !league) return <Box sx={{ p: 4, color: 'white' }}><Button startIcon={<ArrowLeft />} onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ mb: 2, color: 'white', background: '#388e3c', '&:hover': { background: '#388e3c' } }}>Back</Button><Typography color="error">{error || 'Load failed'}</Typography></Box>;
 
     const inputStyles = { '& .MuiOutlinedInput-root': { color: '#E5E7EB', background: 'rgba(255,255,255,0.02)', borderRadius: 1, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)', borderWidth: '1px' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' }, '&.Mui-focused fieldset': { borderColor: '#e56a16', borderWidth: '2px', boxShadow: '0 0 0 3px rgba(229,106,22,0.1)' }, '& input': { color: '#E5E7EB', padding: '10px 14px' } }, '& .MuiInputLabel-root': { color: '#9CA3AF', fontWeight: 500, '&.Mui-focused': { color: '#e56a16' } }, '& .MuiSvgIcon-root': { color: '#E5E7EB' }, '& .MuiOutlinedInput-input': { padding: '10px 14px' } };

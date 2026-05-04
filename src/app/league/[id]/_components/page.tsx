@@ -50,6 +50,9 @@ import { Tooltip, Slide } from '@mui/material';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import LeagueDetailLoadingSkeleton from '@/Components/loading/LeagueDetailLoadingSkeleton';
+import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
+import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import PlayerImg from '@/Components/images/playerimg.png'
 import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
@@ -72,7 +75,7 @@ const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog')
     ssr: false
 });
 const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
-    loading: () => <CircularProgress />,
+    loading: () => <ViewTeamPopupLoadingSkeleton />,
     ssr: false
 });
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').then(mod => ({ default: mod.default })), {
@@ -80,7 +83,7 @@ const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').th
     ssr: false
 });
 const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
-    loading: () => <CircularProgress />,
+    loading: () => <EditMatchPopupLoadingSkeleton />,
     ssr: false
 });
 const MatchDetailsPage = dynamic(() => import('@/app/match/[matchId]/_components/index'), {
@@ -4845,10 +4848,7 @@ export default function LeagueDetailPage() {
                                     marginRight: '-50vw',
                                 }}>
                                     {dreamTeamLoading ? (
-                                        <Box sx={{ p: 3, textAlign: 'center' }}>
-                                            <CircularProgress />
-                                            <Typography variant="h6" sx={{ mt: 2, color: 'white' }}>Loading Dream Team...</Typography>
-                                        </Box>
+                                        <LeagueDetailLoadingSkeleton mode="dream" />
                                     ) : (
                                         <>
                                             {/* Field (image) - Full width without side spaces */}
@@ -5512,9 +5512,7 @@ export default function LeagueDetailPage() {
                                                 {/* Players List */}
                                                 <Box sx={{ p: 0 , ml:-1.2 , mt:-0.5}}>
                                                     {leaderboardLoading ? (
-                                                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                                                            <CircularProgress size={24} />
-                                                        </Box>
+                                                        <LeagueDetailLoadingSkeleton mode="list" />
                                                     ) : (
                                                         (allLeaderboardData[metric.key] || []).slice(0, 5).map((player, idx) => (
                                                             <Link key={`${metric.key}-${player.id}`} href={`/player/${player.id}`} passHref>

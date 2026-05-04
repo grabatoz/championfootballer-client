@@ -8,6 +8,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon, X } from 'lucide-react';
 import Image from 'next/image';
+import AllLeaguesLoadingSkeleton from '@/Components/loading/AllLeaguesLoadingSkeleton';
 import leagueIcon from '@/Components/images/league.png';
 import trofy from '@/Components/images/trofy.png';
 import faceicon from '@/Components/images/faceicon.png';
@@ -3562,8 +3563,8 @@ function AllLeagues() {
                 onChange={(e) => setSelectedLeagueId(e.target.value)}
                 size="small"
                 sx={{
-                  minWidth: 130,
-                  width: { xs: '100%', sm: 180, md: 130 },
+                  minWidth: 150,
+                  width: { xs: '100%', sm: 180, md: 150 },
                   '& .MuiOutlinedInput-root': { 
                     color: 'white',
                     borderRadius: 6,
@@ -3597,8 +3598,8 @@ function AllLeagues() {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 size="small"
                 sx={{
-                   minWidth: 130,
-                  width: { xs: '100%', sm: 180, md: 130 },
+                   minWidth: 150,
+                  width: { xs: '100%', sm: 180, md: 150 },
                   '& .MuiOutlinedInput-root': { 
                     color: 'white',
                     borderRadius: 6,
@@ -3710,10 +3711,7 @@ function AllLeagues() {
         {/* Leagues List - Card Format */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 1, sm: 2, md: 13 } , mb :7}}>
           {loading ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <CircularProgress sx={{ color: 'rgba(96, 165, 250, 0.8)' }} />
-              <Typography sx={{ mt: 2, color: 'white', fontSize: { xs: '14px', md: '16px' } }}>Loading leagues...</Typography>
-            </Box>
+            <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>

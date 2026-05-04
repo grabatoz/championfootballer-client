@@ -13,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
 import CloseButton from '@/Components/CloseButton';
+import RewardsLoadingSkeleton from '@/Components/loading/RewardsLoadingSkeleton';
 
 // Badge images
 import HatTrickBadge from '@/Components/images/brown.png';
@@ -641,11 +642,7 @@ export default function RewardsPage() {
   const totalRewardsXP = myBadges.reduce((sum, badge) => sum + (badge.count * badge.xp), 0);
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <RewardsLoadingSkeleton />;
   }
 
   if (error) {

@@ -43,6 +43,7 @@ import { BarChart, SpaceDashboard } from '@mui/icons-material';
 import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
 import XPStarMilestoneCard, { XP_TIERS, getXPTier } from '@/Components/XPStarMilestoneCard';
+import PlayerProfileLoadingSkeleton from '@/Components/loading/PlayerProfileLoadingSkeleton';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -1897,7 +1898,7 @@ export default function PlayerStatsPage() {
                             }}
                         >
                             {/* Year Filter */}
-                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+                            <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -2003,7 +2004,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* League Filter */}
-                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+                            <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -2127,7 +2128,7 @@ export default function PlayerStatsPage() {
                             </div>
 
                             {/* Season Filter */}
-                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 130 : '100%' }}>
+                            <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
                             {isDesktop ? (
                                 <select
                                     className="filter-select"
@@ -2314,10 +2315,7 @@ export default function PlayerStatsPage() {
          
         <Container maxWidth={false} sx={{ bgcolor: '#383838', py: { xs: 2.2, md: 3 }, px: { xs: 1.3, sm: 2, md: 3.5 }, maxWidth: 1165, mx: 'auto', borderRadius: 2, mb: 5, position: 'relative', zIndex: 1 }}>
             {loading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2  }}>
-                    <CircularProgress sx={{ color: TEAL_PRIMARY }} />
-                    <Typography sx={{ color: '#fff', fontSize: 14 }}>Loading player stats...</Typography>
-                </Box>
+                <PlayerProfileLoadingSkeleton />
             ) : reduxError ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
                     <Typography sx={{ color: '#ff6b6b', fontSize: 16, fontWeight: 700 }}>Error Loading Data</Typography>

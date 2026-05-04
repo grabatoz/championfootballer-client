@@ -4,10 +4,10 @@ export default function AboutCF() {
   return (
     <main
       className="min-h-screen p-6"
-      style={{
-        background:
-          "linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)",
-      }}
+      // style={{
+      //   background:
+      //     "linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)",
+      // }}
     >
       <div
         className="max-w-3xl mx-auto rounded-2xl border border-white/10 shadow-xl overflow-hidden"

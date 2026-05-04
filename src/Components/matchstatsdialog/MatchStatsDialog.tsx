@@ -49,6 +49,7 @@ import DEFIMP from '@/Components/images/defimp.png'
 import MENTALITY from '@/Components/images/metality.png'
 import PlayerImg from '@/Components/images/playerimg.png'
 import Image from 'next/image'
+import MatchStatsPopupLoadingSkeleton from '@/Components/loading/MatchStatsPopupLoadingSkeleton';
 
 type StatKey = 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact';
 type HandleStatChange = (stat: StatKey, increment: number, max: number) => void;
@@ -2282,18 +2283,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             <CloseIcon />
                         </IconButton>
                     </DialogTitle>
-                    <DialogContent sx={{ ...dialogContentSx, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-                        <CircularProgress sx={{ color: '#fff' }} />
+                    <DialogContent sx={{ ...dialogContentSx, minHeight: '200px' }}>
+                        <MatchStatsPopupLoadingSkeleton mode="score" />
                     </DialogContent>
                 </Dialog>
             );
         }
 
-        const inner = (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress />
-            </Box>
-        );
+        const inner = <MatchStatsPopupLoadingSkeleton mode="stats" />;
         if (typeof open === 'boolean') {
             return (
                 <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" scroll="paper" keepMounted PaperProps={{ sx: dialogPaperSx }}>
@@ -2325,9 +2322,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         ) : (
                             <Typography variant="body1" sx={{ color: '#E5E7EB', mb: 2 }}>Loading match detailsâ€¦</Typography>
                         )}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 120 }}>
-                            <CircularProgress sx={{ color: '#fff' }} />
-                        </Box>
+                        {!error && <MatchStatsPopupLoadingSkeleton mode="score" />}
                     </DialogContent>
                 </Dialog>
             );

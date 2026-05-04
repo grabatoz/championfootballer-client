@@ -24,6 +24,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import mapImg from '@/Components/images/map.png';
 import Image from 'next/image';
+import ScheduleMatchLoadingSkeleton from '@/Components/loading/ScheduleMatchLoadingSkeleton';
 
 /* ================== CUSTOM CALENDAR ================== */
 interface CustomCalendarProps {
@@ -831,19 +832,7 @@ export default function ScheduleMatchPage() {
 
   /* ============ STATES UI ============ */
   if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          // bgcolor: '#050505'
-        }}
-      >
-        <CircularProgress sx={{ color: THEME.FOCUS }} />
-      </Box>
-    );
+    return <ScheduleMatchLoadingSkeleton />;
   }
 
   if (error || !league) {

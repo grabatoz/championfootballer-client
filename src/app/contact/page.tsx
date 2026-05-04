@@ -67,7 +67,7 @@ export default function ContactForm() {
         justifyContent: 'center',
         py: 6,
         p: 2,
-        background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)'
+        // background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)'
       }}
     >
       <Box

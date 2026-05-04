@@ -61,6 +61,7 @@ import toast from 'react-hot-toast';
 import TextField from '@mui/material/TextField';
 import PlayMatchPagee from '@/Components/matchstatsdialog/MatchStatsDialog';
 import { leagueAPI } from '@/lib/api-ultra-fast';
+import NotificationMenuLoadingSkeleton from '@/Components/loading/NotificationMenuLoadingSkeleton';
 // import PlayerStatsDialog from '@/Components/PlayerStatsDialog';
 type NotificationKind =
   | 'MATCH_CREATED'
@@ -3283,10 +3284,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
         <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
           {loading ? (
-            <Box sx={{ p: 4, textAlign: 'center', color: '#666' }}>
-              <RefreshIcon sx={{ fontSize: 32, color: '#ccc', mb: 1, animation: 'spin 1s linear infinite' }} />
-              <Typography>Loading notifications...</Typography>
-            </Box>
+            <NotificationMenuLoadingSkeleton />
           ) : notifications.length === 0 ? (
             <Box sx={{ p: 4, textAlign: 'center', color: '#666' }}>
               <NotificationsIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />

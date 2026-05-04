@@ -41,6 +41,7 @@ import Mentality from "@/Components/images/metality.png"
 import cflogo from '@/Components/images/champion football logo 3 (1).png';
 import Raisingstart from '@/Components/images/brown.svg';
 import StarKeeperImg from '@/Components/images/startkeeper.png';
+import TrophyRoomLoadingSkeleton from '@/Components/loading/TrophyRoomLoadingSkeleton';
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').then(mod => ({ default: mod.default })), {
   loading: () => <CircularProgress />,
   ssr: false
@@ -2430,7 +2431,7 @@ export default function GlobalTrophyRoom() {
   };
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+    return <TrophyRoomLoadingSkeleton />;
   }
 
   if (error) {

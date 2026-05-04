@@ -181,7 +181,7 @@ export default function Footer() {
                   bgcolor: '#00A77F',
                   borderRadius: 1.5,
                   ml: 2,
-                  '&:hover': { bgcolor: '#008f6d', color: '#fff' },
+                  '&:hover': { background: "#00cc9c", color: '#fff' },
                 }}
               >
                 Sign In

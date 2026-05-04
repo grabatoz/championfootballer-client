@@ -27,6 +27,7 @@ import TableViewImg from '@/Components/images/table.png';
 import PitchViewImg from '@/Components/images/footblgrond.png';
 import BulbImg from '@/Components/images/bulb.png';
 import UndoImg from '@/Components/images/undo.png';
+import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import { useAuth } from '@/lib/hooks';
 import Awayimgcf from '@/Components/images/awayteamshirt.png'
 import Homeimgcf from '@/Components/images/hometeamshirt.png'
@@ -1433,8 +1434,12 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     );
   };
 
+  if (!dataLoaded) {
+    return <ViewTeamPopupLoadingSkeleton />;
+  }
+
   // Teams not created: only show pitch + message (no shirts)
-  const awaitingTeams = dataLoaded && homePlayers.length === 0 && awayPlayers.length === 0;
+  const awaitingTeams = homePlayers.length === 0 && awayPlayers.length === 0;
 
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#2b2b2b' }}>

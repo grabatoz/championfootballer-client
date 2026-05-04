@@ -267,7 +267,7 @@ function PrivacyPolicies() {
     };
 
     return (
-        <Box sx={{ p: 3, minHeight: '100vh', background: 'linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)' }}>
+        <Box sx={{ p: 3, minHeight: '100vh' }}>
             <Typography
                 variant="h3"
                 sx={{

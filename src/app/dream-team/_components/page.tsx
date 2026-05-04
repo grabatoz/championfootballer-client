@@ -11,6 +11,7 @@ import Link from 'next/link';
 import CloseButton from '@/Components/CloseButton';
 import { optimizedFetch, invalidateCache } from '@/lib/utils/optimizedFetch';
 import PageHeader from '@/Components/PageHeader';
+import DreamTeamLoadingSkeleton from '@/Components/loading/DreamTeamLoadingSkeleton';
 
 
 interface Player {
@@ -85,10 +86,9 @@ interface League {
 interface PlayerCardProps {
   player: Player;
   position: FieldPosition;
-  positionIndex: number;
 }
 
-const PlayerCard = memo<PlayerCardProps>(({ player, position, positionIndex }) => (
+const PlayerCard = memo<PlayerCardProps>(({ player, position }) => (
   <Box
     sx={{
       position: 'absolute',
@@ -586,9 +586,7 @@ const DreamTeamPage = () => {
       </Menu>
 
       {loading ? (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="h6">Loading Dream Team...</Typography>
-        </Box>
+        <DreamTeamLoadingSkeleton compact />
       ) : (
         <>
           {/* Field (image) */}
@@ -618,7 +616,6 @@ const DreamTeamPage = () => {
                   key={`${pos.type}-${idx}-${player.id}`}
                   player={player}
                   position={pos}
-                  positionIndex={idx}
                 />
               );
             })}

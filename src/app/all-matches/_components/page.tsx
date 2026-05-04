@@ -8,6 +8,9 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import homeTeamIcon from '@/Components/images/matches.png';
 import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
+import AllMatchesLoadingSkeleton from '@/Components/loading/AllMatchesLoadingSkeleton';
+import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
+import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import HomeTeamImage from '@/Components/images/hometeamshirt.png';
 import AwayTeamImage from '@/Components/images/awayteamshirt.png';
 import FootBallIcon from '@/Components/images/cardfootball.png';
@@ -45,12 +48,12 @@ const PlayerStatsDialog = dynamic(() => import('@/Components/PlayerStatsDialog')
 });
 
 const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
-  loading: () => <CircularProgress />,
+  loading: () => <ViewTeamPopupLoadingSkeleton />,
   ssr: false
 });
 
 const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
-  loading: () => <CircularProgress />,
+  loading: () => <EditMatchPopupLoadingSkeleton />,
   ssr: false
 });
 
@@ -2552,8 +2555,8 @@ export default function AllMatches() {
                     mb: { xs: 1, md: 4 },
                 }}>
                     {loading ? (
-                        <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '20vh', md: '30vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Typography color="#fff" align="center">Loading matches...</Typography>
+                        <Box sx={{ gridColumn: '1 / -1' }}>
+                            <AllMatchesLoadingSkeleton compact />
                         </Box>
                     ) : selectedLeague === 'all' ? (
                         <Box sx={{ gridColumn: '1 / -1', minHeight: { xs: '25vh', md: '40vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

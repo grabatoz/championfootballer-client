@@ -5,6 +5,7 @@ import { Box, Typography, TableContainer, Table, TableHead, TableRow, TableCell,
 import Link from 'next/link';
 import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
+import WorldRankingLoadingSkeleton from '@/Components/loading/WorldRankingLoadingSkeleton';
 
 interface Filters { mode: 'total' | 'avg'; year?: string; positionType?: string; country?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
@@ -123,6 +124,17 @@ export default function WorldRankingTable() {
       },
     },
   }), [dropdownMaxHeight]);
+
+  const countryFilterMenuProps = useMemo(() => ({
+    ...filterMenuProps,
+    PaperProps: {
+      ...filterMenuProps.PaperProps,
+      sx: {
+        ...filterMenuProps.PaperProps.sx,
+        maxWidth: '240px',
+      },
+    },
+  }), [filterMenuProps]);
   // Use the same full country dataset as the register form
   const countries = useMemo(() => {
     try {
@@ -290,6 +302,10 @@ export default function WorldRankingTable() {
     }
   }, [loading, filtered.length]);
 
+  if (loading && !data) {
+    return <WorldRankingLoadingSkeleton />;
+  }
+
   const formatNum = (n: number | undefined | null, opts: { decimals?: number } = {}) => {
     if (n === undefined || n === null) return '-';
     const d = opts.decimals ?? 0;
@@ -314,6 +330,12 @@ export default function WorldRankingTable() {
           .wr-right-filters .wr-clear-btn {
             width: 100%;
             min-width: 0;
+          }
+          .wr-right-filters .wr-country-filter {
+            width: auto;
+            min-width: 120px;
+            max-width: 170px;
+            justify-self: start;
           }
           .wr-right-filters .wr-clear-btn {
             width: 100%;
@@ -456,26 +478,8 @@ export default function WorldRankingTable() {
             alignItems: 'center',
             justifyContent: { xs: 'flex-start', md: 'flex-end' }
           }}>
-            {/* Position */}
-            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
-              <Select
-                value={filters.positionType || ''}
-                onOpen={handleFilterDropdownOpen}
-                onChange={(e) => setFilters((f) => ({ ...f, positionType: (e.target.value as string) || undefined }))}
-                displayEmpty
-                MenuProps={filterMenuProps}
-                sx={filterSelectSx}
-              >
-                <MenuItem value="">All Position</MenuItem>
-                <MenuItem value="Defender">Defender</MenuItem>
-                <MenuItem value="Midfielder">Midfielder</MenuItem>
-                <MenuItem value="Forward">Forward</MenuItem>
-                <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Year */}
-            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
+             {/* Year */}
+            <FormControl className="wr-filter-control" size="small" sx={{ width: 150 }}>
               <Select
                 value={filters.year || ''}
                 onOpen={handleFilterDropdownOpen}
@@ -492,13 +496,13 @@ export default function WorldRankingTable() {
             </FormControl>
 
             {/* Country */}
-            <FormControl className="wr-filter-control" size="small" sx={{ width: 140 }}>
+            <FormControl className="wr-filter-control wr-country-filter" size="small" sx={{ width: 150 }}>
               <Select
                 value={filters.country || ''}
                 onOpen={handleFilterDropdownOpen}
                 onChange={(e) => setFilters((f) => ({ ...f, country: (e.target.value as string) || undefined }))}
                 displayEmpty
-                MenuProps={filterMenuProps}
+                MenuProps={countryFilterMenuProps}
                 sx={filterSelectSx}
               >
                 <MenuItem value="">All Country</MenuItem>
@@ -507,6 +511,25 @@ export default function WorldRankingTable() {
                 ))}
               </Select>
             </FormControl>
+            {/* Position */}
+            <FormControl className="wr-filter-control" size="small" sx={{ width: 150 }}>
+              <Select
+                value={filters.positionType || ''}
+                onOpen={handleFilterDropdownOpen}
+                onChange={(e) => setFilters((f) => ({ ...f, positionType: (e.target.value as string) || undefined }))}
+                displayEmpty
+                MenuProps={filterMenuProps}
+                sx={filterSelectSx}
+              >
+                <MenuItem value="">All Position</MenuItem>
+                <MenuItem value="Defender">Defender</MenuItem>
+                <MenuItem value="Midfielder">Midfielder</MenuItem>
+                <MenuItem value="Forward">Forward</MenuItem>
+                <MenuItem value="Goalkeeper">Goalkeeper</MenuItem>
+              </Select>
+            </FormControl>
+
+           
 
             {/* Clear */}
             <Box

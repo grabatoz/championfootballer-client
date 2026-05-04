@@ -94,6 +94,7 @@ import type { StaticImageData } from "next/image"
 import imgicon from "@/Components/images/imgicon.png"
 import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
+import ProfileSettingsLoadingSkeleton from "@/Components/loading/ProfileSettingsLoadingSkeleton"
 
 // Removed CountryStateCitySelector; using simple text inputs for Country and City/State.
 
@@ -280,7 +281,7 @@ const buildPlayerDisplayName = (firstName?: string | null, lastName?: string | n
 
 const PlayerProfileCard = () => {
   const dispatch = useDispatch()
-  const { user, token, isAuthenticated } = useAuth()
+  const { user, token, isAuthenticated, loading: authLoading } = useAuth()
   const [step, setStep] = useState(1)
   const [dribbling, setDribbling] = useState(user?.skills?.dribbling)
   const [shooting, setShooting] = useState(user?.skills?.shooting)
@@ -414,6 +415,10 @@ const PlayerProfileCard = () => {
     selectedCountryPhoneRule,
     selectedCountryPhoneDigitsLabel,
   ])
+
+  if (authLoading) {
+    return <ProfileSettingsLoadingSkeleton />;
+  }
 
   // Note: Do not auto-change playing style on position type change.
   // We keep whatever is in DB/user selection; RadioGroup will show none selected

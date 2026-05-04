@@ -8,11 +8,11 @@ import Layer from '@/Components/images/championfootballnewlogo.webp';
 import NewImg from '@/Components/images/Done1.webp';
 import Newimg from '@/Components/images/Done2.webp';
 import mobile from '@/Components/images/mobile.webp';
-import heroPlayers from '@/Components/images/22.png';
-import image9 from '@/Components/images/1stpic.png';
-import image10 from '@/Components/images/2ndpic.png';
-import image11 from '@/Components/images/3rdpic.png';
-import image12 from '@/Components/images/4thpic.png';
+import heroPlayers from '@/Components/images/222.png';
+import image9 from '@/Components/images/1stpicc.png';
+import image10 from '@/Components/images/2ndpicc.png';
+import image11 from '@/Components/images/3rdpicc.png';
+import image12 from '@/Components/images/4thpicc.png';
 import LogoNavbar from './logonavbar';
 
 
@@ -104,15 +104,15 @@ export default function LandingPage() {
               <Box
                 sx={{
                   width: '100%',
-                  maxWidth: { xs: '100%', md: '650px' },
+                  maxWidth: { xs: '100%', md: '750px' },
                   mb: { xs: 2, md: 3 },
                 }}
               >
                 <Image
                   src={heroPlayers}
                   alt="Football Players"
-                  width={730}
-                  height={400}
+                  width={780}
+                  height={500}
                   style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
                   priority
                 />
@@ -397,7 +397,7 @@ export default function LandingPage() {
                 <Typography
                   sx={{
                     fontFamily: 'var(--font-inter), Inter, sans-serif',
-                    fontSize: { xs: '0.98rem', md: '1.05rem' },
+                    fontSize: { xs: '0.98rem', md: '1rem' },
                     lineHeight: 1.1,
                     letterSpacing: '0.01em',
                     color: '#ffff',

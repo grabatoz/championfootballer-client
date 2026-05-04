@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, CircularProgress, MenuItem, Divider, Menu, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography, Paper, Button, MenuItem, Divider, Menu, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronDown, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks';
@@ -16,6 +16,7 @@ import React from 'react';
 import Link from 'next/link';
 import ShirtImg from '@/Components/images/shirtimg.png';
 import CloseButton from '@/Components/CloseButton';
+import LeaderBoardLoadingSkeleton from '@/Components/loading/LeaderBoardLoadingSkeleton';
 
 
 interface Player {
@@ -85,7 +86,8 @@ export default function LeaderBoardPage() {
   // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
     // Prefer backend-computed season-based completion status
-    if ((l as any)?.computedStatus?.isCompleted === true) return true;
+    const computed = l as League & { computedStatus?: { isCompleted?: boolean } };
+    if (computed.computedStatus?.isCompleted === true) return true;
     if ((l as { archived?: boolean })?.archived === true) return true;
 
     // Check explicit completion flags
@@ -510,7 +512,7 @@ export default function LeaderBoardPage() {
       </Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Top 5 Players</Typography>
       {loading ? (
-        <CircularProgress />
+        <LeaderBoardLoadingSkeleton compact />
       ) : !selectedLeague ? (
         <Paper sx={{ p: 2, background: 'rgba(255,255,255,0.06)', color: 'white' }}>
           <Typography variant="body1">No active leagues available for leaderboard.</Typography>

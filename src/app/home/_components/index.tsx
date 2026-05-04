@@ -24,9 +24,32 @@ import {
   // styled
 } from '@mui/material';
 
+const PlayerCardLoadingFallback = () => (
+  <div className="home-player-card-inline-skeleton" aria-hidden="true">
+    <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__avatar" />
+    <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__name" />
+    <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__number" />
+    <div className="home-dashboard-loading-player-core">
+      <div className="home-dashboard-loading-bone home-dashboard-loading-player-core-line" />
+      <div className="home-dashboard-loading-player-core-body">
+        <div className="home-dashboard-loading-bone home-dashboard-loading-player-core-figure" />
+      </div>
+      <div className="home-dashboard-loading-bone home-dashboard-loading-player-core-line home-dashboard-loading-player-core-line--short" />
+    </div>
+    <div className="home-player-card-inline-skeleton__stats">
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+      <div className="home-dashboard-loading-bone home-player-card-inline-skeleton__stat" />
+    </div>
+  </div>
+);
+
 // Lazy load heavy component
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
-  loading: () => <CircularProgress size={40} />,
+  loading: PlayerCardLoadingFallback,
   ssr: false
 });
 
@@ -551,7 +574,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               
               // Get active season number (where isActive === true)
               const seasons = leagueData?.league?.seasons as unknown;
-              const currentSeason = leagueData?.league?.currentSeason as any;
+              const currentSeason = leagueData?.league?.currentSeason as
+                | { seasonNumber?: number }
+                | undefined;
               console.log(`[League ${l.id}] All seasons from backend:`, seasons);
               console.log(`[League ${l.id}] Current season from backend:`, currentSeason);
               
@@ -561,12 +586,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 console.log(`[League ${l.id}] Setting season number to user's season:`, seasonNumberFromDetails);
               } else if (Array.isArray(seasons) && seasons.length > 0) {
                 console.log(`[League ${l.id}] Total seasons found:`, seasons.length);
-                seasons.forEach((s: any) => {
-                  console.log(`[League ${l.id}] Season ${s?.seasonNumber}: isActive=${s?.isActive}`);
+                seasons.forEach((seasonItem) => {
+                  const season = seasonItem as { seasonNumber?: number; isActive?: boolean } | null;
+                  console.log(`[League ${l.id}] Season ${season?.seasonNumber}: isActive=${season?.isActive}`);
                 });
                 
                 // Use the first season from filtered list (user's most recent season)
-                const userSeason = seasons[0];
+                const userSeason = seasons[0] as { seasonNumber?: number } | undefined;
                 console.log(`[League ${l.id}] User's season found:`, userSeason);
                 
                 if (userSeason && typeof userSeason.seasonNumber === 'number') {
@@ -1074,7 +1100,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         onClick={openCreateSeasonConfirm}
            variant="contained"
                    fullWidth
-                   startIcon={<span style={{ fontSize: '20px'}}>+</span>}
                    sx={{
                      bgcolor: '#7f7f7f',
                      color: 'white',
@@ -1089,6 +1114,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                      mx: 'auto',
                      display: 'flex',
                      justifyContent: 'center',
+                     position: 'relative',
                      px: { xs: 2, md: 3 },
                      fontSize: { xs: '15px', sm: '16px', md: '19px' },
                      minHeight: { xs: 42, md: 48 },
@@ -1098,6 +1124,17 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                      textTransform: 'capitalize',
                    }}
         >
+            <Box
+              component="span"
+              sx={{
+                position: 'absolute',
+                left: { xs: 12, md: 16 },
+                fontSize: { xs: '20px', md: '24px' },
+                lineHeight: 1,
+              }}
+            >
+              +
+            </Box>
             {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
         </Button>
       )}

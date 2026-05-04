@@ -7,7 +7,7 @@ import PlayerDashboard from './_components';
 import AuthCheck from '@/Components/AuthCheck';
 import { useAppDispatch } from '@/lib/hooks';
 import { authStorage, type UserProfile, type UserDataShape } from '@/lib/authStorage';
-import { CircularProgress, Box } from '@mui/material';
+import HomeDashboardLoadingSkeleton from '@/Components/loading/HomeDashboardLoadingSkeleton';
 
 // Define proper interfaces matching your auth storage
 interface AuthData {
@@ -145,11 +145,7 @@ const PlayerCardSection: React.FC = () => {
 
   // ✨ Show loading while auth OR token is not ready
   if (!authReady || !tokenReady) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
+    return <HomeDashboardLoadingSkeleton />;
   }
 
   return (

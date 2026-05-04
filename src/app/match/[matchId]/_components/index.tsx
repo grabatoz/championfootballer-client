@@ -8,6 +8,8 @@ import GoalsIcon from '@/Components/images/goal.png';
 import AssistIcon from '@/Components/images/Assist.png';
 import CleanSheetIcon from '@/Components/images/cleansheet.png';
 import { useAuth } from '@/lib/hooks';
+import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
+import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
 const MatchSummary = dynamic(() => import('@/Components/MatchSummary'), {
   loading: () => <CircularProgress />,
   ssr: false
@@ -17,7 +19,7 @@ const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
   ssr: false
 });
 const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam'), {
-  loading: () => <CircularProgress />,
+  loading: () => <ViewTeamPopupLoadingSkeleton />,
   ssr: false
 });
 import ShirtImg from '@/Components/images/shirtimg.png';
@@ -599,9 +601,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         Back to Current Match League
       </Button> */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress />
-        </Box>
+        <MatchResultLoadingSkeleton mode={isEmbeddedInDialog ? 'dialog' : 'page'} />
       ) : !match ? (
         <Typography color="error">Match not found.</Typography>
       ) : (

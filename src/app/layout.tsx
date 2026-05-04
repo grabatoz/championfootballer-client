@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Inter, Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
+import "./bones/registry";
 import { Providers } from "@/lib/providers";
 import AuthCheck from "@/Components/AuthCheck";
 // import Mainbg from '@/Components/images/mainbg.webp'

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
@@ -275,7 +275,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [selectedStateCode, setSelectedStateCode] = useState<string>("")
 
   // Phone country code selector (independent of profile country)
-  const [phoneCountryCode, setPhoneCountryCode] = useState<string>("AE")
+  const [phoneCountryCode, setPhoneCountryCode] = useState<string>("GB")
   const [phoneError, setPhoneError] = useState("")
 
   const selectedPhoneRule = useMemo(
@@ -468,10 +468,18 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   // If we had a state selection we'd derive cities; now we allow free text entry so we don't need the cities list.
   const cities: Array<never> = []
 
-  const isoToFlagEmoji = (isoCode: string): string => {
-    const code = (isoCode || "").toUpperCase()
-    if (!/^[A-Z]{2}$/.test(code)) return ""
-    return code.replace(/[A-Z]/g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+  const getCountryFlagUrl = (isoCode: string): string => {
+    const code = (isoCode || "").toLowerCase()
+    if (!/^[a-z]{2}$/.test(code)) return ""
+    return `https://flagcdn.com/24x18/${code}.png`
+  }
+
+  const normalizeLocationName = (name: string): string => {
+    return name
+      .replace(/^City and County of\s+/i, "")
+      .replace(/^City of\s+/i, "")
+      .replace(/^County of\s+/i, "")
+      .trim()
   }
 
   // Handlers for Select components; store name in registerData, code in local state
@@ -486,7 +494,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const handleStateSelect = (code: string) => {
     setSelectedStateCode(code)
     const s = states.find(s => s.isoCode === code)
-    const name = s?.name || ""
+    const rawName = s?.name || ""
+    const name = normalizeLocationName(rawName) || rawName
     // Store same value for city/state to align with existing backend compatibility.
     setRegisterData(prev => ({ ...prev, state: name, city: name }))
   }
@@ -1037,7 +1046,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 borderRadius: '7px',
                 textTransform: "none",
                 "&:hover": {
-                  background: "#00a77f",
+                  background: "#00cc9c",
                 },
                 "&:disabled": {
                   background: "#00a77f",
@@ -1193,22 +1202,59 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                         }}
                         renderValue={(selected) => {
                           const code = selected as string
-                          const c = countries.find(cc => cc.isoCode === code)
+                          const c = countries.find((cc) => cc.isoCode === code)
+                          const flagUrl = getCountryFlagUrl(code)
                           const phone = c?.phonecode ? `+${c.phonecode}` : ''
                           return (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box component="span" sx={{ color: '#000' }}>
-                                {code} {phone}
+                              {flagUrl ? (
+                                <Box
+                                  component='img'
+                                  src={flagUrl}
+                                  alt={`${code} flag`}
+                                  sx={{
+                                    width: 20,
+                                    height: 15,
+                                    borderRadius: '2px',
+                                    objectFit: 'cover',
+                                    border: '1px solid rgba(0,0,0,0.12)',
+                                  }}
+                                />
+                              ) : null}
+                              <Box component='span' sx={{ color: '#000' }}>
+                                 {phone}
                               </Box>
                             </Box>
                           )
                         }}
                       >
-                        {countries.map(c => (
-                          <MenuItem key={c.isoCode} value={c.isoCode}>
-                            <Box component="span" sx={{ color: '#000' }}>{c.name}</Box>
-                          </MenuItem>
-                        ))}
+                        {countries.map((c) => {
+                          const flagUrl = getCountryFlagUrl(c.isoCode)
+                          return (
+                            <MenuItem key={c.isoCode} value={c.isoCode}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {flagUrl ? (
+                                  <Box
+                                    component='img'
+                                    src={flagUrl}
+                                    alt={`${c.isoCode} flag`}
+                                    sx={{
+                                      width: 20,
+                                      height: 15,
+                                      borderRadius: '2px',
+                                      objectFit: 'cover',
+                                      border: '1px solid rgba(0,0,0,0.12)',
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                ) : null}
+                                <Box component='span' sx={{ color: '#000' }}>
+                                  {c.name} ({c.isoCode}){c.phonecode ? ` +${c.phonecode}` : ''}
+                                </Box>
+                              </Box>
+                            </MenuItem>
+                          )
+                        })}
                       </Select>
                     </InputAdornment>
                   ),
@@ -1351,8 +1397,28 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   renderValue={(selected) => {
                     if (!selected) return <span style={{ color: '#757575' }}>Country/Region</span>
                     const code = selected as string
-                    const c = countries.find(c => c.isoCode === code)
-                    return c?.name || ''
+                    const c = countries.find((country) => country.isoCode === code)
+                    const flagUrl = getCountryFlagUrl(code)
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {flagUrl ? (
+                          <Box
+                            component='img'
+                            src={flagUrl}
+                            alt={`${code} flag`}
+                            sx={{
+                              width: 20,
+                              height: 15,
+                              borderRadius: '2px',
+                              objectFit: 'cover',
+                              border: '1px solid rgba(0,0,0,0.12)',
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : null}
+                        <Box component='span'>{c?.name || ''}</Box>
+                      </Box>
+                    )
                   }}
                   input={<OutlinedInput notched={false} />}
                   sx={registerSelectSx}
@@ -1362,12 +1428,34 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   }}
                   required
                 >
-                  <MenuItem value="" disabled>
+                  <MenuItem value='' disabled>
                     <em>Country/Region</em>
                   </MenuItem>
-                  {countries.map(c => (
-                    <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
-                  ))}
+                  {countries.map((c) => {
+                    const flagUrl = getCountryFlagUrl(c.isoCode)
+                    return (
+                      <MenuItem key={c.isoCode} value={c.isoCode}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {flagUrl ? (
+                            <Box
+                              component='img'
+                              src={flagUrl}
+                              alt={`${c.isoCode} flag`}
+                              sx={{
+                                width: 20,
+                                height: 15,
+                                borderRadius: '2px',
+                                objectFit: 'cover',
+                                border: '1px solid rgba(0,0,0,0.12)',
+                                flexShrink: 0,
+                              }}
+                            />
+                          ) : null}
+                          <Box component='span'>{c.name}</Box>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
             </Box>
@@ -1385,7 +1473,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                       if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
                       const code = selected as string
                       const s = states.find(s => s.isoCode === code)
-                      return s?.name || ''
+                      const rawName = s?.name || ''
+                      return normalizeLocationName(rawName) || rawName
                     }}
                     input={<OutlinedInput notched={false} />}
                     sx={registerSelectSx}
@@ -1400,7 +1489,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                       <em>City/State</em>
                     </MenuItem>
                     {states.map(s => (
-                      <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
+                      <MenuItem key={s.isoCode} value={s.isoCode}>
+                        {normalizeLocationName(s.name) || s.name}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
