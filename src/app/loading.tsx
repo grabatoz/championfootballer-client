@@ -23,88 +23,89 @@ import { usePathname } from 'next/navigation';
 
 export default function Loading() {
   const pathname = usePathname();
+  const resolvedPathname = pathname ?? '';
 
-  if (pathname === '/') {
+  if (resolvedPathname === '/') {
     return <PageLoadingSkeleton />;
   }
 
-  if (pathname === '/home') {
+  if (resolvedPathname === '/home') {
     return <HomeDashboardLoadingSkeleton />;
   }
 
-  if (pathname === '/all-leagues') {
+  if (resolvedPathname === '/all-leagues') {
     return <AllLeaguesLoadingSkeleton />;
   }
 
-  if (pathname === '/all-matches') {
+  if (resolvedPathname === '/all-matches') {
     return <AllMatchesLoadingSkeleton />;
   }
 
-  if (pathname === '/all-players') {
+  if (resolvedPathname === '/all-players') {
     return <AllPlayersLoadingSkeleton />;
   }
 
-  if (pathname === '/rewards') {
+  if (resolvedPathname === '/rewards') {
     return <RewardsLoadingSkeleton />;
   }
 
-  if (pathname === '/trophy-room') {
+  if (resolvedPathname === '/trophy-room') {
     return <TrophyRoomLoadingSkeleton />;
   }
 
-  if (pathname === '/world-ranking') {
+  if (resolvedPathname === '/world-ranking') {
     return <WorldRankingLoadingSkeleton />;
   }
 
-  if (pathname === '/profile') {
+  if (resolvedPathname === '/profile') {
     return <ProfileSettingsLoadingSkeleton />;
   }
 
-  if (pathname === '/dream-team') {
+  if (resolvedPathname === '/dream-team') {
     return <DreamTeamLoadingSkeleton />;
   }
 
-  if (pathname === '/leader-board') {
+  if (resolvedPathname === '/leader-board') {
     return <LeaderBoardLoadingSkeleton />;
   }
 
-  if (pathname === '/contact') {
+  if (resolvedPathname === '/contact') {
     return <ContactPageLoadingSkeleton />;
   }
 
-  if (pathname === '/about' || pathname === '/privacy' || pathname === '/terms') {
+  if (resolvedPathname === '/about' || resolvedPathname === '/privacy' || resolvedPathname === '/terms') {
     return <LegalPageLoadingSkeleton />;
   }
 
-  if (/^\/league\/[^/]+$/.test(pathname)) {
+  if (/^\/league\/[^/]+$/.test(resolvedPathname)) {
     return <LeagueDetailLoadingSkeleton />;
   }
 
-  if (/^\/league\/[^/]+\/trophy-room$/.test(pathname)) {
+  if (/^\/league\/[^/]+\/trophy-room$/.test(resolvedPathname)) {
     return <TrophyRoomLoadingSkeleton />;
   }
 
-  if (/^\/league\/[^/]+\/match$/.test(pathname)) {
+  if (/^\/league\/[^/]+\/match$/.test(resolvedPathname)) {
     return <ScheduleMatchLoadingSkeleton />;
   }
 
-  if (/^\/league\/[^/]+\/match\/[^/]+\/edit$/.test(pathname)) {
+  if (/^\/league\/[^/]+\/match\/[^/]+\/edit$/.test(resolvedPathname)) {
     return <EditMatchPopupLoadingSkeleton mode="page" />;
   }
 
-  if (/^\/league\/[^/]+\/match\/[^/]+\/play$/.test(pathname)) {
+  if (/^\/league\/[^/]+\/match\/[^/]+\/play$/.test(resolvedPathname)) {
     return <MatchResultLoadingSkeleton />;
   }
 
-  if (/^\/player\/[^/]+\/career$/.test(pathname)) {
+  if (/^\/player\/[^/]+\/career$/.test(resolvedPathname)) {
     return <PlayerCareerLoadingSkeleton />;
   }
 
-  if (/^\/player\/[^/]+$/.test(pathname)) {
+  if (/^\/player\/[^/]+$/.test(resolvedPathname)) {
     return <PlayerProfileLoadingSkeleton />;
   }
 
-  if (/^\/match\/[^/]+$/.test(pathname)) {
+  if (/^\/match\/[^/]+$/.test(resolvedPathname)) {
     return <MatchResultLoadingSkeleton />;
   }
 
