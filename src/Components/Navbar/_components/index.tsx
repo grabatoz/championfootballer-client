@@ -2592,7 +2592,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       gap: { xs: 0.5, lg: 1.1 },
       flexWrap: 'nowrap',
       overflow: 'hidden',
-      justifyContent: 'flex-end' ,
+      justifyContent: 'flex-end',
+      minWidth: 0,
+      maxWidth: '100%',
+      flex: 1,
       mt: 0,     // ✅ push links to the right inside this box
     }}>
       {navItems.map(({ label, href }) => {
@@ -2672,9 +2675,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         }}
       >
         <Toolbar sx={{
-          justifyContent: 'space-between', 
+          justifyContent: 'space-between',
+          width: '100%',
+          minWidth: 0,
           minHeight: { xs: '60px', md: '70px' },
-          gap: { xs: 1, md: 2.4 }
+          gap: { xs: 1, md: 2.4 },
+          overflowX: 'hidden'
         }}>
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -2705,6 +2711,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           <Box sx={{
             display: { xs: 'none', lg: 'flex' },
             alignItems: 'center',
+            justifyContent: 'flex-end',
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
             ml: 'auto',              // ✅ push whole nav group to the right
             // pr: 2,                   // optional padding right
             // gap: 1
@@ -4234,4 +4244,3 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 //     console.log('🔍 Login Response Structure:', response);
 //   }
 // };
-

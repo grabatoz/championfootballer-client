@@ -1469,51 +1469,61 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         {/* View toggle row: Home count | Table/Pitch buttons | Away count */}
         <Box
           sx={{
-            display: { xs: 'grid', sm: 'flex' },
-            gridTemplateColumns: { xs: 'minmax(60px,1fr) auto minmax(60px,1fr)', sm: 'none' },
+            display: 'grid',
+            gridTemplateColumns: { xs: 'minmax(0,1fr) minmax(0,1fr)', sm: 'minmax(0,1fr) auto minmax(0,1fr)' },
+            gridTemplateAreas: { xs: '"home away" "toggle toggle"', sm: '"home toggle away"' },
             alignItems: 'center',
             justifyContent: 'center',
-            gap: { xs: 0.5, sm: 4 },
+            gap: { xs: 0.75, sm: 1.5, md: 3 },
             mb: 1.5,
+            width: '100%',
           }}
         >
           <Typography
             sx={{
+              gridArea: 'home',
               fontWeight: 600,
-              fontSize: { xs: '1rem', sm: '1.6rem' },
+              fontSize: { xs: '0.98rem', sm: '1.25rem', md: '1.5rem' },
               color: '#00a77f',
               whiteSpace: 'nowrap',
-              textAlign: { xs: 'left', sm: 'center' },
-              justifySelf: { xs: 'start', sm: 'auto' },
+              textAlign: { xs: 'left', sm: 'right' },
+              justifySelf: { xs: 'start', sm: 'end' },
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {homeTeamName} ({homeTeamGoals ?? 0})
           </Typography>
           <Box
             sx={{
+              gridArea: 'toggle',
               bgcolor: '#fff',
               borderRadius: 0.5,
-              p: { xs: 0.4, sm: 0.75, md: 1 },
-              display: 'flex',
-              gap: { xs: 0.4, sm: 1, md: 1.2 },
-              justifySelf: 'center'
+              p: { xs: 0.35, sm: 0.5, md: 0.75 },
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: { xs: 0.35, sm: 0.6, md: 0.9 },
+              justifySelf: 'center',
+              width: { xs: '100%', sm: 'auto' },
+              maxWidth: { xs: 520, sm: 'none' },
             }}
           >
             <Box
               onClick={() => setViewMode('table')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5, md: 2 },
-                px: { xs: 0.7, sm: 1.5, md: 3 }, py: { xs: 0.3, sm: 0.5, md: 0.95 },
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.6, sm: 0.9, md: 1.2 },
+                px: { xs: 0.7, sm: 1.2, md: 1.8 }, py: { xs: 0.45, sm: 0.55, md: 0.75 },
                 border: { xs: '0.5px solid #212121', md: '1px solid #212121' },
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'table' ? '#00a77f' : 'transparent',
-                minHeight: { md: 58 },
-                minWidth: { md: 228 },
+                minHeight: { xs: 42, sm: 48, md: 54 },
+                minWidth: { xs: 0, sm: 150, md: 180 },
               }}
             >
-              <img src={TableViewImg.src} alt="table" width={16} height={16} style={{ width: 'clamp(16px, 1.6vw, 30px)', height: 'clamp(16px, 1.6vw, 30px)', objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem', md: '2rem' }, fontWeight: 600, color: viewMode === 'table' ? '#fff' : '#555', lineHeight: 1 }}>
+              <img src={TableViewImg.src} alt="table" width={16} height={16} style={{ width: 'clamp(15px, 1.4vw, 22px)', height: 'clamp(15px, 1.4vw, 22px)', objectFit: 'contain', filter: viewMode === 'table' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.85rem', sm: '1.05rem', md: '1.2rem' }, fontWeight: 700, color: viewMode === 'table' ? '#fff' : '#555', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
                 Table
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
               </Typography>
@@ -1521,18 +1531,18 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
             <Box
               onClick={() => setViewMode('pitch')}
               sx={{
-                display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.5, md: 2 },
-                px: { xs: 0.7, sm: 1.5, md: 3 }, py: { xs: 0.3, sm: 0.5, md: 0.95 },
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.6, sm: 0.9, md: 1.2 },
+                px: { xs: 0.7, sm: 1.2, md: 1.8 }, py: { xs: 0.45, sm: 0.55, md: 0.75 },
                 border: { xs: '0.5px solid #212121', md: '1px solid #212121' },
                 borderRadius: 1,
                 cursor: 'pointer',
                 bgcolor: viewMode === 'pitch' ? '#00a77f' : 'transparent',
-                minHeight: { md: 58 },
-                minWidth: { md: 228 },
+                minHeight: { xs: 42, sm: 48, md: 54 },
+                minWidth: { xs: 0, sm: 150, md: 180 },
               }}
             >
-              <img src={PitchViewImg.src} alt="pitch" width={16} height={16} style={{ width: 'clamp(16px, 1.6vw, 30px)', height: 'clamp(16px, 1.6vw, 30px)', objectFit: 'contain', filter: viewMode === 'pitch' ? 'none' : 'brightness(0)' }} />
-              <Typography sx={{ fontSize: { xs: '0.72rem', sm: '1.20rem', md: '2rem' }, fontWeight: 600, color: viewMode === 'pitch' ? '#fff' : '#555', lineHeight: 1 }}>
+              <img src={PitchViewImg.src} alt="pitch" width={16} height={16} style={{ width: 'clamp(15px, 1.4vw, 22px)', height: 'clamp(15px, 1.4vw, 22px)', objectFit: 'contain', filter: viewMode === 'pitch' ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
+              <Typography sx={{ fontSize: { xs: '0.85rem', sm: '1.05rem', md: '1.2rem' }, fontWeight: 700, color: viewMode === 'pitch' ? '#fff' : '#555', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
                 Pitch
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> View</Box>
               </Typography>
@@ -1540,12 +1550,16 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </Box>
           <Typography
             sx={{
+              gridArea: 'away',
               fontWeight: 600,
-              fontSize: { xs: '1rem', sm: '1.6rem' },
+              fontSize: { xs: '0.98rem', sm: '1.25rem', md: '1.5rem' },
               color: '#c95c1a',
               whiteSpace: 'nowrap',
-              textAlign: { xs: 'right', sm: 'center' },
-              justifySelf: { xs: 'end', sm: 'auto' },
+              textAlign: { xs: 'right', sm: 'left' },
+              justifySelf: { xs: 'end', sm: 'start' },
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {awayTeamName} ({awayTeamGoals ?? 0})

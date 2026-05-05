@@ -183,6 +183,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           backgroundAttachment: 'fixed',
           minHeight: '100vh',
           width: '100%',
+          maxWidth: '100%',
+          overflowX: 'hidden',
           backgroundColor: 'black',
         }}
       >

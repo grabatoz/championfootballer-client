@@ -50,6 +50,7 @@ export default function LandingPage() {
         sx={{
           width: '100%',
           backgroundColor: '#101010',
+          overflowX: 'hidden',
           px: { xs: 2, md: 14 },
           py: { xs: 4, md: 2},
         }}
@@ -71,7 +72,8 @@ export default function LandingPage() {
                   mb: { xs: 1.5, md: -4 },
                   mt: { xs: 0, md: 1 },
                   textTransform: 'uppercase',
-                  width: { xs: '100%', md: '817px' },
+                  width: '100%',
+                  maxWidth: { md: '817px' },
                   height: { xs: 'auto', md: '81px' },
                   whiteSpace: { xs: 'normal', md: 'nowrap' },
                   wordBreak: 'break-word',
@@ -91,7 +93,8 @@ export default function LandingPage() {
                   lineHeight: { xs: '1.4', md: '23px' },  
                   letterSpacing: '0% !important',
                   color: '#FFFFFF',
-                  width: { xs: '100%', md: '1152px' },
+                  width: '100%',
+                  maxWidth: { md: '100%' },
                   height: { xs: 'auto', md: '49px' },
                   mb: { xs: 2.5, md: 2 },
                 }}
@@ -125,10 +128,11 @@ export default function LandingPage() {
                   flexDirection: 'row',
                   alignItems: 'baseline',
                   mt: { xs: 0.5, md: -3.5 },
-                  whiteSpace: 'nowrap',
+                  whiteSpace: { xs: 'normal', md: 'nowrap' },
+                  flexWrap: { xs: 'wrap', md: 'nowrap' },
                   gap: 0,
-                  width: { xs: 'auto', md: '826px' },
-                  maxWidth: '100%',
+                  width: '100%',
+                  maxWidth: { xs: '100%', md: '826px' },
                   height: { xs: 'auto', md: '90px' }
                 }}
               >
@@ -328,6 +332,7 @@ export default function LandingPage() {
       <Box
         sx={{
           width: '100%',
+          overflowX: 'hidden',
           
           position: 'relative',
           background: '#101010',

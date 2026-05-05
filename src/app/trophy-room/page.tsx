@@ -2831,7 +2831,7 @@ export default function GlobalTrophyRoom() {
               display: 'flex',
               flexDirection: 'row',
               flexWrap: { xs: 'nowrap', sm: 'nowrap' },
-              gap: { xs: 1, sm: 2 },
+              gap: { xs: 1, sm: 0.8 },
               mt: { xs: 0.6, sm: 2 },
               position: { xs: 'relative', sm: (filter === 'my' ? 'relative' : 'absolute') },
               left: { xs: 'auto', sm: (filter === 'my' ? 'auto' : '50%') },

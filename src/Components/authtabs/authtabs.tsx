@@ -501,11 +501,6 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setRegisterData(prev => ({ ...prev, state: name, city: name }))
   }
 
-  // Single location input handler: store the value in both state and city for backward compatibility.
-  const handleLocationInput = (value: string) => {
-    setRegisterData(prev => ({ ...prev, city: value, state: value }))
-  }
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("[AuthTabs] Attempting login with:", loginData)
@@ -995,7 +990,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
         <Box
           component="form"
           onSubmit={handleLoginSubmit}
-          sx={{ width: { sx: "100%", sm: "60%", md: "70%" }, maxWidth: 33200, marginLeft: 'auto' }}
+          sx={{ width: { xs: "100%", sm: "60%", md: "70%" }, maxWidth: 420, marginLeft: 'auto' }}
         >
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
