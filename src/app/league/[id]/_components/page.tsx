@@ -4143,7 +4143,7 @@ export default function LeagueDetailPage() {
                                                                         {isAdmin ? (
                                                                             <>
                                                                                 <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>
-                                                                                    For Admin Only
+                                                                                     Admin Only
                                                                                 </Typography>
                                                                                 <Button
                                                                                     onClick={(e) => {
@@ -4684,7 +4684,7 @@ export default function LeagueDetailPage() {
 
                                                                     {/* Right Admin Column */}
                                                                     <Box sx={{
-                                                                        width: '95px',
+                                                                        width: '100px',
                                                                         borderLeft: '2px solid #fff',
                                                                         borderTop: 'none',
                                                                         p: 1,
@@ -4696,7 +4696,7 @@ export default function LeagueDetailPage() {
                                                                         {isAdmin ? (
                                                                             <>
                                                                                 <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' , ml:'5px' }}>
-                                                                                    For Admin Only
+                                                                                     Admin Only
                                                                                 </Typography>
                                                                                 {/* Add Score Button */}
                                                                                 <Button

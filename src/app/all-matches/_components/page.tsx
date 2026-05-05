@@ -2040,7 +2040,7 @@ export default function AllMatches() {
                                     minHeight: { xs: 44, md: 48 },
                                     height: { xs: 44, md: 48 },
                                     '&:hover': { bgcolor: '#0388E3' },
-                                    width: { xs: '100%', sm: '240px' },
+                                    width: { xs: '100%', sm: '210px' },
                                     borderRadius: 2,
                                     py: { xs: 0.75, md: 1 },
                                     px: { xs: 2.5, md: 3 },
@@ -2050,7 +2050,7 @@ export default function AllMatches() {
                                 }}
                             >
                                 <Plus size={22} style={{ marginRight: 6 }} />
-                                Create New Match
+                                 New Match
                             </Button>
                             {/* <TextField
                                 label="Enter invite code"
@@ -2109,7 +2109,7 @@ export default function AllMatches() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
-                                                                        width: { xs: '100%', sm: '240px' },
+                                                                        width: { xs: '100%', sm: '210px' },
 
                                     minWidth: { xs: 0, sm: 'unset', md: 'unset' },
                                     textAlign: { xs: 'left', md: 'left' },
@@ -2311,7 +2311,7 @@ export default function AllMatches() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
-                                                                       width: { xs: '100%', sm: '240px' },
+                                                                       width: { xs: '100%', sm: '210px' },
 
                                     minWidth: { xs: 0, sm: 'unset', md: 'unset' },
                                     textAlign: { xs: 'left', md: 'left' },
@@ -2901,10 +2901,10 @@ export default function AllMatches() {
                                                 </Box>
 
                                                 {/* Right Admin Column */}
-                                                <Box sx={{ width: '95px', borderLeft: '2px solid #fff', borderTop: 'none', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+                                                <Box sx={{ width: '100px', borderLeft: '2px solid #fff', borderTop: 'none', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     {isAdmin ? (
                                                         <>
-                                                            <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}>For Admin Only</Typography>
+                                                            <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}> Admin Only</Typography>
                                                             <Button
                                                                 onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(true); setMatchStatsOpen(true); }}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
@@ -3157,7 +3157,7 @@ export default function AllMatches() {
                                             <Box sx={{ width: '95px', borderLeft: '2px solid #fff', borderTop: 'none', pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
                                                 {isAdmin ? (
                                                     <>
-                                                        <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>For Admin Only</Typography>
+                                                        <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}> Admin Only</Typography>
                                                         <Button
                                                             onClick={(e) => { e.stopPropagation(); setEditMatchLeagueId(String(match.leagueId)); setEditMatchId(match.id); setEditMatchOpen(true); }}
                                                             disabled={!league?.active || match.archived}

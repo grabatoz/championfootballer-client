@@ -96,6 +96,7 @@ type XPStarMilestoneCardProps = {
   size?: number;
   width?: number;
   height?: number;
+  colorOverride?: string;
 };
 
 export default function XPStarMilestoneCard({
@@ -104,6 +105,7 @@ export default function XPStarMilestoneCard({
   size = 56,
   width,
   height,
+  colorOverride,
 }: XPStarMilestoneCardProps) {
   const parsedXP = Number(xp);
   const tier = getXPTier(parsedXP);
@@ -117,7 +119,7 @@ export default function XPStarMilestoneCard({
         width: resolvedWidth,
         height: resolvedHeight,
         display: 'inline-block',
-        bgcolor: tier.starColor,
+        bgcolor: colorOverride ?? tier.starColor,
         WebkitMaskImage: `url(${starrImg.src})`,
         WebkitMaskRepeat: 'no-repeat',
         WebkitMaskPosition: 'center',

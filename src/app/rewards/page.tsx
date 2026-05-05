@@ -715,12 +715,12 @@ export default function RewardsPage() {
           titleRowSx={{ gap: { xs: 1.25, md: 1.75 } }}
           titleLeft={(
             <Box sx={{ mt: { xs: -3, md: -6 }, display: 'flex', alignItems: 'center' }}>
-              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} colorOverride="#ffc000" />
             </Box>
           )}
           titleRight={(
             <Box sx={{ mt: { xs: -3, md: -6 }, display: 'flex', alignItems: 'center' }}>
-              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} colorOverride="#ffc000" />
             </Box>
           )}
           titleSx={{

@@ -386,7 +386,7 @@ const TrophyCard = ({
             fontWeight: 800,
             fontSize: isLarge
               ? { xs: '1rem', sm: '1.2rem', md: '1.6rem' }
-              : { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+              : { xs: '0.72rem', sm: '0.82rem', md: '0.9rem' },
             letterSpacing: 1,
             textTransform: 'uppercase',
             mb: { xs: 0.7, sm: 1.5 },
@@ -409,7 +409,7 @@ const TrophyCard = ({
               color: 'rgba(255,255,255,0.8)',
               fontSize: isLarge
                 ? { xs: '0.75rem', sm: '0.85rem', md: '1.05rem' }
-                : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
+                : { xs: '0.58rem', sm: '0.68rem', md: '0.74rem' },
               lineHeight: 1.4,
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -466,7 +466,7 @@ const TrophyCard = ({
             fontWeight: 900,
             fontSize: isLarge
               ? { xs: '1rem', sm: '1.1rem', md: '1.5rem' }
-              : { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
+              : { xs: '0.72rem', sm: '0.82rem', md: '0.92rem' },
             py: isLarge ? { xs: 1, sm: 1.5 } : { xs: 0.75, sm: 1.1 },
             borderRadius: '0',
             borderBottomLeftRadius: '6px',
@@ -2814,7 +2814,7 @@ export default function GlobalTrophyRoom() {
                   <Typography sx={{ fontSize: '0.92rem', fontWeight: 300, color: 'white' }}>
                     Last Updated:
                   </Typography>
-                  <Typography sx={{ fontSize: '0.92rem', fontWeight: 400, color: 'white' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 400, color: 'white' }}>
                     {lastUpdatedLabel}
                   </Typography>
                 </Box>
@@ -2834,7 +2834,7 @@ export default function GlobalTrophyRoom() {
                     <Typography sx={{ fontSize: '1rem', fontWeight: 300, color: 'white' }}>
                       Last Updated:
                     </Typography>
-                    <Typography sx={{ fontSize: '0.92rem', fontWeight: 400, color: 'white' }}>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 400, color: 'white' }}>
                       {lastUpdatedLabel}
                     </Typography>
                   </Box>
