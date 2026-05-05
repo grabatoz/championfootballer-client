@@ -2526,7 +2526,8 @@ export default function GlobalTrophyRoom() {
                     flexShrink: 1,
                     minWidth: 0,
                     color: 'white',
-                    mt: -1,
+                    mt: 1.3,
+                    mb:2.8
                   }}
                 >
                   {user?.firstName || ''} {user?.lastName || ''}
@@ -2563,18 +2564,20 @@ export default function GlobalTrophyRoom() {
                     gap: 0.5,
                   }}
                   endIcon={
-                    <Box
-                      component="span"
-                      sx={{
-                        width: 0,
-                        height: 0,
-                        borderLeft: { xs: '6px solid transparent', sm: '10px solid transparent' },
-                        borderRight: { xs: '6px solid transparent', sm: '10px solid transparent' },
-                        borderTop: { xs: '10px solid #FFFFFF', sm: '16px solid #FFFFFF' },
-                        display: 'inline-block',
-                        ml: 0.5
-                      }}
-                    />
+                      <Box
+                                                                                component="span"
+                                                                                sx={{
+                                                                                    width: 0,
+                                                                                    height: 0,
+                                                                                    borderLeft: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                                                                                    borderRight: { xs: '6px solid transparent', sm: '10px solid transparent' },
+                                                                                    borderTop: { xs: '10px solid #FFFFFF', sm: '16px solid #FFFFFF' },
+                                                                                    display: 'inline-block',
+                                                                                    ml: 0.5,
+                    mr:4
+
+                                                                                }}
+                                                                            />
                   }
                 >
                   <Box

@@ -15,7 +15,7 @@ function LogoNavbar() {
           display: 'flex',
           justifyContent: 'flex-start',
           py: 1,
-          px: { xs: 2, md: 14 }
+          px: { xs: 2, md: 7 }
         }}
       >
         <Box sx={{ width: { xs: 250, sm: 340, md: 700 } }}>
@@ -31,7 +31,7 @@ function LogoNavbar() {
       </Box>
       
       {/* Orange Bottom Bar */}
-      <Box sx={{ px: { xs: 2, md: 14 }, py: 1, width: '100%', backgroundColor: '#101010' }}>
+      <Box sx={{ px: { xs: 2, md: 7 }, py: 1, width: '100%', backgroundColor: '#101010' }}>
         <Box
           sx={{
             width: '100%',

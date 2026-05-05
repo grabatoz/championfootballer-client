@@ -1128,7 +1128,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               component="span"
               sx={{
                 position: 'absolute',
-                left: { xs: 12, md: 16 },
+                left: { xs: 12, md: 22.5 },
                 fontSize: { xs: '20px', md: '24px' },
                 lineHeight: 1,
               }}
@@ -2018,7 +2018,7 @@ export default function PlayerDashboard() {
                     component="span"
                     sx={{
                       position: 'absolute',
-                      left: { xs: 12, md: 16 },
+                      left: { xs: 12, md: 22.5 },
                       fontSize: { xs: '20px', md: '24px' },
                       lineHeight: 1,
                     }}

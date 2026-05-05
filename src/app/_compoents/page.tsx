@@ -51,7 +51,7 @@ export default function LandingPage() {
           width: '100%',
           backgroundColor: '#101010',
           overflowX: 'hidden',
-          px: { xs: 2, md: 14 },
+          px: { xs: 2, md: 7 },
           py: { xs: 4, md: 2},
         }}
       >
@@ -89,10 +89,10 @@ export default function LandingPage() {
                   fontFamily: 'var(--font-inter), Inter, sans-serif !important',
                   fontWeight: '500 !important',
                   fontSize: { xs: '0.86rem', md: '18px' },
-                  fontStyle: 'italic !important',
+                  // fontStyle: 'italic !important',
                   lineHeight: { xs: '1.4', md: '23px' },  
                   letterSpacing: '0% !important',
-                  color: '#FFFFFF',
+                  color: 'orange',
                   width: '100%',
                   maxWidth: { md: '100%' },
                   height: { xs: 'auto', md: '49px' },

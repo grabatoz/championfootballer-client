@@ -3524,28 +3524,43 @@ function AllLeagues() {
               }}>+ Create New League</Button>
               
               {/* Grouped Invite Code + Join Button */}
-              <Box sx={{ display: 'flex', alignItems: 'stretch', width: { xs: '100%', sm: 'auto' } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  width: { xs: '100%', sm: 300, md: 300 },
+                  overflow: 'hidden',
+                }}
+              >
                 <TextField 
                   placeholder="Enter invite code" 
                   value={inviteCode} 
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())} 
                   size="small"
+                  variant="outlined"
                   autoComplete="off" 
                   sx={{
-                    width: { xs: '62%', sm: 160 , md:160  },
-                    '& .MuiOutlinedInput-root': { 
-                      color: '#333', 
-                      backgroundColor: 'white', 
-                      borderRadius: '4px 0 0 4px',
-                      '& input': { padding: '10px 14px' }, 
-                      '& fieldset': { borderColor: 'rgba(0,0,0,0.2)', borderRight: 'none' },
-                      '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.3)' }, 
-                      '&.Mui-focused fieldset': { borderColor: 'rgba(0,0,0,0.4)' }
+                    flex: 1,
+                    minWidth: 0,
+                    backgroundColor: '#fff',
+                    borderRadius: '6px 0 0 6px',
+                    '& .MuiOutlinedInput-root': {
+                      color: '#111',
+                      height: { xs: 42, md: 42 },
+                      // borderRadius: '12px 0 0 12px',
+                      '& fieldset': { border: 'none' },
+                      '&:hover fieldset': { border: 'none' },
+                      '&.Mui-focused fieldset': { border: 'none' },
+                    },
+                    '& .MuiInputBase-input': {
+                      padding: '0 14px',
+                      height: '42px',
+                      fontSize: { xs: '0.85rem', md: '0.95rem' },
                     },
                     '& .MuiInputBase-input::placeholder': {
-                      color: 'rgba(0,0,0,0.4)',
+                      color: 'rgba(0,0,0,0.55)',
                       opacity: 1,
-                      fontSize: { xs: '13px', md: '18px' }
+                      fontSize: { xs: '0.82rem', md: '0.9rem' },
                     }
                   }} 
                 />
@@ -3562,9 +3577,10 @@ function AllLeagues() {
                     fontSize: { xs: '15px', md: '18px' },
                     '&:hover': { bgcolor: '#008c7a' },
                     '&:disabled': { bgcolor: '#00A896', opacity: 0.6 },
-                    borderRadius: '0 4px 4px 0',
-                    width: { xs: '38%', sm: 'auto' },
-                    px: 1,
+                    borderRadius: '0 6px 6px 0',
+                    minWidth: { xs: 110, sm: 124 },
+                    height: { xs: 42, md: 42 },
+                    px: { xs: 1.5, sm: 2 },
                     textTransform: 'none',
                     whiteSpace: 'nowrap'
                   }}
