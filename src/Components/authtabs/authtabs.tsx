@@ -1470,51 +1470,38 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
             <Box>
               <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Select City/State</Typography>
-              {isDesktop ? (
-                <FormControl fullWidth>
-                  <Select
-                    id="state-select"
-                    value={selectedStateCode}
-                    onChange={(e) => handleStateSelect(e.target.value as string)}
-                    displayEmpty
-                    renderValue={(selected) => {
-                      if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
-                      const code = selected as string
-                      const s = states.find(s => s.isoCode === code)
-                      const rawName = s?.name || ''
-                      return normalizeLocationName(rawName) || rawName
-                    }}
-                    input={<OutlinedInput notched={false} />}
-                    sx={registerSelectSx}
-                    MenuProps={{
-                      ...dropdownMenuBaseProps,
-                      PaperProps: { sx: dropdownPaperBaseSx },
-                    }}
-                    required
-                    disabled={!selectedCountryCode}
-                  >
-                    <MenuItem value="" disabled>
-                      <em>City/State</em>
-                    </MenuItem>
-                    {states.map(s => (
-                      <MenuItem key={s.isoCode} value={s.isoCode}>
-                        {normalizeLocationName(s.name) || s.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              ) : (
-                <TextField
-                  fullWidth
-                  placeholder="City / State"
-                  name="location"
-                  value={registerData.city}
-                  onChange={(e) => handleLocationInput(e.target.value)}
+              <FormControl fullWidth>
+                <Select
+                  id="state-select"
+                  value={selectedStateCode}
+                  onChange={(e) => handleStateSelect(e.target.value as string)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
+                    const code = selected as string
+                    const s = states.find(s => s.isoCode === code)
+                    const rawName = s?.name || ''
+                    return normalizeLocationName(rawName) || rawName
+                  }}
+                  input={<OutlinedInput notched={false} />}
+                  sx={registerSelectSx}
+                  MenuProps={{
+                    ...dropdownMenuBaseProps,
+                    PaperProps: { sx: dropdownPaperBaseSx },
+                  }}
                   required
-                  sx={registerInputSx}
-                  helperText="Enter your city, town or state"
-                />
-              )}
+                  disabled={!selectedCountryCode || states.length === 0}
+                >
+                  <MenuItem value="" disabled>
+                    <em>City/State</em>
+                  </MenuItem>
+                  {states.map((s) => (
+                    <MenuItem key={s.isoCode} value={s.isoCode}>
+                      {normalizeLocationName(s.name) || s.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
 
             {/* TERMS */}
