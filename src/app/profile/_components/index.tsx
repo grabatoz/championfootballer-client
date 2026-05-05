@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
 import { useState, useEffect, useRef, useMemo } from "react"
@@ -35,46 +35,7 @@ import {
   Select,
   InputAdornment,
 } from "@mui/material"
-import { Country } from "country-state-city"
-// Lightweight country list (can be expanded or sourced externally later)
-const countryOptions = [
-  "United Kingdom","United States","Canada","Australia","Germany","France","Spain","Italy","Netherlands","Brazil","Argentina","Portugal","Belgium","Sweden","Norway","Denmark","Finland","Switzerland","Austria","Ireland","Turkey","Japan","South Korea","China","India","Pakistan","Saudi Arabia","United Arab Emirates","South Africa","Nigeria","Mexico"
-]
-
-// Country → list of major cities / states for auto-filter
-const countryCityMap: Record<string, string[]> = {
-  "United Kingdom": ["London","Manchester","Birmingham","Liverpool","Leeds","Glasgow","Edinburgh","Bristol","Cardiff","Belfast","Sheffield","Newcastle","Nottingham","Leicester","Southampton"],
-  "United States": ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose","Austin","Jacksonville","Miami","Seattle","Denver"],
-  "Canada": ["Toronto","Vancouver","Montreal","Calgary","Edmonton","Ottawa","Winnipeg","Quebec City","Hamilton","Halifax"],
-  "Australia": ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Gold Coast","Canberra","Newcastle","Hobart","Darwin"],
-  "Germany": ["Berlin","Munich","Hamburg","Frankfurt","Cologne","Stuttgart","Düsseldorf","Dortmund","Leipzig","Dresden"],
-  "France": ["Paris","Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Montpellier","Bordeaux","Lille"],
-  "Spain": ["Madrid","Barcelona","Valencia","Seville","Zaragoza","Malaga","Bilbao","Alicante","Cordoba","Granada"],
-  "Italy": ["Rome","Milan","Naples","Turin","Palermo","Genoa","Bologna","Florence","Venice","Verona"],
-  "Netherlands": ["Amsterdam","Rotterdam","The Hague","Utrecht","Eindhoven","Groningen","Tilburg","Almere","Breda","Nijmegen"],
-  "Brazil": ["São Paulo","Rio de Janeiro","Brasília","Salvador","Fortaleza","Belo Horizonte","Curitiba","Manaus","Recife","Porto Alegre"],
-  "Argentina": ["Buenos Aires","Córdoba","Rosario","Mendoza","La Plata","San Miguel de Tucumán","Mar del Plata","Salta","Santa Fe"],
-  "Portugal": ["Lisbon","Porto","Braga","Coimbra","Funchal","Setúbal","Aveiro","Faro","Évora"],
-  "Belgium": ["Brussels","Antwerp","Ghent","Charleroi","Liège","Bruges","Namur","Leuven","Mons"],
-  "Sweden": ["Stockholm","Gothenburg","Malmö","Uppsala","Västerås","Örebro","Linköping","Helsingborg","Norrköping"],
-  "Norway": ["Oslo","Bergen","Stavanger","Trondheim","Drammen","Fredrikstad","Kristiansand","Tromsø"],
-  "Denmark": ["Copenhagen","Aarhus","Odense","Aalborg","Frederiksberg","Esbjerg","Randers","Kolding"],
-  "Finland": ["Helsinki","Espoo","Tampere","Vantaa","Oulu","Turku","Jyväskylä","Lahti","Kuopio"],
-  "Switzerland": ["Zurich","Geneva","Basel","Bern","Lausanne","Winterthur","Lucerne","St. Gallen"],
-  "Austria": ["Vienna","Graz","Linz","Salzburg","Innsbruck","Klagenfurt","Villach","Wels"],
-  "Ireland": ["Dublin","Cork","Limerick","Galway","Waterford","Drogheda","Dundalk","Swords"],
-  "Turkey": ["Istanbul","Ankara","Izmir","Bursa","Antalya","Adana","Konya","Gaziantep"],
-  "Japan": ["Tokyo","Osaka","Yokohama","Nagoya","Sapporo","Kobe","Kyoto","Fukuoka","Hiroshima"],
-  "South Korea": ["Seoul","Busan","Incheon","Daegu","Daejeon","Gwangju","Suwon","Ulsan"],
-  "China": ["Beijing","Shanghai","Guangzhou","Shenzhen","Chengdu","Hangzhou","Wuhan","Nanjing","Xi'an"],
-  "India": ["Mumbai","Delhi","Bangalore","Hyderabad","Chennai","Kolkata","Pune","Ahmedabad","Jaipur","Lucknow"],
-  "Pakistan": ["Karachi","Lahore","Islamabad","Rawalpindi","Faisalabad","Multan","Peshawar","Quetta","Sialkot","Hyderabad"],
-  "Saudi Arabia": ["Riyadh","Jeddah","Mecca","Medina","Dammam","Khobar","Tabuk","Abha"],
-  "United Arab Emirates": ["Dubai","Abu Dhabi","Sharjah","Ajman","Ras Al Khaimah","Fujairah","Al Ain"],
-  "South Africa": ["Johannesburg","Cape Town","Durban","Pretoria","Port Elizabeth","Bloemfontein","Nelspruit"],
-  "Nigeria": ["Lagos","Abuja","Kano","Ibadan","Port Harcourt","Benin City","Kaduna","Enugu"],
-  "Mexico": ["Mexico City","Guadalajara","Monterrey","Puebla","Tijuana","León","Cancún","Mérida","Querétaro"],
-}
+import { Country, State } from "country-state-city"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile, deleteProfilePicture } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
@@ -99,7 +60,7 @@ import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
 import ProfileSettingsLoadingSkeleton from "@/Components/loading/ProfileSettingsLoadingSkeleton"
 
-// Removed CountryStateCitySelector; using simple text inputs for Country and City/State.
+// Country/State dropdowns are powered by country-state-city for parity with join/register flow.
 
 
 // ===== THEME (brand palette reused) =====
@@ -281,6 +242,14 @@ const getCountryFlagUrl = (isoCode: string): string => {
   return `https://flagcdn.com/24x18/${code}.png`
 }
 
+const normalizeLocationName = (name: string): string => {
+  return String(name || "")
+    .replace(/^City and County of\s+/i, "")
+    .replace(/^City of\s+/i, "")
+    .replace(/^County of\s+/i, "")
+    .trim()
+}
+
 // Shape of possible API error objects (optional)
 // interface ApiError {
 //   message?: string
@@ -315,6 +284,19 @@ const PlayerProfileCard = () => {
   const [city, setCity] = useState(user?.city || "")
   const [phone, setPhone] = useState(user?.phone || "")
   const phoneCountries = useMemo(() => Country.getAllCountries(), [])
+  const profileCountries = useMemo(() => Country.getAllCountries(), [])
+  const selectedProfileCountryCode = useMemo(() => {
+    const normalizedCountry = String(country || "").trim().toLowerCase()
+    if (!normalizedCountry) return ""
+    const matched = profileCountries.find(
+      (c) => String(c.name || "").trim().toLowerCase() === normalizedCountry
+    )
+    return matched?.isoCode || ""
+  }, [country, profileCountries])
+  const profileStates = useMemo(
+    () => (selectedProfileCountryCode ? State.getStatesOfCountry(selectedProfileCountryCode) : []),
+    [selectedProfileCountryCode]
+  )
   const phoneCountryStorageKey = useMemo(
     () => `profilePhoneCountryCode:${String(user?.id || "me")}`,
     [user?.id]
@@ -844,7 +826,7 @@ const PlayerProfileCard = () => {
   //       dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
   //       dispatch(syncWithStorage())
 
-  //       // Update PlayerCard’s localStorage readers
+  //       // Update PlayerCardâ€™s localStorage readers
   //       localStorage.setItem("avatar_url", newUrl)
   //       localStorage.setItem("avatar_v", String(Date.now()))
   //     }
@@ -1166,18 +1148,17 @@ const PlayerProfileCard = () => {
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Country/Region</Typography>
                             <StyledTextField
                               size="small"
-                              value={country}
+                              value={selectedProfileCountryCode}
                               select
                               onChange={e => {
-                                const nextCountry = e.target.value
-                                setCountry(nextCountry)
+                                const nextCountryCode = e.target.value
+                                const matchedCountry = profileCountries.find((c) => c.isoCode === nextCountryCode)
+                                const nextCountryName = matchedCountry?.name || ""
+                                setCountry(nextCountryName)
                                 setStateProvince("")
                                 setCity("")
-                                const matchedPhoneCountry = phoneCountries.find(
-                                  (c) => String(c.name || "").trim().toLowerCase() === String(nextCountry || "").trim().toLowerCase()
-                                )
-                                if (matchedPhoneCountry?.isoCode) {
-                                  setPhoneCountryCode(matchedPhoneCountry.isoCode)
+                                if (matchedCountry?.isoCode) {
+                                  setPhoneCountryCode(matchedCountry.isoCode)
                                 }
                               }}
                               placeholder="Select country"
@@ -1185,46 +1166,47 @@ const PlayerProfileCard = () => {
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
                               SelectProps={{ MenuProps: selectMenuProps }}
                             >
-                              {countryOptions.map(c => (
-                                <MenuItem key={c} value={c}>{c}</MenuItem>
+                              <MenuItem value="" disabled>
+                                Select country
+                              </MenuItem>
+                              {profileCountries.map((c) => (
+                                <MenuItem key={c.isoCode} value={c.isoCode}>
+                                  {c.name}
+                                </MenuItem>
                               ))}
                             </StyledTextField>
                           </Grid>
                           <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>City/State</Typography>
-                            {country && countryCityMap[country] ? (
-                              <StyledTextField
-                                size="small"
-                                value={city}
-                                select
-                                onChange={e => {
-                                  const v = e.target.value
-                                  setCity(v)
-                                  setStateProvince(v)
-                                }}
-                                placeholder="Select city"
-                                fullWidth
-                                sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
-                                SelectProps={{ MenuProps: selectMenuProps }}
-                              >
-                                {countryCityMap[country].map(c => (
-                                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                                ))}
-                              </StyledTextField>
-                            ) : (
-                              <StyledTextField
-                                size="small"
-                                value={city}
-                                onChange={e => {
-                                  const v = e.target.value
-                                  setCity(v)
-                                  setStateProvince(v)
-                                }}
-                                placeholder={country ? "Type your city" : "Select country first"}
-                                fullWidth
-                                sx={{ mb: 1 }}
-                              />
-                            )}
+                            <StyledTextField
+                              size="small"
+                              value={city || stateProvince}
+                              select
+                              onChange={(e) => {
+                                const v = e.target.value
+                                setCity(v)
+                                setStateProvince(v)
+                              }}
+                              placeholder="Select city/state"
+                              fullWidth
+                              sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
+                              SelectProps={{
+                                MenuProps: selectMenuProps,
+                              }}
+                              disabled={!selectedProfileCountryCode || profileStates.length === 0}
+                            >
+                              <MenuItem value="" disabled>
+                                {selectedProfileCountryCode ? "Select city/state" : "Select country first"}
+                              </MenuItem>
+                              {profileStates.map((s) => {
+                                const stateName = normalizeLocationName(s.name) || s.name
+                                return (
+                                  <MenuItem key={s.isoCode} value={stateName}>
+                                    {stateName}
+                                  </MenuItem>
+                                )
+                              })}
+                            </StyledTextField>
                           </Grid>
                           <Grid item xs={6} sm={6}>
                             <Typography sx={{ mb: 0.5, fontSize: { xs: 15, sm: 20 }, fontWeight: 400, color: themeColors.text }}>Phone Number</Typography>
@@ -1858,3 +1840,4 @@ const PlayerProfileCard = () => {
 }
 
 export default PlayerProfileCard
+
