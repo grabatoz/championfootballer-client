@@ -129,8 +129,10 @@ const normalizeUserForStorage = (user: User): UserProfile => {
     age: typeof user.age === "string" ? Number(user.age) || undefined : user.age,
     gender: user.gender,
     country: user.country ?? null,
+    phoneCountryCode: user.phoneCountryCode ?? null,
     state: user.state ?? null,
     city: user.city ?? null,
+    phone: user.phone ?? null,
     position: user.position,
     positionType: user.positionType,
     style: user.style,
@@ -647,7 +649,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[AuthTabs] Attempting registration with:", registerData)
+    const normalizedPhoneCountryCode = String(phoneCountryCode || "").trim().toUpperCase()
+    const registerPayload: RegisterCredentials = {
+      ...registerData,
+      phoneCountryCode: /^[A-Z]{2}$/.test(normalizedPhoneCountryCode) ? normalizedPhoneCountryCode : undefined,
+    }
+
+    console.log("[AuthTabs] Attempting registration with:", registerPayload)
     setRegisterError("")
     setRegisterLoading(true)
     if (!validateRegisterForm()) {
@@ -655,7 +663,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       return
     }
     try {
-      const result = await dispatch(register(registerData)).unwrap()
+      const result = await dispatch(register(registerPayload)).unwrap()
       console.log("[AuthTabs] Register result from server:", result)
 
       // Check if server says verification is required (6-digit code flow)

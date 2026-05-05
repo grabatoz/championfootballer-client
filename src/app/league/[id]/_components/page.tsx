@@ -925,7 +925,14 @@ export default function LeagueDetailPage() {
 
     // Declare isMember and isAdmin here so they are available for useEffect and logic below
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
-    const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
+    const isAdmin = !!(
+        league &&
+        user &&
+        (
+            (league.adminId && league.adminId === user.id) ||
+            (league.administrators && league.administrators.some((a: User) => a.id === user.id))
+        )
+    );
 
 
     const handleCloseTeamModal = () => {
@@ -3435,7 +3442,7 @@ export default function LeagueDetailPage() {
                                                 borderColor: '#9CA3AF',
                                                 borderWidth: { xs: 2, sm: 3 },
                                                 textTransform: 'none',
-                                                fontWeight: 'normal',
+                                                fontWeight: 600,
                                                 px: { xs: 1, sm: 2.5, md: 4.5 },
                                                 py: 0.5,
                                                 minWidth: { xs: '50%', sm: 'auto' },
@@ -4846,6 +4853,7 @@ export default function LeagueDetailPage() {
                                     right: '50%',
                                     marginLeft: '-50vw',
                                     marginRight: '-50vw',
+                                    mt:-4
                                 }}>
                                     {dreamTeamLoading ? (
                                         <LeagueDetailLoadingSkeleton mode="dream" />
@@ -5096,14 +5104,16 @@ export default function LeagueDetailPage() {
                                                         <Share2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
-                                                <div className="col-start-10 col-span-2 justify-self-end">
-                                                     <Link href={`/league/${leagueId}/match`} passHref>
-                                                    <button  disabled={!league?.active} className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
-                                                        {/* <Plus className="w-4 h-4 mr-2" /> */}
-                                                        + New Match
-                                                    </button>
-                                                    </Link>
-                                                </div>
+                                                {isAdmin && (
+                                                    <div className="col-start-10 col-span-2 justify-self-end">
+                                                        <Link href={`/league/${leagueId}/match`} passHref>
+                                                            <button disabled={!league?.active} className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                                {/* <Plus className="w-4 h-4 mr-2" /> */}
+                                                                + New Match
+                                                            </button>
+                                                        </Link>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Table Header */}
@@ -6128,7 +6138,7 @@ export default function LeagueDetailPage() {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'flex-start',
-                                            gap: 0.01,
+                                            gap: 0.5,
                                             p: { xs: 0.02, sm: 0.3 },
                                         }}
                                     >
@@ -6276,7 +6286,7 @@ export default function LeagueDetailPage() {
                                 zIndex: 4,
                                 order: { xs: 3, sm: 3 },
                                 mt: { xs: 3.4, sm: 6 },
-                                minHeight: { xs: 188, sm: 275 },
+                                minHeight: { xs: 188, sm: 290 },
                                 height: { xs: 188, sm: 'auto' },
                             }}>
                                 <Typography sx={{ fontWeight: 800, mb: 0.2, fontSize: { xs: '0.5rem', sm: '0.7rem' }, letterSpacing: 0, lineHeight: 1.05 }}>Last 10 games</Typography>

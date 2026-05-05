@@ -32,7 +32,10 @@ import {
   Fade,
   Modal,
   MenuItem,
+  Select,
+  InputAdornment,
 } from "@mui/material"
+import { Country } from "country-state-city"
 // Lightweight country list (can be expanded or sourced externally later)
 const countryOptions = [
   "United Kingdom","United States","Canada","Australia","Germany","France","Spain","Italy","Netherlands","Brazil","Argentina","Portugal","Belgium","Sweden","Norway","Denmark","Finland","Switzerland","Austria","Ireland","Turkey","Japan","South Korea","China","India","Pakistan","Saudi Arabia","United Arab Emirates","South Africa","Nigeria","Mexico"
@@ -79,7 +82,7 @@ import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
 import {
   formatPhoneDigitRule,
-  getPhoneDigitRuleByCountryName,
+  getPhoneDigitRuleByIsoCode,
   isPhoneDigitsValidForRule,
   sanitizePhoneDigits,
 } from "@/lib/phoneValidation"
@@ -272,6 +275,12 @@ const buildPlayerDisplayName = (firstName?: string | null, lastName?: string | n
   return "Player Name"
 }
 
+const getCountryFlagUrl = (isoCode: string): string => {
+  const code = String(isoCode || "").toLowerCase()
+  if (!/^[a-z]{2}$/.test(code)) return ""
+  return `https://flagcdn.com/24x18/${code}.png`
+}
+
 // Shape of possible API error objects (optional)
 // interface ApiError {
 //   message?: string
@@ -305,6 +314,30 @@ const PlayerProfileCard = () => {
   const [stateProvince, setStateProvince] = useState(user?.state || "")
   const [city, setCity] = useState(user?.city || "")
   const [phone, setPhone] = useState(user?.phone || "")
+  const phoneCountries = useMemo(() => Country.getAllCountries(), [])
+  const phoneCountryStorageKey = useMemo(
+    () => `profilePhoneCountryCode:${String(user?.id || "me")}`,
+    [user?.id]
+  )
+  const [phoneCountryCode, setPhoneCountryCode] = useState<string>(() => {
+    const fromUser = String((user as { phoneCountryCode?: string | null } | null)?.phoneCountryCode || "").trim().toUpperCase()
+    if (/^[A-Z]{2}$/.test(fromUser)) return fromUser
+
+    if (typeof window !== "undefined") {
+      const fromScopedStorage = String(localStorage.getItem(`profilePhoneCountryCode:${String(user?.id || "me")}`) || "").trim().toUpperCase()
+      if (/^[A-Z]{2}$/.test(fromScopedStorage)) return fromScopedStorage
+
+      const fromLegacyStorage = String(localStorage.getItem("profilePhoneCountryCode") || "").trim().toUpperCase()
+      if (/^[A-Z]{2}$/.test(fromLegacyStorage)) return fromLegacyStorage
+    }
+
+    const normalizedCountry = String(user?.country || "").trim().toLowerCase()
+    if (!normalizedCountry) return "GB"
+    const matchedCountry = phoneCountries.find(
+      (c) => String(c.name || "").trim().toLowerCase() === normalizedCountry
+    )
+    return matchedCountry?.isoCode || "GB"
+  })
   const [phoneError, setPhoneError] = useState("")
   // When editing location we mirror the City/State value into both city and stateProvince for backward compatibility.
   const [password, setPassword] = useState("")
@@ -363,16 +396,38 @@ const PlayerProfileCard = () => {
   const currentPositionOptions = resolvedPositionType ? positionOptionsMap[resolvedPositionType] : []
   const useExpandedPositionSpacing = currentPositionOptions.length === 5
 
-  const selectedCountryPhoneRule = useMemo(
-    () => getPhoneDigitRuleByCountryName(country),
-    [country]
+  const selectedPhoneRule = useMemo(
+    () => getPhoneDigitRuleByIsoCode(phoneCountryCode),
+    [phoneCountryCode]
   )
-  const selectedCountryPhoneDigitsLabel = formatPhoneDigitRule(selectedCountryPhoneRule)
-  const selectedCountryPhoneHint = country
-    ? `Required ${selectedCountryPhoneDigitsLabel} digits${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
-    : "Enter 6-15 digits (select country for exact phone rule)"
+  const selectedPhoneDigitsLabel = formatPhoneDigitRule(selectedPhoneRule)
+  const selectedPhoneHint = `Required ${selectedPhoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}. Do not start with 0.`
 
   useEffect(() => { setImgSrc(safeSrc(user?.profilePicture)) }, [user?.profilePicture])
+
+  useEffect(() => {
+    const fromUser = String((user as { phoneCountryCode?: string | null } | null)?.phoneCountryCode || "").trim().toUpperCase()
+    if (/^[A-Z]{2}$/.test(fromUser)) {
+      setPhoneCountryCode((prev) => (prev === fromUser ? prev : fromUser))
+      return
+    }
+
+    if (typeof window !== "undefined") {
+      const fromScopedStorage = String(localStorage.getItem(phoneCountryStorageKey) || "").trim().toUpperCase()
+      if (/^[A-Z]{2}$/.test(fromScopedStorage)) {
+        setPhoneCountryCode((prev) => (prev === fromScopedStorage ? prev : fromScopedStorage))
+      }
+    }
+  }, [user, phoneCountryStorageKey])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const normalizedCode = String(phoneCountryCode || "").trim().toUpperCase()
+    if (!/^[A-Z]{2}$/.test(normalizedCode)) return
+    localStorage.setItem(phoneCountryStorageKey, normalizedCode)
+    // Backward-compatible/global fallback key
+    localStorage.setItem("profilePhoneCountryCode", normalizedCode)
+  }, [phoneCountryCode, phoneCountryStorageKey])
 
   useEffect(() => {
     if (user?.position) {
@@ -390,7 +445,7 @@ const PlayerProfileCard = () => {
 
   useEffect(() => {
     const digits = sanitizePhoneDigits(phone)
-    const trimmed = digits.slice(0, selectedCountryPhoneRule.max)
+    const trimmed = digits.slice(0, selectedPhoneRule.max)
     if (trimmed !== phone) {
       setPhone(trimmed)
       return
@@ -401,19 +456,26 @@ const PlayerProfileCard = () => {
       return
     }
 
-    if (isPhoneDigitsValidForRule(trimmed, selectedCountryPhoneRule)) {
+    if (trimmed.startsWith("0")) {
+      setPhoneError(
+        `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+      )
+      return
+    }
+
+    if (isPhoneDigitsValidForRule(trimmed, selectedPhoneRule)) {
       setPhoneError("")
       return
     }
 
     setPhoneError(
-      `Phone number must be ${selectedCountryPhoneDigitsLabel} digits${country ? ` for ${country}` : ""}${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
+      `Phone number must be ${selectedPhoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
     )
   }, [
     phone,
-    country,
-    selectedCountryPhoneRule,
-    selectedCountryPhoneDigitsLabel,
+    phoneCountryCode,
+    selectedPhoneRule,
+    selectedPhoneDigitsLabel,
   ])
 
   if (authLoading) {
@@ -496,15 +558,26 @@ const PlayerProfileCard = () => {
       if (!isBlank(stateProvince)) updateData.state = stateProvince
       if (!isBlank(city)) updateData.city = city
       if (!isBlank(phone)) {
-        const phoneDigits = sanitizePhoneDigits(phone).slice(0, selectedCountryPhoneRule.max)
-        if (!isPhoneDigitsValidForRule(phoneDigits, selectedCountryPhoneRule)) {
-          const msg = `Phone number must be ${selectedCountryPhoneDigitsLabel} digits${country ? ` for ${country}` : ""}${selectedCountryPhoneRule.dialCode ? ` (${selectedCountryPhoneRule.dialCode})` : ""}`
+        const phoneDigits = sanitizePhoneDigits(phone).slice(0, selectedPhoneRule.max)
+        if (phoneDigits.startsWith("0")) {
+          const msg = `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+          setPhoneError(msg)
+          toast.error(msg)
+          setIsUpdating(false)
+          return
+        }
+        if (!isPhoneDigitsValidForRule(phoneDigits, selectedPhoneRule)) {
+          const msg = `Phone number must be ${selectedPhoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
           setPhoneError(msg)
           toast.error(msg)
           setIsUpdating(false)
           return
         }
         updateData.phone = phoneDigits
+      }
+      const normalizedPhoneCountryCode = String(phoneCountryCode || "").trim().toUpperCase()
+      if (/^[A-Z]{2}$/.test(normalizedPhoneCountryCode)) {
+        updateData.phoneCountryCode = normalizedPhoneCountryCode
       }
 
       // Skills: include only the ones that have numeric values; skip otherwise
@@ -537,6 +610,7 @@ const PlayerProfileCard = () => {
           preferredFoot: data.user.preferredFoot,
           shirtNumber: typeof data.user.shirtNumber === "string" ? Number(data.user.shirtNumber) || undefined : data.user.shirtNumber,
           country: data.user.country,
+          phoneCountryCode: (data.user.phoneCountryCode || phoneCountryCode || null),
           state: data.user.state,
           city: data.user.city,
           phone: data.user.phone || null,
@@ -1095,9 +1169,16 @@ const PlayerProfileCard = () => {
                               value={country}
                               select
                               onChange={e => {
-                                setCountry(e.target.value)
+                                const nextCountry = e.target.value
+                                setCountry(nextCountry)
                                 setStateProvince("")
                                 setCity("")
+                                const matchedPhoneCountry = phoneCountries.find(
+                                  (c) => String(c.name || "").trim().toLowerCase() === String(nextCountry || "").trim().toLowerCase()
+                                )
+                                if (matchedPhoneCountry?.isoCode) {
+                                  setPhoneCountryCode(matchedPhoneCountry.isoCode)
+                                }
                               }}
                               placeholder="Select country"
                               fullWidth
@@ -1152,19 +1233,102 @@ const PlayerProfileCard = () => {
                               type="tel"
                               value={phone}
                               onChange={e => {
-                                const digits = sanitizePhoneDigits(e.target.value).slice(0, selectedCountryPhoneRule.max)
+                                const digits = sanitizePhoneDigits(e.target.value).slice(0, selectedPhoneRule.max)
                                 setPhone(digits)
                               }}
                               placeholder="Enter phone digits"
                               fullWidth
-                              inputProps={{ maxLength: selectedCountryPhoneRule.max, inputMode: "numeric", pattern: "[0-9]*" }}
+                              inputProps={{ maxLength: selectedPhoneRule.max, inputMode: "numeric", pattern: "[0-9]*" }}
                               error={Boolean(phoneError)}
-                              helperText={phoneError || selectedCountryPhoneHint}
+                              helperText={phoneError || selectedPhoneHint}
                               FormHelperTextProps={{
                                 sx: {
                                   color: phoneError ? "#ff6b6b !important" : `${themeColors.textDim} !important`,
                                   fontSize: "0.72rem",
                                 }
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start" sx={{ height: "100%" }}>
+                                    <Select
+                                      value={phoneCountryCode}
+                                      onChange={(e) => setPhoneCountryCode(e.target.value as string)}
+                                      variant="standard"
+                                      disableUnderline
+                                      MenuProps={selectMenuProps}
+                                      sx={{
+                                        minWidth: 78,
+                                        mr: 1,
+                                        height: "100%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        "& .MuiSelect-select": {
+                                          color: themeColors.text,
+                                          fontSize: "0.85rem",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                        },
+                                        "& .MuiSvgIcon-root": { color: themeColors.text },
+                                      }}
+                                      renderValue={(selected) => {
+                                        const code = selected as string
+                                        const c = phoneCountries.find((cc) => cc.isoCode === code)
+                                        const flagUrl = getCountryFlagUrl(code)
+                                        const phoneDial = c?.phonecode ? `+${c.phonecode}` : ""
+                                        return (
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            {flagUrl ? (
+                                              <Box
+                                                component="img"
+                                                src={flagUrl}
+                                                alt={`${code} flag`}
+                                                sx={{
+                                                  width: 20,
+                                                  height: 15,
+                                                  borderRadius: "2px",
+                                                  objectFit: "cover",
+                                                  border: "1px solid rgba(255,255,255,0.18)",
+                                                }}
+                                              />
+                                            ) : null}
+                                            <Box component="span" sx={{ color: themeColors.text }}>
+                                              {phoneDial}
+                                            </Box>
+                                          </Box>
+                                        )
+                                      }}
+                                    >
+                                      {phoneCountries.map((c) => {
+                                        const flagUrl = getCountryFlagUrl(c.isoCode)
+                                        return (
+                                          <MenuItem key={c.isoCode} value={c.isoCode}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                              {flagUrl ? (
+                                                <Box
+                                                  component="img"
+                                                  src={flagUrl}
+                                                  alt={`${c.isoCode} flag`}
+                                                  sx={{
+                                                    width: 20,
+                                                    height: 15,
+                                                    borderRadius: "2px",
+                                                    objectFit: "cover",
+                                                    border: "1px solid rgba(255,255,255,0.18)",
+                                                    flexShrink: 0,
+                                                  }}
+                                                />
+                                              ) : null}
+                                              <Box component="span" sx={{ color: themeColors.text }}>
+                                                {c.name} ({c.isoCode}){c.phonecode ? ` +${c.phonecode}` : ""}
+                                              </Box>
+                                            </Box>
+                                          </MenuItem>
+                                        )
+                                      })}
+                                    </Select>
+                                  </InputAdornment>
+                                ),
                               }}
                               sx={{ mb: 1 }}
                             />

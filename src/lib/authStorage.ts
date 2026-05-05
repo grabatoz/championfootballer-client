@@ -40,6 +40,7 @@ export interface UserProfile {
   age?: number;
   gender?: string;
   country?: string | null;
+  phoneCountryCode?: string | null;
   state?: string | null;
   city?: string | null;
   phone?: string | null;

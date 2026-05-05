@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Paper, Button, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, Alert, useMediaQuery, useTheme } from '@mui/material';
 import PageHeader from '@/Components/PageHeader';
 import {
   Dialog,
@@ -29,6 +29,7 @@ import ChartTopperBadge from '@/Components/images/brown.png';
 // Decorative images
 import LeftStar from '@/Components/images/leftstart.png';
 import RightStar from '@/Components/images/rightstar.png';
+import XPStarMilestoneCard from '@/Components/XPStarMilestoneCard';
 
 // --- Interfaces ---
 interface User {
@@ -374,6 +375,8 @@ const mergeBadges = (client: Badge[], server: Badge[] | null | undefined): Badge
 // --- Badge Card Component ---
 const BadgeCard = ({ id, title, description, image, color, count, unlocked, progressText, xp, onOpen }: Badge & { onOpen?: () => void }) => {
   const totalXPEarned = count * xp;
+
+     
   
   return (
     <Paper
@@ -550,11 +553,13 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
 export default function RewardsPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
+  const [xp, setXp] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
-
+ const theme = useTheme();
+      const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Badge detail modal state
   const [openBadgeDlg, setOpenBadgeDlg] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
@@ -637,6 +642,45 @@ export default function RewardsPage() {
       0;
     return Number.isFinite(Number(resolved)) ? Number(resolved) : 0;
   }, [myBadges, user?.xp, backendTotalXP]);
+
+  // Direct player XP from player profile endpoint (fallback to computed/profile XP)
+  useEffect(() => {
+    const fallbackXP = Number.isFinite(Number(myProfileXP)) ? Number(myProfileXP) : 0;
+
+    if (!user?.id) {
+      setXp(fallbackXP);
+      return;
+    }
+
+    let cancelled = false;
+    setXp(fallbackXP);
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(user.id))}`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to fetch player profile XP');
+        const json = (await res.json()) as Record<string, unknown>;
+        const playerObj = (json.player || json.data || {}) as Record<string, unknown>;
+        const raw =
+          playerObj.xp ??
+          playerObj.totalXP ??
+          playerObj.totalXp ??
+          json.xp ??
+          json.totalXP ??
+          fallbackXP;
+        const parsed = Number(raw);
+        if (!cancelled) setXp(Number.isFinite(parsed) ? parsed : fallbackXP);
+      })
+      .catch(() => {
+        if (!cancelled) setXp(fallbackXP);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, token, myProfileXP]);
   
   // Calculate total XP from all rewards
   const totalRewardsXP = myBadges.reduce((sum, badge) => sum + (badge.count * badge.xp), 0);
@@ -668,6 +712,17 @@ export default function RewardsPage() {
           title="Rewards"
           fullBleed={false}
           sx={{ mb: { xs: 2, md: 3 }, mx: 0 }}
+          titleRowSx={{ gap: { xs: 1.25, md: 1.75 } }}
+          titleLeft={(
+            <Box sx={{ mt: { xs: -3, md: -6 }, display: 'flex', alignItems: 'center' }}>
+              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+            </Box>
+          )}
+          titleRight={(
+            <Box sx={{ mt: { xs: -3, md: -6 }, display: 'flex', alignItems: 'center' }}>
+              <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+            </Box>
+          )}
           titleSx={{
             // Adjust this padding to move the divider line up/down
             pb: { xs: 4, md: 8 }

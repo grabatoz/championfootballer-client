@@ -16,6 +16,8 @@ export interface User {
   password?: string;
   gender?: string;
   country?: string | null;
+  phone?: string | null;
+  phoneCountryCode?: string | null;
   state?: string | null;
   city?: string | null;
   level?: string;

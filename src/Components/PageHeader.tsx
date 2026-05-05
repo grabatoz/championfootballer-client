@@ -18,6 +18,9 @@ type PageHeaderProps = {
   children?: React.ReactNode;
   sx?: SxProps<Theme>;
   titleSx?: SxProps<Theme>;
+  titleRowSx?: SxProps<Theme>;
+  titleLeft?: React.ReactNode;
+  titleRight?: React.ReactNode;
   dividerSx?: SxProps<Theme>;
   fullBleed?: boolean;
 };
@@ -57,6 +60,9 @@ export default function PageHeader({
   children,
   sx,
   titleSx,
+  titleRowSx,
+  titleLeft,
+  titleRight,
   dividerSx,
   fullBleed = true,
 }: PageHeaderProps) {
@@ -82,12 +88,25 @@ export default function PageHeader({
     : baseDividerSx;
   const headerSx: SxProps<Theme> = [baseHeaderSx, fullBleedSx, ...toSxArray(sx)];
   const headerTitleSx: SxProps<Theme> = [baseTitleSx, ...toSxArray(titleSx)];
+  const headerTitleRowSx: SxProps<Theme> = [
+    {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: { xs: 1, md: 1.25 },
+    },
+    ...toSxArray(titleRowSx),
+  ];
   const headerDividerSx: SxProps<Theme> = [dividerBaseSx, ...toSxArray(dividerSx)];
   return (
     <Box sx={headerSx}>
-      <Typography variant="h3" sx={headerTitleSx}>
-        {title}
-      </Typography>
+      <Box sx={headerTitleRowSx}>
+        {titleLeft}
+        <Typography variant="h3" sx={headerTitleSx}>
+          {title}
+        </Typography>
+        {titleRight}
+      </Box>
       <Box sx={headerDividerSx} />
       {children}
     </Box>

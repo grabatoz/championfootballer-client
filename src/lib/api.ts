@@ -890,6 +890,7 @@ interface UpdateProfileData {
   state?: string;
   city?: string;
   phone?: string;
+  phoneCountryCode?: string | null;
 }
 
 export const updateProfile = async ( token: string , updateData: UpdateProfileData) => {

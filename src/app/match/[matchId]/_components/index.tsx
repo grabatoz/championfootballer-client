@@ -712,7 +712,25 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                 <Typography sx={{ color: '#fff', mt: 1.5,fontWeight: 500, fontSize: { xs: 12, sm: 14, md: 18 } }}>
                   Admin Only Edits
                 </Typography>
-                <Image src={EditImg} alt="Edit" width={30} height={30} style={{ objectFit: 'contain',color: '#00a77f'}} />
+                <Box
+                  component="span"
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                    backgroundColor: '#00a77f',
+                    WebkitMaskImage: `url(${EditImg.src})`,
+                    maskImage: `url(${EditImg.src})`,
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    maskPosition: 'center',
+                    WebkitMaskSize: 'contain',
+                    maskSize: 'contain',
+                  }}
+                  aria-label="Edit"
+                />
               </Box>
             )}
           </Box>

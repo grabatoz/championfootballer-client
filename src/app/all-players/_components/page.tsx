@@ -73,6 +73,11 @@ interface Match {
   status?: string;
   active?: boolean;
   end?: string;
+  date?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  startDate?: string;
+  scheduledAt?: string;
 }
 
 const WORLD_RANKING_POSITION_OPTIONS = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper'] as const;
@@ -96,6 +101,8 @@ interface LeagueOption {
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
 }
+
+type SeasonOption = { id: string; name: string; seasonNumber?: number; isActive?: boolean };
 
 // Minimal shape we expect from API for user leagues
 // type ApiUser = {
@@ -138,12 +145,107 @@ const AllPlayersPage = () => {
   const [selectedSeason, setSelectedSeason] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   const [allPositionsMenuAnchor, setAllPositionsMenuAnchor] = useState<null | HTMLElement>(null);
-  const [seasons, setSeasons] = useState<Array<{id: string, name: string}>>([]);
+  const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  const getYearFromDateLike = useCallback((value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const t = Date.parse(value);
+    if (!Number.isFinite(t)) return null;
+    return String(new Date(t).getFullYear());
+  }, []);
+
+  const getSeasonSortScore = useCallback((season: SeasonOption): number => {
+    if (typeof season.seasonNumber === 'number' && Number.isFinite(season.seasonNumber)) {
+      return season.seasonNumber;
+    }
+    const label = String(season.name || '');
+    const yearHits = label.match(/\b(19|20)\d{2}\b/g);
+    if (yearHits && yearHits.length > 0) return Number(yearHits[yearHits.length - 1]);
+    const numHits = label.match(/\d+/g);
+    if (numHits && numHits.length > 0) return Number(numHits[numHits.length - 1]);
+    return -1;
+  }, []);
+
+  const sortSeasonsLatestFirst = useCallback((seasonList: SeasonOption[]): SeasonOption[] => {
+    return [...seasonList].sort((a, b) => {
+      const aScore = getSeasonSortScore(a);
+      const bScore = getSeasonSortScore(b);
+      if (aScore !== bScore) return bScore - aScore;
+      if ((a.isActive === true) !== (b.isActive === true)) return a.isActive ? -1 : 1;
+      return String(b.name || '').localeCompare(String(a.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, [getSeasonSortScore]);
+
+  const normalizeAndSortSeasons = useCallback((rawSeasons: unknown): SeasonOption[] => {
+    if (!Array.isArray(rawSeasons)) return [];
+    const mapped = rawSeasons
+      .map((raw) => {
+        if (!raw || typeof raw !== 'object') return null;
+        const rec = raw as Record<string, unknown>;
+        const rawId = rec.id;
+        if (rawId == null) return null;
+        const seasonNumberRaw = rec.seasonNumber;
+        const seasonNumber =
+          typeof seasonNumberRaw === 'number'
+            ? seasonNumberRaw
+            : (typeof seasonNumberRaw === 'string' && Number.isFinite(Number(seasonNumberRaw)) ? Number(seasonNumberRaw) : undefined);
+        const id = String(rawId);
+        const nameRaw = rec.name;
+        const name = typeof nameRaw === 'string' && nameRaw.trim() ? nameRaw : `Season ${seasonNumber ?? id}`;
+        return {
+          id,
+          name,
+          seasonNumber,
+          isActive: rec.isActive === true,
+        } as SeasonOption;
+      })
+      .filter((s): s is SeasonOption => Boolean(s));
+
+    return sortSeasonsLatestFirst(mapped);
+  }, [sortSeasonsLatestFirst]);
+
+  const getLeagueYears = useCallback((league: LeagueOption): string[] => {
+    const years = new Set<string>();
+    const addYear = (v: unknown) => {
+      const y = getYearFromDateLike(v);
+      if (y) years.add(y);
+    };
+
+    addYear(league.createdAt);
+    addYear(league.updatedAt);
+
+    if (Array.isArray(league.matches)) {
+      league.matches.forEach((m) => {
+        const rec = m as Record<string, unknown>;
+        addYear(rec.date);
+        addYear(rec.startDate);
+        addYear(rec.scheduledAt);
+        addYear(rec.createdAt);
+        addYear(rec.updatedAt);
+        addYear(rec.end);
+      });
+    }
+
+    if (Array.isArray(league.seasons)) {
+      league.seasons.forEach((s) => {
+        if (typeof s?.seasonNumber === 'number' && s.seasonNumber >= 1900 && s.seasonNumber <= 2100) {
+          years.add(String(s.seasonNumber));
+        }
+        const seasonName = String(s?.name || '');
+        const yearHits = seasonName.match(/\b(19|20)\d{2}\b/g);
+        if (yearHits) {
+          yearHits.forEach((y) => years.add(y));
+        }
+      });
+    }
+
+    return Array.from(years);
+  }, [getYearFromDateLike]);
 
   const normalizePlayer = useCallback((raw: unknown): Player | null => {
     if (!raw || typeof raw !== 'object') return null;
@@ -354,14 +456,7 @@ const AllPlayersPage = () => {
                   missing,
                 };
                 // Extract seasons from league data
-                const seasonsFromLeague = Array.isArray((league as any).seasons) 
-                  ? (league as any).seasons.map((s: any) => ({
-                      id: String(s.id),
-                      name: s.name || `Season ${s.seasonNumber || s.id}`,
-                      seasonNumber: s.seasonNumber,
-                      isActive: s.isActive
-                    }))
-                  : [];
+                const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
                 
                 return {
                   ...league,
@@ -378,14 +473,7 @@ const AllPlayersPage = () => {
               }
 
               // Extract seasons from league data
-              const seasonsFromLeague = Array.isArray((league as any).seasons) 
-                ? (league as any).seasons.map((s: any) => ({
-                    id: String(s.id),
-                    name: s.name || `Season ${s.seasonNumber || s.id}`,
-                    seasonNumber: s.seasonNumber,
-                    isActive: s.isActive
-                  }))
-                : [];
+              const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
               
               return {
                 id: String(leagueId),
@@ -399,14 +487,7 @@ const AllPlayersPage = () => {
               const leagueId = String((league as { id?: string | number }).id);
               
               // Extract seasons from league data even in error case
-              const seasonsFromLeague = Array.isArray((league as any).seasons) 
-                ? (league as any).seasons.map((s: any) => ({
-                    id: String(s.id),
-                    name: s.name || `Season ${s.seasonNumber || s.id}`,
-                    seasonNumber: s.seasonNumber,
-                    isActive: s.isActive
-                  }))
-                : [];
+              const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
               
               return {
                 id: String(leagueId),
@@ -448,7 +529,7 @@ const AllPlayersPage = () => {
     } finally {
       setLeaguesLoading(false);
     }
-  }, [token, leagueIsCompleted]);
+  }, [token, leagueIsCompleted, normalizeAndSortSeasons]);
 
   useEffect(() => {
     if (token) {
@@ -460,27 +541,16 @@ const AllPlayersPage = () => {
   const yearOptions = React.useMemo(() => {
     const yearsSet = new Set<string>();
     leagues.forEach((l) => {
-      if (l.createdAt) {
-        const t = Date.parse(l.createdAt);
-        if (Number.isFinite(t)) {
-          const year = new Date(t).getFullYear();
-          yearsSet.add(String(year));
-        }
-      }
+      getLeagueYears(l).forEach((y) => yearsSet.add(y));
     });
     return Array.from(yearsSet).sort((a, b) => Number(b) - Number(a));
-  }, [leagues]);
+  }, [leagues, getLeagueYears]);
 
   // Filter leagues by year
   const filteredLeagues = React.useMemo(() => {
     if (selectedYear === 'all') return leagues;
-    return leagues.filter(l => {
-      const t = Date.parse(l.createdAt || '');
-      if (!Number.isFinite(t)) return false;
-      const year = String(new Date(t).getFullYear());
-      return year === selectedYear;
-    });
-  }, [leagues, selectedYear]);
+    return leagues.filter((l) => getLeagueYears(l).includes(selectedYear));
+  }, [leagues, selectedYear, getLeagueYears]);
 
   // Auto-adjust selectedLeague when year changes
   useEffect(() => {
@@ -524,16 +594,17 @@ const AllPlayersPage = () => {
     const selectedLeagueData = filteredLeagues.find(l => l.id === leagueId);
     
     if (selectedLeagueData && selectedLeagueData.seasons && selectedLeagueData.seasons.length > 0) {
-      console.log('[All Players] Found seasons:', selectedLeagueData.seasons);
-      setSeasons(selectedLeagueData.seasons);
+      const sortedSeasons = sortSeasonsLatestFirst(selectedLeagueData.seasons as SeasonOption[]);
+      console.log('[All Players] Found seasons:', sortedSeasons);
+      setSeasons(sortedSeasons);
       // Auto-select first season if available
-      setSelectedSeason(selectedLeagueData.seasons[0].id);
+      setSelectedSeason(sortedSeasons[0].id);
     } else {
       console.log('[All Players] No seasons found for league');
       setSeasons([]);
       setSelectedSeason('all');
     }
-  }, [filteredLeagues]);
+  }, [filteredLeagues, sortSeasonsLatestFirst]);
 
   const fetchAllLeaguesPlayers = useCallback(async () => {
     if (!token) return;
@@ -911,10 +982,7 @@ const AllPlayersPage = () => {
                 }}
               >
                 <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
-                {Array.from(new Set([
-                  '2020', '2021', '2022', '2023', '2024', '2025', '2026',
-                  ...yearOptions
-                ])).sort((a, b) => parseInt(b) - parseInt(a)).map(year => (
+                {yearOptions.map(year => (
                   <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
                 ))}
               </select>

@@ -2841,8 +2841,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             px: 0,
                                             fontSize: '0.85rem',
                                         },
+                                        '& .MuiOutlinedInput-root.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                            opacity: 1,
+                                        },
+                                        '& .MuiSelect-select.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
                                         '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                                         '& .MuiSvgIcon-root': { color: '#fff' },
+                                        '& .MuiSvgIcon-root.Mui-disabled': { color: '#fff' },
                                     }}
                                 >
                                     {allPlayersForVoting.map((p) => {
@@ -2956,8 +2970,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             px: 0,
                                             fontSize: '0.85rem',
                                         },
+                                        '& .MuiOutlinedInput-root.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                            opacity: 1,
+                                        },
+                                        '& .MuiSelect-select.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
                                         '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                                         '& .MuiSvgIcon-root': { color: '#fff' },
+                                        '& .MuiSvgIcon-root.Mui-disabled': { color: '#fff' },
                                     }}
                                 >
                                     {captainPickCandidates.map((p) => {
@@ -3068,8 +3096,22 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             px: 0,
                                             fontSize: '0.85rem',
                                         },
+                                        '& .MuiOutlinedInput-root.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                            opacity: 1,
+                                        },
+                                        '& .MuiSelect-select.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            color: '#fff',
+                                            WebkitTextFillColor: '#fff',
+                                        },
                                         '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                                         '& .MuiSvgIcon-root': { color: '#fff' },
+                                        '& .MuiSvgIcon-root.Mui-disabled': { color: '#fff' },
                                     }}
                                 >
                                     {captainPickCandidates.map((p) => {

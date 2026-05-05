@@ -19,6 +19,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   phone?: string;
+  phoneCountryCode?: string;
   username: string;
   firstName: string;
   lastName: string;

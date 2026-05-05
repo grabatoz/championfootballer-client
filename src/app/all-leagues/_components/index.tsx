@@ -1584,7 +1584,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   />
                   <FormControlLabel
                     value="inactive"
-                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
+                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: 'red' } }} />}
                     label="Inactive"
                   />
                 </RadioGroup>
@@ -1767,6 +1767,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         >
           {currentUserId && (
             <Button
+               startIcon={<ExitToApp />}
               variant="outlined"
               color="warning"
               onClick={async () => {
@@ -1796,14 +1797,41 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 try { onClose() } catch { }
               }}
               sx={{
-                borderColor: 'rgba(229,106,22,0.6)',
-                color: '#e56a16',
+                  fontWeight: 600,
+                 bgcolor: "#fff",
+              color: "#d32f2f",
                 width: { xs: '100%', md: 'auto' },
                 flex: { md: 1 },
                 minHeight: { xs: 42, md: 'auto' },
-                '&:hover': { borderColor: '#e56a16', bgcolor: 'rgba(229,106,22,0.08)' }
+                   px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "#ffebee",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
               }}
             >
+            {/* onClick={handleLeaveLeague}
+            sx={{
+              fontWeight: 600,
+              bgcolor: "#fff",
+              color: "#d32f2f",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                bgcolor: "#ffebee",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              },
+              transition: "all 0.2s ease",
+            }} */}
               Leave League
             </Button>
           )}
@@ -3557,6 +3585,36 @@ function AllLeagues() {
                 width: { xs: '100%', md: 'auto' }
               }}
             >
+                <TextField 
+                  select 
+                  value={selectedYear} 
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  size="small"
+                  sx={{
+                     minWidth: 150,
+                    width: { xs: '100%', sm: 180, md: 150 },
+                    '& .MuiOutlinedInput-root': { 
+                      color: 'white',
+                      borderRadius: 6,
+                      '& .MuiSelect-select': { py: 1.25, px: 2 },
+                      '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
+                      '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
+                      '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
+                    },
+                    '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
+                  }}
+                  SelectProps={{
+                    MenuProps: {
+                      ...dropdownMenuBaseProps,
+                      PaperProps: {
+                        sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
+                      }
+                    }
+                  }}
+                >
+                  <MenuItem value="all">All Years</MenuItem>
+                  {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+                </TextField>
               <TextField 
                 select 
                 value={selectedLeagueId} 
@@ -3592,36 +3650,6 @@ function AllLeagues() {
                 ))}
               </TextField>
               
-              <TextField 
-                select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(e.target.value)}
-                size="small"
-                sx={{
-                   minWidth: 150,
-                  width: { xs: '100%', sm: 180, md: 150 },
-                  '& .MuiOutlinedInput-root': { 
-                    color: 'white',
-                    borderRadius: 6,
-                    '& .MuiSelect-select': { py: 1.25, px: 2 },
-                    '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
-                    '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
-                    '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
-                  },
-                  '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
-                }}
-                SelectProps={{
-                  MenuProps: {
-                    ...dropdownMenuBaseProps,
-                    PaperProps: {
-                      sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
-                    }
-                  }
-                }}
-              >
-                <MenuItem value="all">All Years</MenuItem>
-                {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
-              </TextField>
               
               <Button 
                 variant="outlined" 
@@ -3783,8 +3811,18 @@ function AllLeagues() {
                         bottom: { xs: 'auto', md: 'auto' },
                         right: { xs: 8, md: 18 },
                         color: 'white',
-                        // background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);',
-                        // '&:hover': { background: 'linear-gradient(177deg,rgba(229, 106, 22, 1) 26%, rgba(207, 35, 38, 1) 100%);', },
+                        '& .settings-icon': {
+                          transition: 'filter 0.2s ease',
+                          // Keep source icon pure white in default state
+                          filter: 'brightness(0) saturate(100%) invert(100%)',
+                        },
+                        '&:hover': {
+                          backgroundColor: 'transparent',
+                        },
+                        '&:hover .settings-icon': {
+                          // Recolor white icon to orange/red on hover
+                          filter: 'brightness(0) saturate(100%) invert(56%) sepia(84%) saturate(2061%) hue-rotate(354deg) brightness(95%) contrast(92%)',
+                        },
                         zIndex: 4,
                         p: { xs: 0.25, md: 1 },
                         pr: { xs: 0.25, md: 3 }
@@ -3806,8 +3844,8 @@ function AllLeagues() {
                         alt="Settings" 
                         width={24} 
                         height={24} 
-                        className="w-5 h-5 md:w-6 md:h-6"
-                        style={{ flexShrink: 0 }} 
+                        className="settings-icon w-5 h-5 md:w-6 md:h-6"
+                        style={{ flexShrink: 0}} 
                       />
                     </IconButton>
                   )}
@@ -4036,7 +4074,7 @@ function AllLeagues() {
                                   textTransform: 'none',
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                                 fontFamily: '"League Spartan", sans-serif',
-                                fontWeight: 300,
+                                fontWeight: 600,
                                 fontSize: { xs: '10px', sm: '16px' },
                                   textDecoration: 'underline',
                                   textUnderlineOffset: '3px',
@@ -4094,6 +4132,18 @@ function AllLeagues() {
                                   height: '100%',
                                   cursor: 'pointer',
                                   mt: { xs: 1, md: 0 },
+                                  '& .view-label': {
+                                    transition: 'color 0.2s ease',
+                                  },
+                                  '& .view-play-icon': {
+                                    transition: 'filter 0.2s ease',
+                                  },
+                                  '&:hover .view-label': {
+                                    color: '#E56A16 !important',
+                                  },
+                                  '&:hover .view-play-icon': {
+                                    filter: 'brightness(0) saturate(100%) invert(56%) sepia(84%) saturate(2061%) hue-rotate(354deg) brightness(95%) contrast(92%)',
+                                  },
                                   ...(!isCompleted && {
                                     position: { xs: 'static', md: 'absolute' },
                                     top: { md: 46 },
@@ -4107,7 +4157,7 @@ function AllLeagues() {
                                 }}
                               >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{
+                                  <Typography className="view-label" sx={{
                                     color: isCompleted ? '#111827' : 'white',
                                     fontFamily: '"League Spartan", sans-serif',
                                     fontWeight: 'semi-bold',
@@ -4115,7 +4165,7 @@ function AllLeagues() {
                                   }}>
                                     View
                                   </Typography>
-                                  <Image src={play} alt="Play" width={15} height={15} style={{ flexShrink: 0 }} />
+                                  <Image className="view-play-icon" src={play} alt="Play" width={15} height={15} style={{ flexShrink: 0 }} />
                                 </Box>
                               </Box>
                             </Grid>

@@ -1,6 +1,6 @@
 'use client';
 import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Chip, Alert, useTheme, useMediaQuery } from '@mui/material';
-import { Calendar, ChevronDown, Crown, Edit, Trash2, Trophy, Undo2 } from 'lucide-react';
+import { Calendar, ChevronDown, Crown, Edit, Plus, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
 import PageHeader from '@/Components/PageHeader';
@@ -1321,6 +1321,21 @@ export default function AllMatches() {
         handleLeaguesDropdownClose();
     };
 
+    const handleCreateMatchClick = () => {
+        if (!league?.id) {
+            toast.error('Please select a league first.');
+            return;
+        }
+
+        const isLeagueAdmin = league.administrators?.some((admin) => String(admin.id) === String(user?.id));
+        if (!isLeagueAdmin) {
+            toast.error('Only league admins can create matches.');
+            return;
+        }
+
+        router.push(`/league/${league.id}/match`);
+    };
+
     // Keep the selected league at the top of the dropdown
     const sortedLeagues = React.useMemo(() => {
         if (!leagues?.length) return [];
@@ -2015,7 +2030,7 @@ export default function AllMatches() {
                         }}>
                             <Button
                                 variant="contained"
-                                // onClick={() => setIsDialogOpen(true)}
+                                onClick={handleCreateMatchClick}
                                 sx={{
                                     bgcolor: '#0388E3',
                                     color: 'white',
@@ -2025,7 +2040,7 @@ export default function AllMatches() {
                                     minHeight: { xs: 44, md: 48 },
                                     height: { xs: 44, md: 48 },
                                     '&:hover': { bgcolor: '#0388E3' },
-                                    width: { xs: '100%', sm: 'fit-content' },
+                                    width: { xs: '100%', sm: '240px' },
                                     borderRadius: 2,
                                     py: { xs: 0.75, md: 1 },
                                     px: { xs: 2.5, md: 3 },
@@ -2034,9 +2049,8 @@ export default function AllMatches() {
                                     textTransform: 'none'
                                 }}
                             >
-                                <Link href={`/league/${league?.id}/match`}>
-                                    Create New Match
-                                </Link>
+                                <Plus size={22} style={{ marginRight: 6 }} />
+                                Create New Match
                             </Button>
                             {/* <TextField
                                 label="Enter invite code"
@@ -2095,8 +2109,9 @@ export default function AllMatches() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
-                                    width: { xs: '100%', sm: 'min(52vw, 420px)', md: 'auto' },
-                                    minWidth: { xs: 0, sm: 240, md: 260 },
+                                                                        width: { xs: '100%', sm: '240px' },
+
+                                    minWidth: { xs: 0, sm: 'unset', md: 'unset' },
                                     textAlign: { xs: 'left', md: 'left' },
                                     // color: 'white',
                                     backgroundColor: '#2B2B2B',
@@ -2296,8 +2311,9 @@ export default function AllMatches() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 1,
-                                    width: { xs: '100%', sm: 'min(42vw, 290px)', md: 'auto' },
-                                    minWidth: { xs: 0, sm: 180, md: 200 },
+                                                                       width: { xs: '100%', sm: '240px' },
+
+                                    minWidth: { xs: 0, sm: 'unset', md: 'unset' },
                                     textAlign: { xs: 'left', md: 'left' },
                                     backgroundColor: '#2B2B2B',
                                     borderRadius: 2,

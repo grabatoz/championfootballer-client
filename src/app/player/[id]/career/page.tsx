@@ -182,6 +182,29 @@ const extractPlayerName = (input: unknown): string => {
   return '';
 };
 
+const getSeasonSortScore = (season: SeasonInfo): number => {
+  if (typeof season.seasonNumber === 'number' && Number.isFinite(season.seasonNumber)) {
+    return season.seasonNumber;
+  }
+  const label = String(season.name || '');
+  const yearHits = label.match(/\b(19|20)\d{2}\b/g);
+  if (yearHits && yearHits.length > 0) return Number(yearHits[yearHits.length - 1]);
+  const startTs = season.startDate ? Date.parse(season.startDate) : NaN;
+  if (Number.isFinite(startTs)) return startTs;
+  const endTs = season.endDate ? Date.parse(season.endDate) : NaN;
+  if (Number.isFinite(endTs)) return endTs;
+  return -1;
+};
+
+const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
+  [...seasonList].sort((a, b) => {
+    const aScore = getSeasonSortScore(a);
+    const bScore = getSeasonSortScore(b);
+    if (aScore !== bScore) return bScore - aScore;
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return String(b.name || '').localeCompare(String(a.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+  });
+
 // Row used for weekly / monthly aggregation
 interface PerformanceRow {
   key: string;
@@ -531,7 +554,12 @@ export default function CareerPage() {
         if (!cancelled) {
           // API returns { success: true, seasons: [...] }
           const list = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
-          setAvailableSeasons(list);
+          const sorted = sortSeasonsLatestFirst(list);
+          setAvailableSeasons(sorted);
+          setSeasonFilter((prev) => {
+            if (prev !== 'all' && sorted.some((s) => s.id === prev)) return prev;
+            return sorted[0]?.id || 'all';
+          });
           setSeasonsLoading(false);
         }
       })
