@@ -1780,17 +1780,15 @@ const PlayerProfileCard = () => {
               <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
                 <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}>
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     color="error"
                     onClick={handleDeleteProfile}
                     sx={{
                       borderRadius: 1,
                       px: 4,
                       width: { xs: '48%', sm: 'auto' },
+                      minHeight: { xs: 42, md: 'auto' },
                       fontWeight: 600,
-                      borderColor: '#00a77f',
-                      color: themeColors.text,
-                      '&:hover': { background: "rgba(0,167,127,0.15)", borderColor: '#00a77f' }
                     }}
                   >Delete Account</Button>
                   <Button
