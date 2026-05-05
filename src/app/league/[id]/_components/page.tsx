@@ -4713,10 +4713,11 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         p: 0,
                                                                                         ml: '5px',
-                                                                                        fontSize: '0.6rem',
+                                                                                        fontSize: '0.7rem',
+                                                                                        fontWeight: 600,
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
-                                                                                        '& .MuiButton-startIcon': { mr: 1 }
+                                                                                        '& .MuiButton-startIcon': { mr: 1 },
                                                                                     }}
                                                                                 >
                                                                                     Add Score
@@ -4735,7 +4736,8 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         p: 0,
                                                                                         ml: '5px',
-                                                                                        fontSize: '0.6rem',
+                                                                                       fontSize: '0.7rem',
+                                                                                        fontWeight: 600,
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
                                                                                         '& .MuiButton-startIcon': { mr: 0.5 }
@@ -4760,7 +4762,8 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         p: 0,
                                                                                         ml: '5px',
-                                                                                        fontSize: '0.6rem',
+                                                                                        fontSize: '0.65rem',
+                                                                                        fontWeight: 600,
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
                                                                                         '& .MuiButton-startIcon': { mr: 0.5 }

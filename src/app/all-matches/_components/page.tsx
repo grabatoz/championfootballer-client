@@ -2915,7 +2915,8 @@ export default function AllMatches() {
                                                                     textTransform: 'none',
                                                                     p: 0,
                                                                     ml: '5px',
-                                                                    fontSize: '0.6rem',
+                                                                    fontSize: '0.7rem',
+                                                                                        fontWeight: 600,
                                                                     whiteSpace: 'nowrap',
                                                                     textDecoration: 'underline',
                                                                     '& .MuiButton-startIcon': { mr: 1 },
@@ -2934,7 +2935,8 @@ export default function AllMatches() {
                                                                     textTransform: 'none',
                                                                     p: 0,
                                                                     ml: '5px',
-                                                                    fontSize: '0.6rem',
+                                                                    fontSize: '0.7rem',
+                                                                                        fontWeight: 600,
                                                                     whiteSpace: 'nowrap',
                                                                     textDecoration: 'underline',
                                                                     '& .MuiButton-startIcon': { mr: 0.5 },
@@ -2954,7 +2956,7 @@ export default function AllMatches() {
                                                                     }
                                                                 }}
                                                                 startIcon={match.archived ? <Undo2 size={14} /> : <Trash2 size={14} />}
-                                                                sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.6rem', whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
+                                                                sx={{ color: '#fff', justifyContent: 'flex-start', textTransform: 'none', p: 0, ml: '5px', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap', textDecoration: 'underline', '& .MuiButton-startIcon': { mr: 0.5 } }}
                                                             >
                                                                 {match.archived ? 'Restore' : 'Delete Match'}
                                                             </Button>
