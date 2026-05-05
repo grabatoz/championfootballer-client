@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert, Menu, MenuItem, Avatar, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import TrophyImg from '@/Components/images/awardtrophy.png';
 import RunnerUpImg from '@/Components/images/runnerup.png';
 import BaloonDImg from '@/Components/images/baloond.png';
@@ -396,23 +396,31 @@ const TrophyCard = ({
         </Typography>
 
         {/* Description */}
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'rgba(255,255,255,0.8)',
-            fontSize: isLarge
-              ? { xs: '0.75rem', sm: '0.85rem', md: '1.05rem' }
-              : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            mb: isLarge ? { xs: 1, sm: 2 } : { xs: 0.5, sm: 0.5 },
-          }}
+        <Tooltip
+          title={description}
+          placement="top"
+          arrow
+          enterDelay={200}
+          disableHoverListener={!description}
         >
-          {description}
-        </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: isLarge
+                ? { xs: '0.75rem', sm: '0.85rem', md: '1.05rem' }
+                : { xs: '0.65rem', sm: '0.75rem', md: '0.8rem' },
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              mb: isLarge ? { xs: 1, sm: 2 } : { xs: 0.5, sm: 0.5 },
+            }}
+          >
+            {description}
+          </Typography>
+        </Tooltip>
       </Box>
 
       {/* Middle Section - Trophy Image */}
@@ -1084,22 +1092,30 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
     role="button"
   >
     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Typography
-        variant="body2"
-        sx={{
-          color: '#666',
-          mb: { xs: 1, sm: 1.25 },
-          fontSize: { xs: '0.72rem', sm: '0.85rem' },
-          lineHeight: 1.35,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          textAlign: 'center',
-        }}
+      <Tooltip
+        title={description}
+        placement="top"
+        arrow
+        enterDelay={200}
+        disableHoverListener={!description}
       >
-        {description}
-      </Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#666',
+            mb: { xs: 1, sm: 1.25 },
+            fontSize: { xs: '0.72rem', sm: '0.85rem' },
+            lineHeight: 1.35,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textAlign: 'center',
+          }}
+        >
+          {description}
+        </Typography>
+      </Tooltip>
 
       <Box
         sx={{
