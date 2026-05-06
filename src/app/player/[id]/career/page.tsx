@@ -25,7 +25,7 @@ import {
   // Avatar
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
@@ -446,11 +446,11 @@ export default function CareerPage() {
   }, [data?.leagues, filters.year]);
   const { user, token, loading: authLoading } = useAuth();
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const currentUserId = String(user?.id || '').trim();
   const routePlayerId = String(playerId || '').trim();
+  const canViewPersonalSections = Boolean(currentUserId && routePlayerId && currentUserId === routePlayerId);
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -493,26 +493,10 @@ export default function CareerPage() {
 
   const loading = !data;
 
-  // Personal dashboard only: prevent opening another player's dashboard route.
-  useEffect(() => {
-    if (authLoading) return;
-    if (!routePlayerId) return;
-
-    if (!currentUserId) {
-      router.replace(`/player/${routePlayerId}`);
-      return;
-    }
-
-    if (routePlayerId !== currentUserId) {
-      router.replace(`/player/${currentUserId}/career`);
-    }
-  }, [authLoading, routePlayerId, currentUserId, router]);
-
   useEffect(() => {
     if (!playerId || authLoading) return;
-    if (!currentUserId || String(playerId) !== currentUserId) return;
     dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
-  }, [playerId, dispatch, filters.leagueId, filters.year, authLoading, currentUserId]);
+  }, [playerId, dispatch, filters.leagueId, filters.year, authLoading]);
 
   const matches: LeagueMatch[] = useMemo(() => {
     const d: PlayerStatsData | undefined = data;
@@ -520,6 +504,20 @@ export default function CareerPage() {
       .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
   }, [data]);
+
+  // Keep season options scoped to the viewed player's actual matches in the selected league.
+  const playerSeasonIdsForSelectedLeague = useMemo(() => {
+    const selectedLeagueId = filters.leagueId;
+    if (!selectedLeagueId || selectedLeagueId === 'all') return [] as string[];
+
+    const ids = new Set<string>();
+    for (const match of matches) {
+      if (match.leagueId !== selectedLeagueId) continue;
+      const sid = typeof match.seasonId === 'string' ? match.seasonId.trim() : '';
+      if (sid) ids.add(sid);
+    }
+    return Array.from(ids);
+  }, [matches, filters.leagueId]);
 
   // ---------- State for seasons filter ----------
   const [seasonFilter, setSeasonFilter] = useState<string>('all');
@@ -542,6 +540,7 @@ export default function CareerPage() {
     if (!token) return; // Need auth token
     let cancelled = false;
     setSeasonsLoading(true);
+    const playerSeasonIdSet = new Set(playerSeasonIdsForSelectedLeague);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
     fetch(`${apiUrl}/api/leagues/${filters.leagueId}/seasons`, {
       headers: {
@@ -555,22 +554,42 @@ export default function CareerPage() {
           // API returns { success: true, seasons: [...] }
           const list = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
           const sorted = sortSeasonsLatestFirst(list);
-          setAvailableSeasons(sorted);
+          const playerScopedSeasons = playerSeasonIdSet.size > 0
+            ? sorted.filter((s) => playerSeasonIdSet.has(String(s.id)))
+            : sorted;
+          setAvailableSeasons(playerScopedSeasons);
           setSeasonFilter((prev) => {
-            if (prev !== 'all' && sorted.some((s) => s.id === prev)) return prev;
-            return sorted[0]?.id || 'all';
+            if (prev !== 'all' && playerScopedSeasons.some((s) => s.id === prev)) return prev;
+            return playerScopedSeasons[0]?.id || 'all';
           });
           setSeasonsLoading(false);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setAvailableSeasons([]);
+          if (playerSeasonIdsForSelectedLeague.length > 0) {
+            const fallback = sortSeasonsLatestFirst(
+              playerSeasonIdsForSelectedLeague.map((sid) => ({
+                id: sid,
+                name: `Season ${sid.slice(-6)}`,
+                seasonNumber: 0,
+                isActive: false,
+              }))
+            );
+            setAvailableSeasons(fallback);
+            setSeasonFilter((prev) => {
+              if (prev !== 'all' && fallback.some((s) => s.id === prev)) return prev;
+              return fallback[0]?.id || 'all';
+            });
+          } else {
+            setAvailableSeasons([]);
+            setSeasonFilter('all');
+          }
           setSeasonsLoading(false);
         }
       });
     return () => { cancelled = true; };
-  }, [filters.leagueId, token]);
+  }, [filters.leagueId, token, playerSeasonIdsForSelectedLeague]);
 
   // Matches filtered by selected league, year, and season (for "Your Stats")
   const filteredMatches = useMemo(() => {
@@ -2842,33 +2861,35 @@ export default function CareerPage() {
                 </Box>
               </GlassCard>
 
-              {/* FOCUS AREA Section */}
-              <GlassCard sx={{ mb: 3, background: '#25262a' }}>
-                {/* Orange Header */}
-                <Box sx={{ 
-                  background: '#25262a', 
-                  px: 2, 
-                  py: 1,
-                  borderRadius: '8px 8px 0 0'
-                }}>
-                  <Typography sx={{ 
-                    fontSize: 14, 
-                    fontWeight: 'bold', 
-                    color: themeColors.text,
-                    pl: { xs: 1.5, md: 5 },
-                    pt: 1,
-                    textTransform: 'uppercase'
+              {/* FOCUS AREA Section (private: only when viewing your own dashboard) */}
+              {canViewPersonalSections && (
+                <GlassCard sx={{ mb: 3, background: '#25262a' }}>
+                  {/* Orange Header */}
+                  <Box sx={{ 
+                    background: '#25262a', 
+                    px: 2, 
+                    py: 1,
+                    borderRadius: '8px 8px 0 0'
                   }}>
-                    Focus Area
-                  </Typography>
-                </Box>
+                    <Typography sx={{ 
+                      fontSize: 14, 
+                      fontWeight: 'bold', 
+                      color: themeColors.text,
+                      pl: { xs: 1.5, md: 5 },
+                      pt: 1,
+                      textTransform: 'uppercase'
+                    }}>
+                      Focus Area
+                    </Typography>
+                  </Box>
 
-                <Box sx={{ p: 2 }}>
-                  <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
-                    {focusSuggestion}
-                  </Typography>
-                </Box>
-              </GlassCard>
+                  <Box sx={{ p: 2 }}>
+                    <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
+                      {focusSuggestion}
+                    </Typography>
+                  </Box>
+                </GlassCard>
+              )}
 
               {/* Play Best With + Rivalries */}
               <Box sx={{ mb: 2 }}>

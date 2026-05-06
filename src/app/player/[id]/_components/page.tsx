@@ -260,8 +260,7 @@ export default function PlayerStatsPage() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
     const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-    const { token, user } = useAuth();
-    const currentUserId = String(user?.id || '').trim();
+    const { token } = useAuth();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -2547,18 +2546,18 @@ export default function PlayerStatsPage() {
                                         alignItems: 'stretch',
                                         borderRadius: 1,
                                         overflow: 'hidden',
-                                        cursor: currentUserId ? 'pointer' : 'not-allowed',
+                                        cursor: playerId ? 'pointer' : 'not-allowed',
                                         border: '1px solid rgba(255,255,255,0.4)',
                                         boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
-                                        opacity: currentUserId ? 1 : 0.6,
+                                        opacity: playerId ? 1 : 0.6,
                                         transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
                                         '&:hover': {
-                                            transform: currentUserId ? 'translateY(-1px)' : 'none',
-                                            boxShadow: currentUserId ? '0 10px 22px rgba(0,0,0,0.45)' : '0 6px 16px rgba(0,0,0,0.35)',
-                                            borderColor: currentUserId ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.4)',
+                                            transform: playerId ? 'translateY(-1px)' : 'none',
+                                            boxShadow: playerId ? '0 10px 22px rgba(0,0,0,0.45)' : '0 6px 16px rgba(0,0,0,0.35)',
+                                            borderColor: playerId ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.4)',
                                         },
-                                        '&:hover .perf-icon-box': { bgcolor: currentUserId ? '#E16419' : '#E16419' },
-                                        '&:hover .perf-text-box': { bgcolor: currentUserId ? '#2f2f2f' : '#2b2b2b' },
+                                        '&:hover .perf-icon-box': { bgcolor: '#E16419' },
+                                        '&:hover .perf-text-box': { bgcolor: playerId ? '#2f2f2f' : '#2b2b2b' },
                                         width: '100%',
                                         maxWidth: { xs: '100%', md: 238 },
                                         minWidth: 0,
@@ -2566,8 +2565,8 @@ export default function PlayerStatsPage() {
                                         justifySelf: { xs: 'stretch', md: 'start' },
                                     }}
                                     onClick={() => {
-                                        if (!currentUserId) return;
-                                        router.push(`/player/${currentUserId}/career`);
+                                        if (!playerId) return;
+                                        router.push(`/player/${playerId}/career`);
                                     }}
                                 >
                                     <Box className="perf-icon-box" sx={{
