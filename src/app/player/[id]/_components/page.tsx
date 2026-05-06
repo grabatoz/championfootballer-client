@@ -209,6 +209,23 @@ const orderedTrophyKeys = [
     'Star Keeper',
 ];
 
+const TROPHY_ICON_FRAME_SIZE = 65;
+const TROPHY_ICON_SIZE_BY_LABEL: Record<string, number> = {
+    'League Champion': 56,
+    'Runner-Up': 55,
+    "Ballon d'Or": 55,
+    'Golden Boot': 54,
+    'King Playmaker': 54,
+    'Legendary Shield': 52,
+    'The Dark Horse': 46,
+    'Star Keeper': 50,
+};
+
+const getTrophyIconSize = (label?: string): number => {
+    if (!label) return 54;
+    return TROPHY_ICON_SIZE_BY_LABEL[label] ?? 54;
+};
+
 type StatTotals = {
     goals: number;
     assists: number;
@@ -2777,12 +2794,20 @@ export default function PlayerStatsPage() {
                                                 alignItems: 'center', 
                                                 gap: 0.5 
                                             }}>
-                                                <Box sx={{ width: 65, height: 65, position: 'relative' }}>
+                                                <Box
+                                                    sx={{
+                                                        width: TROPHY_ICON_FRAME_SIZE,
+                                                        height: TROPHY_ICON_FRAME_SIZE,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                >
                                                     <Image 
                                                         src={t.image} 
                                                         alt={t.label} 
-                                                        width={65} 
-                                                        height={65} 
+                                                        width={getTrophyIconSize(t.label)}
+                                                        height={getTrophyIconSize(t.label)}
                                                         style={{ 
                                                             objectFit: 'contain',
                                                             filter: t.label === 'Star Keeper' ? BLUE_FILTER : 'none'

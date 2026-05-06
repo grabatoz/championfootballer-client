@@ -241,7 +241,7 @@ const bottomTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'lea
   { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#cccccc' },
   { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#7b3fe4' },
   { title: 'Legendary Shield', description: 'Player With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#00b3ff' },
-  { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The ....', image: DarkHorseImg, color: '#e10600' },
+  { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#e10600' },
   { title: 'Star Keeper', description: 'Goalkeeper With The Highest Number Of Clean Sheets', image: StarKeeperImg, color: '#00d1c1' },
 ];
 
