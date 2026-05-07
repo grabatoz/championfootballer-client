@@ -914,7 +914,17 @@ const AllPlayersPage = () => {
         // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
       {/* Full-width Header Section */}
-      <PageHeader title="Players" fullBleed={false} sx={{ mb: 4 }}>
+      <PageHeader
+        title="Players"
+        fullBleed={false}
+        sx={{ mb: 4 }}
+        dividerSx={{
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
+      >
         {/* Search and Filters Section */}
         <Box sx={{
           display: 'flex',
