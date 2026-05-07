@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { leagueAPI } from '../api';
 import {  CreateLeagueDTO } from '@/types/api';
-import Cookies from 'js-cookie';
 import { League } from '@/types/user';
+import type { RootState } from '../store';
+import { getAuthToken } from '../tokenManager';
 
 interface LeagueState {
   leagues: League[];
@@ -18,11 +19,23 @@ const initialState: LeagueState = {
   error: null,
 };
 
+const resolveAuthToken = (state: RootState | undefined): string | null => {
+  const stateToken = state?.auth?.token;
+  if (typeof stateToken === 'string') {
+    const trimmed = stateToken.trim();
+    if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
+      return trimmed;
+    }
+  }
+
+  return getAuthToken();
+};
+
 export const createLeague = createAsyncThunk(
   'league/create',
-  async (leagueData: CreateLeagueDTO, { rejectWithValue }) => {
+  async (leagueData: CreateLeagueDTO, { rejectWithValue, getState }) => {
     try {
-      const token = Cookies.get('token');
+      const token = resolveAuthToken(getState() as RootState | undefined);
       if (!token) {
         return rejectWithValue('No authentication token');
       }
@@ -42,9 +55,9 @@ export const createLeague = createAsyncThunk(
 
 export const joinLeague = createAsyncThunk(
   'league/join',
-  async (inviteCode: string, { rejectWithValue }) => {
+  async (inviteCode: string, { rejectWithValue, getState }) => {
     try {
-      const token = Cookies.get('token');
+      const token = resolveAuthToken(getState() as RootState | undefined);
       if (!token) {
         return rejectWithValue('No authentication token');
       }
