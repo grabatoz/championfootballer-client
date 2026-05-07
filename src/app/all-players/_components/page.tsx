@@ -97,7 +97,8 @@ interface LeagueOption {
   active?: boolean;
   archived?: boolean;
   matches?: Match[];
-  seasons?: Array<{id: string, name: string, seasonNumber?: number, isActive?: boolean}>;
+  seasons?: SeasonOption[];
+  members?: Player[];
   // Derived on client: whether the user is an admin of this league
   isAdmin?: boolean;
 }
@@ -453,6 +454,8 @@ const AllPlayersPage = () => {
               let matchesFromDetails: Match[] | undefined = undefined;
               let maxGamesFromDetails: number | undefined = undefined;
               let createdAt: string | undefined = undefined;
+              let seasonsFromDetails: SeasonOption[] | undefined = undefined;
+              let membersFromDetails: Player[] | undefined = undefined;
 
               if (detailsRes.ok) {
                 const leagueData = await detailsRes.json();
@@ -464,6 +467,13 @@ const AllPlayersPage = () => {
                   maxGamesFromDetails = leagueData.league.maxGames as number;
                 }
                 createdAt = leagueData?.league?.createdAt;
+                seasonsFromDetails = normalizeAndSortSeasons(leagueData?.league?.seasons);
+                const rawMembers = leagueData?.league?.members as unknown;
+                if (Array.isArray(rawMembers)) {
+                  membersFromDetails = rawMembers
+                    .map((memberRaw: unknown) => normalizePlayer(memberRaw))
+                    .filter((member): member is Player => Boolean(member));
+                }
               }
 
               const statusFromUserLeagues = statusMap.get(leagueId);
@@ -489,7 +499,7 @@ const AllPlayersPage = () => {
                   missing,
                 };
                 // Extract seasons from league data
-                const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
+                const seasonsFromLeague = seasonsFromDetails ?? normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
                 
                 return {
                   ...league,
@@ -502,11 +512,12 @@ const AllPlayersPage = () => {
                   createdAt,
                   isAdmin,
                   seasons: seasonsFromLeague,
+                  members: membersFromDetails ?? [],
                 } as LeagueOption;
               }
 
               // Extract seasons from league data
-              const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
+              const seasonsFromLeague = seasonsFromDetails ?? normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
               
               return {
                 id: String(leagueId),
@@ -514,6 +525,7 @@ const AllPlayersPage = () => {
                 createdAt,
                 isAdmin,
                 seasons: seasonsFromLeague,
+                members: membersFromDetails ?? [],
               } as LeagueOption;
             } catch (error) {
               console.error(`Error fetching details for league`, error);
@@ -527,6 +539,7 @@ const AllPlayersPage = () => {
                 name: (league as { name?: string }).name || '',
                 isAdmin: adminIds.has(leagueId),
                 seasons: seasonsFromLeague,
+                members: [],
               } as LeagueOption;
             }
           })
@@ -562,7 +575,7 @@ const AllPlayersPage = () => {
     } finally {
       setLeaguesLoading(false);
     }
-  }, [token, leagueIsCompleted, normalizeAndSortSeasons]);
+  }, [token, leagueIsCompleted, normalizeAndSortSeasons, normalizePlayer]);
 
   useEffect(() => {
     if (token) {
@@ -630,8 +643,13 @@ const AllPlayersPage = () => {
       const sortedSeasons = sortSeasonsLatestFirst(selectedLeagueData.seasons as SeasonOption[]);
       console.log('[All Players] Found seasons:', sortedSeasons);
       setSeasons(sortedSeasons);
-      // Auto-select first season if available
-      setSelectedSeason(sortedSeasons[0].id);
+      setSelectedSeason((prev) => {
+        if (prev !== 'all' && sortedSeasons.some((season) => season.id === prev)) {
+          return prev;
+        }
+        const activeSeason = sortedSeasons.find((season) => season.isActive === true);
+        return activeSeason?.id || sortedSeasons[0].id;
+      });
     } else {
       console.log('[All Players] No seasons found for league');
       setSeasons([]);
@@ -650,11 +668,12 @@ const AllPlayersPage = () => {
     
     try {
       const allPlayersMap = new Map<string, Player>();
+      const requestTs = Date.now();
       
       // Fetch players from ALL leagues in parallel (faster)
       const playerResponses = await Promise.all(
         filteredLeagues.map(league => {
-          let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}`;
+          let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${league.id}&_t=${requestTs}`;
           // Add season filter if a specific season is selected
           if (selectedSeason !== 'all') {
             url += `&seasonId=${selectedSeason}`;
@@ -704,27 +723,51 @@ const AllPlayersPage = () => {
       // Fetch all players from all leagues the user is part of
       fetchAllLeaguesPlayers();
     } else {
-      // Fetch players for specific league and season
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${selectedLeague}`;
-      if (selectedSeason !== 'all') {
-        url += `&seasonId=${selectedSeason}`;
-      }
-      
-      fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.success && data?.players) {
-            const normalizedPlayers = Array.isArray(data.players)
-              ? data.players
-                  .map((rawPlayer: unknown) => normalizePlayer(rawPlayer))
-                  .filter((p: Player | null): p is Player => Boolean(p))
-              : [];
-            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: normalizedPlayers });
+      const fetchPlayersForLeague = async () => {
+        const selectedLeagueData = filteredLeagues.find((league) => league.id === selectedLeague);
+        const selectedSeasonMeta = (selectedLeagueData?.seasons || []).find((season) => season.id === selectedSeason);
+        const leagueMembers = selectedLeagueData?.members || [];
+
+        // Fetch players for specific league and season
+        let url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?leagueId=${selectedLeague}&_t=${Date.now()}`;
+        if (selectedSeason !== 'all') {
+          url += `&seasonId=${selectedSeason}`;
+        }
+
+        try {
+          const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+          const data = await res.json().catch(() => ({}));
+
+          const normalizedPlayers = (data?.success && Array.isArray(data.players))
+            ? data.players
+                .map((rawPlayer: unknown) => normalizePlayer(rawPlayer))
+                .filter((p: Player | null): p is Player => Boolean(p))
+            : [];
+
+          // New active season can temporarily return partial players from backend.
+          // Keep all league members visible in All Players until season membership sync completes.
+          if (selectedSeason !== 'all' && selectedSeasonMeta?.isActive === true && leagueMembers.length > 0) {
+            const merged = new Map<string, Player>();
+            normalizedPlayers.forEach((player) => merged.set(player.id, player));
+            leagueMembers.forEach((member) => {
+              if (!merged.has(member.id)) merged.set(member.id, member);
+            });
+            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: Array.from(merged.values()) });
+            return;
           }
-        })
-        .catch(err => console.error('Error fetching league players:', err));
+
+          dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: normalizedPlayers });
+        } catch (err) {
+          console.error('Error fetching league players:', err);
+          if (selectedSeason !== 'all' && selectedSeasonMeta?.isActive === true && leagueMembers.length > 0) {
+            dispatch({ type: 'user/fetchLeaguePlayers/fulfilled', payload: leagueMembers });
+          }
+        }
+      };
+
+      void fetchPlayersForLeague();
     }
-  }, [dispatch, token, selectedLeague, selectedSeason, fetchAllLeaguesPlayers, normalizePlayer]);
+  }, [dispatch, token, selectedLeague, selectedSeason, fetchAllLeaguesPlayers, normalizePlayer, filteredLeagues]);
 
   useEffect(() => {
     if (error) {
