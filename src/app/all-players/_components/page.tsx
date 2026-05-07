@@ -247,11 +247,39 @@ const AllPlayersPage = () => {
     return Array.from(years);
   }, [getYearFromDateLike]);
 
+  const resolveProfileImageUrl = useCallback((value: unknown): string | null => {
+    if (value == null) return null;
+    const raw = String(value).trim();
+    if (!raw || raw === 'null' || raw === 'undefined') return null;
+
+    if (
+      raw.startsWith('http://') ||
+      raw.startsWith('https://') ||
+      raw.startsWith('//') ||
+      raw.startsWith('data:') ||
+      raw.startsWith('blob:')
+    ) {
+      return raw;
+    }
+
+    const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+    if (!apiBase) {
+      return raw.startsWith('/') ? raw : `/${raw}`;
+    }
+
+    return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  }, []);
+
   const normalizePlayer = useCallback((raw: unknown): Player | null => {
     if (!raw || typeof raw !== 'object') return null;
     const rec = raw as Record<string, unknown>;
     const nested = (rec.player && typeof rec.player === 'object') ? (rec.player as Record<string, unknown>) : null;
-    const from = (key: string) => (rec[key] ?? (nested ? nested[key] : undefined));
+    const nestedUser = (rec.user && typeof rec.user === 'object') ? (rec.user as Record<string, unknown>) : null;
+    const from = (key: string) => (
+      rec[key] ??
+      (nested ? nested[key] : undefined) ??
+      (nestedUser ? nestedUser[key] : undefined)
+    );
     const pickString = (keys: string[]) => {
       for (const k of keys) {
         const v = from(k);
@@ -259,17 +287,22 @@ const AllPlayersPage = () => {
       }
       return '';
     };
-    const id = (from('id') != null ? String(from('id')) : '') || '';
+    const id = pickString(['id', '_id', 'userId']);
     if (!id) return null;
     const firstName = pickString(['firstName', 'first_name']);
     const lastName = pickString(['lastName', 'last_name']);
     const fullName = pickString(['name']) || `${firstName} ${lastName}`.trim();
+    const profilePictureRaw =
+      from('profilePicture') ??
+      from('avatar') ??
+      from('avatarUrl') ??
+      from('image');
     const normalized: Player = {
       id,
       name: fullName || 'Unknown Player',
       firstName,
       lastName,
-      profilePicture: from('profilePicture') == null ? null : String(from('profilePicture')),
+      profilePicture: resolveProfileImageUrl(profilePictureRaw),
       rating: Number(from('rating') ?? 0),
       cpPoints: typeof from('cpPoints') === 'number' ? (from('cpPoints') as number) : undefined,
       xpPoints: typeof from('xpPoints') === 'number' ? (from('xpPoints') as number) : undefined,
@@ -302,7 +335,7 @@ const AllPlayersPage = () => {
       },
     });
     return normalized;
-  }, []);
+  }, [resolveProfileImageUrl]);
 
   useEffect(() => {
     dispatch(initializeFromStorage());
@@ -1346,11 +1379,16 @@ const AllPlayersPage = () => {
                             backgroundColor: 'rgba(255,255,255,0.1)'
                           }}>
                             {player.profilePicture ? (
-                              <Image 
-                                src={player.profilePicture} 
-                                alt={player.name} 
-                                fill 
-                                style={{ objectFit: 'cover' }} 
+                              <Box
+                                component="img"
+                                src={player.profilePicture}
+                                alt={player.name}
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  display: 'block',
+                                }}
                               />
                             ) : (
                               <Image src={ShirtImg} alt="Default" fill style={{ objectFit: 'contain' }} />

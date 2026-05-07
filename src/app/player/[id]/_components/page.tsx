@@ -272,6 +272,26 @@ function getReadableTextColor(hexColor: string): string {
     return luminance > 0.58 ? '#111111' : '#FFFFFF';
 }
 
+function resolveProfileImageUrl(value: string | null | undefined): string {
+    const raw = String(value ?? '').trim();
+    if (!raw || raw === 'null' || raw === 'undefined') return '/assets/group451.png';
+
+    if (
+        raw.startsWith('http://') ||
+        raw.startsWith('https://') ||
+        raw.startsWith('//') ||
+        raw.startsWith('data:') ||
+        raw.startsWith('blob:')
+    ) {
+        return raw;
+    }
+
+    const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+    if (!apiBase) return raw.startsWith('/') ? raw : `/${raw}`;
+
+    return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
+}
+
 export default function PlayerStatsPage() {
     const params = useParams();
     const router = useRouter();
@@ -442,6 +462,7 @@ export default function PlayerStatsPage() {
         avatar?: string;
         profilePicture?: string;
         avatarUrl?: string;
+        image?: string;
         position?: string;
         positionType?: string;
     };
@@ -460,7 +481,7 @@ export default function PlayerStatsPage() {
         firstName: p.firstName ?? p.fname,
         lastName: p.lastName ?? p.lname,
         name: p.name ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
-        avatar: p.avatar ?? p.profilePicture ?? p.avatarUrl,
+        avatar: resolveProfileImageUrl(p.avatar ?? p.profilePicture ?? p.avatarUrl ?? p.image),
         position: p.position ?? p.positionType,
     }), []);
 
@@ -1847,7 +1868,7 @@ export default function PlayerStatsPage() {
                                                             }}
                                                         >
                                                             <Avatar
-                                                                src={p.avatar || '/assets/group451.png'}
+                                                                src={resolveProfileImageUrl(p.avatar)}
                                                                 alt={displayName}
                                                                 sx={{
                                                                     width: 34,
@@ -2358,7 +2379,7 @@ export default function PlayerStatsPage() {
                         {/* Left: Avatar + Name + Position */}
                         <Box sx={{ display: 'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 1.3, sm: 2 }, width: { xs: '100%', md: 'auto' } }}>
                             <Avatar
-                                src={fullPlayerData?.player?.avatar || '/assets/group451.png'}
+                                src={resolveProfileImageUrl(fullPlayerData?.player?.avatar || fullPlayerData?.player?.profilePicture || null)}
                                 alt={playerName}
                                 sx={{
                                     width: { xs: 84, sm: 102, md: 125 },
