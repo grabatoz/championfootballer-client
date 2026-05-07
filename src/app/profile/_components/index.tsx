@@ -1791,7 +1791,7 @@ const PlayerProfileCard = () => {
                     sx={{
                       borderRadius: 1,
                       px: 4,
-                      width: { xs: '100%', sm: 'auto' },
+                      width: { xs: '100%', sm: 220 },
                       minHeight: { xs: 42, md: 'auto' },
                       fontWeight: 600,
                     }}
@@ -1812,7 +1812,7 @@ const PlayerProfileCard = () => {
                       sx={{
                         borderRadius: 1,
                         px: 3,
-                        width: { xs: '48%', sm: 'auto' },
+                        width: { xs: '48%', sm: 220 },
                         borderColor: themeColors.primary,
                         color: themeColors.text,
                         fontWeight: 600,
@@ -1830,7 +1830,7 @@ const PlayerProfileCard = () => {
                       sx={{
                         borderRadius: 1,
                         px: 5,
-                        width: { xs: '48%', sm: 'auto' },
+                        width: { xs: '48%', sm: 220 },
                         fontWeight: 700,
                         background: themeColors.primaryGradient,
                         '&:hover': { opacity: .9 }
