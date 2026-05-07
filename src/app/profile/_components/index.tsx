@@ -1778,7 +1778,12 @@ const PlayerProfileCard = () => {
               </Grid>
 
               <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
-                <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  spacing={{ xs: 1.25, sm: 1 }}
+                  sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}
+                >
                   <Button
                     variant="contained"
                     color="error"
@@ -1786,46 +1791,56 @@ const PlayerProfileCard = () => {
                     sx={{
                       borderRadius: 1,
                       px: 4,
-                      width: { xs: '48%', sm: 'auto' },
+                      width: { xs: '100%', sm: 'auto' },
                       minHeight: { xs: 42, md: 'auto' },
                       fontWeight: 600,
                     }}
-                  >Delete Account</Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isUpdating}
-                    startIcon={isUpdating ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : null}
-                    sx={{
-                      borderRadius: 1,
-                      px: 5,
-                      width: { xs: '48%', sm: 'auto' },
-                      fontWeight: 700,
-                      background: themeColors.primaryGradient,
-                      '&:hover': { opacity: .9 }
-                    }}
                   >
-                    {isUpdating ? "Updating..." : "Update Profile"}
+                    Delete Account
                   </Button>
+
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={handlePrevious}
+                      startIcon={<ArrowBack />}
+                      sx={{
+                        borderRadius: 1,
+                        px: 3,
+                        width: { xs: '48%', sm: 'auto' },
+                        borderColor: themeColors.primary,
+                        color: themeColors.text,
+                        fontWeight: 600,
+                        '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
+                      }}
+                    >
+                      Previous
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isUpdating}
+                      startIcon={isUpdating ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : null}
+                      sx={{
+                        borderRadius: 1,
+                        px: 5,
+                        width: { xs: '48%', sm: 'auto' },
+                        fontWeight: 700,
+                        background: themeColors.primaryGradient,
+                        '&:hover': { opacity: .9 }
+                      }}
+                    >
+                      {isUpdating ? "Updating..." : "Update Profile"}
+                    </Button>
+                  </Stack>
                 </Stack>
               </form>
-
-              <Stack direction="row" justifyContent="flex-start" sx={{ mt: 4, px: { xs: 1, sm: 3, md: 6 } }}>
-                <Button
-                  variant="outlined"
-                  onClick={handlePrevious}
-                  startIcon={<ArrowBack />}
-                  sx={{
-                    borderRadius: 1,
-                    px: 3,
-                    width: 'auto',
-                    borderColor: themeColors.primary,
-                    color: themeColors.text,
-                    fontWeight: 600,
-                    '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
-                  }}
-                >Previous</Button>
-              </Stack>
             </StyledPaper>
           </Box>
         </Fade>
