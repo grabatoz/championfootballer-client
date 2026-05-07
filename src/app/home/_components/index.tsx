@@ -341,39 +341,163 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
     try {
       setIsCreatingSeason(true);
-      const response = await fetch(
+      const endpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/seasons`,
         `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${selectedLeague.id}/seasons`,
-        {
+      ];
+
+      let responsePayload: Record<string, unknown> | null = null;
+      let successMessage = 'New season created successfully!';
+      let errorMessage = 'Failed to create new season';
+      let seasonCreated = false;
+
+      for (let i = 0; i < endpoints.length; i += 1) {
+        const response = await fetch(endpoints[i], {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ copyPlayers: true })
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = (typeof payloadUnknown === 'object' && payloadUnknown !== null)
+          ? (payloadUnknown as Record<string, unknown>)
+          : {};
+
+        if (response.ok && payload.success !== false) {
+          responsePayload = payload;
+          const msg = payload.message;
+          if (typeof msg === 'string' && msg.trim()) {
+            successMessage = msg.trim();
+          }
+          seasonCreated = true;
+          break;
         }
-      );
 
-      const data = await response.json();
+        const msg = payload.message;
+        if (typeof msg === 'string' && msg.trim()) {
+          errorMessage = msg.trim();
+        }
 
-      if (response.ok && data.success) {
-        toast.success(`${data.message || 'New season created successfully!'}`);
-        
-        // Note: Backend already sends notifications to all league members in createNewSeason
-
-        // Clear all caches before reload
-        try {
-          leagueAPI.invalidateCache();
-          localStorage.removeItem('leaguesCache');
-          localStorage.removeItem('lastLeaguesFetch');
-        } catch {}
-
-        // Refresh the league data by triggering a complete page reload
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      } else {
-        toast.error(data.message || 'Failed to create new season');
+        const shouldTryFallback = i === 0 && (response.status === 404 || response.status === 405);
+        if (!shouldTryFallback) break;
       }
+
+      if (!seasonCreated) {
+        toast.error(errorMessage);
+        return;
+      }
+
+      const extractSeasonIdFromPayload = (payload: Record<string, unknown> | null): string | null => {
+        if (!payload) return null;
+
+        const asRecord = (v: unknown): Record<string, unknown> | null =>
+          typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : null;
+
+        const getId = (v: unknown): string | null => {
+          if (typeof v === 'string' && v.trim()) return v.trim();
+          if (typeof v === 'number') return String(v);
+          return null;
+        };
+
+        const directSeasonId = getId(payload.seasonId);
+        if (directSeasonId) return directSeasonId;
+
+        const seasonLikeKeys = ['season', 'newSeason', 'createdSeason', 'currentSeason'] as const;
+        for (const key of seasonLikeKeys) {
+          const obj = asRecord(payload[key]);
+          const id = getId(obj?.id) || getId(obj?.seasonId);
+          if (id) return id;
+        }
+
+        const nestedKeys = ['data', 'result', 'payload', 'league'] as const;
+        for (const key of nestedKeys) {
+          const obj = asRecord(payload[key]);
+          if (!obj) continue;
+          const id =
+            getId(obj.seasonId) ||
+            getId(asRecord(obj.season)?.id) ||
+            getId(asRecord(obj.newSeason)?.id) ||
+            getId(asRecord(obj.currentSeason)?.id);
+          if (id) return id;
+        }
+
+        return null;
+      };
+
+      const resolveLatestSeasonIdFromLeague = (leaguePayload: unknown): string | null => {
+        if (!leaguePayload || typeof leaguePayload !== 'object') return null;
+        const leagueObj = leaguePayload as Record<string, unknown>;
+
+        const getId = (v: unknown): string | null => {
+          if (typeof v === 'string' && v.trim()) return v.trim();
+          if (typeof v === 'number') return String(v);
+          return null;
+        };
+
+        const currentSeason = leagueObj.currentSeason as Record<string, unknown> | undefined;
+        const fromCurrent = currentSeason ? getId(currentSeason.id) : null;
+        if (fromCurrent) return fromCurrent;
+
+        const seasonsUnknown = leagueObj.seasons;
+        if (!Array.isArray(seasonsUnknown) || seasonsUnknown.length === 0) return null;
+
+        const seasons = seasonsUnknown
+          .map((s) => (typeof s === 'object' && s !== null ? (s as Record<string, unknown>) : null))
+          .filter((s): s is Record<string, unknown> => Boolean(s));
+
+        const activeSeason = seasons.find((s) => s.isActive === true);
+        const activeId = activeSeason ? getId(activeSeason.id) : null;
+        if (activeId) return activeId;
+
+        const sorted = [...seasons].sort((a, b) => {
+          const aNum = typeof a.seasonNumber === 'number' ? a.seasonNumber : Number(a.seasonNumber || 0);
+          const bNum = typeof b.seasonNumber === 'number' ? b.seasonNumber : Number(b.seasonNumber || 0);
+          return bNum - aNum;
+        });
+        return getId(sorted[0]?.id);
+      };
+
+      let createdSeasonId = extractSeasonIdFromPayload(responsePayload);
+      if (!createdSeasonId) {
+        const detailsRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}?_t=${Date.now()}`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store',
+          }
+        );
+        if (detailsRes.ok) {
+          const detailsData: unknown = await detailsRes.json().catch(() => null);
+          const leagueObj = (detailsData && typeof detailsData === 'object')
+            ? (detailsData as { league?: unknown }).league
+            : null;
+          createdSeasonId = resolveLatestSeasonIdFromLeague(leagueObj);
+        }
+      }
+
+      toast.success(successMessage);
+
+      // Clear caches before redirecting to the newly-created season table
+      try {
+        leagueAPI.invalidateCache();
+        localStorage.removeItem('leaguesCache');
+        localStorage.removeItem('lastLeaguesFetch');
+      } catch {}
+
+      const params = new URLSearchParams();
+      params.set('tab', 'table');
+      params.set('seasonCreated', '1');
+      params.set('seasonCreatedMsg', successMessage);
+      if (createdSeasonId) {
+        params.set('seasonId', createdSeasonId);
+      }
+
+      setTimeout(() => {
+        window.location.assign(`/league/${selectedLeague.id}?${params.toString()}`);
+      }, 250);
     } catch (error) {
       console.error('Error creating new season:', error);
       toast.error('An error occurred while creating new season');
@@ -1159,6 +1283,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         <DialogContent>
           <Typography sx={{ color: '#9CA3AF' }}>
             Do you want to create a new season?
+          </Typography>
+          <Typography sx={{ color: '#D1D5DB', mt: 1.5, fontSize: '0.9rem' }}>
+            Note: Players from the previous season will be moved to the new season, and after creation you will be taken to the new season league table.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>

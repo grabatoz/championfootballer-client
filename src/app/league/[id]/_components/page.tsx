@@ -441,6 +441,9 @@ export default function LeagueDetailPage() {
     const [tableHasHorizontalOverflow, setTableHasHorizontalOverflow] = useState(false);
     const searchParams = useSearchParams();
     const profilePlayerId = typeof searchParams?.get === 'function' ? searchParams.get('profilePlayerId') : '';
+    const initialSeasonIdFromQuery = typeof searchParams?.get === 'function'
+        ? (searchParams.get('seasonId') || '').trim()
+        : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
     const [, setCheckedCommonLeague] = useState(false);
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
@@ -676,7 +679,8 @@ export default function LeagueDetailPage() {
     // Season dropdown state
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
     const [seasonDropdownAnchor, setSeasonDropdownAnchor] = useState<null | HTMLElement>(null);
-    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(initialSeasonIdFromQuery || null);
+    const seasonCreatedToastShownRef = React.useRef(false);
 
     // Match detail modal state
     const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);
@@ -921,6 +925,26 @@ export default function LeagueDetailPage() {
         if (tab === 'table' || tab === 'leaderboard' || tab === 'members' || tab === 'matches' || tab === 'results') {
             setSection(tab);
         }
+    }, [searchParams]);
+
+    // Sync season from query param (used after creating a new season and redirecting)
+    useEffect(() => {
+        const querySeasonId = typeof searchParams?.get === 'function'
+            ? (searchParams.get('seasonId') || '').trim()
+            : '';
+        if (querySeasonId && querySeasonId !== selectedSeasonId) {
+            setSelectedSeasonId(querySeasonId);
+        }
+    }, [searchParams, selectedSeasonId]);
+
+    // Show creation message after redirect from season creation flows
+    useEffect(() => {
+        if (seasonCreatedToastShownRef.current) return;
+        const createdFlag = searchParams?.get('seasonCreated');
+        if (createdFlag !== '1') return;
+        const queryMessage = (searchParams?.get('seasonCreatedMsg') || '').trim();
+        toast.success(queryMessage || 'New season created successfully!');
+        seasonCreatedToastShownRef.current = true;
     }, [searchParams]);
 
     // Declare isMember and isAdmin here so they are available for useEffect and logic below
@@ -1723,9 +1747,24 @@ export default function LeagueDetailPage() {
                             .filter((id) => id !== '')
                     );
                     console.log('🔍 All league members:', league.members.map(m => `${m.id}: ${m.firstName} ${m.lastName}`));
-                    filteredMembers = league.members.filter((member: User) => seasonMemberIds.has(normalizeEntityId(member.id)));
-                    console.log('✅ Using season members from backend:', filteredMembers.length);
-                    console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
+                    const membersFromSeason = league.members.filter((member: User) => seasonMemberIds.has(normalizeEntityId(member.id)));
+                    const isActiveSeason = seasonObj?.isActive === true;
+                    const shouldUseLeagueMembersFallback =
+                        isActiveSeason &&
+                        filteredMatches.length === 0 &&
+                        membersFromSeason.length > 0 &&
+                        membersFromSeason.length < league.members.length;
+
+                    if (shouldUseLeagueMembersFallback) {
+                        // New active season can briefly return partial season members from backend.
+                        // Show all league members until season membership is fully synced.
+                        filteredMembers = [...league.members];
+                        console.log('⚠️ Active season has partial members; falling back to all league members:', filteredMembers.length);
+                    } else {
+                        filteredMembers = membersFromSeason;
+                        console.log('✅ Using season members from backend:', filteredMembers.length);
+                        console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
+                    }
                 }
             }
         }

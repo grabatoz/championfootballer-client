@@ -2801,13 +2801,14 @@ function AllLeagues() {
     setCreatingSeasonLeagueId(leagueId);
     try {
       const endpoints = [
-        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons`,
         `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons`,
       ];
 
       let success = false;
       let errorMessage = 'Failed to create new season';
       let successMessage = '';
+      let responsePayload: Record<string, unknown> | null = null;
 
       for (let i = 0; i < endpoints.length; i += 1) {
         const response = await fetch(endpoints[i], {
@@ -2826,14 +2827,15 @@ function AllLeagues() {
 
         if (response.ok && payload.success !== false) {
           success = true;
+          responsePayload = payload as Record<string, unknown>;
           successMessage = payload.message || `New season created for ${league.name}`;
           break;
         }
 
         if (payload.message) errorMessage = payload.message;
 
-        // Try fallback endpoint only when the first one is not found.
-        const shouldTryFallback = i === 0 && response.status === 404;
+        // Try fallback endpoint when the first endpoint is missing or method isn't allowed.
+        const shouldTryFallback = i === 0 && (response.status === 404 || response.status === 405);
         if (!shouldTryFallback) break;
       }
 
@@ -2841,15 +2843,110 @@ function AllLeagues() {
         throw new Error(errorMessage);
       }
 
+      const extractSeasonIdFromPayload = (payload: Record<string, unknown> | null): string | null => {
+        if (!payload) return null;
+
+        const asRecord = (v: unknown): Record<string, unknown> | null =>
+          typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : null;
+
+        const getId = (v: unknown): string | null => {
+          if (typeof v === 'string' && v.trim()) return v.trim();
+          if (typeof v === 'number') return String(v);
+          return null;
+        };
+
+        const directSeasonId = getId(payload.seasonId);
+        if (directSeasonId) return directSeasonId;
+
+        const seasonLikeKeys = ['season', 'newSeason', 'createdSeason', 'currentSeason'] as const;
+        for (const key of seasonLikeKeys) {
+          const obj = asRecord(payload[key]);
+          const id = getId(obj?.id) || getId(obj?.seasonId);
+          if (id) return id;
+        }
+
+        const nestedKeys = ['data', 'result', 'payload', 'league'] as const;
+        for (const key of nestedKeys) {
+          const obj = asRecord(payload[key]);
+          if (!obj) continue;
+          const id =
+            getId(obj.seasonId) ||
+            getId(asRecord(obj.season)?.id) ||
+            getId(asRecord(obj.newSeason)?.id) ||
+            getId(asRecord(obj.currentSeason)?.id);
+          if (id) return id;
+        }
+
+        return null;
+      };
+
+      const resolveLatestSeasonIdFromLeague = (leaguePayload: unknown): string | null => {
+        if (!leaguePayload || typeof leaguePayload !== 'object') return null;
+        const leagueObj = leaguePayload as Record<string, unknown>;
+
+        const getId = (v: unknown): string | null => {
+          if (typeof v === 'string' && v.trim()) return v.trim();
+          if (typeof v === 'number') return String(v);
+          return null;
+        };
+
+        const currentSeason = leagueObj.currentSeason as Record<string, unknown> | undefined;
+        const fromCurrent = currentSeason ? getId(currentSeason.id) : null;
+        if (fromCurrent) return fromCurrent;
+
+        const seasonsUnknown = leagueObj.seasons;
+        if (!Array.isArray(seasonsUnknown) || seasonsUnknown.length === 0) return null;
+
+        const seasons = seasonsUnknown
+          .map((s) => (typeof s === 'object' && s !== null ? (s as Record<string, unknown>) : null))
+          .filter((s): s is Record<string, unknown> => Boolean(s));
+
+        const activeSeason = seasons.find((s) => s.isActive === true);
+        const activeId = activeSeason ? getId(activeSeason.id) : null;
+        if (activeId) return activeId;
+
+        const sorted = [...seasons].sort((a, b) => {
+          const aNum = typeof a.seasonNumber === 'number' ? a.seasonNumber : Number(a.seasonNumber || 0);
+          const bNum = typeof b.seasonNumber === 'number' ? b.seasonNumber : Number(b.seasonNumber || 0);
+          return bNum - aNum;
+        });
+        return getId(sorted[0]?.id);
+      };
+
+      let createdSeasonId = extractSeasonIdFromPayload(responsePayload);
+      if (!createdSeasonId) {
+        const detailsRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?_t=${Date.now()}`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store',
+          }
+        );
+        if (detailsRes.ok) {
+          const detailsData: unknown = await detailsRes.json().catch(() => null);
+          const leagueObj = (detailsData && typeof detailsData === 'object')
+            ? (detailsData as { league?: unknown }).league
+            : null;
+          createdSeasonId = resolveLatestSeasonIdFromLeague(leagueObj);
+        }
+      }
+
       toast.success(successMessage);
       await fetchAllLeagues();
+
+      const params = new URLSearchParams();
+      params.set('tab', 'table');
+      params.set('seasonCreated', '1');
+      params.set('seasonCreatedMsg', successMessage);
+      if (createdSeasonId) params.set('seasonId', createdSeasonId);
+      router.push(`/league/${leagueId}?${params.toString()}`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to create new season';
       toast.error(message);
     } finally {
       setCreatingSeasonLeagueId(null);
     }
-  }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues]);
+  }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues, router]);
 
   const openCreateSeasonConfirm = useCallback((league: LeagueWithStatus) => {
     setPendingSeasonLeague(league);
@@ -4883,6 +4980,9 @@ function AllLeagues() {
           <DialogContent>
             <Typography sx={{ color: '#9CA3AF' }}>
               Do you want to create a new season?
+            </Typography>
+            <Typography sx={{ color: '#D1D5DB', mt: 1.5, fontSize: '0.9rem' }}>
+              Note: Players from the previous season will be moved to the new season, and after creation you will be taken to the new season league table.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ px: 2, pb: 2 }}>
