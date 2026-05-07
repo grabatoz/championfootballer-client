@@ -2503,7 +2503,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       icon: <QueryStatsOutlinedIcon sx={{ fontSize: 20 }} />,
       href: '/profile',
       resolveHrefLabel: 'VIEW STATS',
-      isActive: () => isNavActive('VIEW STATS', '/profile'),
+      // Mobile has a separate "Profile" tab, so keep Stats active only on player stats routes.
+      isActive: () => pathname?.startsWith('/player/') ?? false,
     },
     {
       key: 'trophy',
@@ -2551,7 +2552,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   function isNavActive(label: string, href: string): boolean {
     if (!pathname) return false;
     if (label === 'TABLE') return pathname.startsWith('/league/');
-    if (label === 'VIEW STATS') return pathname.startsWith('/player/') || pathname.startsWith('/profile');
+    // Keep desktop/mobile Profile selection independent from View Stats.
+    if (label === 'VIEW STATS') return pathname.startsWith('/player/');
     return pathname.startsWith(href);
   }
 

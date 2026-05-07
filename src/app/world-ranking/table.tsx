@@ -332,10 +332,10 @@ export default function WorldRankingTable() {
             min-width: 0;
           }
           .wr-right-filters .wr-country-filter {
-            width: auto;
-            min-width: 120px;
-            max-width: 170px;
-            justify-self: start;
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            justify-self: stretch;
           }
           .wr-right-filters .wr-clear-btn {
             width: 100%;
