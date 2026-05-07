@@ -1789,7 +1789,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
                     Select Team
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#fff', mb: 2, fontSize: { xs: '0.75rem', sm: '1rem' }, textAlign: 'center' }}>
-                    Click on a player from the home or away team to switch or remove players.
+                    {/* Click on a player from the home or away team to switch or remove players. */}
+                 Pick Your Players From the Dropdown And Set Up Your Home And Away Teams. Tap On Any Player To Switch Them Between Teams And Perfect Your Line-Up
                   </Typography>
                   {/* Action Buttons */}
                   <Box sx={{ display: 'flex', gap: 1, mb: 2.5, flexWrap: 'wrap', justifyContent: 'center', flexDirection: { xs: 'column', sm: 'row' } }}>

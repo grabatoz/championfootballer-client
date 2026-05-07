@@ -203,7 +203,7 @@ export default function Footer() {
             >
               {new Date().getFullYear()} Champion Footballer. All rights reserved.
             </Typography>
-            <Typography
+            {/* <Typography
               variant="body2"
               sx={{
                 mt: 0.8,
@@ -215,7 +215,7 @@ export default function Footer() {
               }}
             >
               Developed by TechSolutionor
-            </Typography>
+            </Typography> */}
           </Box>
         </Stack>
       </Container>
