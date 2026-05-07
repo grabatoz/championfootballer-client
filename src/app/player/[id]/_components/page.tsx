@@ -334,6 +334,43 @@ export default function PlayerStatsPage() {
     const [preferredLeagueLoaded, setPreferredLeagueLoaded] = useState(false);
     const filtersInitialized = useRef(false);
 
+    const getSeasonSortScore = useCallback((season: { seasonNumber?: number; startDate?: string; endDate?: string; name?: string }): number => {
+        if (typeof season.seasonNumber === 'number' && Number.isFinite(season.seasonNumber)) {
+            return season.seasonNumber;
+        }
+
+        const endTs = season.endDate ? Date.parse(season.endDate) : NaN;
+        if (Number.isFinite(endTs)) return endTs;
+
+        const startTs = season.startDate ? Date.parse(season.startDate) : NaN;
+        if (Number.isFinite(startTs)) return startTs;
+
+        const name = String(season.name || '');
+        const yearHits = name.match(/\b(19|20)\d{2}\b/g);
+        if (yearHits && yearHits.length > 0) return Number(yearHits[yearHits.length - 1]);
+
+        return -1;
+    }, []);
+
+    const sortSeasonsLatestFirst = useCallback(
+        (seasonList: Array<{ id: string; name: string; seasonNumber?: number; startDate?: string; endDate?: string; isMember?: boolean }>) => {
+            return [...seasonList].sort((a, b) => {
+                const aScore = getSeasonSortScore(a);
+                const bScore = getSeasonSortScore(b);
+                if (aScore !== bScore) return bScore - aScore;
+
+                const aStart = a.startDate ? Date.parse(a.startDate) : NaN;
+                const bStart = b.startDate ? Date.parse(b.startDate) : NaN;
+                if (Number.isFinite(aStart) && Number.isFinite(bStart) && aStart !== bStart) {
+                    return bStart - aStart;
+                }
+
+                return String(b.name || '').localeCompare(String(a.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+            });
+        },
+        [getSeasonSortScore]
+    );
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setPreferredLeagueId(localStorage.getItem('preferredLeagueId'));
@@ -417,9 +454,13 @@ export default function PlayerStatsPage() {
                             endDate: s.endDate || null,
                             isMember: s.isMember !== undefined ? s.isMember : true
                         }));
-                        setSeasons(formattedSeasons);
-                        console.log('📋 Fetched seasons from /leagues/:id/seasons API:', formattedSeasons);
-                        setSelectedSeason('all');
+                        const sortedSeasons = sortSeasonsLatestFirst(formattedSeasons);
+                        const memberSeasons = sortedSeasons.filter((season) => season.isMember !== false);
+                        const defaultSeason = memberSeasons[0] || sortedSeasons[0];
+
+                        setSeasons(sortedSeasons);
+                        console.log('📋 Fetched seasons from /leagues/:id/seasons API:', sortedSeasons);
+                        setSelectedSeason(defaultSeason?.id || 'all');
                     } else {
                         setSeasons([]);
                         setSelectedSeason('all');
@@ -437,7 +478,7 @@ export default function PlayerStatsPage() {
         };
         
         fetchSeasons();
-    }, [leagueId, token]);
+    }, [leagueId, token, sortSeasonsLatestFirst]);
 
     // --- Teammate (co-players) search state ---
     type LeaguePlayer = {
