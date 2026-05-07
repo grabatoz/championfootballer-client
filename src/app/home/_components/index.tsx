@@ -342,8 +342,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     try {
       setIsCreatingSeason(true);
       const endpoints = [
-        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/seasons`,
         `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${selectedLeague.id}/seasons`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/seasons`,
       ];
 
       let responsePayload: Record<string, unknown> | null = null;
@@ -670,6 +670,88 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             let matchesFromDetails: Match[] | undefined = undefined;
             let maxGamesFromDetails: number | undefined = undefined;
             let seasonNumberFromDetails: number | undefined = undefined;
+            let seasonNumberFromSeasonsApi: number | undefined = undefined;
+
+            try {
+              const seasonEndpoints = [
+                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}/seasons?_t=${timestamp}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${l.id}/seasons?_t=${timestamp}`,
+              ];
+
+              const extractRawSeasons = (seasonsPayload: unknown): unknown[] => {
+                const payloadRecord = (seasonsPayload && typeof seasonsPayload === 'object')
+                  ? (seasonsPayload as Record<string, unknown>)
+                  : {};
+                const nestedData = (payloadRecord.data && typeof payloadRecord.data === 'object')
+                  ? (payloadRecord.data as Record<string, unknown>)
+                  : {};
+
+                return Array.isArray(seasonsPayload)
+                  ? seasonsPayload
+                  : (
+                      Array.isArray(payloadRecord.seasons)
+                        ? payloadRecord.seasons
+                        : (
+                            Array.isArray(payloadRecord.data)
+                              ? payloadRecord.data
+                              : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
+                          )
+                    );
+              };
+
+              const parseSeasonNumber = (seasonLike: Record<string, unknown>): number => {
+                const rawNum = seasonLike.seasonNumber;
+                const direct = typeof rawNum === 'number'
+                  ? rawNum
+                  : (typeof rawNum === 'string' ? Number(rawNum) : NaN);
+                if (Number.isFinite(direct) && direct > 0) return direct;
+
+                const label = String(seasonLike.name || '');
+                const hits = label.match(/\d+/g);
+                if (hits && hits.length > 0) {
+                  const parsed = Number(hits[hits.length - 1]);
+                  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+                }
+                return 0;
+              };
+
+              const allRawSeasons: unknown[] = [];
+              for (const endpoint of seasonEndpoints) {
+                try {
+                  const seasonsRes = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    cache: 'no-store',
+                    signal: aborter.signal,
+                  } as RequestInit);
+                  if (!seasonsRes.ok) continue;
+
+                  const seasonsPayload: unknown = await seasonsRes.json().catch(() => ({}));
+                  allRawSeasons.push(...extractRawSeasons(seasonsPayload));
+                } catch {
+                  // try next endpoint
+                }
+              }
+
+              const seasonsParsed = allRawSeasons
+                .map((s) => (typeof s === 'object' && s !== null ? (s as Record<string, unknown>) : null))
+                .filter((s): s is Record<string, unknown> => Boolean(s))
+                .map((s) => ({
+                  seasonNumber: parseSeasonNumber(s),
+                  isActive: s.isActive === true || s.active === true || String(s.status || '').toLowerCase() === 'active',
+                }))
+                .filter((s) => s.seasonNumber > 0);
+
+              const activeSeason = seasonsParsed.find((s) => s.isActive);
+              if (activeSeason) {
+                seasonNumberFromSeasonsApi = activeSeason.seasonNumber;
+              } else if (seasonsParsed.length > 0) {
+                seasonNumberFromSeasonsApi = [...seasonsParsed]
+                  .sort((a, b) => b.seasonNumber - a.seasonNumber)[0].seasonNumber;
+              }
+            } catch {
+              // ignore seasons API failure; detail payload fallback still applies
+            }
+
             if (detailsRes.ok) {
               const leagueData = await detailsRes.json();
               const rawMatches = leagueData?.league?.matches as unknown;
@@ -708,6 +790,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               if (currentSeason && typeof currentSeason.seasonNumber === 'number') {
                 seasonNumberFromDetails = currentSeason.seasonNumber;
                 console.log(`[League ${l.id}] Setting season number to user's season:`, seasonNumberFromDetails);
+              } else if (typeof seasonNumberFromSeasonsApi === 'number' && seasonNumberFromSeasonsApi > 0) {
+                seasonNumberFromDetails = seasonNumberFromSeasonsApi;
+                console.log(`[League ${l.id}] Setting season number from seasons API:`, seasonNumberFromDetails);
               } else if (Array.isArray(seasons) && seasons.length > 0) {
                 console.log(`[League ${l.id}] Total seasons found:`, seasons.length);
                 seasons.forEach((seasonItem) => {

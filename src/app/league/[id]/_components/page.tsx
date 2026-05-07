@@ -680,6 +680,13 @@ export default function LeagueDetailPage() {
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
     const [seasonDropdownAnchor, setSeasonDropdownAnchor] = useState<null | HTMLElement>(null);
     const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(initialSeasonIdFromQuery || null);
+    const [seasonOptions, setSeasonOptions] = useState<Array<{
+        id: string;
+        seasonNumber: number;
+        isActive?: boolean;
+        active?: boolean;
+        status?: string | null;
+    }>>([]);
     const seasonCreatedToastShownRef = React.useRef(false);
 
     // Match detail modal state
@@ -1077,7 +1084,33 @@ export default function LeagueDetailPage() {
     // 🎯 Auto-select active season when league data loads
     useEffect(() => {
         if (!league || selectedSeasonId) return; // Skip if already selected
-        
+
+        if (Array.isArray(seasonOptions) && seasonOptions.length > 0) {
+            const activeFromSeasonsApi = seasonOptions.find((season) => {
+                const status = String(season.status || '').trim().toLowerCase();
+                return season.isActive === true || season.active === true || status === 'active' || status === 'current' || status === 'ongoing';
+            });
+            const seasonToPick = activeFromSeasonsApi || seasonOptions[0];
+            if (seasonToPick?.id) {
+                console.log('🎯 Auto-selecting season from seasons API:', seasonToPick.id, seasonToPick.seasonNumber);
+                setSelectedSeasonId(seasonToPick.id);
+                void fetchLeagueDetails(seasonToPick.id);
+                return;
+            }
+        }
+
+        const currentSeasonUnknown = (league as unknown as Record<string, unknown>)?.currentSeason;
+        if (currentSeasonUnknown && typeof currentSeasonUnknown === 'object') {
+            const currentSeasonObj = currentSeasonUnknown as Record<string, unknown>;
+            const currentSeasonId = String(currentSeasonObj?.id || '').trim();
+            if (currentSeasonId) {
+                console.log('🎯 Auto-selecting current season from backend:', currentSeasonId);
+                setSelectedSeasonId(currentSeasonId);
+                void fetchLeagueDetails(currentSeasonId);
+                return;
+            }
+        }
+
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
         if (!Array.isArray(seasonsUnknown) || seasonsUnknown.length === 0) return;
         
@@ -1092,6 +1125,7 @@ export default function LeagueDetailPage() {
             const activeSeasonId = String(seasonObj.id || '');
             console.log('🎯 Auto-selecting active season:', activeSeasonId);
             setSelectedSeasonId(activeSeasonId);
+            void fetchLeagueDetails(activeSeasonId);
         } else {
             // If no active season found, select the latest season (highest season number)
             const sortedSeasons = [...seasonsUnknown].sort((a: unknown, b: unknown) => {
@@ -1105,9 +1139,10 @@ export default function LeagueDetailPage() {
                 const latestSeasonId = String(latestSeason.id || '');
                 console.log('🎯 Auto-selecting latest season:', latestSeasonId);
                 setSelectedSeasonId(latestSeasonId);
+                void fetchLeagueDetails(latestSeasonId);
             }
         }
-    }, [league, selectedSeasonId]);
+    }, [league, selectedSeasonId, seasonOptions, fetchLeagueDetails]);
 
     // 🔄 Refresh league data when page becomes visible (e.g., user comes back from settings)
     useEffect(() => {
@@ -1402,6 +1437,112 @@ export default function LeagueDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
+    // Fetch seasons from dedicated endpoint to avoid stale/incomplete seasons lists on league payload
+    useEffect(() => {
+        if (!token || !leagueId) {
+            setSeasonOptions([]);
+            return;
+        }
+
+        let cancelled = false;
+
+        const parseSeasonNumber = (seasonLike: Record<string, unknown>): number => {
+            const rawNum = seasonLike.seasonNumber;
+            const direct = typeof rawNum === 'number'
+                ? rawNum
+                : (typeof rawNum === 'string' ? Number(rawNum) : NaN);
+            if (Number.isFinite(direct) && direct > 0) return direct;
+
+            const label = String(seasonLike.name || '');
+            const hits = label.match(/\d+/g);
+            if (hits && hits.length > 0) {
+                const parsed = Number(hits[hits.length - 1]);
+                if (Number.isFinite(parsed) && parsed > 0) return parsed;
+            }
+            return 0;
+        };
+
+        const fetchSeasonsOptions = async () => {
+            try {
+                const endpoints = [
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons?_t=${Date.now()}`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons?_t=${Date.now()}`,
+                ];
+
+                const extractRawSeasons = (payloadUnknown: unknown): unknown[] => {
+                    const payloadRecord = (payloadUnknown && typeof payloadUnknown === 'object')
+                        ? (payloadUnknown as Record<string, unknown>)
+                        : {};
+                    const nestedData = (payloadRecord.data && typeof payloadRecord.data === 'object')
+                        ? (payloadRecord.data as Record<string, unknown>)
+                        : {};
+
+                    return Array.isArray(payloadUnknown)
+                        ? payloadUnknown
+                        : (
+                            Array.isArray(payloadRecord.seasons)
+                                ? payloadRecord.seasons
+                                : (
+                                    Array.isArray(payloadRecord.data)
+                                        ? payloadRecord.data
+                                        : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
+                                )
+                        );
+                };
+
+                const allRawSeasons: unknown[] = [];
+                for (const url of endpoints) {
+                    try {
+                        const response = await fetch(url, {
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            cache: 'no-store',
+                        });
+                        if (!response.ok) continue;
+                        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+                        allRawSeasons.push(...extractRawSeasons(payloadUnknown));
+                    } catch {
+                        // try next endpoint
+                    }
+                }
+
+                if (allRawSeasons.length === 0) {
+                    if (!cancelled) setSeasonOptions([]);
+                    return;
+                }
+
+                const parsed = allRawSeasons
+                    .map((seasonRaw) => (typeof seasonRaw === 'object' && seasonRaw !== null ? (seasonRaw as Record<string, unknown>) : null))
+                    .filter((seasonRaw): seasonRaw is Record<string, unknown> => Boolean(seasonRaw))
+                    .map((seasonRaw) => ({
+                        id: String(seasonRaw.id ?? seasonRaw._id ?? '').trim(),
+                        seasonNumber: parseSeasonNumber(seasonRaw),
+                        isActive: seasonRaw.isActive === true,
+                        active: seasonRaw.active === true,
+                        status: typeof seasonRaw.status === 'string' ? seasonRaw.status : null,
+                    }))
+                    .filter((season) => season.id && season.seasonNumber > 0)
+                    .filter((season, index, arr) => arr.findIndex((s) => s.id === season.id) === index)
+                    .sort((a, b) => {
+                        if ((a.isActive === true) !== (b.isActive === true)) return a.isActive ? -1 : 1;
+                        if ((a.active === true) !== (b.active === true)) return a.active ? -1 : 1;
+                        return b.seasonNumber - a.seasonNumber;
+                    });
+
+                if (!cancelled) {
+                    setSeasonOptions(parsed);
+                }
+            } catch (error) {
+                if (!cancelled) setSeasonOptions([]);
+                console.error('Error fetching seasons options:', error);
+            }
+        };
+
+        void fetchSeasonsOptions();
+        return () => {
+            cancelled = true;
+        };
+    }, [token, leagueId]);
+
 
     const handleBackToAllLeagues = () => {
         router.push('/all-leagues');
@@ -1638,17 +1779,23 @@ export default function LeagueDetailPage() {
     const selectedSeasonNumber = React.useMemo(() => {
         if (!selectedSeasonId || !league) return currentSeasonNumber;
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
-        if (!Array.isArray(seasonsUnknown)) return currentSeasonNumber;
-        const season = seasonsUnknown.find((s: unknown) => {
-            const seasonObj = s as Record<string, unknown>;
-            return String(seasonObj?.id || '') === selectedSeasonId;
-        });
-        if (season) {
-            const seasonObj = season as Record<string, unknown>;
-            return Number(seasonObj?.seasonNumber || currentSeasonNumber);
+        if (Array.isArray(seasonsUnknown)) {
+            const season = seasonsUnknown.find((s: unknown) => {
+                const seasonObj = s as Record<string, unknown>;
+                return String(seasonObj?.id || '') === selectedSeasonId;
+            });
+            if (season) {
+                const seasonObj = season as Record<string, unknown>;
+                return Number(seasonObj?.seasonNumber || currentSeasonNumber);
+            }
+        }
+
+        const seasonFromOptions = seasonOptions.find((season) => season.id === selectedSeasonId);
+        if (seasonFromOptions && seasonFromOptions.seasonNumber > 0) {
+            return seasonFromOptions.seasonNumber;
         }
         return currentSeasonNumber;
-    }, [selectedSeasonId, league, currentSeasonNumber]);
+    }, [selectedSeasonId, league, currentSeasonNumber, seasonOptions]);
     
     const seasonLabel = React.useMemo(() => (selectedSeasonNumber ? `(#Season ${selectedSeasonNumber})` : ''), [selectedSeasonNumber]);
     
@@ -1656,17 +1803,23 @@ export default function LeagueDetailPage() {
     const isSelectedSeasonActive = React.useMemo(() => {
         if (!selectedSeasonId || !league) return true; // Default to active if no season selected
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
-        if (!Array.isArray(seasonsUnknown)) return true;
-        const season = seasonsUnknown.find((s: unknown) => {
-            const seasonObj = s as Record<string, unknown>;
-            return String(seasonObj?.id || '') === selectedSeasonId;
-        });
-        if (season) {
-            const seasonObj = season as Record<string, unknown>;
-            return seasonObj?.isActive === true;
+        if (Array.isArray(seasonsUnknown)) {
+            const season = seasonsUnknown.find((s: unknown) => {
+                const seasonObj = s as Record<string, unknown>;
+                return String(seasonObj?.id || '') === selectedSeasonId;
+            });
+            if (season) {
+                const seasonObj = season as Record<string, unknown>;
+                return seasonObj?.isActive === true;
+            }
+        }
+        const seasonFromOptions = seasonOptions.find((season) => season.id === selectedSeasonId);
+        if (seasonFromOptions) {
+            const status = String(seasonFromOptions.status || '').trim().toLowerCase();
+            return seasonFromOptions.isActive === true || seasonFromOptions.active === true || status === 'active' || status === 'current' || status === 'ongoing';
         }
         return true; // Default to active
-    }, [selectedSeasonId, league]);
+    }, [selectedSeasonId, league, seasonOptions]);
     
     // Filter matches and members based on selected season
     const filteredLeague = React.useMemo(() => {
@@ -1714,6 +1867,7 @@ export default function LeagueDetailPage() {
         // Get season object and its members
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
         let filteredMembers: User[] = [];
+        let declinedIdsFromSeason = new Set<string>();
         
         console.log('🔍 All seasons:', seasonsUnknown);
         
@@ -1728,6 +1882,31 @@ export default function LeagueDetailPage() {
             if (selectedSeason) {
                 const seasonObj = selectedSeason as Record<string, unknown>;
                 const membersUnknown = seasonObj?.members;
+                const extractDeclinedIds = (seasonRecord: Record<string, unknown>): Set<string> => {
+                    const keys = ['declinedMembers', 'declinedUserIds', 'declinedUsers', 'rejectedMembers', 'removedMembers'];
+                    const ids = new Set<string>();
+                    keys.forEach((key) => {
+                        const raw = seasonRecord[key];
+                        if (!Array.isArray(raw)) return;
+                        raw.forEach((entry) => {
+                            if (entry == null) return;
+                            if (typeof entry === 'string' || typeof entry === 'number') {
+                                const id = String(entry).trim();
+                                if (id) ids.add(id);
+                                return;
+                            }
+                            if (typeof entry === 'object') {
+                                const rec = entry as Record<string, unknown>;
+                                const candidate = rec.id ?? rec.userId ?? rec.memberId ?? rec.playerId;
+                                const id = candidate == null ? '' : String(candidate).trim();
+                                if (id) ids.add(id);
+                            }
+                        });
+                    });
+                    return ids;
+                };
+                const declinedIds = extractDeclinedIds(seasonObj);
+                declinedIdsFromSeason = declinedIds;
                 
                 console.log('🔍 Selected season ID:', seasonObj?.id);
                 console.log('🔍 Selected season number:', seasonObj?.seasonNumber);
@@ -1758,7 +1937,7 @@ export default function LeagueDetailPage() {
                     if (shouldUseLeagueMembersFallback) {
                         // New active season can briefly return partial season members from backend.
                         // Show all league members until season membership is fully synced.
-                        filteredMembers = [...league.members];
+                        filteredMembers = league.members.filter((member: User) => !declinedIds.has(normalizeEntityId(member.id)));
                         console.log('⚠️ Active season has partial members; falling back to all league members:', filteredMembers.length);
                     } else {
                         filteredMembers = membersFromSeason;
@@ -1781,7 +1960,7 @@ export default function LeagueDetailPage() {
             // If no one played in matches yet, show all league members for this season
             if (playersInSeasonSet.size === 0) {
                 console.log('⚠️ No matches played yet, showing all league members');
-                filteredMembers = [...league.members];
+                filteredMembers = league.members.filter((member: User) => !declinedIdsFromSeason.has(normalizeEntityId(member.id)));
             } else {
                 filteredMembers = league.members.filter((member: User) => playersInSeasonSet.has(member.id));
                 console.log('✅ Players from matches:', filteredMembers.length);
@@ -3268,27 +3447,53 @@ export default function LeagueDetailPage() {
                                     >
                                         {(() => {
                                             const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
-                                            let availableSeasons: Array<{id: string, seasonNumber: number}> = [];
+                                            const availableSeasons: Array<{id: string, seasonNumber: number}> = [];
+                                            const addUniqueSeason = (id: string, seasonNumber: number) => {
+                                                if (!id || seasonNumber <= 0) return;
+                                                if (!availableSeasons.some((season) => season.id === id)) {
+                                                    availableSeasons.push({ id, seasonNumber });
+                                                }
+                                            };
+
+                                            // Prefer dedicated seasons endpoint data first (fresh/latest)
+                                            if (Array.isArray(seasonOptions) && seasonOptions.length > 0) {
+                                                seasonOptions.forEach((season) => {
+                                                    addUniqueSeason(
+                                                        String(season.id || ''),
+                                                        Number(season.seasonNumber || 0)
+                                                    );
+                                                });
+                                            }
 
                                             // If user is admin, show all seasons
                                             if (isAdmin && Array.isArray(seasonsUnknown)) {
-                                                availableSeasons = seasonsUnknown.map((s: unknown) => {
+                                                seasonsUnknown.forEach((s: unknown) => {
                                                     const season = s as Record<string, unknown>;
-                                                    return {
-                                                        id: String(season?.id || ''),
-                                                        seasonNumber: Number(season?.seasonNumber || 0)
-                                                    };
-                                                }).filter(s => s.id && s.seasonNumber > 0);
+                                                    addUniqueSeason(
+                                                        String(season?.id || ''),
+                                                        Number(season?.seasonNumber || 0)
+                                                    );
+                                                });
                                             }
                                             // If user is member, show only seasons they joined
                                             else if (Array.isArray(seasonsUnknown)) {
-                                                availableSeasons = seasonsUnknown.map((s: unknown) => {
+                                                seasonsUnknown.forEach((s: unknown) => {
                                                     const season = s as Record<string, unknown>;
-                                                    return {
-                                                        id: String(season?.id || ''),
-                                                        seasonNumber: Number(season?.seasonNumber || 0)
-                                                    };
-                                                }).filter(s => s.id && s.seasonNumber > 0);
+                                                    addUniqueSeason(
+                                                        String(season?.id || ''),
+                                                        Number(season?.seasonNumber || 0)
+                                                    );
+                                                });
+                                            }
+
+                                            // Ensure current season is visible even if seasons list is temporarily stale.
+                                            const currentSeasonUnknown = (league as unknown as Record<string, unknown>)?.currentSeason;
+                                            if (currentSeasonUnknown && typeof currentSeasonUnknown === 'object') {
+                                                const currentSeason = currentSeasonUnknown as Record<string, unknown>;
+                                                addUniqueSeason(
+                                                    String(currentSeason?.id || ''),
+                                                    Number(currentSeason?.seasonNumber || 0)
+                                                );
                                             }
 
                                             // Sort by season number descending (newest first)

@@ -2801,8 +2801,8 @@ function AllLeagues() {
     setCreatingSeasonLeagueId(leagueId);
     try {
       const endpoints = [
-        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`,
         `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`,
       ];
 
       let success = false;

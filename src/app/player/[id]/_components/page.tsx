@@ -323,8 +323,39 @@ export default function PlayerStatsPage() {
 
     const [search, setSearch] = useState('');
     const [, setLeagues] = useState<League[]>([]);
+    type PlayerSeasonOption = {
+        id: string;
+        name: string;
+        seasonNumber?: number;
+        startDate?: string;
+        endDate?: string;
+        isMember?: boolean;
+        isActive?: boolean;
+        active?: boolean;
+        membershipStatus?: string;
+        memberStatus?: string;
+        inviteStatus?: string;
+    };
+
+    const isSeasonExplicitlyDeclined = useCallback((season: PlayerSeasonOption): boolean => {
+        const statusTokens = [
+            season.membershipStatus,
+            season.memberStatus,
+            season.inviteStatus,
+        ]
+            .map((token) => String(token || '').trim().toLowerCase())
+            .filter(Boolean);
+        return statusTokens.some((token) => token.includes('declin') || token.includes('reject'));
+    }, []);
+
+    const isSeasonActiveLike = useCallback((season: PlayerSeasonOption): boolean => {
+        if (season.isActive === true || season.active === true) return true;
+        const endDate = String(season.endDate || '').trim();
+        return !endDate;
+    }, []);
+
     const [selectedSeason, setSelectedSeason] = useState<string>('all');
-    const [seasons, setSeasons] = useState<Array<{id: string, name: string, seasonNumber?: number, startDate?: string, endDate?: string, isMember?: boolean}>>([]);
+    const [seasons, setSeasons] = useState<PlayerSeasonOption[]>([]);
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
     const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
@@ -354,7 +385,7 @@ export default function PlayerStatsPage() {
     }, []);
 
     const sortSeasonsLatestFirst = useCallback(
-        (seasonList: Array<{ id: string; name: string; seasonNumber?: number; startDate?: string; endDate?: string; isMember?: boolean }>) => {
+        (seasonList: PlayerSeasonOption[]) => {
             return [...seasonList].sort((a, b) => {
                 const aScore = getSeasonSortScore(a);
                 const bScore = getSeasonSortScore(b);
@@ -435,13 +466,28 @@ export default function PlayerStatsPage() {
         
         const fetchSeasons = async () => {
             try {
-                // Use the dedicated seasons endpoint which returns seasonNumber, startDate, endDate
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`, {
-                    credentials: 'include',
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                // Use seasons endpoint with fallback path to handle mixed deployments
+                const endpoints = [
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons`,
+                ];
+                let response: Response | null = null;
+                for (const endpoint of endpoints) {
+                    try {
+                        const res = await fetch(endpoint, {
+                            credentials: 'include',
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            response = res;
+                            break;
+                        }
+                    } catch {
+                        // try next endpoint
+                    }
+                }
                 
-                if (response.ok) {
+                if (response && response.ok) {
                     const result = await response.json();
                     // API returns { success: true, seasons: [...] }
                     const seasonsData = result?.seasons || result?.data || [];
@@ -450,14 +496,20 @@ export default function PlayerStatsPage() {
                         const formattedSeasons = seasonsData.map((s: any) => ({
                             id: s.id || s._id,
                             name: s.name || `Season ${s.seasonNumber !== undefined ? s.seasonNumber : ''}`,
-                            seasonNumber: s.seasonNumber !== undefined ? s.seasonNumber : null,
-                            startDate: s.startDate || null,
-                            endDate: s.endDate || null,
-                            isMember: s.isMember !== undefined ? s.isMember : true
+                            seasonNumber: s.seasonNumber !== undefined ? s.seasonNumber : undefined,
+                            startDate: typeof s.startDate === 'string' ? s.startDate : undefined,
+                            endDate: typeof s.endDate === 'string' ? s.endDate : undefined,
+                            isMember: s.isMember !== undefined ? s.isMember : true,
+                            isActive: s.isActive === true,
+                            active: s.active === true,
+                            membershipStatus: typeof s.membershipStatus === 'string' ? s.membershipStatus : undefined,
+                            memberStatus: typeof s.memberStatus === 'string' ? s.memberStatus : undefined,
+                            inviteStatus: typeof s.inviteStatus === 'string' ? s.inviteStatus : undefined,
                         }));
                         const sortedSeasons = sortSeasonsLatestFirst(formattedSeasons);
-                        const memberSeasons = sortedSeasons.filter((season) => season.isMember !== false);
-                        const defaultSeason = memberSeasons[0] || sortedSeasons[0];
+                        const visibleSeasons = sortedSeasons.filter((season) => !isSeasonExplicitlyDeclined(season));
+                        const activeVisibleSeason = visibleSeasons.find((season) => isSeasonActiveLike(season));
+                        const defaultSeason = activeVisibleSeason || visibleSeasons[0] || sortedSeasons[0];
 
                         setSeasons(sortedSeasons);
                         console.log('📋 Fetched seasons from /leagues/:id/seasons API:', sortedSeasons);
@@ -467,7 +519,7 @@ export default function PlayerStatsPage() {
                         setSelectedSeason('all');
                     }
                 } else {
-                    console.warn('Seasons API returned non-OK status:', response.status);
+                    console.warn('Seasons API returned non-OK status');
                     setSeasons([]);
                     setSelectedSeason('all');
                 }
@@ -479,7 +531,7 @@ export default function PlayerStatsPage() {
         };
         
         fetchSeasons();
-    }, [leagueId, token, sortSeasonsLatestFirst]);
+    }, [leagueId, token, sortSeasonsLatestFirst, isSeasonExplicitlyDeclined, isSeasonActiveLike]);
 
     // --- Teammate (co-players) search state ---
     type LeaguePlayer = {
@@ -1185,9 +1237,8 @@ export default function PlayerStatsPage() {
         // Ensure ALL seasons where user is a member appear, even with 0 matches
         if (apiSeasons.length > 0) {
             apiSeasons.forEach(season => {
-                // Include season if user is a member (or isMember not specified = include all)
-                const isMember = season.isMember !== false;
-                if (isMember && !seasonMap.has(season.id)) {
+                // Include season unless explicitly declined.
+                if (!isSeasonExplicitlyDeclined(season) && !seasonMap.has(season.id)) {
                     // If filtering by specific season, only add that one
                     if (selectedSeason && selectedSeason !== 'all' && season.id !== selectedSeason) {
                         return;
@@ -1277,7 +1328,7 @@ export default function PlayerStatsPage() {
         console.log('✅ Final season stats for popup:', sortedStats);
         
         return sortedStats;
-    }, [data, leagueId, playerId, seasons, selectedSeason]);
+    }, [data, leagueId, playerId, seasons, selectedSeason, isSeasonExplicitlyDeclined]);
 
     const yearsOptions = useMemo(() => {
         const years = new Set<number>([dayjs().year()]);
