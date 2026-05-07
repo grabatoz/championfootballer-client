@@ -44,6 +44,7 @@ import StarKeeperImg from '@/Components/images/brown.svg';
 import SearchIcon from '@/Components/images/searchicon.png';
 import XPStarMilestoneCard, { XP_TIERS, getXPTier } from '@/Components/XPStarMilestoneCard';
 import PlayerProfileLoadingSkeleton from '@/Components/loading/PlayerProfileLoadingSkeleton';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -272,9 +273,9 @@ function getReadableTextColor(hexColor: string): string {
     return luminance > 0.58 ? '#111111' : '#FFFFFF';
 }
 
-function resolveProfileImageUrl(value: string | null | undefined): string {
+function resolveProfileImageUrl(value: string | null | undefined): string | null {
     const raw = String(value ?? '').trim();
-    if (!raw || raw === 'null' || raw === 'undefined') return '/assets/group451.png';
+    if (!raw || raw === 'null' || raw === 'undefined') return null;
 
     if (
         raw.startsWith('http://') ||
@@ -522,7 +523,7 @@ export default function PlayerStatsPage() {
         firstName: p.firstName ?? p.fname,
         lastName: p.lastName ?? p.lname,
         name: p.name ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
-        avatar: resolveProfileImageUrl(p.avatar ?? p.profilePicture ?? p.avatarUrl ?? p.image),
+        avatar: resolveProfileImageUrl(p.avatar ?? p.profilePicture ?? p.avatarUrl ?? p.image) ?? undefined,
         position: p.position ?? p.positionType,
     }), []);
 
@@ -1400,6 +1401,7 @@ export default function PlayerStatsPage() {
     const playerName = fullPlayerData?.player?.name || 'Player';
     // const playerShirt = fullPlayerData?.player?.shirtNo || '';
     const playerPositionType = fullPlayerData?.player?.positionType || fullPlayerData?.player?.position || 'Player';
+    const profileAvatarSrc = resolveProfileImageUrl(fullPlayerData?.player?.avatar || fullPlayerData?.player?.profilePicture || null);
 
     // Accumulative trophies via backend API with fallback to local computation
     const [trophyCounts, setTrophyCounts] = useState<Record<string, number>>({});
@@ -1888,6 +1890,7 @@ export default function PlayerStatsPage() {
                                                     p.name ||
                                                     `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() ||
                                                     'Player';
+                                                const teammateAvatarSrc = resolveProfileImageUrl(p.avatar);
 
                                                 return (
                                                     <Grid item xs={12} key={p.id}>
@@ -1909,7 +1912,7 @@ export default function PlayerStatsPage() {
                                                             }}
                                                         >
                                                             <Avatar
-                                                                src={resolveProfileImageUrl(p.avatar)}
+                                                                src={teammateAvatarSrc ?? undefined}
                                                                 alt={displayName}
                                                                 sx={{
                                                                     width: 34,
@@ -1917,6 +1920,11 @@ export default function PlayerStatsPage() {
                                                                     border: '1px solid rgba(255,255,255,0.25)',
                                                                     overflow: 'hidden',
                                                                     flexShrink: 0,
+                                                                    bgcolor: teammateAvatarSrc ? 'transparent' : getAvatarBackgroundColor(displayName),
+                                                                    color: '#fff',
+                                                                    fontSize: 12,
+                                                                    fontWeight: 800,
+                                                                    textTransform: 'uppercase',
                                                                     '& .MuiAvatar-img': {
                                                                         width: '100% !important',
                                                                         height: '100% !important',
@@ -1924,7 +1932,13 @@ export default function PlayerStatsPage() {
                                                                         display: 'block',
                                                                     },
                                                                 }}
-                                                            />
+                                                            >
+                                                                {!teammateAvatarSrc && getAvatarInitials({
+                                                                    name: displayName,
+                                                                    firstName: p.firstName,
+                                                                    lastName: p.lastName,
+                                                                })}
+                                                            </Avatar>
 
                                                             <Box sx={{ minWidth: 0, flex: 1 }}>
                                                                 <Typography
@@ -2420,14 +2434,21 @@ export default function PlayerStatsPage() {
                         {/* Left: Avatar + Name + Position */}
                         <Box sx={{ display: 'flex', alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 1.3, sm: 2 }, width: { xs: '100%', md: 'auto' } }}>
                             <Avatar
-                                src={resolveProfileImageUrl(fullPlayerData?.player?.avatar || fullPlayerData?.player?.profilePicture || null)}
+                                src={profileAvatarSrc ?? undefined}
                                 alt={playerName}
                                 sx={{
                                     width: { xs: 84, sm: 102, md: 125 },
                                     height: { xs: 84, sm: 102, md: 125 },
+                                    bgcolor: profileAvatarSrc ? 'transparent' : getAvatarBackgroundColor(playerName),
+                                    color: '#fff',
+                                    fontWeight: 800,
+                                    fontSize: { xs: 30, sm: 34, md: 40 },
+                                    textTransform: 'uppercase',
                                     // border: '3px solid ' + TEAL_PRIMARY,
                                 }}
-                            />
+                            >
+                                {!profileAvatarSrc && getAvatarInitials({ name: playerName })}
+                            </Avatar>
                             <Box sx={{ pt: 0, minWidth: 0 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <Typography sx={{ 

@@ -54,11 +54,10 @@ import Passing from '@/Components/images/passing.png'
 import Shooting from '@/Components/images/shooting.png'
 import Defending from '@/Components/images/defending.png'
 import Image from "next/image"
-import type { StaticImageData } from "next/image"
-import imgicon from "@/Components/images/imgicon.png"
 import { useDispatch } from "react-redux"
 import { mergeUser, syncWithStorage } from "@/lib/features/authSlice"
 import ProfileSettingsLoadingSkeleton from "@/Components/loading/ProfileSettingsLoadingSkeleton"
+import { getAvatarBackgroundColor, getAvatarInitials } from "@/lib/avatarInitials"
 
 // Country/State dropdowns are powered by country-state-city for parity with join/register flow.
 
@@ -340,8 +339,7 @@ const PlayerProfileCard = () => {
   }
   const [, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const fallbackImgSrc = (imgicon as StaticImageData).src
-  const safeSrc = (v: unknown) => typeof v === "string" && v.trim().length ? v : fallbackImgSrc
+  const safeSrc = (v: unknown) => (typeof v === "string" && v.trim().length ? v : "")
   const [imgSrc, setImgSrc] = useState<string>(safeSrc(user?.profilePicture))
   // For avatar options and camera
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false)
@@ -352,6 +350,8 @@ const PlayerProfileCard = () => {
   const router = useRouter()
   const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
   const userDisplayName = buildPlayerDisplayName(user?.firstName, user?.lastName)
+  const avatarInitials = getAvatarInitials({ name: userDisplayName, firstName, lastName })
+  const avatarFallbackBg = getAvatarBackgroundColor(userDisplayName || `${firstName} ${lastName}`)
 
   // Playing styles per position type (3 options each; you can edit/rename later)
   const playingStylesMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
@@ -740,7 +740,7 @@ const PlayerProfileCard = () => {
       setIsUpdating(true)
       const { ok, data } = await deleteProfilePicture(token)
       if (ok && data.success) {
-        setImgSrc(fallbackImgSrc)
+        setImgSrc("")
         setImagePreview(null)
         dispatch(mergeUser({ profilePicture: null, image: null }))
         dispatch(syncWithStorage())
@@ -878,10 +878,10 @@ const PlayerProfileCard = () => {
 
               <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 1.5, width: '100%', height: { xs: 'auto', sm: 180 } }}>
                 <Avatar
-                  src={imgSrc}
+                  src={imgSrc || undefined}
                   alt="Profile"
                   imgProps={{
-                    onError: () => setImgSrc(fallbackImgSrc),
+                    onError: () => setImgSrc(""),
                     referrerPolicy: 'no-referrer',
                     crossOrigin: 'anonymous'
                   }}
@@ -890,11 +890,15 @@ const PlayerProfileCard = () => {
                     height: { xs: 152, sm: 160 },
                     border: `3px solid ${themeColors.primary}`,
                     borderRadius: 3,
-                    background: "#2f3033",
+                    background: imgSrc ? "#2f3033" : avatarFallbackBg,
+                    color: '#fff',
+                    fontSize: 44,
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
                     boxShadow: "0 4px 18px -4px rgba(0,0,0,0.6)"
                   }}
                 >
-                  <Person sx={{ fontSize: 62, color: themeColors.textFaint }} />
+                  {!imgSrc ? avatarInitials : <Person sx={{ fontSize: 62, color: themeColors.textFaint }} />}
                 </Avatar>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', flex: 1, width: '100%' }}>
                   <Typography variant="h5" fontWeight={800} sx={{
@@ -1078,21 +1082,25 @@ const PlayerProfileCard = () => {
                   <Box sx={{ position: 'relative' }}>
                     <Avatar
                       onClick={handleAvatarClick}
-                      src={imagePreview || imgSrc}
+                      src={(imagePreview || imgSrc) || undefined}
                       alt="Profile"
                       imgProps={{
-                        onError: () => setImgSrc(fallbackImgSrc),
+                        onError: () => setImgSrc(""),
                         crossOrigin: 'anonymous'
                       }}
                       sx={{
                         width: { xs: 120, sm: 140, md: 170 },
                         height: { xs: 120, sm: 140, md: 170 },
                         borderRadius: '50%',
-                        background: "#2c2e32",
+                        background: (imagePreview || imgSrc) ? "#2c2e32" : avatarFallbackBg,
+                        color: '#fff',
+                        fontSize: { xs: 36, sm: 42, md: 56 },
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
                         cursor: 'pointer'
                       }}
                     >
-                      <Person sx={{ fontSize: 70, color: themeColors.textFaint }} />
+                      {!(imagePreview || imgSrc) ? avatarInitials : <Person sx={{ fontSize: 70, color: themeColors.textFaint }} />}
                     </Avatar>
                     {/* Hidden file input for gallery */}
                     <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />

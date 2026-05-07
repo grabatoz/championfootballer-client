@@ -28,9 +28,9 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/lib/store';
 import { fetchLeaguePlayers } from '@/lib/features/userSlice';
 import { initializeFromStorage } from '@/lib/features/authSlice';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import ShirtImg from '@/Components/images/shirtimg.png';
 import SearchIcon from '@/Components/images/searchicon.png';
 import TableGraphIcon from '@/Components/images/tablegrapicon.png';
 import AllPlayersLoadingSkeleton from '@/Components/loading/AllPlayersLoadingSkeleton';
@@ -1401,7 +1401,27 @@ const AllPlayersPage = () => {
                                 }}
                               />
                             ) : (
-                              <Image src={ShirtImg} alt="Default" fill style={{ objectFit: 'contain' }} />
+                              <Box
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  backgroundColor: getAvatarBackgroundColor(getPlayerName(player)),
+                                  color: '#fff',
+                                  fontWeight: 800,
+                                  fontSize: { xs: 12, sm: 13 },
+                                  textTransform: 'uppercase',
+                                  letterSpacing: 0.4,
+                                }}
+                              >
+                                {getAvatarInitials({
+                                  name: getPlayerName(player),
+                                  firstName: player.firstName,
+                                  lastName: player.lastName,
+                                })}
+                              </Box>
                             )}
                           </Box>
                         </ListItemAvatar>

@@ -12,13 +12,13 @@ import {
 } from '@mui/material';
 import ShareIcon from '@mui/icons-material/Share';
 import Foot from '@/Components/images/foot.png'
-import imgicon from '@/Components/images/imgicon.png'
 import Star from '@/Components/images/star.png'
 // import EditIcon from '@mui/icons-material/Edit';
 // import IconButton from '@mui/material/IconButton';
 import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 
 // const fallback = '/assets/cflogo2.png';
 
@@ -179,6 +179,8 @@ const PlayerCard = ({
   const displayCardName = firstNameOnly
     ? (lastInitial ? `${firstNameOnly} ${lastInitial}.` : firstNameOnly)
     : 'Player Name';
+  const avatarInitials = getAvatarInitials({ name: normalizedName });
+  const avatarBg = getAvatarBackgroundColor(normalizedName || displayCardName);
   const normalizedFoot = typeof foot === 'string' ? foot.trim().toUpperCase() : '';
   const footLabel = normalizedFoot === 'RIGHT' ? 'R' : normalizedFoot === 'LEFT' ? 'L' : (normalizedFoot || '-');
   const isRightFoot = footLabel === 'R';
@@ -431,11 +433,11 @@ const PlayerCard = ({
   };
 
   // Build a safe src for <Image /> that is never undefined
-  const displaySrc: string | StaticImageData = imgUrl
+  const displaySrc: string | null = imgUrl
     ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
-    : imgicon;
+    : null;
 
-  const hasUserImage = Boolean(imgUrl);
+  const hasUserImage = Boolean(displaySrc);
 
   const avgSkill = calculateAverageSkill(stats);
 
@@ -515,21 +517,31 @@ const PlayerCard = ({
               sx={{
                 width: 105,
                 height: 105,
-                p: 0
+                p: 0,
+                bgcolor: hasUserImage ? 'transparent' : avatarBg,
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 30,
+                letterSpacing: 0.6,
+                textTransform: 'uppercase',
               }}
               data-testid="profile-avatar"
             >
-              <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-                <Image
-                  src={displaySrc}
-                  alt="Profile"
-                  fill
-                  sizes="105px"
-                  unoptimized
-                  priority={!imgUrl}
-                  style={{ objectFit: hasUserImage ? 'cover' : 'contain', imageRendering: 'auto' }}
-                />
-              </Box>
+              {hasUserImage ? (
+                <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <Image
+                    src={displaySrc}
+                    alt="Profile"
+                    fill
+                    sizes="105px"
+                    unoptimized
+                    priority={false}
+                    style={{ objectFit: 'cover', imageRendering: 'auto' }}
+                  />
+                </Box>
+              ) : (
+                avatarInitials
+              )}
             </Avatar>
           </Box>
         </Box>

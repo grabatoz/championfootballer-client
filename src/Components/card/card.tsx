@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import vector from '@/Components/images/Vector.svg';
 import Foot from '@/Components/images/foot.png'
-import imgicon from '@/Components/images/imgicon.png'
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 
 interface PlayerCardProps {
     name: string;
@@ -45,6 +45,9 @@ const ResponsiveCard = ({
     isCaptain,
     backgroundColor, // <-- add this
 }: PlayerCardProps) => {
+    const avatarInitials = getAvatarInitials({ name });
+    const avatarBg = getAvatarBackgroundColor(name);
+
     const getShortName = (fullName: string) => {
         const parts = fullName.trim().split(' ');
         if (parts.length === 1) return parts[0]; // Only one name
@@ -125,12 +128,18 @@ const ResponsiveCard = ({
                     >
                         <Avatar
                             src={typeof profileImage === 'string' ? profileImage : undefined}
-                            sx={{ width: 35, height: 35 }}
+                            sx={{
+                                width: 35,
+                                height: 35,
+                                bgcolor: profileImage ? 'transparent' : avatarBg,
+                                color: '#fff',
+                                fontSize: 12,
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                            }}
                             alt="Profile"
                         >
-                            {(!profileImage || typeof profileImage !== 'string') && (
-                                <Image src={imgicon.src} alt="Profile" width={40} height={40} />
-                            )}
+                            {(!profileImage || typeof profileImage !== 'string') && avatarInitials}
                         </Avatar>
                     </Box>
                 </Box>

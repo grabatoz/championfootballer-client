@@ -53,7 +53,6 @@ import toast from 'react-hot-toast';
 import LeagueDetailLoadingSkeleton from '@/Components/loading/LeagueDetailLoadingSkeleton';
 import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
-import PlayerImg from '@/Components/images/playerimg.png'
 import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
@@ -125,6 +124,7 @@ import SecondBadge from '@/Components/images/2nd.png';
 import ThirdBadge from '@/Components/images/3rd.png';
 import fieldImg from '@/Components/images/dreamteambgimg.png';
 import cflogo from '@/Components/images/champion football logo 3 (1).png';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 
 type Foot = 'L' | 'R';
 type ShortPosition = 'GK' | 'DF' | 'MF' | 'WG' | 'ST';
@@ -3751,7 +3751,16 @@ export default function LeagueDetailPage() {
                                                     .map((member, index, arr) => {
                                                         const firstName = member.firstName || '';
                                                         const lastName = member.lastName || '';
-                                                        const memberImageSrc = member?.profilePicture || PlayerImg;
+                                                        const memberImageSrc =
+                                                            typeof member?.profilePicture === 'string' && member.profilePicture.trim().length > 0
+                                                                ? member.profilePicture.trim()
+                                                                : '';
+                                                        const memberDisplayName = `${firstName} ${lastName}`.trim();
+                                                        const memberInitials = getAvatarInitials({
+                                                            name: memberDisplayName,
+                                                            firstName,
+                                                            lastName,
+                                                        });
                                                         const isEven = index % 2 === 0;
                                                         const isLast = index === arr.length - 1;
 
@@ -3763,10 +3772,21 @@ export default function LeagueDetailPage() {
                                                             >
                                                                 {/* Player Info - under ALL POSITIONS */}
                                                                 <div className="flex items-center gap-3 min-w-0">
-                                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                                        <div className="relative w-full h-full">
-                                                                            <Image src={memberImageSrc as any} alt={firstName || 'Player'} fill style={{ objectFit: 'cover' }} />
-                                                                        </div>
+                                                                    <div
+                                                                        className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
+                                                                        style={{
+                                                                            backgroundColor: memberImageSrc
+                                                                                ? 'transparent'
+                                                                                : getAvatarBackgroundColor(memberDisplayName || String(member.id || 'player')),
+                                                                        }}
+                                                                    >
+                                                                        {memberImageSrc ? (
+                                                                            <div className="relative w-full h-full">
+                                                                                <Image src={memberImageSrc} alt={firstName || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                                            </div>
+                                                                        ) : (
+                                                                            memberInitials
+                                                                        )}
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
                                                                         <div className="flex items-center gap-1.5 min-w-0">
@@ -5169,7 +5189,27 @@ export default function LeagueDetailPage() {
 
                                                         const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || 'Striker';
                                                         const member = (league?.members || []).find(m => String(m.id) === String(player.id));
-                                                        const playerImageSrc = member?.profilePicture || member?.profilePicture || (player as any)?.imageUrl || (player as any)?.profileImage || (player as any)?.image || PlayerImg;
+                                                        const playerWithOptionalImage = player as TableData & {
+                                                            imageUrl?: string;
+                                                            profileImage?: string;
+                                                            image?: string;
+                                                        };
+                                                        const playerImageSrcRaw =
+                                                            member?.profilePicture ||
+                                                            playerWithOptionalImage.imageUrl ||
+                                                            playerWithOptionalImage.profileImage ||
+                                                            playerWithOptionalImage.image ||
+                                                            '';
+                                                        const playerImageSrc =
+                                                            typeof playerImageSrcRaw === 'string' && playerImageSrcRaw.trim().length > 0
+                                                                ? playerImageSrcRaw.trim()
+                                                                : '';
+                                                        const tablePlayerName = `${firstName} ${lastName}`.trim() || player.name;
+                                                        const tablePlayerInitials = getAvatarInitials({
+                                                            name: tablePlayerName,
+                                                            firstName,
+                                                            lastName,
+                                                        });
                                                         const isEven = index % 2 === 0;
 
                                                         return (
@@ -5183,10 +5223,21 @@ export default function LeagueDetailPage() {
 
                                                                 {/* Player Info */}
                                                                 <div className="flex items-center gap-3 min-w-0">
-                                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                                        <div className="relative w-full h-full">
-                                                                            <Image src={playerImageSrc as any} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
-                                                                        </div>
+                                                                    <div
+                                                                        className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
+                                                                        style={{
+                                                                            backgroundColor: playerImageSrc
+                                                                                ? 'transparent'
+                                                                                : getAvatarBackgroundColor(tablePlayerName || String(player.id || 'player')),
+                                                                        }}
+                                                                    >
+                                                                        {playerImageSrc ? (
+                                                                            <div className="relative w-full h-full">
+                                                                                <Image src={playerImageSrc} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                                            </div>
+                                                                        ) : (
+                                                                            tablePlayerInitials
+                                                                        )}
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
                                                                         <div className="flex items-center gap-1.5 min-w-0">
@@ -5527,97 +5578,122 @@ export default function LeagueDetailPage() {
                                                     {leaderboardLoading ? (
                                                         <LeagueDetailLoadingSkeleton mode="list" />
                                                     ) : (
-                                                        (allLeaderboardData[metric.key] || []).slice(0, 5).map((player, idx) => (
-                                                            <Link key={`${metric.key}-${player.id}`} href={`/player/${player.id}`} passHref>
-                                                                <Box
-                                                                    sx={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        px: 2,
-                                                                        py: 0.5,
-                                                                        borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                                                                        cursor: 'pointer',
-                                                                        transition: 'background 0.2s',
-                                                                        background: idx === 0 ? '#383838' : 'transparent',
-                                                                        '&:hover': {
-                                                                            background: idx === 0 ? '#454545' : 'rgba(255,255,255,0.05)',
-                                                                        },
-                                                                    }}
-                                                                >
-                                                                    {/* Rank Number - aligned with info icon */}
-                                                                    <Typography
-                                                                        sx={{
-                                                                            color: '#fff',
-                                                                            fontWeight: 600,
-                                                                            fontSize: '0.9rem',
-                                                                            width: 20,
-                                                                            textAlign: 'center',
-                                                                        }}
-                                                                    >
-                                                                        {idx + 1}
-                                                                    </Typography>
+                                                        (allLeaderboardData[metric.key] || []).slice(0, 5).map((player, idx) => {
+                                                            const leaderboardMember = (league?.members || []).find((m) => String(m.id) === String(player.id));
+                                                            const leaderboardPlayerName =
+                                                                (player.name || `${leaderboardMember?.firstName || ''} ${leaderboardMember?.lastName || ''}`.trim()).trim();
+                                                            const leaderboardAvatarSrc =
+                                                                typeof leaderboardMember?.profilePicture === 'string' && leaderboardMember.profilePicture.trim().length > 0
+                                                                    ? leaderboardMember.profilePicture.trim()
+                                                                    : '';
+                                                            const leaderboardInitials = getAvatarInitials({
+                                                                name: leaderboardPlayerName,
+                                                                firstName: leaderboardMember?.firstName,
+                                                                lastName: leaderboardMember?.lastName,
+                                                            });
 
-                                                                    {/* Player Avatar - aligned with metric icon */}
+                                                            return (
+                                                                <Link key={`${metric.key}-${player.id}`} href={`/player/${player.id}`} passHref>
                                                                     <Box
                                                                         sx={{
-                                                                            width: 33,
-                                                                            height: 33,
-                                                                            borderRadius: '50%',
-                                                                            background: 'linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%)',
                                                                             display: 'flex',
                                                                             alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            ml: 1.5,
-                                                                            mr: 1.5,
-                                                                            overflow: 'hidden',
+                                                                            px: 2,
+                                                                            py: 0.5,
+                                                                            borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'background 0.2s',
+                                                                            background: idx === 0 ? '#383838' : 'transparent',
+                                                                            '&:hover': {
+                                                                                background: idx === 0 ? '#454545' : 'rgba(255,255,255,0.05)',
+                                                                            },
                                                                         }}
                                                                     >
-                                                                        <Image src={PlayerImg} alt="Player" width={33} height={33} style={{ objectFit: 'cover' }} />
-                                                                    </Box>
+                                                                        {/* Rank Number - aligned with info icon */}
+                                                                        <Typography
+                                                                            sx={{
+                                                                                color: '#fff',
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.9rem',
+                                                                                width: 20,
+                                                                                textAlign: 'center',
+                                                                            }}
+                                                                        >
+                                                                            {idx + 1}
+                                                                        </Typography>
 
-                                                                    {/* Player Info */}
-                                                                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, lineHeight: 1 }}>
+                                                                        {/* Player Avatar - aligned with metric icon */}
+                                                                        <Box
+                                                                            sx={{
+                                                                                width: 33,
+                                                                                height: 33,
+                                                                                borderRadius: '50%',
+                                                                                background: leaderboardAvatarSrc
+                                                                                    ? 'linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%)'
+                                                                                    : getAvatarBackgroundColor(leaderboardPlayerName || String(player.id || 'player')),
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                ml: 1.5,
+                                                                                mr: 1.5,
+                                                                                overflow: 'hidden',
+                                                                                color: '#fff',
+                                                                                fontWeight: 700,
+                                                                                fontSize: '0.7rem',
+                                                                                textTransform: 'uppercase',
+                                                                            }}
+                                                                        >
+                                                                            {leaderboardAvatarSrc ? (
+                                                                                <Image src={leaderboardAvatarSrc} alt={leaderboardPlayerName || 'Player'} width={33} height={33} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                                                                            ) : (
+                                                                                leaderboardInitials
+                                                                            )}
+                                                                        </Box>
+
+                                                                        {/* Player Info */}
+                                                                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, lineHeight: 1 }}>
+                                                                            <Typography
+                                                                                sx={{
+                                                                                    color: 'white',
+                                                                                    fontWeight: 600,
+                                                                                    fontSize: '0.8rem',
+                                                                                    whiteSpace: 'nowrap',
+                                                                                    overflow: 'hidden',
+                                                                                    textOverflow: 'ellipsis',
+                                                                                    lineHeight: 1.1,
+                                                                                    mb: 0,
+                                                                                }}
+                                                                            >
+                                                                                {player.name}
+                                                                            </Typography>
+                                                                            <Typography
+                                                                                sx={{
+                                                                                    color: '#ffff',
+                                                                                    fontSize: '0.65rem',
+                                                                                    fontWeight: 300,
+                                                                                    lineHeight: 1.1,
+                                                                                    mt: 0,
+                                                                                }}
+                                                                            >
+                                                                                {player.positionType || 'Player'}
+                                                                            </Typography>
+                                                                        </Box>
+
+                                                                        {/* Value */}
                                                                         <Typography
                                                                             sx={{
                                                                                 color: 'white',
-                                                                                fontWeight: 600,
-                                                                                fontSize: '0.8rem',
-                                                                                whiteSpace: 'nowrap',
-                                                                                overflow: 'hidden',
-                                                                                textOverflow: 'ellipsis',
-                                                                                lineHeight: 1.1,
-                                                                                mb: 0,
+                                                                                fontWeight: 700,
+                                                                                fontSize: '1.1rem',
+                                                                                ml: 1,
                                                                             }}
                                                                         >
-                                                                            {player.name}
-                                                                        </Typography>
-                                                                        <Typography
-                                                                            sx={{
-                                                                                color: '#ffff',
-                                                                                fontSize: '0.65rem',
-                                                                                fontWeight: 300,
-                                                                                lineHeight: 1.1,
-                                                                                mt: 0,
-                                                                            }}
-                                                                        >
-                                                                            {player.positionType || 'Player'}
+                                                                            {metric.key === 'contribution' ? `${player.value}%` : player.value}
                                                                         </Typography>
                                                                     </Box>
-
-                                                                    {/* Value */}
-                                                                    <Typography
-                                                                        sx={{
-                                                                            color: 'white',
-                                                                            fontWeight: 700,
-                                                                            fontSize: '1.1rem',
-                                                                            ml: 1,
-                                                                        }}
-                                                                    >
-                                                                        {metric.key === 'contribution' ? `${player.value}%` : player.value}
-                                                                    </Typography>
-                                                                </Box>
-                                                            </Link>
-                                                        ))
+                                                                </Link>
+                                                            );
+                                                        })
                                                     )}
                                                     {!leaderboardLoading && (allLeaderboardData[metric.key] || []).length === 0 && (
                                                         <Box sx={{ p: 3, textAlign: 'center' }}>
