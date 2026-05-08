@@ -300,6 +300,14 @@ const PlayerProfileCard = () => {
     () => `profilePhoneCountryCode:${String(user?.id || "me")}`,
     [user?.id]
   )
+  const avatarUrlStorageKey = useMemo(() => {
+    const id = String(user?.id || "").trim()
+    return id ? `avatar_url:${id}` : null
+  }, [user?.id])
+  const avatarVersionStorageKey = useMemo(() => {
+    const id = String(user?.id || "").trim()
+    return id ? `avatar_v:${id}` : null
+  }, [user?.id])
   const [phoneCountryCode, setPhoneCountryCode] = useState<string>(() => {
     const fromUser = String((user as { phoneCountryCode?: string | null } | null)?.phoneCountryCode || "").trim().toUpperCase()
     if (/^[A-Z]{2}$/.test(fromUser)) return fromUser
@@ -707,8 +715,10 @@ const PlayerProfileCard = () => {
           setImagePreview(null)
           dispatch(mergeUser({ profilePicture: newUrl, image: newUrl }))
           dispatch(syncWithStorage())
-          localStorage.setItem('avatar_url', newUrl)
-          localStorage.setItem('avatar_v', String(Date.now()))
+          if (avatarUrlStorageKey) localStorage.setItem(avatarUrlStorageKey, newUrl)
+          if (avatarVersionStorageKey) localStorage.setItem(avatarVersionStorageKey, String(Date.now()))
+          localStorage.removeItem('avatar_url')
+          localStorage.removeItem('avatar_v')
         }
         toast.success('Profile picture updated!')
       } else {
@@ -744,8 +754,10 @@ const PlayerProfileCard = () => {
         setImagePreview(null)
         dispatch(mergeUser({ profilePicture: null, image: null }))
         dispatch(syncWithStorage())
+        if (avatarUrlStorageKey) localStorage.removeItem(avatarUrlStorageKey)
+        if (avatarVersionStorageKey) localStorage.setItem(avatarVersionStorageKey, String(Date.now()))
         localStorage.removeItem('avatar_url')
-        localStorage.setItem('avatar_v', String(Date.now()))
+        localStorage.removeItem('avatar_v')
         if (data.user) cacheManager.updatePlayersCache(data.user)
         toast.success('Profile picture removed')
       } else {

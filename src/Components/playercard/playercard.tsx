@@ -195,10 +195,13 @@ const PlayerCard = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imgUrl, setImgUrl] = useState<string | null>(profileImage ?? null);
   // const [imgVersion, setImgVersion] = useState(0);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);     // gallery picker
   const cameraInputRef = useRef<HTMLInputElement | null>(null);   // (kept for fallback if needed)
   const [imgVersion, setImgVersion] = useState(0);                // NEW: cache-bust counter
+  const avatarUserId = String(user?.id || '').trim();
+  const avatarUrlStorageKey = avatarUserId ? `avatar_url:${avatarUserId}` : null;
+  const avatarVersionStorageKey = avatarUserId ? `avatar_v:${avatarUserId}` : null;
 
   // NEW: in-app camera state
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -227,13 +230,24 @@ const PlayerCard = ({
       if (profileImage) setImgUrl(profileImage);
       return;
     }
-    if (typeof window !== 'undefined') {
-      const storedUrl = localStorage.getItem('avatar_url');
-      const storedV = localStorage.getItem('avatar_v');
-      if (storedUrl) setImgUrl(storedUrl);             // use latest known URL
-      if (storedV) setImgVersion(Number(storedV) || 0); // use latest cache buster
+    if (typeof window !== 'undefined' && avatarUrlStorageKey && avatarVersionStorageKey) {
+      const storedUrl = localStorage.getItem(avatarUrlStorageKey);
+      const storedV = localStorage.getItem(avatarVersionStorageKey);
+      if (storedUrl) {
+        setImgUrl(storedUrl); // use latest known URL
+      } else {
+        setImgUrl(profileImage ?? null);
+      }
+      if (storedV) {
+        setImgVersion(Number(storedV) || 0); // use latest cache buster
+      } else {
+        setImgVersion(0);
+      }
+    } else {
+      setImgUrl(profileImage ?? null);
+      setImgVersion(0);
     }
-  }, [disableImagePopup, profileImage]);
+  }, [disableImagePopup, profileImage, avatarUrlStorageKey, avatarVersionStorageKey]);
 
   // When prop changes (e.g. after user fetch), update image URL.
   // For other players' cards (disableImagePopup=true), always use the prop directly.
@@ -242,14 +256,21 @@ const PlayerCard = ({
       // Viewing another player — always honour the prop
       if (profileImage) setImgUrl(profileImage);
     } else {
-      const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('avatar_url') : null;
-      if (!storedUrl && profileImage) setImgUrl(profileImage);
+      const storedUrl =
+        typeof window !== 'undefined' && avatarUrlStorageKey
+          ? localStorage.getItem(avatarUrlStorageKey)
+          : null;
+      if (storedUrl) {
+        setImgUrl(storedUrl);
+      } else {
+        setImgUrl(profileImage ?? null);
+      }
     }
 
     // prefer persisted cache-buster; fallback to Cloudinary version in URL
     let v = 0;
-    if (!disableImagePopup && typeof window !== 'undefined') {
-      const stored = localStorage.getItem('avatar_v');
+    if (!disableImagePopup && typeof window !== 'undefined' && avatarVersionStorageKey) {
+      const stored = localStorage.getItem(avatarVersionStorageKey);
       if (stored) v = Number(stored) || 0;
     }
     if (!v && profileImage) {
@@ -257,7 +278,8 @@ const PlayerCard = ({
       if (m) v = Number(m[1]);
     }
     if (v) setImgVersion(v);
-  }, [profileImage, disableImagePopup]);
+    else if (!disableImagePopup) setImgVersion(0);
+  }, [profileImage, disableImagePopup, avatarUrlStorageKey, avatarVersionStorageKey]);
 
   // Auto-click the file input when the image modal opens
   // useEffect(() => {
@@ -407,7 +429,8 @@ const PlayerCard = ({
           setImgUrl(newUrl);
           // persist so refresh uses the newest Cloudinary path
           if (typeof window !== 'undefined') {
-            localStorage.setItem('avatar_url', newUrl);
+            if (avatarUrlStorageKey) localStorage.setItem(avatarUrlStorageKey, newUrl);
+            localStorage.removeItem('avatar_url');
           }
         }
 
@@ -416,7 +439,8 @@ const PlayerCard = ({
           Date.now();
         setImgVersion(Number(bump));
         if (typeof window !== 'undefined') {
-          localStorage.setItem('avatar_v', String(bump));
+          if (avatarVersionStorageKey) localStorage.setItem(avatarVersionStorageKey, String(bump));
+          localStorage.removeItem('avatar_v');
         }
 
         toast.success('Profile picture updated!');

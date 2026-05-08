@@ -90,6 +90,16 @@ const clearClientAuthArtifacts = (): void => {
   localStorage.removeItem("isAuthenticated")
   localStorage.removeItem("sessionExpiry")
   localStorage.removeItem("authData")
+  localStorage.removeItem("avatar_url")
+  localStorage.removeItem("avatar_v")
+  const avatarKeyPrefixes = ["avatar_url:", "avatar_v:"]
+  for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+    const key = localStorage.key(i)
+    if (!key) continue
+    if (avatarKeyPrefixes.some((prefix) => key.startsWith(prefix))) {
+      localStorage.removeItem(key)
+    }
+  }
   sessionStorage.removeItem("authData")
 }
 
