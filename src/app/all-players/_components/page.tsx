@@ -736,12 +736,12 @@ const AllPlayersPage = () => {
 
         try {
           const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-          const data = await res.json().catch(() => ({}));
+          const data: { success?: boolean; players?: unknown[] } = await res.json().catch(() => ({}));
 
-          const normalizedPlayers = (data?.success && Array.isArray(data.players))
+          const normalizedPlayers: Player[] = (data.success && Array.isArray(data.players))
             ? data.players
-                .map((rawPlayer: unknown) => normalizePlayer(rawPlayer))
-                .filter((p: Player | null): p is Player => Boolean(p))
+                .map((rawPlayer) => normalizePlayer(rawPlayer))
+                .filter((p): p is Player => Boolean(p))
             : [];
 
           // New active season can temporarily return partial players from backend.
