@@ -527,7 +527,7 @@ const PlayerCard = ({
               }}
               data-testid="profile-avatar"
             >
-              {hasUserImage ? (
+              {displaySrc ? (
                 <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
                   <Image
                     src={displaySrc}
