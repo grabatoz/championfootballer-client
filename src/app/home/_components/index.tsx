@@ -168,12 +168,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownOffsetY, setDropdownOffsetY] = useState(0);
   const [networkDone, setNetworkDone] = useState(false);
   const [isCreatingSeason, setIsCreatingSeason] = useState(false);
   const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const { token } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -306,34 +304,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // Keep a small visual gap from viewport bottom/footer on short screens.
-  useEffect(() => {
-    if (!showDropdown || isFetching) {
-      setDropdownOffsetY(0);
-      return;
-    }
-
-    const adjustDropdownOffset = () => {
-      const menuEl = dropdownMenuRef.current;
-      if (!menuEl) return;
-
-      const footerGap = 14;
-      const viewportBottom = window.innerHeight - footerGap;
-      const rect = menuEl.getBoundingClientRect();
-      const overflow = rect.bottom - viewportBottom;
-
-      setDropdownOffsetY(overflow > 0 ? -Math.ceil(overflow) : 0);
-    };
-
-    const rafId = window.requestAnimationFrame(adjustDropdownOffset);
-    window.addEventListener('resize', adjustDropdownOffset);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', adjustDropdownOffset);
-    };
-  }, [showDropdown, isFetching, userLeagues.length]);
 
   // Handler to create new season
   const handleCreateNewSeason = async () => {
@@ -1173,18 +1143,17 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       {/* Dropdown menu */}
       {showDropdown && !isFetching && (
         <Box
-          ref={dropdownMenuRef}
           sx={{
             position: 'absolute',
-            top: 'calc(100% - 2px)',
+            top: '100%',
             left: 0,
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box',
-            transform: dropdownOffsetY !== 0 ? `translateY(${dropdownOffsetY}px)` : 'none',
-            transition: 'transform 0.2s ease',
-            maxHeight: 300,
+            transform: 'none',
+            height: { xs: 220, sm: 250, md: 280 },
             overflowY: 'auto',
+            overflowX: 'hidden',
             p: 0.5,
             zIndex: 99999,
             bgcolor: '#00A77F',
@@ -1196,10 +1165,23 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
             backdropFilter: 'blur(8px)',
             '&::-webkit-scrollbar': {
-              display: 'none',
+              width: 8,
             },
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(255,255,255,0.14)',
+              borderRadius: 10,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(255,255,255,0.55)',
+              borderRadius: 10,
+              border: '1px solid rgba(0,0,0,0.1)',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'rgba(255,255,255,0.75)',
+            },
+            msOverflowStyle: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.65) rgba(255,255,255,0.14)',
           }}
           id="league-dropdown-list"
           role="listbox"
