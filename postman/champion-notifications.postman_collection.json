@@ -1,0 +1,641 @@
+{
+  "info": {
+    "_postman_id": "9d4205b4-55d6-4d34-9e79-c989d89b4a31",
+    "name": "Champion - Notifications & Related APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection extracted from src/Components/Navbar/_components/index.tsx"
+  },
+  "item": [
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?userId={{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification (POST fallback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}",
+                "delete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear All (DELETE by userId)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?userId={{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear All (DELETE /clear-all fallback)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/clear-all?userId={{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "clear-all"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear All (POST /clear-all body fallback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/clear-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "clear-all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Season Action (Join/Decline)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"{{seasonAction}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/season-action",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}",
+                "season-action"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Notification (Primary)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{adminUserId}}\",\n  \"type\": \"RESULT_CONFIRMATION_REJECTED\",\n  \"title\": \"Player rejected result confirmation\",\n  \"body\": \"Sample body\",\n  \"meta\": {\n    \"matchId\": \"{{matchId}}\",\n    \"leagueId\": \"{{leagueId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Notification (User route fallback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"RESULT_CONFIRMATION_REJECTED\",\n  \"title\": \"Player rejected result confirmation\",\n  \"body\": \"Sample body\",\n  \"meta\": {\n    \"matchId\": \"{{matchId}}\",\n    \"leagueId\": \"{{leagueId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{adminUserId}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{adminUserId}}",
+                "notifications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Notification (Fallback /create)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{adminUserId}}\",\n  \"type\": \"RESULT_CONFIRMATION_REJECTED\",\n  \"title\": \"Player rejected result confirmation\",\n  \"body\": \"Sample body\",\n  \"meta\": {\n    \"matchId\": \"{{matchId}}\",\n    \"leagueId\": \"{{leagueId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "create"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Match / Availability / Result Confirmation",
+      "item": [
+        {
+          "name": "Get Match Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "availability"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set Availability YES",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/availability?action=available",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "available"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set Availability NO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/availability?action=unavailable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "unavailable"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Match Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirm Result YES (POST /confirm)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"YES\",\n  \"action\": \"YES\",\n  \"status\": \"YES\",\n  \"confirmationDecision\": \"YES\",\n  \"captainDecision\": \"YES\",\n  \"confirm\": true,\n  \"confirmed\": true,\n  \"isConfirmed\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "confirm"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirm Result NO (POST /result/confirm)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"NO\",\n  \"action\": \"NO\",\n  \"status\": \"NO\",\n  \"confirmationDecision\": \"NO\",\n  \"captainDecision\": \"NO\",\n  \"confirm\": false,\n  \"confirmed\": false,\n  \"isConfirmed\": false,\n  \"suggestedHomeGoals\": 1,\n  \"suggestedAwayGoals\": 0,\n  \"suggested_home_goals\": 1,\n  \"suggested_away_goals\": 0,\n  \"homeTeamGoals\": 1,\n  \"awayTeamGoals\": 0,\n  \"home_goals\": 1,\n  \"away_goals\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/result/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "result",
+                "confirm"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirm Result (PATCH alt with query decision)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"{{decision}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/confirm?decision={{decision}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}",
+                "confirm"
+              ],
+              "query": [
+                {
+                  "key": "decision",
+                  "value": "{{decision}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "League Metadata (Used by Notifications)",
+      "item": [
+        {
+          "name": "Get League (includeMatches=0)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}?includeMatches=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}"
+              ],
+              "query": [
+                {
+                  "key": "includeMatches",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get League (full)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "adminUserId",
+      "value": ""
+    },
+    {
+      "key": "matchId",
+      "value": ""
+    },
+    {
+      "key": "leagueId",
+      "value": ""
+    },
+    {
+      "key": "decision",
+      "value": "YES"
+    },
+    {
+      "key": "seasonAction",
+      "value": "join"
+    }
+  ]
+}

@@ -3096,42 +3096,101 @@ function AllLeagues() {
     }
   };
 
+  const removeMemberFromLeague = async (
+    leagueId: string | number,
+    memberId: string
+  ): Promise<{ ok: boolean; message?: string }> => {
+    if (!token) return { ok: false, message: 'Authentication token is missing' };
+
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const lid = encodeURIComponent(String(leagueId));
+    const mid = encodeURIComponent(String(memberId));
+
+    type RemoveMemberAttempt = {
+      method: 'DELETE' | 'POST';
+      url: string;
+      body?: Record<string, unknown>;
+    };
+
+    const attempts: RemoveMemberAttempt[] = [
+      { method: 'DELETE', url: `${baseUrl}/leagues/${lid}/users/${mid}` },
+      { method: 'DELETE', url: `${baseUrl}/api/leagues/${lid}/users/${mid}` },
+      { method: 'DELETE', url: `${baseUrl}/leagues/${lid}/members/${mid}` },
+      { method: 'DELETE', url: `${baseUrl}/api/leagues/${lid}/members/${mid}` },
+      { method: 'POST', url: `${baseUrl}/leagues/${lid}/users/${mid}/remove`, body: {} },
+      { method: 'POST', url: `${baseUrl}/api/leagues/${lid}/users/${mid}/remove`, body: {} },
+      { method: 'POST', url: `${baseUrl}/leagues/${lid}/members/remove`, body: { memberId: String(memberId) } },
+      { method: 'POST', url: `${baseUrl}/api/leagues/${lid}/members/remove`, body: { memberId: String(memberId) } },
+      { method: 'POST', url: `${baseUrl}/leagues/${lid}/users/remove`, body: { userId: String(memberId) } },
+      { method: 'POST', url: `${baseUrl}/api/leagues/${lid}/users/remove`, body: { userId: String(memberId) } },
+    ];
+
+    let lastMessage = 'Failed to remove member';
+
+    for (const attempt of attempts) {
+      try {
+        const response = await fetch(attempt.url, {
+          method: attempt.method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            ...(attempt.body ? { 'Content-Type': 'application/json' } : {}),
+          },
+          body: attempt.body ? JSON.stringify(attempt.body) : undefined,
+        });
+
+        if (response.ok || response.status === 204) {
+          return { ok: true };
+        }
+
+        const text = await response.text().catch(() => '');
+        if (text) lastMessage = text;
+
+        // For non-route-missing cases, stop early and surface backend message
+        if (response.status !== 404 && response.status !== 405) {
+          return { ok: false, message: text || `Failed to remove member (${response.status})` };
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Network error';
+        lastMessage = msg || lastMessage;
+      }
+    }
+
+    return { ok: false, message: lastMessage };
+  };
+
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedLeague) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}/users/${memberId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const result = await removeMemberFromLeague(selectedLeague.id, memberId);
+      if (!result.ok) {
+        toast.error(result.message || 'Failed to remove member');
+        return;
+      }
 
-      if (response.ok) {
-        // If current user was removed, refresh the entire leagues list
-        if (memberId === user?.id) {
-          setOpenMembers(false);
-          await fetchAllLeagues();
-        } else {
-          // Optimistic local update for instant UI feedback
-          setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
-            ...l,
-            members: Array.isArray(l.members) ? l.members.filter(m => m.id !== memberId) : l.members,
-            administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => a.id !== memberId) : l.administrators,
-            updatedAt: new Date().toISOString(),
-          } : l));
-          setSelectedLeague(prev => prev ? {
-            ...prev,
-            members: Array.isArray(prev.members) ? prev.members.filter(m => m.id !== memberId) : prev.members,
-            administrators: Array.isArray(prev.administrators) ? prev.administrators.filter(a => a.id !== memberId) : prev.administrators,
-            updatedAt: new Date().toISOString(),
-          } : prev);
-          try {
-            window.dispatchEvent(new CustomEvent('league-updated', { detail: { leagueId: selectedLeague.id, reason: 'member-removed' } }));
-          } catch {}
-          // Background refresh to ensure consistency (no-cache bust)
-          await handleOpenMembers(selectedLeague);
-          try { toast.success('Member removed'); } catch {}
-        }
+      // If current user was removed, refresh the entire leagues list
+      if (String(memberId) === String(user?.id ?? '')) {
+        setOpenMembers(false);
+        await fetchAllLeagues();
       } else {
-        toast.error('Failed to remove member');
+        // Optimistic local update for instant UI feedback
+        setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
+          ...l,
+          members: Array.isArray(l.members) ? l.members.filter(m => String(m.id) !== String(memberId)) : l.members,
+          administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => String(a.id) !== String(memberId)) : l.administrators,
+          updatedAt: new Date().toISOString(),
+        } : l));
+        setSelectedLeague(prev => prev ? {
+          ...prev,
+          members: Array.isArray(prev.members) ? prev.members.filter(m => String(m.id) !== String(memberId)) : prev.members,
+          administrators: Array.isArray(prev.administrators) ? prev.administrators.filter(a => String(a.id) !== String(memberId)) : prev.administrators,
+          updatedAt: new Date().toISOString(),
+        } : prev);
+        try {
+          window.dispatchEvent(new CustomEvent('league-updated', { detail: { leagueId: selectedLeague.id, reason: 'member-removed' } }));
+        } catch {}
+        // Background refresh to ensure consistency (no-cache bust)
+        await handleOpenMembers(selectedLeague);
+        try { toast.success('Member removed'); } catch {}
       }
     } catch {
       toast.error('Failed to remove member');
@@ -5355,15 +5414,9 @@ function AllLeagues() {
             try {
               const lid = adminSettingsLeague?.id || selectedLeague?.id;
               if (!lid || !token) return;
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}/users/${memberId}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                },
-              });
-              if (!res.ok) {
-                const msg = await res.text().catch(() => '');
-                throw new Error(msg || 'Failed to remove member');
+              const result = await removeMemberFromLeague(lid, memberId);
+              if (!result.ok) {
+                throw new Error(result.message || 'Failed to remove member');
               }
 
               // Optimistically update dialog/local states for instant UI feedback
@@ -5371,22 +5424,22 @@ function AllLeagues() {
                 // Update the admin settings dialog league
                 setAdminSettingsLeague(prev => prev ? {
                   ...prev,
-                  members: (prev.members || []).filter(m => m.id !== memberId),
-                  administrators: (prev.administrators || []).filter(a => a.id !== memberId),
+                  members: (prev.members || []).filter(m => String(m.id) !== String(memberId)),
+                  administrators: (prev.administrators || []).filter(a => String(a.id) !== String(memberId)),
                 } : prev);
 
                 // If selectedLeague is the same league, update it too
                 setSelectedLeague(prev => (prev && prev.id === lid) ? {
                   ...prev,
-                  members: (prev.members || []).filter(m => m.id !== memberId),
-                  administrators: (prev.administrators || []).filter(a => a.id !== memberId),
+                  members: (prev.members || []).filter(m => String(m.id) !== String(memberId)),
+                  administrators: (prev.administrators || []).filter(a => String(a.id) !== String(memberId)),
                 } : prev);
 
                 // Update the leagues list if it contains members/admins
                 setLeagues(prev => prev.map(l => l.id === lid ? {
                   ...l,
-                  members: Array.isArray(l.members) ? l.members.filter(m => m.id !== memberId) : l.members,
-                  administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => a.id !== memberId) : l.administrators,
+                  members: Array.isArray(l.members) ? l.members.filter(m => String(m.id) !== String(memberId)) : l.members,
+                  administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => String(a.id) !== String(memberId)) : l.administrators,
                 } : l));
               } catch { /* noop */ }
 
