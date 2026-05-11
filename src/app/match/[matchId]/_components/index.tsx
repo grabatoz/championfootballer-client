@@ -81,7 +81,11 @@ interface Match {
   start?: string;
   homeCaptainId?: string;
   awayCaptainId?: string;
+  homeCaptainConfirmed?: boolean;
+  awayCaptainConfirmed?: boolean;
   leagueId?: string;
+  seasonId?: string;
+  seasonMatchNumber?: number;
   end?: string;
   availableUsers?: { id: string }[];
   // Captain picks (from league matches data)
@@ -97,7 +101,17 @@ interface League {
   id: string;
   name: string;
   isAdmin?: boolean;
-  matches: { id: string; homeDefensiveImpactId?: string | null; awayDefensiveImpactId?: string | null; homeMentalityId?: string | null; awayMentalityId?: string | null }[];
+  maxGames?: number;
+  seasons?: Array<{ id: string; maxGames?: number }>;
+  matches: {
+    id: string;
+    seasonId?: string;
+    seasonMatchNumber?: number;
+    homeDefensiveImpactId?: string | null;
+    awayDefensiveImpactId?: string | null;
+    homeMentalityId?: string | null;
+    awayMentalityId?: string | null
+  }[];
 }
 
 type PlayerWithTeam = User & { __team: 'home' | 'away' };
@@ -161,6 +175,13 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // cache of per-player stats fetched via ultra-fast endpoint (used for guests)
   const [perPlayerStats, setPerPlayerStats] = useState<Record<string, MatchStatLite>>({});
   const fetchedStatsKeysRef = useRef(new Set<string>());
+  const getNestedLeagueId = useCallback((matchLike: unknown): string => {
+    if (!matchLike || typeof matchLike !== 'object') return '';
+    const matchRecord = matchLike as Record<string, unknown>;
+    const nestedLeague = matchRecord.league;
+    if (!nestedLeague || typeof nestedLeague !== 'object') return '';
+    return String((nestedLeague as Record<string, unknown>).id || '').trim();
+  }, []);
 
   // Fetch match data function
   const fetchMatchData = useCallback(() => {
@@ -219,9 +240,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   }, [matchId, fetchMatchData]);
 
   useEffect(() => {
-    const lid = match?.leagueId || (match as any)?.league?.id;
+    const lid = match?.leagueId || getNestedLeagueId(match);
     if (match && lid && token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}`, {
+      const seasonQuery = match?.seasonId ? `?seasonId=${encodeURIComponent(String(match.seasonId))}` : '';
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}${seasonQuery}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -244,11 +266,11 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           }
         });
     }
-  }, [match, token]);
+  }, [match, token, getNestedLeagueId]);
 
   // Fetch detailed match (including guests) if not present in initial /matches/:id response
   useEffect(() => {
-    const lid2 = match?.leagueId || (match as any)?.league?.id;
+    const lid2 = match?.leagueId || getNestedLeagueId(match);
     if (!match || !token || !lid2) return;
     // If guests already present or already fetched, skip
     if (match.guests?.length || detailedFetchDone.current) return;
@@ -259,11 +281,42 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         if (data.success && data.match) {
-          setMatch(prev => prev && prev.id === data.match.id ? { ...prev, guests: data.match.guests || [] } : prev);
+          setMatch(prev => {
+            if (!prev || prev.id !== data.match.id) return prev;
+            return {
+              ...prev,
+              leagueId: data.match.leagueId || prev.leagueId,
+              seasonId: data.match.seasonId || prev.seasonId,
+              seasonMatchNumber: typeof data.match.seasonMatchNumber === 'number'
+                ? data.match.seasonMatchNumber
+                : prev.seasonMatchNumber,
+              homeTeamName: data.match.homeTeamName || prev.homeTeamName,
+              awayTeamName: data.match.awayTeamName || prev.awayTeamName,
+              homeTeamImage: data.match.homeTeamImage || prev.homeTeamImage,
+              awayTeamImage: data.match.awayTeamImage || prev.awayTeamImage,
+              start: data.match.start || prev.start,
+              end: data.match.end || prev.end,
+              location: data.match.location || prev.location,
+              homeCaptainId: data.match.homeCaptainId || prev.homeCaptainId,
+              awayCaptainId: data.match.awayCaptainId || prev.awayCaptainId,
+              homeCaptainConfirmed: typeof data.match.homeCaptainConfirmed === 'boolean'
+                ? data.match.homeCaptainConfirmed
+                : prev.homeCaptainConfirmed,
+              awayCaptainConfirmed: typeof data.match.awayCaptainConfirmed === 'boolean'
+                ? data.match.awayCaptainConfirmed
+                : prev.awayCaptainConfirmed,
+              homeTeamGoals: typeof data.match.homeTeamGoals === 'number' ? data.match.homeTeamGoals : prev.homeTeamGoals,
+              awayTeamGoals: typeof data.match.awayTeamGoals === 'number' ? data.match.awayTeamGoals : prev.awayTeamGoals,
+              status: data.match.status || prev.status,
+              homeTeamUsers: Array.isArray(data.match.homeTeamUsers) ? data.match.homeTeamUsers : prev.homeTeamUsers,
+              awayTeamUsers: Array.isArray(data.match.awayTeamUsers) ? data.match.awayTeamUsers : prev.awayTeamUsers,
+              guests: data.match.guests || prev.guests || []
+            };
+          });
         }
       } catch { /* ignore */ }
     })();
-  }, [match, token]);
+  }, [match, token, getNestedLeagueId]);
 
   // Fetch ALL per-match stats for every player (single call, no playerId param)
   useEffect(() => {
@@ -281,9 +334,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         const data = await res.json().catch(() => null);
         if (data?.success && Array.isArray(data.stats)) {
           const statsMap: Record<string, MatchStatLite> = {};
-          data.stats.forEach((s: any) => {
+          data.stats.forEach((s: Record<string, unknown>) => {
+            const userLike = (s.user && typeof s.user === 'object') ? (s.user as Record<string, unknown>) : null;
             const displayUid = String(s.displayUserId || s.userDisplayId || '');
-            const rawUid = String(s.userId || s.user?.id || '');
+            const rawUid = String(s.userId || userLike?.id || '');
             if (!displayUid && !rawUid) return;
             const entry: MatchStatLite = {
               goals: Number(s.goals) || 0,
@@ -574,11 +628,39 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   //   }
   // }, [router, match]);
 
-  const currentMatchNumber = (() => {
-    if (!league || !match) return null;
-    const idx = league.matches?.findIndex(m => m.id === match.id) ?? -1;
-    return idx >= 0 ? idx + 1 : null;
+  const seasonIdForProgress = String(match?.seasonId || '').trim();
+  const seasonMatches = (() => {
+    if (!league?.matches || !Array.isArray(league.matches)) return [];
+    if (!seasonIdForProgress) return league.matches;
+    const scoped = league.matches.filter((m) => String((m as { seasonId?: string }).seasonId || '') === seasonIdForProgress);
+    return scoped.length > 0 ? scoped : league.matches;
   })();
+
+  const currentMatchNumber = (() => {
+    const explicitSeasonMatchNumber =
+      typeof match?.seasonMatchNumber === 'number' && Number.isFinite(match.seasonMatchNumber)
+        ? match.seasonMatchNumber
+        : null;
+    if (explicitSeasonMatchNumber && explicitSeasonMatchNumber > 0) return explicitSeasonMatchNumber;
+    if (!match || !seasonMatches.length) return 1;
+    const idx = seasonMatches.findIndex((m) => String(m.id) === String(match.id));
+    return idx >= 0 ? idx + 1 : 1;
+  })();
+
+  const totalMatchSlots = (() => {
+    const seasonMaxFromLeague = Array.isArray(league?.seasons)
+      ? league?.seasons?.find((s) => String(s?.id || '') === seasonIdForProgress)?.maxGames
+      : undefined;
+    const numericSeasonMax = Number(seasonMaxFromLeague);
+    if (Number.isFinite(numericSeasonMax) && numericSeasonMax > 0) return numericSeasonMax;
+
+    const numericLeagueMax = Number(league?.maxGames);
+    if (Number.isFinite(numericLeagueMax) && numericLeagueMax > 0) return numericLeagueMax;
+
+    return Math.max(seasonMatches.length, 1);
+  })();
+
+  const captainsConfirmed = Boolean(match?.homeCaptainConfirmed && match?.awayCaptainConfirmed);
 
   return (
     <Box
@@ -630,8 +712,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             homeGoals={typeof match.homeTeamGoals === 'number' ? match.homeTeamGoals : 0}
             awayGoals={typeof match.awayTeamGoals === 'number' ? match.awayTeamGoals : 0}
             leagueName={league?.name || 'League'}
-            currentMatch={league && league.matches ? (league.matches.findIndex(m => m.id === match.id) + 1) : 1}
-            totalMatches={league?.matches?.length || 1}
+            currentMatch={currentMatchNumber}
+            totalMatches={totalMatchSlots}
             matchStartTime={match.start || match.date || new Date().toISOString()}
             possessionLeft={47} // TODO: Replace with actual possession if available
             possessionRight={53} // TODO: Replace with actual possession if available
@@ -639,8 +721,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             winPercentRight={winPercentRight}
             matchStatus={match.status}
             matchEndTime={match.end || undefined}
-            leagueId={match.leagueId || (match as any).league?.id || ""}
+            leagueId={match.leagueId || getNestedLeagueId(match) || ""}
             matchId={match.id}
+            captainsConfirmed={captainsConfirmed}
             isUserAvailable={!!match.availableUsers?.some(u => u?.id === user?.id)}
             availabilityLoading={availabilityLoading}
             handleToggleAvailability={handleToggleAvailability}

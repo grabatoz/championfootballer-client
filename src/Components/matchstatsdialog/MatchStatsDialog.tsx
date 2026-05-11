@@ -1661,8 +1661,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 voteSuccess = true; // No vote to save
             }
 
-            // 3. Save Captain Picks (if user is captain)
-            if ((isHomeCaptain || isAwayCaptain) && captainApiAvailable) {
+            // 3. Save Defensive Impact / Mentality picks
+            if (captainApiAvailable && (captainPicks.defence || captainPicks.influence)) {
                 try {
                     captainPicksSuccess = true;
                     // Save Defensive Impact pick
@@ -1709,14 +1709,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     errors.push('Failed to save captain picks');
                 }
             } else {
-                captainPicksSuccess = true; // Not a captain or no picks
+                captainPicksSuccess = true; // No picks selected or API unavailable
             }
 
             // Show result
             if (statsSuccess) {
                 const successParts = ['Stats saved'];
                 if (votedForId && voteSuccess) successParts.push('Vote saved');
-                if ((isHomeCaptain || isAwayCaptain) && captainPicksSuccess && (captainPicks.defence || captainPicks.influence)) {
+                if (captainPicksSuccess && (captainPicks.defence || captainPicks.influence)) {
                     successParts.push('Captain picks saved');
                 }
                 toast.success(successParts.join(', ') + '!');
@@ -1837,7 +1837,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // NEW: captain role flags
     const isHomeCaptain = !!(currentUserId && match && currentUserId === String(match.homeCaptainId || ''));
     const isAwayCaptain = !!(currentUserId && match && currentUserId === String(match.awayCaptainId || ''));
-    const isCaptainUser = isHomeCaptain || isAwayCaptain;
+    const userPickTeamKey: 'home' | 'away' | null = playerOnHomeTeamSafe ? 'home' : (playerOnAwayTeamSafe ? 'away' : null);
 
     // Helper to check if user can edit stats for a player
     // League admin can edit all players, captains can only edit their team's players
@@ -1950,7 +1950,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             console.log('Loading captain picks for match:', resolvedMatchId);
 
-            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            const teamKey = userPickTeamKey;
             const storageKey = teamKey ? `captain_picks_${resolvedMatchId}_${teamKey}` : null;
 
             const normalizeTeamPicks = (raw: unknown): CaptainPicks => {
@@ -2064,7 +2064,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             }
         };
         loadPicks();
-    }, [token, resolvedMatchId, isHomeCaptain, isAwayCaptain]);
+    }, [token, resolvedMatchId, userPickTeamKey]);
 
     // --- NEW: open pick dialog handler ---
     const openPickDialog = (category: CaptainPickCategory) => {
@@ -2106,7 +2106,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 return updated;
             });
 
-            const teamKey = isHomeCaptain ? 'home' : (isAwayCaptain ? 'away' : null);
+            const teamKey = userPickTeamKey;
             if (teamKey) {
                 setMatchCaptainPicks((prev) => ({
                     ...prev,

@@ -704,6 +704,10 @@ export default function ScheduleMatchPage() {
       toast.error('Location required');
       return;
     }
+    const confirmSaveWithoutCaptains = window.confirm('Do you want to save the match without selecting captains?');
+    if (!confirmSaveWithoutCaptains) {
+      return;
+    }
     setSaving(true);
     try {
       const start = buildDateTime(date, hour, minute, isPM);

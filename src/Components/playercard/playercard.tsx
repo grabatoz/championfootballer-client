@@ -643,7 +643,7 @@ const PlayerCard = ({
           {/* Left Side Stats */}
           <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
             <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.DRI} DRI</Typography>
-            <Typography fontSize="13px" fontWeight={'bold'} color={'#fff'}>{stats?.SHO} SHO</Typography>
+            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.SHO} SHO</Typography>
             <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PAS} PAS</Typography>
           </Box>
 

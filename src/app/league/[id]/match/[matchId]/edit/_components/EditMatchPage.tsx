@@ -279,13 +279,15 @@ const clampLocation = (value: string) => value.slice(0, 120);
       <Paper
         {...props}
         elevation={0}
-        sx={{
-          bgcolor: '#000',
-          color: '#fff',
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          ...(props.sx as any)
-        }}
+        sx={[
+          {
+            bgcolor: '#000',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          },
+          props.sx,
+        ]}
       />
     );
 
@@ -1639,6 +1641,16 @@ const clampLocation = (value: string) => value.slice(0, 120);
         toast.error('A minimum of 8 total players (including at least 6 registered league players) is required to save teams.');
         setIsSubmitting(false);
         return;
+      }
+
+      const hasHomeCaptainSelected = Boolean(homeCaptain && !homeCaptain.isGuest);
+      const hasAwayCaptainSelected = Boolean(awayCaptain && !awayCaptain.isGuest);
+      if (!hasHomeCaptainSelected || !hasAwayCaptainSelected) {
+        const confirmedWithoutCaptains = window.confirm('Do you want to save the match without selecting captains?');
+        if (!confirmedWithoutCaptains) {
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       try {

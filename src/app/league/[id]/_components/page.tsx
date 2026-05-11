@@ -702,6 +702,7 @@ export default function LeagueDetailPage() {
     // Results popup dialog state
     const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
     const [resultsDialogMatchId, setResultsDialogMatchId] = useState<string | null>(null);
+    const [matchClockMs, setMatchClockMs] = useState<number>(() => Date.now());
 
     // Confirmation dialog state
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -1279,6 +1280,14 @@ export default function LeagueDetailPage() {
     // 🔄 Auto-refresh: Event-driven (immediate) + Periodic check every 1 minute
     // This handles both manual operations AND automatic match completion detection
     useCombinedMatchRefresh(fetchLeagueDetails, 60000); // Check every 60 seconds
+
+    // Keep a lightweight local clock so fixtures/results can transition automatically.
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setMatchClockMs(Date.now());
+        }, 30000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     // Professional access logic: allow if user and profile player have ever shared ANY league
     useEffect(() => {
@@ -1986,9 +1995,26 @@ export default function LeagueDetailPage() {
         // 1) Check `l.seasons` - now only contains seasons user is member of
         const seasonsUnknown = (l as unknown as Record<string, unknown>)?.seasons;
         if (Array.isArray(seasonsUnknown) && seasonsUnknown.length > 0) {
-            // Use the first season from filtered list (user's most recent season)
-            const userSeason = seasonsUnknown[0];
-            const fromUserSeason = getNumberLike(userSeason, ['seasonNumber']);
+            const seasonRecords = seasonsUnknown
+                .map((season) => (season && typeof season === 'object' ? (season as Record<string, unknown>) : null))
+                .filter((season): season is Record<string, unknown> => Boolean(season));
+
+            const activeSeason = seasonRecords.find((season) => {
+                const status = String(season.status || '').trim().toLowerCase();
+                return (
+                    season.isActive === true ||
+                    season.active === true ||
+                    status === 'active' ||
+                    status === 'current' ||
+                    status === 'ongoing'
+                );
+            });
+            const latestSeason = [...seasonRecords].sort((a, b) => {
+                const aNum = toNum(a.seasonNumber) ?? 0;
+                const bNum = toNum(b.seasonNumber) ?? 0;
+                return bNum - aNum;
+            })[0];
+            const fromUserSeason = getNumberLike(activeSeason || latestSeason, ['seasonNumber']);
             if (typeof fromUserSeason === 'number') return fromUserSeason;
         }
 
@@ -2073,8 +2099,8 @@ export default function LeagueDetailPage() {
     const inviteCodeDisplay = inviteCodeForSelectedSeason || '-';
     const inviteSeasonLabel = `${league?.name || 'League'} - Season ${selectedSeasonNumber || 1}`;
     const invitePlayersMessage = inviteCodeForSelectedSeason
-        ? `Invites players to using the code`
-        : `Invites players to ${inviteSeasonLabel}`;
+        ? `Invites players to ${inviteSeasonLabel} using the code`
+        : `Invite code unavailable for ${inviteSeasonLabel}`;
 
     const handleCopySeasonInviteCode = useCallback(async () => {
         const code = inviteCodeForSelectedSeason.trim();
@@ -2369,7 +2395,7 @@ export default function LeagueDetailPage() {
         // Process matches to build stats for players who played in this season
         filteredLeague.matches
             .filter(m => !m.archived) // <-- exclude archived
-            .filter(m => isResultLikeStatus(m.status) && m.homeTeamGoals != null && m.awayTeamGoals != null)
+            .filter(m => isResultMatch(m) && m.homeTeamGoals != null && m.awayTeamGoals != null)
             .forEach(match => {
                 const homeWon = match.homeTeamGoals! > match.awayTeamGoals!;
                 const awayWon = match.awayTeamGoals! > match.homeTeamGoals!;
@@ -2432,7 +2458,7 @@ export default function LeagueDetailPage() {
 
         return list;
         // Recompute when filtered league or stats change
-    }, [filteredLeague, filteredLeague?.id, filteredLeague?.members, filteredLeague?.matches, filteredLeague?.administrators, leagueWinners, userLeagueXP, motmCounts]);
+    }, [filteredLeague, filteredLeague?.id, filteredLeague?.members, filteredLeague?.matches, filteredLeague?.administrators, leagueWinners, userLeagueXP, motmCounts, matchClockMs, getLeagueXpForMember, isResultMatch]);
 
     useEffect(() => {
         if (section !== 'table') return;
@@ -2779,6 +2805,50 @@ export default function LeagueDetailPage() {
         return st.includes('UPLOAD') || st.includes('REVISION') || (st.includes('CONFIRM') && !st.includes('CONFIRMED'));
     }
 
+    function parseDateMs(value: unknown): number | null {
+        if (value === null || value === undefined) return null;
+        const dt = new Date(value as string | number | Date).getTime();
+        return Number.isNaN(dt) ? null : dt;
+    }
+
+    function getMatchEndTimeMs(match: Match): number | null {
+        const explicitEnd = parseDateMs(match.end);
+        if (explicitEnd !== null) return explicitEnd;
+
+        const startMs = parseDateMs(match.start) ?? parseDateMs(match.date);
+        if (startMs === null) return null;
+
+        const startRecord = match as unknown as Record<string, unknown>;
+        const durationCandidates = [
+            startRecord.durationMinutes,
+            startRecord.duration,
+            startRecord.matchDuration,
+            startRecord.duration_minutes,
+            startRecord.lengthMinutes,
+            startRecord.length,
+        ];
+
+        for (const candidate of durationCandidates) {
+            const n = typeof candidate === 'number' ? candidate : (typeof candidate === 'string' ? Number(candidate) : NaN);
+            if (Number.isFinite(n) && n > 0) {
+                return startMs + (Math.round(n) * 60 * 1000);
+            }
+        }
+
+        return startMs + (90 * 60 * 1000);
+    }
+
+    function isResultMatch(match: Match): boolean {
+        if (isResultLikeStatus(match.status)) return true;
+        const endMs = getMatchEndTimeMs(match);
+        if (endMs === null) return false;
+        return endMs <= matchClockMs;
+    }
+
+    function isFixtureMatch(match: Match): boolean {
+        return !isResultMatch(match);
+    }
+
     if (error && !isSigningOut) {
         return (
             <Box
@@ -2940,7 +3010,7 @@ export default function LeagueDetailPage() {
                                         </Typography>
                                     </Box>
                                 )}
-                                {match.status === 'SCHEDULED' && (
+                                {isFixtureMatch(match) && (
                                     <Box sx={{
                                         backgroundColor: 'rgba(255,255,255,0.2)',
                                         px: 2,
@@ -3065,7 +3135,7 @@ export default function LeagueDetailPage() {
                         </Box>
 
                         {/* Availability Info for Scheduled Matches */}
-                        {match.status === 'SCHEDULED' && (
+                        {isFixtureMatch(match) && (
                             <Box sx={{
                                 mt: 2,
                                 p: 2,
@@ -3136,7 +3206,7 @@ export default function LeagueDetailPage() {
 
         // Check if match has players or stats/scores
         const hasPlayers = (match.homeTeamUsers?.length ?? 0) > 0 || (match.awayTeamUsers?.length ?? 0) > 0;
-        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || isResultLikeStatus(match.status);
+        const hasScores = (match.homeTeamGoals ?? 0) > 0 || (match.awayTeamGoals ?? 0) > 0 || isResultMatch(match);
 
         if (hasPlayers || hasScores) {
             setMatchHasData(true);
@@ -3168,8 +3238,8 @@ export default function LeagueDetailPage() {
         setConfirmDeleteOpen(false);
 
         try {
-            const isFixtureMatch = !isResultLikeStatus(m.status);
-            if (isFixtureMatch) {
+            const fixtureMode = isFixtureMatch(m);
+            if (fixtureMode) {
                 // Upcoming/fixture matches should be hard-deleted directly.
                 await handlePermanentDelete(m);
                 return;
@@ -3221,9 +3291,7 @@ export default function LeagueDetailPage() {
         }
     };
 
-    const pendingDeleteIsFixture = Boolean(
-        matchPendingDelete && !isResultLikeStatus(matchPendingDelete.status)
-    );
+    const pendingDeleteIsFixture = Boolean(matchPendingDelete && isFixtureMatch(matchPendingDelete));
 
     const handleUndo = async () => {
         if (!undoInfo || !token) return;
@@ -4413,6 +4481,17 @@ export default function LeagueDetailPage() {
                                     )
                                 )}
 
+                                    <Typography
+                                        sx={{
+                                            color: 'rgba(255,255,255,0.78)',
+                                            fontSize: { xs: '0.78rem', sm: '0.86rem' },
+                                            mb: 2,
+                                            lineHeight: 1.5,
+                                        }}
+                                    >
+                                        Match fixtures will move to Match Results once the match has finished. Please check the fixture duration time to know when to view completed matches.
+                                    </Typography>
+
                                     {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
@@ -4420,11 +4499,19 @@ export default function LeagueDetailPage() {
                                             gap: 2
                                         }}>
                                             {filteredLeague.matches
-                                                .filter(match => match.status === 'SCHEDULED')
+                                                .filter((match) => isFixtureMatch(match))
                                                 .sort(compareMatchesDesc)
-                                                .map((match, idx, arr) => {
+                                                .map((match, idx) => {
                                                     const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                                                    const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
+                                                    const seasonMatchNumberRaw = (match as unknown as { seasonMatchNumber?: unknown })?.seasonMatchNumber;
+                                                    const seasonMatchNumber =
+                                                        typeof seasonMatchNumberRaw === 'number'
+                                                            ? seasonMatchNumberRaw
+                                                            : (typeof seasonMatchNumberRaw === 'string' ? Number(seasonMatchNumberRaw) : NaN);
+                                                    const matchNumber =
+                                                        (Number.isFinite(seasonMatchNumber) && seasonMatchNumber > 0 ? seasonMatchNumber : null)
+                                                        ?? getNumericIndex(match)
+                                                        ?? (idx + 1);
                                                     // Calculate match duration in minutes
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
@@ -4843,10 +4930,18 @@ export default function LeagueDetailPage() {
                                             gap: 2
                                         }}>
                                             {filteredLeague.matches
-                                                .filter(match => isResultLikeStatus(match.status))
+                                                .filter((match) => isResultMatch(match))
                                                 .sort(compareMatchesDesc)
-                                                .map((match, idx, arr) => {
-                                                    const matchNumber = (match as any).seasonMatchNumber ?? getNumericIndex(match) ?? (idx + 1);
+                                                .map((match, idx) => {
+                                                    const seasonMatchNumberRaw = (match as unknown as { seasonMatchNumber?: unknown })?.seasonMatchNumber;
+                                                    const seasonMatchNumber =
+                                                        typeof seasonMatchNumberRaw === 'number'
+                                                            ? seasonMatchNumberRaw
+                                                            : (typeof seasonMatchNumberRaw === 'string' ? Number(seasonMatchNumberRaw) : NaN);
+                                                    const matchNumber =
+                                                        (Number.isFinite(seasonMatchNumber) && seasonMatchNumber > 0 ? seasonMatchNumber : null)
+                                                        ?? getNumericIndex(match)
+                                                        ?? (idx + 1);
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
@@ -5930,7 +6025,7 @@ export default function LeagueDetailPage() {
                                                             const derivedPlayed = (() => {
                                                                 if (!selectedSeasonId && typeof leagueStats?.playedMatches === 'number') return Number(leagueStats.playedMatches);
                                                                 const matches = Array.isArray(matchesToUse) ? matchesToUse : [];
-                                                                return matches.filter(m => isResultLikeStatus(m?.status)).length;
+                                                                return matches.filter((m) => isResultMatch(m as Match)).length;
                                                             })();
 
                                                             const played = derivedPlayed;

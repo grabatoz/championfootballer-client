@@ -34,6 +34,7 @@ interface MatchSummaryProps {
   matchStatus: string // 'not_started' | 'started' | 'completed'
   matchEndTime?: string // ISO string, only for completed
   matchId: string
+  captainsConfirmed?: boolean
   isUserAvailable: boolean
   availabilityLoading: { [matchId: string]: boolean }
   handleToggleAvailability: (matchId: string, isAvailable: boolean) => void
@@ -67,6 +68,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   matchStatus,
   matchEndTime,
   matchId,
+  captainsConfirmed = false,
   isUserAvailable,
   availabilityLoading,
   handleToggleAvailability,
@@ -358,7 +360,13 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               variant="caption"
               sx={{ fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' }, color: '#fff', textAlign: 'center', whiteSpace: 'nowrap', mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
             >
-              Captains Confirmed <Image src={ThumImg} alt="thumbs up" width={10} height={10} style={{ filter: 'brightness(0) invert(1)' }} />
+              {captainsConfirmed ? (
+                <>
+                  Captains Confirmed <Image src={ThumImg} alt="thumbs up" width={10} height={10} style={{ filter: 'brightness(0) invert(1)' }} />
+                </>
+              ) : (
+                'Awaiting Captains'
+              )}
             </Typography>
           </Box>
 

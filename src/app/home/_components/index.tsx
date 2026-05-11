@@ -785,16 +785,55 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   const season = seasonItem as { seasonNumber?: number; isActive?: boolean } | null;
                   console.log(`[League ${l.id}] Season ${season?.seasonNumber}: isActive=${season?.isActive}`);
                 });
-                
-                // Use the first season from filtered list (user's most recent season)
-                const userSeason = seasons[0] as { seasonNumber?: number } | undefined;
-                console.log(`[League ${l.id}] User's season found:`, userSeason);
-                
-                if (userSeason && typeof userSeason.seasonNumber === 'number') {
-                  seasonNumberFromDetails = userSeason.seasonNumber;
-                  console.log(`[League ${l.id}] Setting season number to:`, seasonNumberFromDetails);
+
+                const seasonRecords = seasons
+                  .map((seasonItem) =>
+                    (seasonItem && typeof seasonItem === 'object')
+                      ? (seasonItem as Record<string, unknown>)
+                      : null
+                  )
+                  .filter((seasonItem): seasonItem is Record<string, unknown> => Boolean(seasonItem));
+
+                const parseSeasonNumberFromDetails = (seasonLike: Record<string, unknown>): number => {
+                  const rawNum = seasonLike.seasonNumber;
+                  const direct = typeof rawNum === 'number'
+                    ? rawNum
+                    : (typeof rawNum === 'string' ? Number(rawNum) : NaN);
+                  if (Number.isFinite(direct) && direct > 0) return direct;
+
+                  const label = String(seasonLike.name || '');
+                  const hits = label.match(/\d+/g);
+                  if (hits && hits.length > 0) {
+                    const parsed = Number(hits[hits.length - 1]);
+                    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+                  }
+
+                  return 0;
+                };
+
+                const activeSeasonFromDetails = seasonRecords.find((seasonRecord) => {
+                  const status = String(seasonRecord.status || '').trim().toLowerCase();
+                  return (
+                    seasonRecord.isActive === true ||
+                    seasonRecord.active === true ||
+                    status === 'active' ||
+                    status === 'current' ||
+                    status === 'ongoing'
+                  );
+                });
+
+                const seasonToUse = activeSeasonFromDetails || [...seasonRecords].sort((a, b) => {
+                  const aNum = parseSeasonNumberFromDetails(a);
+                  const bNum = parseSeasonNumberFromDetails(b);
+                  return bNum - aNum;
+                })[0];
+
+                const chosenSeasonNumber = seasonToUse ? parseSeasonNumberFromDetails(seasonToUse) : 0;
+                if (chosenSeasonNumber > 0) {
+                  seasonNumberFromDetails = chosenSeasonNumber;
+                  console.log(`[League ${l.id}] Setting season number to latest/active season:`, seasonNumberFromDetails);
                 } else {
-                  console.log(`[League ${l.id}] No user season found!`);
+                  console.log(`[League ${l.id}] No valid season number found in details payload`);
                 }
               } else {
                 console.log(`[League ${l.id}] No seasons array or empty`);
