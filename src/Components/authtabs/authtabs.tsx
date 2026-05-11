@@ -33,12 +33,12 @@ import {
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import toast from "react-hot-toast"
-import { Visibility, VisibilityOff, Facebook, Apple, Close as CloseIcon, CheckCircleOutline } from "@mui/icons-material"
+import { Visibility, VisibilityOff, Apple, Close as CloseIcon, CheckCircleOutline } from "@mui/icons-material"
 import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
-import { buildSocialAuthUrl } from "@/lib/clientApiBase"
+import { buildSocialAuthUrl, getClientApiBaseUrl } from "@/lib/clientApiBase"
 import type { User } from "@/types/user"
-import { Country, State, City } from 'country-state-city'
+import { Country, State } from 'country-state-city'
 import {
   formatPhoneDigitRule,
   getPhoneDigitRuleByIsoCode,
@@ -117,6 +117,16 @@ const forgotPopupTheme = {
   outlineHover: "rgba(0,167,127,0.18)",
   buttonShadow: "0 4px 14px rgba(0,167,127,0.28)",
   buttonDisabled: "rgba(0,167,127,0.45)",
+}
+
+const REGISTER_DRAFT_STORAGE_KEY = "cf_register_draft_v1"
+const EMAIL_MAX_LENGTH = 254
+const PASSWORD_MAX_LENGTH = 72
+
+type SocialProviders = {
+  google: boolean
+  facebook: boolean
+  apple: boolean
 }
 
 // Helper to normalize User to UserProfile
@@ -232,6 +242,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [registerError, setRegisterError] = useState("")
   const [registerLoading, setRegisterLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
+  const [isDraftHydrated, setIsDraftHydrated] = useState(false)
 
   const [forgotMessage, setForgotMessage] = useState("")
   const [forgotError, setForgotError] = useState(false)
@@ -256,6 +267,11 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [confirmError, setConfirmError] = useState("")
+  const [socialProviders, setSocialProviders] = useState<SocialProviders>({
+    google: true,
+    facebook: true,
+    apple: false,
+  })
 
   // Email verification dialog state
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
@@ -291,11 +307,19 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     const digits = sanitizePhoneDigits(digitsInput).slice(0, selectedPhoneRule.max)
     if (!digits) return ""
     if (digits.startsWith("0")) {
-      return `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+      const dialCode = selectedPhoneRule.dialCode
+        ? (selectedPhoneRule.dialCode.startsWith("+") ? selectedPhoneRule.dialCode : `+${selectedPhoneRule.dialCode}`)
+        : ""
+      return `Please enter the phone number without the starting 0 for ${phoneCountryCode}${dialCode ? ` (${dialCode})` : ""}.`
     }
     if (isPhoneDigitsValidForRule(digits, selectedPhoneRule)) return ""
     return `Phone number must be ${phoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
   }, [phoneCountryCode, phoneDigitsLabel, selectedPhoneRule])
+
+  const clearRegisterDraft = useCallback(() => {
+    if (typeof window === "undefined") return
+    sessionStorage.removeItem(REGISTER_DRAFT_STORAGE_KEY)
+  }, [])
 
   // Shared input styling for white bg + black text + visible placeholder
   const inputSx = {
@@ -396,6 +420,93 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setTabValue(showLogin ? 0 : 1)
   }, [showLogin])
 
+  useEffect(() => {
+    let cancelled = false
+
+    const loadSocialProviderStatus = async () => {
+      try {
+        const response = await fetch(`${getClientApiBaseUrl()}/auth/providers`, {
+          method: "GET",
+          credentials: "include",
+        })
+        if (!response.ok) return
+
+        const payload = await response.json() as Partial<SocialProviders>
+        if (cancelled) return
+
+        setSocialProviders({
+          google: typeof payload.google === "boolean" ? payload.google : true,
+          facebook: typeof payload.facebook === "boolean" ? payload.facebook : true,
+          apple: Boolean(payload.apple),
+        })
+      } catch {
+        // Keep fallback provider availability when endpoint is unreachable.
+      }
+    }
+
+    loadSocialProviderStatus()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const raw = sessionStorage.getItem(REGISTER_DRAFT_STORAGE_KEY)
+    if (!raw) {
+      setIsDraftHydrated(true)
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as {
+        registerData?: Partial<RegisterCredentials>
+        acceptTerms?: boolean
+        selectedCountryCode?: string
+        selectedStateCode?: string
+        phoneCountryCode?: string
+      }
+
+      if (parsed.registerData && typeof parsed.registerData === "object") {
+        setRegisterData((prev) => ({ ...prev, ...parsed.registerData }))
+      }
+      if (typeof parsed.acceptTerms === "boolean") {
+        setAcceptTerms(parsed.acceptTerms)
+      }
+      if (typeof parsed.selectedCountryCode === "string") {
+        setSelectedCountryCode(parsed.selectedCountryCode)
+      }
+      if (typeof parsed.selectedStateCode === "string") {
+        setSelectedStateCode(parsed.selectedStateCode)
+      }
+      if (typeof parsed.phoneCountryCode === "string" && parsed.phoneCountryCode.trim()) {
+        setPhoneCountryCode(parsed.phoneCountryCode.trim().toUpperCase())
+      }
+    } catch {
+      // Ignore invalid drafts from older builds.
+    } finally {
+      setIsDraftHydrated(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!isDraftHydrated) return
+    // Prevent login-only AuthTabs instances from overwriting register draft.
+    if (tabValue !== 1) return
+
+    sessionStorage.setItem(
+      REGISTER_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        registerData,
+        acceptTerms,
+        selectedCountryCode,
+        selectedStateCode,
+        phoneCountryCode,
+      }),
+    )
+  }, [isDraftHydrated, tabValue, registerData, acceptTerms, selectedCountryCode, selectedStateCode, phoneCountryCode])
+
   // Countdown timer for forgot-password resend button
   useEffect(() => {
     if (forgotResendTimer <= 0) return
@@ -411,13 +522,18 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
   }, [verifyResendTimer])
 
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLoginData({ ...loginData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    let nextValue = value
+    if (name === "email") nextValue = value.slice(0, EMAIL_MAX_LENGTH)
+    if (name === "password") nextValue = value.slice(0, PASSWORD_MAX_LENGTH)
+    setLoginData((prev) => ({ ...prev, [name]: nextValue }))
   }
 
   const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9]).{7,}$/
   const PASSWORD_FORMAT_MSG = "Password must contain letters and numbers. Consider also using upper and lower case and other characters (-, _, @, ?, etc)"
   const getPasswordError = (pw: string): string => {
     if (!pw) return ""
+    if (pw.length > PASSWORD_MAX_LENGTH) return `Password must be ${PASSWORD_MAX_LENGTH} characters or less`
     if (pw.length < 7) return "Password must be at least 7 characters"
     if (!/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) return PASSWORD_FORMAT_MSG
     return ""
@@ -433,16 +549,20 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       return
     }
 
-    const next = { ...registerData, [name]: value }
+    let nextValue = value
+    if (name === "email") nextValue = value.slice(0, EMAIL_MAX_LENGTH)
+    if (name === "password" || name === "confirmPassword") nextValue = value.slice(0, PASSWORD_MAX_LENGTH)
+
+    const next = { ...registerData, [name]: nextValue }
     setRegisterData(next)
 
     if (name === "password") {
-      setPasswordError(getPasswordError(value))
+      setPasswordError(getPasswordError(nextValue))
       // also re-validate confirm when password changes
-      setConfirmError(next.confirmPassword && next.confirmPassword !== value ? "Passwords do not match" : "")
+      setConfirmError(next.confirmPassword && next.confirmPassword !== nextValue ? "Passwords do not match" : "")
     }
     if (name === "confirmPassword") {
-      setConfirmError(value && value !== next.password ? "Passwords do not match" : "")
+      setConfirmError(nextValue && nextValue !== next.password ? "Passwords do not match" : "")
     }
   }
 
@@ -465,9 +585,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   // Derived lists from country-state-city library
   const countries = Country.getAllCountries()
-  const states = selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []
-  // If we had a state selection we'd derive cities; now we allow free text entry so we don't need the cities list.
-  const cities: Array<never> = []
+  const states = useMemo(
+    () => (selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []),
+    [selectedCountryCode],
+  )
 
   const getCountryFlagUrl = (isoCode: string): string => {
     const code = (isoCode || "").toLowerCase()
@@ -483,6 +604,15 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       .trim()
   }
 
+  const sortedStates = useMemo(() => {
+    if (states.length <= 1) return states
+    return [...states].sort((a, b) => {
+      const first = (normalizeLocationName(a.name) || a.name).toLowerCase()
+      const second = (normalizeLocationName(b.name) || b.name).toLowerCase()
+      return first.localeCompare(second, "en", { sensitivity: "base" })
+    })
+  }, [states])
+
   // Handlers for Select components; store name in registerData, code in local state
   const handleCountrySelect = (code: string) => {
     setSelectedCountryCode(code)
@@ -494,7 +624,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
   const handleStateSelect = (code: string) => {
     setSelectedStateCode(code)
-    const s = states.find(s => s.isoCode === code)
+    const s = sortedStates.find(s => s.isoCode === code)
     const rawName = s?.name || ""
     const name = normalizeLocationName(rawName) || rawName
     // Store same value for city/state to align with existing backend compatibility.
@@ -618,6 +748,11 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       msg = "Please fill in all fields"
     else if (registerData.firstName.length > 20) msg = "First name must be 20 characters or less"
     else if (registerData.lastName.length > 20) msg = "Last name must be 20 characters or less"
+    else if (registerData.email.length > EMAIL_MAX_LENGTH) msg = `Email must be ${EMAIL_MAX_LENGTH} characters or less`
+    else if (registerData.password.length > PASSWORD_MAX_LENGTH || registerData.confirmPassword.length > PASSWORD_MAX_LENGTH) {
+      msg = `Password must be ${PASSWORD_MAX_LENGTH} characters or less`
+      setPasswordError(msg)
+    }
     else if (!passwordPattern.test(registerData.password)) {
       msg = PASSWORD_FORMAT_MSG
       setPasswordError(getPasswordError(registerData.password))
@@ -676,6 +811,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       }
 
       if (result.success && result.data) {
+        clearRegisterDraft()
         if (result.token) {
           // Use the helper functions to normalize data
           const normalizedUser = normalizeUserForStorage(result.data)
@@ -769,6 +905,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     try {
       const res = await authAPI.verifyRegistration(verifyEmail, code)
       if (res.success && res.data) {
+        clearRegisterDraft()
         setVerifySuccess(true)
         toast.success("Email verified successfully! Welcome to Champion Footballer!")
 
@@ -1007,6 +1144,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               autoComplete="email"
               value={loginData.email}
               onChange={handleLoginChange}
+              inputProps={{ maxLength: EMAIL_MAX_LENGTH }}
               required
               sx={inputSx}
             />
@@ -1019,6 +1157,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               autoComplete="current-password"
               value={loginData.password}
               onChange={handleLoginChange}
+              inputProps={{ maxLength: PASSWORD_MAX_LENGTH }}
               required
               sx={inputSx}
               InputProps={{
@@ -1153,6 +1292,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
+                inputProps={{ maxLength: EMAIL_MAX_LENGTH }}
               />
             </Box>
 
@@ -1277,7 +1417,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
-                inputProps={{ minLength: 7 }}
+                inputProps={{ minLength: 7, maxLength: PASSWORD_MAX_LENGTH }}
                 error={Boolean(passwordError)}
                 helperText={passwordError || 'Min 7 characters with letters and numbers'}
                 FormHelperTextProps={{ sx: { color: passwordError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
@@ -1307,7 +1447,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
-                inputProps={{ minLength: 7 }}
+                inputProps={{ minLength: 7, maxLength: PASSWORD_MAX_LENGTH }}
                 error={Boolean(confirmError)}
                 helperText={confirmError || 'Re-type your password'}
                 FormHelperTextProps={{ sx: { color: confirmError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
@@ -1474,7 +1614,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   renderValue={(selected) => {
                     if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
                     const code = selected as string
-                    const s = states.find(s => s.isoCode === code)
+                    const s = sortedStates.find(s => s.isoCode === code)
                     const rawName = s?.name || ''
                     return normalizeLocationName(rawName) || rawName
                   }}
@@ -1485,12 +1625,12 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                     PaperProps: { sx: dropdownPaperBaseSx },
                   }}
                   required
-                  disabled={!selectedCountryCode || states.length === 0}
+                  disabled={!selectedCountryCode || sortedStates.length === 0}
                 >
                   <MenuItem value="" disabled>
                     <em>City/State</em>
                   </MenuItem>
-                  {states.map((s) => (
+                  {sortedStates.map((s) => (
                     <MenuItem key={s.isoCode} value={s.isoCode}>
                       {normalizeLocationName(s.name) || s.name}
                     </MenuItem>
@@ -1515,7 +1655,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 label={
                   <span className="text-black" style={{ color: 'black' }}>
                     I accept the{' '}
-                    <Link href="/terms" style={{ color: 'black', textDecoration: 'underline' }}>
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'black', textDecoration: 'underline' }}>
                       terms and conditions
                     </Link>
                   </span>
@@ -1552,7 +1692,15 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
             {/* Social auth buttons (desktop: to the right of Register; next row: FB/Apple) */}
             {(() => {
-              const go = (provider: string) => {
+              const go = (provider: keyof SocialProviders) => {
+                if (!socialProviders[provider]) {
+                  if (provider === "apple") {
+                    toast.error("Continue with Apple ID is not available right now.")
+                  } else {
+                    toast.error(`${provider[0].toUpperCase()}${provider.slice(1)} sign in is not available right now.`)
+                  }
+                  return
+                }
                 window.location.href = buildSocialAuthUrl(provider, '/home')
               }
 
@@ -1568,6 +1716,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 <>
                   <Button
                     onClick={() => go('google')}
+                    disabled={!socialProviders.google}
                     variant="outlined"
                     startIcon={<GoogleIcon />}
                     sx={{
@@ -1584,6 +1733,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
                   <Button
                     onClick={() => go('facebook')}
+                    disabled={!socialProviders.facebook}
                     variant="contained"
                     startIcon={<FacebookIcon />}
                     sx={{
@@ -1599,6 +1749,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
                   <Button
                     onClick={() => go('apple')}
+                    disabled={!socialProviders.apple}
                     variant="contained"
                     startIcon={<Apple sx={{ fontSize: '28px' }} />}
                     sx={{
@@ -1608,6 +1759,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                       color: '#fff',
                       border: '1px solid #000',
                       '&:hover': { backgroundColor: '#333', border: '1px solid #000' },
+                      '&:disabled': { backgroundColor: '#1f1f1f', color: 'rgba(255,255,255,0.6)' },
                     }}
                   >
                     Continue with Apple
@@ -1710,8 +1862,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 placeholder="you@example.com"
                 type="email"
                 value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
+                onChange={(e) => setForgotEmail(e.target.value.slice(0, EMAIL_MAX_LENGTH))}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                inputProps={{ maxLength: EMAIL_MAX_LENGTH }}
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
@@ -1838,7 +1991,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 type={showForgotNewPassword ? 'text' : 'password'}
                 value={forgotNewPassword}
                 onChange={(e) => {
-                  const v = e.target.value
+                  const v = e.target.value.slice(0, PASSWORD_MAX_LENGTH)
                   setForgotNewPassword(v)
                   setForgotPasswordError(getPasswordError(v))
                   if (forgotConfirmPassword && forgotConfirmPassword !== v) {
@@ -1850,6 +2003,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 error={Boolean(forgotPasswordError)}
                 helperText={forgotPasswordError || 'Min 7 characters with letters and numbers'}
                 FormHelperTextProps={{ sx: { color: forgotPasswordError ? '#ff6b6b' : 'rgba(255,255,255,0.4)', fontSize: '0.75rem' } }}
+                inputProps={{ maxLength: PASSWORD_MAX_LENGTH }}
                 sx={{
                   mb: 2,
                   '& .MuiOutlinedInput-root': {
@@ -1881,7 +2035,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 type={showForgotConfirmPassword ? 'text' : 'password'}
                 value={forgotConfirmPassword}
                 onChange={(e) => {
-                  const v = e.target.value
+                  const v = e.target.value.slice(0, PASSWORD_MAX_LENGTH)
                   setForgotConfirmPassword(v)
                   setForgotConfirmError(v && v !== forgotNewPassword ? "Passwords do not match" : "")
                 }}
@@ -1889,6 +2043,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 error={Boolean(forgotConfirmError)}
                 helperText={forgotConfirmError || 'Re-type your password'}
                 FormHelperTextProps={{ sx: { color: forgotConfirmError ? '#ff6b6b' : 'rgba(255,255,255,0.4)', fontSize: '0.75rem' } }}
+                inputProps={{ maxLength: PASSWORD_MAX_LENGTH }}
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
@@ -2061,6 +2216,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             <Box>
               <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
                 We sent a 6-digit code to <span style={{ color: '#E56A16', fontWeight: 600 }}>{verifyEmail}</span>
+              </Typography>
+              <Typography sx={{ mb: 2, color: 'rgba(255,255,255,0.52)', fontSize: '0.72rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+                If you cannot find the email, please check your Spam/Junk folder.
               </Typography>
 
               {/* 6-digit OTP boxes */}
