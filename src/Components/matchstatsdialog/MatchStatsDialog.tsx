@@ -50,6 +50,7 @@ import MENTALITY from '@/Components/images/metality.png'
 import PlayerImg from '@/Components/images/playerimg.png'
 import Image from 'next/image'
 import MatchStatsPopupLoadingSkeleton from '@/Components/loading/MatchStatsPopupLoadingSkeleton';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 
 type StatKey = 'goals' | 'assists' | 'cleanSheets' | 'penalties' | 'freeKicks' | 'defence' | 'impact';
 type HandleStatChange = (stat: StatKey, increment: number, max: number) => void;
@@ -302,6 +303,63 @@ const JerseyAvatar = ({
         </Typography> */}
     </Box>
 );
+
+const VotedPlayerAvatar = ({
+    player,
+    borderColor = '#00C48C',
+}: {
+    player?: { firstName?: string | null; lastName?: string | null; profilePicture?: string | null } | null;
+    borderColor?: string;
+}) => {
+    const fullName = formatGuestAwarePlayerName(player);
+    const profilePicture = String(player?.profilePicture || '').trim();
+    const initials = getAvatarInitials({
+        name: fullName,
+        firstName: player?.firstName ?? '',
+        lastName: player?.lastName ?? '',
+    });
+    const bg = getAvatarBackgroundColor(fullName || initials);
+
+    if (profilePicture) {
+        return (
+            <Box
+                component="img"
+                src={profilePicture}
+                alt={fullName}
+                sx={{
+                    width: { xs: 40, md: 48 },
+                    height: { xs: 40, md: 48 },
+                    borderRadius: '50%',
+                    border: `2px solid ${borderColor}`,
+                    objectFit: 'cover',
+                }}
+            />
+        );
+    }
+
+    return (
+        <Box
+            sx={{
+                width: { xs: 40, md: 48 },
+                height: { xs: 40, md: 48 },
+                borderRadius: '50%',
+                border: `2px solid ${borderColor}`,
+                backgroundColor: bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: { xs: '0.72rem', md: '0.82rem' },
+                letterSpacing: 0.4,
+            }}
+            aria-label={fullName || 'Player initials'}
+            title={fullName || 'Player'}
+        >
+            {initials}
+        </Box>
+    );
+};
 
 type EditWindow = {
     resultsUploaded: boolean;
@@ -3225,33 +3283,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     Man Of The Match
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                    {motmPlayer?.profilePicture ? (
-                                        <Box
-                                            component="img"
-                                            src={motmPlayer.profilePicture}
-                                            alt={formatGuestAwarePlayerName(motmPlayer)}
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    ) : (
-                                        <Box
-                                            component="img"
-                                            src={PlayerImg.src}
-                                            alt="Default Player"
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    )}
+                                    <VotedPlayerAvatar player={motmPlayer} />
                                     <Typography
                                         variant="body2"
                                         sx={{
@@ -3274,33 +3306,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     Defensive Impact
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                    {defensivePlayer?.profilePicture ? (
-                                        <Box
-                                            component="img"
-                                            src={defensivePlayer.profilePicture}
-                                            alt={formatGuestAwarePlayerName(defensivePlayer)}
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    ) : (
-                                        <Box
-                                            component="img"
-                                            src={PlayerImg.src}
-                                            alt="Default Player"
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    )}
+                                    <VotedPlayerAvatar player={defensivePlayer} />
                                     <Typography
                                         variant="body2"
                                         sx={{
@@ -3323,33 +3329,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     + Mentality
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                    {mentalityPlayer?.profilePicture ? (
-                                        <Box
-                                            component="img"
-                                            src={mentalityPlayer.profilePicture}
-                                            alt={formatGuestAwarePlayerName(mentalityPlayer)}
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    ) : (
-                                        <Box
-                                            component="img"
-                                            src={PlayerImg.src}
-                                            alt="Default Player"
-                                            sx={{
-                                                width: { xs: 40, md: 48 },
-                                                height: { xs: 40, md: 48 },
-                                                borderRadius: '50%',
-                                                border: '2px solid #00C48C',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                    )}
+                                    <VotedPlayerAvatar player={mentalityPlayer} />
                                     <Typography
                                         variant="body2"
                                         sx={{

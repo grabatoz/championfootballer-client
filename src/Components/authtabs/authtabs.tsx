@@ -121,7 +121,8 @@ const forgotPopupTheme = {
 
 const REGISTER_DRAFT_STORAGE_KEY = "cf_register_draft_v1"
 const EMAIL_MAX_LENGTH = 254
-const PASSWORD_MAX_LENGTH = 72
+const PASSWORD_MAX_LENGTH = 16
+const PASSWORD_MIN_LENGTH = 6
 
 type SocialProviders = {
   google: boolean
@@ -529,13 +530,15 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setLoginData((prev) => ({ ...prev, [name]: nextValue }))
   }
 
-  const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9]).{7,}$/
-  const PASSWORD_FORMAT_MSG = "Password must contain letters and numbers. Consider also using upper and lower case and other characters (-, _, @, ?, etc)"
+  const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,16}$/
+  const PASSWORD_FORMAT_MSG = "Password must be 6-16 characters and include at least one uppercase letter, one number, and one special character."
   const getPasswordError = (pw: string): string => {
     if (!pw) return ""
     if (pw.length > PASSWORD_MAX_LENGTH) return `Password must be ${PASSWORD_MAX_LENGTH} characters or less`
-    if (pw.length < 7) return "Password must be at least 7 characters"
-    if (!/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) return PASSWORD_FORMAT_MSG
+    if (pw.length < PASSWORD_MIN_LENGTH) return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
+    if (!/[A-Z]/.test(pw)) return "Please ensure the password includes at least one uppercase letter."
+    if (!/[0-9]/.test(pw)) return "Password must include at least one number"
+    if (!/[^A-Za-z0-9]/.test(pw)) return "Password must include at least one special character"
     return ""
   }
 
@@ -754,8 +757,8 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       setPasswordError(msg)
     }
     else if (!passwordPattern.test(registerData.password)) {
-      msg = PASSWORD_FORMAT_MSG
-      setPasswordError(getPasswordError(registerData.password))
+      msg = getPasswordError(registerData.password) || PASSWORD_FORMAT_MSG
+      setPasswordError(msg)
     }
     else if (registerData.password !== registerData.confirmPassword) {
       msg = "Passwords do not match"
@@ -1417,9 +1420,9 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 onChange={handleRegisterChange}
                 required
                 sx={registerInputSx}
-                inputProps={{ minLength: 7, maxLength: PASSWORD_MAX_LENGTH }}
+                inputProps={{ minLength: PASSWORD_MIN_LENGTH, maxLength: PASSWORD_MAX_LENGTH }}
                 error={Boolean(passwordError)}
-                helperText={passwordError || 'Min 7 characters with letters and numbers'}
+                helperText={passwordError || '6-16 chars, include uppercase, number, and special character'}
                 FormHelperTextProps={{ sx: { color: passwordError ? '#d32f2f' : '#555', fontSize: '0.75rem' } }}
                 InputProps={{
                   endAdornment: (

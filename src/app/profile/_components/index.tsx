@@ -340,7 +340,7 @@ const PlayerProfileCard = () => {
     if (!pw) return "" // Empty is OK (means no change)
     if (pw.length < 6) return "Minimum 6 characters required"
     if (pw.length > 16) return "Maximum 16 characters allowed"
-    if (!/[A-Z]/.test(pw)) return "Include at least one uppercase letter"
+    if (!/[A-Z]/.test(pw)) return "Please ensure the password includes at least one uppercase letter."
     if (!/[0-9]/.test(pw)) return "Include at least one number"
     if (!/[^A-Za-z0-9]/.test(pw)) return "Include at least one special character"
     return ""

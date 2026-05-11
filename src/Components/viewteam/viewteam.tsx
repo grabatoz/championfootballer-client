@@ -658,7 +658,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -1124,7 +1124,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     }
     if (!list.length) {
       try {
-        const r = await fetch(`${apiBase}/leagues/${leagueId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const r = await fetch(`${apiBase}/leagues/${leagueId}?includeMatches=0`, { headers: { Authorization: `Bearer ${token}` } });
         if (r.ok) {
           const d = await r.json();
           const guesses =
@@ -1920,68 +1920,43 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               Match Predictions
             </Typography>
 
-            {hasPublishedResult && homeTeamGoals != null && awayTeamGoals != null ? (
-              <>
-                <Typography sx={{ fontSize: { xs: 13, sm: 19 }, fontWeight: 500, lineHeight: 1.1, mb: 0 }}>
-                  <span style={{ color: primaryColor }}>
-                    {homeTeamGoals > awayTeamGoals
+            <>
+              <Typography sx={{ fontSize: { xs: 13, sm: 19 }, fontWeight: 600, lineHeight: 1.1, mb: 0 }}>
+                <span style={{ color: primaryColor }}>
+                  {teamInsights
+                    ? teamInsights.predicted === 'home'
                       ? homeTeamName
-                      : awayTeamGoals > homeTeamGoals
+                      : teamInsights.predicted === 'away'
                       ? awayTeamName
-                      : 'Match'}
-                  </span>{' '}
-                  <span style={{ color: '#fff' }}>
-                    {homeTeamGoals === awayTeamGoals
-                      ? 'ended in a draw.'
-                      : 'is predicted to win !'}
-                  </span>
+                      : 'Draw'
+                    : homeTeamName}
+                </span>{' '}
+                <span style={{ color: '#fff' }}>
+                  {teamInsights
+                    ? teamInsights.predicted === 'draw'
+                      ? 'is predicted (draw).'
+                      : 'is predicted to win.'
+                    : ''}
+                </span>
+              </Typography>
+              <Typography sx={{ fontSize: { xs: 12.5, sm: 19 }, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
+                Predicted score is{' '}
+                <span style={{ color: primaryColor }}>
+                  {teamInsights ? teamInsights.predictedScore : '\u2014'}
+                </span>
+              </Typography>
+              {!!predictionReason && !teamInsights && !insightsLoading && (
+                <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>
+                  {predictionReason === 'FIRST_MATCH_NO_STATS'
+                    ? 'Predictions are unavailable for the first match without prior stats.'
+                    : predictionReason === 'NO_SELECTED_PLAYERS'
+                    ? 'Select players to see predictions.'
+                    : predictionReason === 'NO_SIGNAL'
+                    ? 'Not enough data to estimate.'
+                    : 'Prediction unavailable.'}
                 </Typography>
-                <Typography sx={{ fontSize: { xs: 12, sm: 16 }, fontWeight: 600, color: '#fff', lineHeight: 1.1 }}>
-                  Predicted scores{' '}
-                  <span style={{ color: primaryColor }}>
-                    {homeTeamGoals} - {awayTeamGoals}
-                  </span>
-                </Typography>
-              </>
-            ) : (
-              <>
-                <Typography sx={{ fontSize: { xs: 13, sm: 19 }, fontWeight: 600, lineHeight: 1.1, mb: 0 }}>
-                  <span style={{ color: primaryColor }}>
-                    {teamInsights
-                      ? teamInsights.predicted === 'home'
-                        ? homeTeamName
-                        : teamInsights.predicted === 'away'
-                        ? awayTeamName
-                        : 'Draw'
-                      : homeTeamName}
-                  </span>{' '}
-                  <span style={{ color: '#fff' }}>
-                    {teamInsights
-                      ? teamInsights.predicted === 'draw'
-                        ? 'is predicted (draw).'
-                        : 'is predicted to win.'
-                      : ''}
-                  </span>
-                </Typography>
-                <Typography sx={{ fontSize: { xs: 12.5, sm: 19 }, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
-                  Predicted score is{' '}
-                  <span style={{ color: primaryColor }}>
-                    {teamInsights ? teamInsights.predictedScore : '\u2014'}
-                  </span>
-                </Typography>
-                {!!predictionReason && !teamInsights && !insightsLoading && (
-                  <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>
-                    {predictionReason === 'FIRST_MATCH_NO_STATS'
-                      ? 'Predictions are unavailable for the first match without prior stats.'
-                      : predictionReason === 'NO_SELECTED_PLAYERS'
-                      ? 'Select players to see predictions.'
-                      : predictionReason === 'NO_SIGNAL'
-                      ? 'Not enough data to estimate.'
-                      : 'Prediction unavailable.'}
-                  </Typography>
-                )}
-              </>
-            )}
+              )}
+            </>
           </Paper>
 
           {/* Right: Share button */}

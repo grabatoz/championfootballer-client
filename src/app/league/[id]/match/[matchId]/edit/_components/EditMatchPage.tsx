@@ -286,8 +286,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
             border: '1px solid rgba(255,255,255,0.12)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
           },
-          props.sx,
-        ]}
+          ...(Array.isArray(props.sx) ? props.sx : props.sx ? [props.sx] : []),
+        ] as any}
       />
     );
 
@@ -857,8 +857,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
     const guestToPlayer = (g: StagedGuest): PlayerOption => ({ id: `guest-${g.tempId}`, firstName: g.firstName, lastName: g.lastName, email: '', isGuest: true, guestTempId: g.tempId, team: g.team, existingGuestId: g.existingId });
 
     // Prediction from API
-    const [, setHomeWinChance] = useState<number | null>(null);
-    const [, setAwayWinChance] = useState<number | null>(null);
+    const [homeWinChance, setHomeWinChance] = useState<number | null>(null);
+    const [awayWinChance, setAwayWinChance] = useState<number | null>(null);
     const [, setHomeStrength] = useState<number | null>(null);
     const [, setAwayStrength] = useState<number | null>(null);
 
@@ -977,6 +977,29 @@ const clampLocation = (value: string) => value.slice(0, 120);
       const homePct = 100 - awayPct;
       return { homeSum, awaySum, total, homePct, awayPct };
     }, [homeTeamUsers, awayTeamUsers, userLeagueAvgXP, leagueAvgXPValue]);
+
+    const teamBalance = React.useMemo(() => {
+      const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+      if (homeWinChance !== null && awayWinChance !== null) {
+        return {
+          homePct: clamp(homeWinChance),
+          awayPct: clamp(awayWinChance),
+          hasData: true,
+        };
+      }
+      if (xpBased.total > 0) {
+        return {
+          homePct: clamp(xpBased.homePct),
+          awayPct: clamp(xpBased.awayPct),
+          hasData: true,
+        };
+      }
+      return {
+        homePct: 0,
+        awayPct: 0,
+        hasData: false,
+      };
+    }, [homeWinChance, awayWinChance, xpBased]);
 
     // Shuffle: randomly repartition registered players (guests stay on current sides)
     const shuffleTeams = () => {
@@ -2585,18 +2608,18 @@ const clampLocation = (value: string) => value.slice(0, 120);
                     <Typography variant="h6" sx={{ mb: { xs: 1, sm: 1.5, md: 2 }, textAlign: 'center', fontWeight: 700, fontSize: { xs: '0.85rem', sm: '1.1rem', md: '1.35rem' }, textTransform: 'uppercase', letterSpacing: 1 }}>Team Balance</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 1, sm: 1.5, md: 2 } }}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" sx={{ color: '#00a77f', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.homePct)}%` : '—'}</Typography>
+                        <Typography variant="h4" sx={{ color: '#00a77f', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{teamBalance.hasData ? `${teamBalance.homePct}%` : '—'}</Typography>
                         {/* <Typography variant="body2" sx={{ color: '#43a047', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{homeTeamName || 'Home'}</Typography> */}
                       </Box>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" sx={{ color: '#e56a16', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{xpBased.total > 0 ? `${Math.round(xpBased.awayPct)}%` : '—'}</Typography>
+                        <Typography variant="h4" sx={{ color: '#e56a16', fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' } }}>{teamBalance.hasData ? `${teamBalance.awayPct}%` : '—'}</Typography>
                         {/* <Typography variant="body2" sx={{ color: '#ef5350', fontSize: { xs: '0.65rem', sm: '0.875rem' } }}>{awayTeamName || 'Away'}</Typography> */}
                       </Box>
                     </Box>
-                    {xpBased.total > 0 && (
+                    {teamBalance.hasData && (
                       <LinearProgress
                         variant="determinate"
-                        value={Math.round(xpBased.homePct)}
+                        value={teamBalance.homePct}
                         sx={{
                           height: { xs: 6, sm: 8 },
                           borderRadius: { xs: 3, sm: 4 },
