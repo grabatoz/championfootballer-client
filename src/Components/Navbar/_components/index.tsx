@@ -222,6 +222,13 @@ function isResultConfirmationNotification(n: Notification) {
   return /CONFIRM\s+RESULT/.test(titleBody);
 }
 
+function isMotmSelectionNotification(n: Notification) {
+  const t = String(n.type || '').toUpperCase();
+  if (t === 'MOTM_VOTE') return true;
+  const titleBody = `${n.title || ''} ${n.body || ''}`.toLowerCase();
+  return titleBody.includes('as motm') && titleBody.includes('voted for');
+}
+
 // Global switch to force availability buttons (use true for testing, false for prod)
 const ALWAYS_SHOW_AVAILABILITY = true;
 
@@ -1507,6 +1514,8 @@ export default function NavigationBar() {
       if (data.success) {
         const serverList: Notification[] = data.notifications || [];
         const notificationList = serverList.filter(
+          (n) => !isMotmSelectionNotification(n)
+        ).filter(
           (n) => !dismissedNotificationIds[String(n.id)]
         );
         setNotifications((prev) => {
@@ -1921,7 +1930,7 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
         console.log('🔔 Received notification refresh event');
         const customEvt = evt as CustomEvent<{ localNotification?: Notification }>;
         const localN = customEvt?.detail?.localNotification;
-        if (localN && localN.id) {
+        if (localN && localN.id && !isMotmSelectionNotification(localN)) {
           setNotifications(prev => {
             if (prev.some(n => String(n.id) === String(localN.id))) return prev;
             return [localN, ...prev];

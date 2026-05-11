@@ -293,6 +293,10 @@ function resolveProfileImageUrl(value: string | null | undefined): string | null
     return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
 }
 
+function sameId(a: unknown, b: unknown): boolean {
+    return String(a ?? '').trim() === String(b ?? '').trim();
+}
+
 export default function PlayerStatsPage() {
     const params = useParams();
     const router = useRouter();
@@ -412,6 +416,7 @@ export default function PlayerStatsPage() {
     
     // Tab navigation state
     const [activeTab, setActiveTab] = useState('current');
+    const [refreshNonce, setRefreshNonce] = useState(0);
     
     // Stats Over Season Modal state
     const [statsModalOpen, setStatsModalOpen] = useState(false);
@@ -476,7 +481,8 @@ export default function PlayerStatsPage() {
                     try {
                         const res = await fetch(endpoint, {
                             credentials: 'include',
-                            headers: { Authorization: `Bearer ${token}` }
+                            headers: { Authorization: `Bearer ${token}` },
+                            cache: 'no-store'
                         });
                         if (res.ok) {
                             response = res;
@@ -615,97 +621,54 @@ export default function PlayerStatsPage() {
         setSearchTriggered(true);
 
         try {
-            let list: RawPlayer[] | undefined;
-
-            // Handle "All Leagues" case - aggregate from all leagues
-            if (effectiveLeagueId === 'all') {
-                const allTeammates = new Map<string, RawPlayer>();
-                
-                // Get leagues for the selected year
-                const leaguesToFetch = leaguesForYear || [];
-                
-                // Fetch teammates from each league
-                for (const league of leaguesToFetch) {
-                    try {
-                        const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${league.id}/teammates`;
-                        const res = await fetch(primaryUrl, {
-                            credentials: 'include',
-                            headers: { Authorization: `Bearer ${token}` },
-                            signal: controller.signal
-                        });
-
-                        if (res.ok) {
-                            const contentType = res.headers.get('content-type');
-                            if (!contentType || !contentType.includes('application/json')) continue;
-                            const json: TeammateAPIResponse = await res.json();
-                            let leagueList: RawPlayer[] = [];
-                            
-                            if (Array.isArray(json)) {
-                                leagueList = json;
-                            } else if (json?.data && Array.isArray(json.data)) {
-                                leagueList = json.data;
-                            } else if (json?.players && Array.isArray(json.players)) {
-                                leagueList = json.players;
-                            }
-
-                            // Add to map to avoid duplicates
-                            leagueList.forEach(player => {
-                                if (player.id && !allTeammates.has(player.id)) {
-                                    allTeammates.set(player.id, player);
-                                }
-                            });
-                        }
-                    } catch (err) {
-                        // Continue with other leagues if one fails
-                        console.log(`Failed to fetch teammates for league ${league.id}`, err);
-                    }
+            const fetchLeaguePlayers = async (targetLeagueId: string): Promise<RawPlayer[]> => {
+                const params = new URLSearchParams();
+                params.set('leagueId', String(targetLeagueId));
+                if (effectiveSeason && effectiveSeason !== 'all') {
+                    params.set('seasonId', String(effectiveSeason));
                 }
-
-                list = Array.from(allTeammates.values());
-            } else {
-                // Single league case
-                const primaryUrl = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/leagues/${effectiveLeagueId}/teammates`;
-                const res = await fetch(primaryUrl, {
+                params.set('_t', String(Date.now()));
+                const url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?${params.toString()}`;
+                const res = await fetch(url, {
                     credentials: 'include',
                     headers: { Authorization: `Bearer ${token}` },
-                    signal: controller.signal
+                    signal: controller.signal,
+                    cache: 'no-store'
                 });
+                if (!res.ok) return [];
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) return [];
+                const json: TeammateAPIResponse = await res.json();
+                if (Array.isArray(json)) return json;
+                if (json?.data && Array.isArray(json.data)) return json.data;
+                if (json?.players && Array.isArray(json.players)) return json.players;
+                return [];
+            };
 
-                if (res.ok) {
-                    const contentType = res.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const json: TeammateAPIResponse = await res.json();
-                    if (Array.isArray(json)) {
-                        list = json;
-                    } else if (json?.data && Array.isArray(json.data)) {
-                        list = json.data;
-                    } else if (json?.players && Array.isArray(json.players)) {
-                        list = json.players;
-                    }
+            const allPlayers = new Map<string, RawPlayer>();
+            if (effectiveLeagueId === 'all') {
+                for (const league of leaguesForYear || []) {
+                    try {
+                        const leaguePlayers = await fetchLeaguePlayers(String(league.id));
+                        leaguePlayers.forEach((player) => {
+                            const id = String(player.id || player._id || player.userId || '').trim();
+                            if (id && !allPlayers.has(id)) allPlayers.set(id, player);
+                        });
+                    } catch (err) {
+                        console.log(`Failed to fetch players for league ${league.id}`, err);
                     }
                 }
-
-                // Fallback: league players (admin/user listing)
-                if (!list) {
-                    const fbRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}/players`, {
-                        credentials: 'include',
-                        headers: { Authorization: `Bearer ${token}` },
-                        signal: controller.signal
-                    });
-                    if (fbRes.ok) {
-                        const contentType = fbRes.headers.get('content-type');
-                        if (contentType && contentType.includes('application/json')) {
-                            const fb = await fbRes.json();
-                            const raw = Array.isArray(fb) ? fb : (Array.isArray(fb?.players) ? fb.players : []);
-                            list = raw as RawPlayer[];
-                        }
-                    }
-                }
+            } else {
+                const leaguePlayers = await fetchLeaguePlayers(String(effectiveLeagueId));
+                leaguePlayers.forEach((player) => {
+                    const id = String(player.id || player._id || player.userId || '').trim();
+                    if (id && !allPlayers.has(id)) allPlayers.set(id, player);
+                });
             }
 
-            const mapped = (list || [])
+            const mapped = Array.from(allPlayers.values())
                 .map(normalizePlayer)
-                .filter(p => p.id && p.id !== playerId);
+                .filter(p => p.id && !sameId(p.id, playerId));
 
             setTeammates(mapped);
             lastFetchKeyRef.current = fetchKey;
@@ -768,6 +731,7 @@ export default function PlayerStatsPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
             credentials: 'include',
             headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
         })
             .then(async res => {
                 if (!res.ok) return null;
@@ -805,6 +769,43 @@ export default function PlayerStatsPage() {
         }
     }, [dispatch, playerId, leagueId, year]);
 
+    const triggerPlayerStatsRefresh = useCallback(() => {
+        if (!playerId) return;
+        dispatch(fetchPlayerStats({ playerId, leagueId, year }));
+        setRefreshNonce((prev) => prev + 1);
+    }, [dispatch, playerId, leagueId, year]);
+
+    useEffect(() => {
+        if (!playerId) return;
+
+        const handleStatsMutation = () => {
+            triggerPlayerStatsRefresh();
+        };
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                triggerPlayerStatsRefresh();
+            }
+        };
+
+        window.addEventListener('match-created', handleStatsMutation as EventListener);
+        window.addEventListener('match-updated', handleStatsMutation as EventListener);
+        window.addEventListener('match-stats-updated', handleStatsMutation as EventListener);
+        window.addEventListener('cache-cleared', handleStatsMutation as EventListener);
+        window.addEventListener('data-mutated', handleStatsMutation as EventListener);
+        window.addEventListener('focus', handleStatsMutation as EventListener);
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            window.removeEventListener('match-created', handleStatsMutation as EventListener);
+            window.removeEventListener('match-updated', handleStatsMutation as EventListener);
+            window.removeEventListener('match-stats-updated', handleStatsMutation as EventListener);
+            window.removeEventListener('cache-cleared', handleStatsMutation as EventListener);
+            window.removeEventListener('data-mutated', handleStatsMutation as EventListener);
+            window.removeEventListener('focus', handleStatsMutation as EventListener);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
+    }, [playerId, triggerPlayerStatsRefresh]);
+
     // Always keep an unfiltered snapshot for Career Stats (all leagues, all years).
     useEffect(() => {
         if (!playerId) {
@@ -828,7 +829,7 @@ export default function PlayerStatsPage() {
         return () => {
             cancelled = true;
         };
-    }, [playerId, token]);
+    }, [playerId, token, refreshNonce]);
 
     // Awards flattening
     const allTrophyAwards: AllTrophyAward[] = useMemo(() => {
@@ -871,12 +872,12 @@ export default function PlayerStatsPage() {
         if (!leaguesList.length) return [];
 
         if (leagueId && leagueId !== 'all') {
-            const l = leaguesList.find((x: LeagueWithMatchesTyped) => x.id === leagueId);
+            const l = leaguesList.find((x: LeagueWithMatchesTyped) => sameId(x.id, leagueId));
             let matches = hasMatches(l) ? l.matches ?? [] : [];
             
             // Apply season filter if selected - use date range from seasons API
             if (selectedSeason && selectedSeason !== 'all') {
-                const selectedSeasonData = seasons.find(s => s.id === selectedSeason);
+                const selectedSeasonData = seasons.find(s => sameId(s.id, selectedSeason));
                 if (selectedSeasonData && selectedSeasonData.startDate) {
                     const seasonStart = dayjs(selectedSeasonData.startDate);
                     const seasonEnd = selectedSeasonData.endDate ? dayjs(selectedSeasonData.endDate) : null;
@@ -884,7 +885,7 @@ export default function PlayerStatsPage() {
                     matches = matches.filter(m => {
                         // First check if match has seasonId directly
                         if ((m as any).seasonId) {
-                            return (m as any).seasonId === selectedSeason;
+                            return sameId((m as any).seasonId, selectedSeason);
                         }
                         // Otherwise filter by date range
                         const matchDate = dayjs(m.date);
@@ -896,7 +897,7 @@ export default function PlayerStatsPage() {
                     });
                 } else {
                     // Fallback to direct seasonId check
-                    matches = matches.filter(m => (m as any).seasonId === selectedSeason);
+                    matches = matches.filter(m => sameId((m as any).seasonId, selectedSeason));
                 }
                 console.log('⚽ [Stats] Filtered by season:', selectedSeason, '| Matches:', matches.length);
             }
@@ -951,8 +952,8 @@ export default function PlayerStatsPage() {
     const defensiveImpactCount = useMemo(() => {
         const count = currentLeagueMatches.filter(match => {
             const m = match as any;
-            const isDefensive = m.homeDefensiveImpactId === playerId || 
-                   m.awayDefensiveImpactId === playerId;
+            const isDefensive = sameId(m.homeDefensiveImpactId, playerId) ||
+                   sameId(m.awayDefensiveImpactId, playerId);
             console.log('🛡️ Match defensive impact:', {
                 matchId: match.id,
                 homeDefensiveImpactId: m.homeDefensiveImpactId,
@@ -970,7 +971,7 @@ export default function PlayerStatsPage() {
     const careerDefensiveImpactCount = useMemo(() => {
         const count = careerMatches.filter(match => {
             const m = match as any;
-            return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
+            return sameId(m.homeDefensiveImpactId, playerId) || sameId(m.awayDefensiveImpactId, playerId);
         }).length;
         console.log('✅ Total Career defensive impact count:', count);
         return count;
@@ -1008,6 +1009,7 @@ export default function PlayerStatsPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(playerId))}`, {
             credentials: 'include',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
+            cache: 'no-store',
         })
             .then(async (res) => {
                 if (!res.ok) throw new Error('Failed to fetch player profile');
@@ -1082,7 +1084,7 @@ export default function PlayerStatsPage() {
         const leaguesList: LeagueWithMatchesTyped[] = (data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [];
         if (!leaguesList.length || !leagueId || leagueId === 'all') return [];
 
-        const selectedLeague = leaguesList.find(l => l.id === leagueId);
+        const selectedLeague = leaguesList.find(l => sameId(l.id, leagueId));
         // Allow league even with no matches - user may be a member in seasons with 0 matches
         if (!selectedLeague) return [];
         // If no matches AND no seasons fetched, nothing to show
@@ -1096,45 +1098,13 @@ export default function PlayerStatsPage() {
         });
 
         const allLeagueMatches = selectedLeague.matches || [];
-        
-        // Filter matches where this player was added/participated
-        const playerMatches = allLeagueMatches.filter(match => {
-            const m = match as any;
-            
-            // Check if player is in either team's roster
-            const inHomeTeam = m.homeTeam?.players?.some((p: any) => String(p.id || p._id) === String(playerId));
-            const inAwayTeam = m.awayTeam?.players?.some((p: any) => String(p.id || p._id) === String(playerId));
-            
-            // Player participated if they are in the team roster
-            if (inHomeTeam || inAwayTeam) {
-                return true;
-            }
-            
-            // Also include if they have any stats recorded
-            const stats = match.playerStats;
-            if (stats && (
-                (stats.goals && stats.goals > 0) ||
-                (stats.assists && stats.assists > 0) ||
-                (stats.cleanSheets && stats.cleanSheets > 0) ||
-                (stats.motmVotes && stats.motmVotes > 0) ||
-                (stats.defence && stats.defence > 0) ||
-                (stats.impact && stats.impact > 0) ||
-                (stats.freeKicks && stats.freeKicks > 0) ||
-                (stats.penalties && stats.penalties > 0)
-            )) {
-                return true;
-            }
-            
-            // Also check if player received any votes or captain picks
-            if (m.votes && m.votes.some((v: any) => String(v.votedForId) === String(playerId))) {
-                return true;
-            }
-            
-            if (m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId) {
-                return true;
-            }
-            
-            return false;
+        // Backend profile payload is already scoped to this player. Keep unique matches only.
+        const seenMatchIds = new Set<string>();
+        const playerMatches = allLeagueMatches.filter((match) => {
+            const matchId = String((match as { id?: string }).id || '').trim();
+            if (!matchId || seenMatchIds.has(matchId)) return false;
+            seenMatchIds.add(matchId);
+            return true;
         });
 
         console.log('🎯 Player participated in matches:', {
@@ -1216,7 +1186,7 @@ export default function PlayerStatsPage() {
                 const finalSeasonId = matchSeasonId || 'unknown';
                 
                 // If a specific season is selected, only include matches from that season
-                if (selectedSeason && selectedSeason !== 'all' && finalSeasonId !== selectedSeason) {
+                if (selectedSeason && selectedSeason !== 'all' && !sameId(finalSeasonId, selectedSeason)) {
                     return;
                 }
                 
@@ -1240,7 +1210,7 @@ export default function PlayerStatsPage() {
                 // Include season unless explicitly declined.
                 if (!isSeasonExplicitlyDeclined(season) && !seasonMap.has(season.id)) {
                     // If filtering by specific season, only add that one
-                    if (selectedSeason && selectedSeason !== 'all' && season.id !== selectedSeason) {
+                    if (selectedSeason && selectedSeason !== 'all' && !sameId(season.id, selectedSeason)) {
                         return;
                     }
                     seasonMap.set(season.id, []);
@@ -1279,14 +1249,14 @@ export default function PlayerStatsPage() {
             // Count defensive impact
             const defensiveImpact = matches.filter(match => {
                 const m = match as any;
-                return m.homeDefensiveImpactId === playerId || m.awayDefensiveImpactId === playerId;
+                return sameId(m.homeDefensiveImpactId, playerId) || sameId(m.awayDefensiveImpactId, playerId);
             }).length;
 
             // Canonical total XP from backend per-match xpAwarded
             const totalXP = sumXPAwardedFromMatches(matches);
 
             // Get season info from state (fetched from API)
-            const seasonInfo = seasons.find(s => s.id === seasonId);
+            const seasonInfo = seasons.find(s => sameId(s.id, seasonId));
             
             // Determine season number from mapping (built from API data)
             let seasonNumber: number;
@@ -1374,7 +1344,7 @@ export default function PlayerStatsPage() {
         const leaguesList = (data?.leagues || []) as LeagueWithMatchesTyped[];
         const preferredIsValid = Boolean(
             preferredLeagueId &&
-            leaguesList.some((l) => l.id === preferredLeagueId && isLeagueActiveForFilter(l))
+            leaguesList.some((l) => sameId(l.id, preferredLeagueId) && isLeagueActiveForFilter(l))
         );
         const nextLeague = preferredIsValid ? String(preferredLeagueId) : (leagueId || 'all');
         if (nextLeague !== leagueId) {
@@ -1392,7 +1362,7 @@ export default function PlayerStatsPage() {
             return;
         }
         if (leagueId === 'all') return;
-        const stillValid = list.some(l => l.id === leagueId);
+        const stillValid = list.some(l => sameId(l.id, leagueId));
         if (!stillValid) {
             // If current league not valid for selected year, reset to 'all'
             dispatch(setLeagueFilter('all'));
@@ -1420,10 +1390,10 @@ export default function PlayerStatsPage() {
         // preserve league if possible, else select latest league for that year (or 'all')
         let nextLeague = leagueId;
         if (val !== 'all') {
-            if (nextLeague === 'all' || !list.some(l => l.id === nextLeague)) {
+            if (nextLeague === 'all' || !list.some(l => sameId(l.id, nextLeague))) {
                 nextLeague = list.length ? getLatestLeagueIdForYear(list, val) || 'all' : 'all';
             }
-        } else if (!list.some(l => l.id === nextLeague)) {
+        } else if (!list.some(l => sameId(l.id, nextLeague))) {
             nextLeague = 'all';
         }
 
@@ -1446,8 +1416,11 @@ export default function PlayerStatsPage() {
 
     const currentLeagueName =
         leagueId && leagueId !== 'all'
-            ? leaguesForYear.find((l: LeagueWithMatchesTyped) => l.id === leagueId)?.name || 'Current League'
+            ? leaguesForYear.find((l: LeagueWithMatchesTyped) => sameId(l.id, leagueId))?.name || 'Current League'
             : leaguesForYear[0]?.name || 'Current League';
+    const historyXpLabel = leagueId && leagueId !== 'all'
+        ? 'Highest XP Points Received In A League (Selected League)'
+        : 'Highest XP Points Received In A League';
 
     const playerName = fullPlayerData?.player?.name || 'Player';
     // const playerShirt = fullPlayerData?.player?.shirtNo || '';
@@ -1515,7 +1488,7 @@ export default function PlayerStatsPage() {
             })
             .finally(() => { if (!cancelled) setTrophiesLoading(false); });
         return () => { cancelled = true; };
-    }, [playerId, effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId, localCounts]);
+    }, [playerId, effectiveTrophiesLeagueId, effectiveTrophiesYear, effectiveTrophiesSeasonId, localCounts, refreshNonce]);
 
     // Fetch player badges/achievements
     useEffect(() => {
@@ -1637,7 +1610,7 @@ export default function PlayerStatsPage() {
             console.log('🧹 [BADGES] Cleanup');
             cancelled = true; 
         };
-    }, [playerId, token, effectiveRewardsLeagueId, effectiveRewardsYear, effectiveRewardsSeasonId]);
+    }, [playerId, token, effectiveRewardsLeagueId, effectiveRewardsYear, effectiveRewardsSeasonId, refreshNonce]);
 
     // Fetch history records from backend with filters
     useEffect(() => {
@@ -1669,7 +1642,7 @@ export default function PlayerStatsPage() {
             });
 
         return () => { cancelled = true; };
-    }, [playerId, effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId]);
+    }, [playerId, effectiveHistoryLeagueId, effectiveHistoryYear, effectiveHistorySeasonId, refreshNonce]);
 
     const earnedTrophies = useMemo(() => {
         // Aggregate counts for duplicate keys (e.g., 'Champion Footballer' + 'League Champion')
@@ -2209,7 +2182,7 @@ export default function PlayerStatsPage() {
                                         }}
                                     >
                                         {leagueId && leagueId !== 'all'
-                                            ? ((leaguesForYear || []).find((l: LeagueWithMatchesTyped) => l.id === leagueId)?.name || 'All Leagues')
+                                            ? ((leaguesForYear || []).find((l: LeagueWithMatchesTyped) => sameId(l.id, leagueId))?.name || 'All Leagues')
                                             : 'All Leagues'}
                                     </button>
                                     <Menu
@@ -2249,7 +2222,7 @@ export default function PlayerStatsPage() {
                                         {(leaguesForYear || []).map((l: LeagueWithMatchesTyped) => (
                                             <MenuItem
                                                 key={l.id}
-                                                selected={(leagueId || 'all') === l.id}
+                                                selected={sameId((leagueId || 'all'), l.id)}
                                                 onClick={() => applyLeagueSelection(l.id)}
                                                 sx={{
                                                     color: '#fff',
@@ -2351,7 +2324,7 @@ export default function PlayerStatsPage() {
                                     >
                                         {selectedSeason === 'all'
                                             ? 'All Seasons'
-                                            : (seasons.find((season) => season.id === selectedSeason)?.name || 'All Seasons')}
+                                            : (seasons.find((season) => sameId(season.id, selectedSeason))?.name || 'All Seasons')}
                                     </button>
                                     <Menu
                                         anchorEl={seasonFilterButtonRef.current}
@@ -2393,7 +2366,7 @@ export default function PlayerStatsPage() {
                                         {seasons.map((season) => (
                                             <MenuItem
                                                 key={season.id}
-                                                selected={selectedSeason === season.id}
+                                                selected={sameId(selectedSeason, season.id)}
                                                 onClick={() => {
                                                     setSelectedSeason(season.id);
                                                     setSeasonDropdownOpen(false);
@@ -2882,6 +2855,7 @@ export default function PlayerStatsPage() {
                                 // borderRadius: 2,
                                 border: activeTab === 'trophies' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
                                 transition: 'border 0.3s ease',
+                                boxSizing: 'border-box',
                                 height: '100%',
                                 width: '100%',
                                 display: 'flex',
@@ -2978,6 +2952,7 @@ export default function PlayerStatsPage() {
                                 // borderRadius: 2,
                                 border: activeTab === 'rewards' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
                                 transition: 'border 0.3s ease',
+                                boxSizing: 'border-box',
                                 height: '100%',
                                 width: '100%',
                                 display: 'flex',
@@ -3027,6 +3002,7 @@ export default function PlayerStatsPage() {
                                 // borderRadius: 2,
                                 border: activeTab === 'history' ? `3px solid ${TEAL_PRIMARY}` : '1px solid #fff',
                                 transition: 'border 0.3s ease',
+                                boxSizing: 'border-box',
                                 height: '100%',
                                 width: '100%',
                                 display: 'flex',
@@ -3063,14 +3039,14 @@ export default function PlayerStatsPage() {
                                     </Box>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                         <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most Goals In A League</Typography>
+                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most Goals Scored In A League</Typography>
                                         <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
                                             {historyRecords.mostGoalsInLeague}
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                         <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most MOTM In A League</Typography>
+                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most MOTM Votes Received In A League</Typography>
                                         <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
                                             {historyRecords.mostMotmInLeague}
                                         </Typography>
@@ -3084,7 +3060,7 @@ export default function PlayerStatsPage() {
                                     </Box>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                         <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Highest XP In A League</Typography>
+                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>{historyXpLabel}</Typography>
                                         <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
                                             {historyRecords.highestXpInLeague.toLocaleString()}
                                         </Typography>

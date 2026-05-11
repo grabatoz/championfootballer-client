@@ -1010,11 +1010,17 @@ export const playerAPI = {
   getPlayerStats: async (playerId: string, leagueId: string, year: string): Promise<ApiResponse<PlayerStatsData>> => {
     try {
         const token = Cookies.get('token');
+        const params = new URLSearchParams({
+          leagueId: leagueId || 'all',
+          year: year || 'all',
+          _t: String(Date.now())
+        });
         // Use the new comprehensive profile endpoint
-        const response = await fetch(`${API_BASE_URL}/players/${playerId}/profile?leagueId=${leagueId}&year=${year}`, {
+        const response = await fetch(`${API_BASE_URL}/players/${playerId}/profile?${params.toString()}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
-            }
+            },
+            cache: 'no-store'
         });
 
         if (!response.ok) {
@@ -1071,8 +1077,12 @@ export const playerAPI = {
       if (leagueId && leagueId !== 'all') params.append('leagueId', leagueId);
       if (year && year !== 'all') params.append('year', year);
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
+      params.append('_t', String(Date.now()));
       const url = `${API_BASE_URL}/players/${playerId}/trophies?${params.toString()}`;
-      const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        cache: 'no-store'
+      });
       
       if (!res.ok) {
         console.warn('[getPlayerTrophies] API returned error:', res.status, res.statusText);
@@ -1104,8 +1114,12 @@ export const playerAPI = {
       if (leagueId && leagueId !== 'all') params.append('leagueId', leagueId);
       if (year && year !== 'all') params.append('year', year);
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
+      params.append('_t', String(Date.now()));
       const url = `${API_BASE_URL}/players/${playerId}/history-records?${params.toString()}`;
-      const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        cache: 'no-store'
+      });
       
       if (!res.ok) {
         console.warn('[getPlayerHistoryRecords] API returned error:', res.status, res.statusText);

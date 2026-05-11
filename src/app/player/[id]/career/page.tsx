@@ -205,6 +205,9 @@ const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
     return String(b.name || '').localeCompare(String(a.name || ''), undefined, { numeric: true, sensitivity: 'base' });
   });
 
+const sameId = (a: unknown, b: unknown): boolean =>
+  String(a ?? '').trim() === String(b ?? '').trim();
+
 // Row used for weekly / monthly aggregation
 interface PerformanceRow {
   key: string;
@@ -464,6 +467,7 @@ export default function CareerPage() {
   // Use leagues from Redux state if available, fallback to local state
   const leaguesFromRedux = useSelector((state: RootState) => state.playerStats.data?.leagues) as LeagueWithMatches[] | undefined;
   const [availableLeagues, setAvailableLeagues] = useState<LeagueWithMatches[]>([]);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   // Initialize filters from URL params on mount
   useEffect(() => {
@@ -487,7 +491,7 @@ export default function CareerPage() {
 
   useEffect(() => {
     if (!filters.leagueId || filters.leagueId === 'all') return;
-    const stillVisible = availableLeagues.some((l) => l.id === filters.leagueId);
+    const stillVisible = availableLeagues.some((l) => sameId(l.id, filters.leagueId));
     if (!stillVisible) dispatch(setLeagueFilter('all'));
   }, [availableLeagues, filters.leagueId, dispatch]);
 
@@ -496,7 +500,38 @@ export default function CareerPage() {
   useEffect(() => {
     if (!playerId || authLoading) return;
     dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
-  }, [playerId, dispatch, filters.leagueId, filters.year, authLoading]);
+  }, [playerId, dispatch, filters.leagueId, filters.year, authLoading, refreshNonce]);
+
+  useEffect(() => {
+    if (!playerId) return;
+
+    const triggerRefresh = () => {
+      setRefreshNonce((prev) => prev + 1);
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        triggerRefresh();
+      }
+    };
+
+    window.addEventListener('match-created', triggerRefresh as EventListener);
+    window.addEventListener('match-updated', triggerRefresh as EventListener);
+    window.addEventListener('match-stats-updated', triggerRefresh as EventListener);
+    window.addEventListener('cache-cleared', triggerRefresh as EventListener);
+    window.addEventListener('data-mutated', triggerRefresh as EventListener);
+    window.addEventListener('focus', triggerRefresh as EventListener);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('match-created', triggerRefresh as EventListener);
+      window.removeEventListener('match-updated', triggerRefresh as EventListener);
+      window.removeEventListener('match-stats-updated', triggerRefresh as EventListener);
+      window.removeEventListener('cache-cleared', triggerRefresh as EventListener);
+      window.removeEventListener('data-mutated', triggerRefresh as EventListener);
+      window.removeEventListener('focus', triggerRefresh as EventListener);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [playerId]);
 
   const matches: LeagueMatch[] = useMemo(() => {
     const d: PlayerStatsData | undefined = data;
@@ -512,7 +547,7 @@ export default function CareerPage() {
 
     const ids = new Set<string>();
     for (const match of matches) {
-      if (match.leagueId !== selectedLeagueId) continue;
+      if (!sameId(match.leagueId, selectedLeagueId)) continue;
       const sid = typeof match.seasonId === 'string' ? match.seasonId.trim() : '';
       if (sid) ids.add(sid);
     }
@@ -547,6 +582,7 @@ export default function CareerPage() {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      cache: 'no-store',
     })
       .then(res => res.ok ? res.json() : Promise.reject(res.status))
       .then((data: { success?: boolean; seasons?: SeasonInfo[] } | SeasonInfo[]) => {
@@ -593,14 +629,14 @@ export default function CareerPage() {
 
   // Matches filtered by selected league, year, and season (for "Your Stats")
   const filteredMatches = useMemo(() => {
-    const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : m.leagueId === filters.leagueId;
+    const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : sameId(m.leagueId, filters.leagueId);
     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
     const bySeason = (m: LeagueMatch) => {
       if (!seasonFilter || seasonFilter === 'all') return true;
       // Method 1: Match has seasonId directly
-      if (m.seasonId) return m.seasonId === seasonFilter;
+      if (m.seasonId) return sameId(m.seasonId, seasonFilter);
       // Method 2: Filter by season date range
-      const selectedSeason = availableSeasons.find(s => s.id === seasonFilter);
+      const selectedSeason = availableSeasons.find(s => sameId(s.id, seasonFilter));
       if (selectedSeason?.startDate) {
         const matchDate = dayjs(m.date);
         const start = dayjs(selectedSeason.startDate);
@@ -616,9 +652,9 @@ export default function CareerPage() {
   const timeSeasonFilteredMatches = useMemo(() => {
     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
     const bySeason = (m: LeagueMatch) => {
-      if (!seasonFilter || seasonFilter === 'all') return true;
-      if (m.seasonId) return m.seasonId === seasonFilter;
-      const selectedSeason = availableSeasons.find((s) => s.id === seasonFilter);
+    if (!seasonFilter || seasonFilter === 'all') return true;
+      if (m.seasonId) return sameId(m.seasonId, seasonFilter);
+      const selectedSeason = availableSeasons.find((s) => sameId(s.id, seasonFilter));
       if (selectedSeason?.startDate) {
         const matchDate = dayjs(m.date);
         const start = dayjs(selectedSeason.startDate);
@@ -647,7 +683,8 @@ export default function CareerPage() {
     const fetchAvg = async (leagueId: string) => {
       try {
         const res = await fetch(`${apiUrl}/api/leagues/${leagueId}/player-averages`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          cache: 'no-store'
         });
         if (!res.ok) return null;
         const data = await res.json();
@@ -724,17 +761,17 @@ export default function CareerPage() {
   const chartMatches = useMemo(() =>
     chartLeague === 'all'
       ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => m.leagueId === chartLeague),
+      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, chartLeague)),
     [timeSeasonFilteredMatches, chartLeague]);
   const influenceMatches = useMemo(() =>
     influenceLeague === 'all'
       ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => m.leagueId === influenceLeague),
+      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, influenceLeague)),
     [timeSeasonFilteredMatches, influenceLeague]);
   const winLossMatches = useMemo(() =>
     winLossLeague === 'all'
       ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => m.leagueId === winLossLeague),
+      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, winLossLeague)),
     [timeSeasonFilteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
@@ -1368,8 +1405,11 @@ export default function CareerPage() {
           setLeagueRank(null);
           return;
         }
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}`;
-        const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}&_t=${Date.now()}`;
+        const res = await fetch(url, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          cache: 'no-store'
+        });
         if (!res.ok) { setLeagueRank(null); return; }
         const json = await res.json();
         const players: Array<{ id: string; value?: number }> = json?.players || [];
@@ -1403,11 +1443,22 @@ export default function CareerPage() {
         setSynergyLoading(true);
         setSynergyError(null);
 
-        const leagueParam = (filters.leagueId && filters.leagueId !== 'all')
-          ? `?leagueId=${encodeURIComponent(filters.leagueId)}`
-          : '';
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy${leagueParam}`;
-  const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+        const params = new URLSearchParams();
+        if (filters.leagueId && filters.leagueId !== 'all') {
+          params.set('leagueId', String(filters.leagueId));
+        }
+        if (filters.year && filters.year !== 'all') {
+          params.set('year', String(filters.year));
+        }
+        if (seasonFilter && seasonFilter !== 'all') {
+          params.set('seasonId', String(seasonFilter));
+        }
+        params.set('_t', String(Date.now()));
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy?${params.toString()}`;
+        const res = await fetch(url, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          cache: 'no-store'
+        });
 
         // Gracefully treat 404 / 204 as "no data" (not an error)
         if (res.status === 404 || res.status === 204) {
@@ -1513,7 +1564,7 @@ export default function CareerPage() {
     })();
 
     return () => { aborted = true; };
-  }, [playerId, matches, filters.leagueId, token]);
+  }, [playerId, matches, filters.leagueId, filters.year, seasonFilter, token, refreshNonce]);
 
   // Dynamic years: keep previous years from data and always include current/latest year
   const availableYears = useMemo(() => {
@@ -1536,7 +1587,7 @@ export default function CareerPage() {
   // Get selected league name for display
   const selectedLeagueName = useMemo(() => {
     if (!filters.leagueId || filters.leagueId === 'all') return null;
-    const league = availableLeagues.find(l => l.id === filters.leagueId);
+    const league = availableLeagues.find(l => sameId(l.id, filters.leagueId));
     return (league as LeagueWithMatches & { name?: string })?.name || `League ${filters.leagueId}`;
   }, [filters.leagueId, availableLeagues]);
 
@@ -1550,7 +1601,7 @@ export default function CareerPage() {
   }, []);
   const preferredLeagueName = useMemo(() => {
     if (!preferredLeagueId) return null;
-    const league = availableLeagues.find(l => l.id === preferredLeagueId);
+    const league = availableLeagues.find(l => sameId(l.id, preferredLeagueId));
     return (league as LeagueWithMatches & { name?: string })?.name || null;
   }, [preferredLeagueId, availableLeagues]);
 
@@ -1560,7 +1611,7 @@ export default function CareerPage() {
         ? filters.leagueId
         : preferredLeagueId;
     if (!candidate) return null;
-    return availableLeagues.some((l) => l.id === candidate) ? candidate : null;
+    return availableLeagues.some((l) => sameId(l.id, candidate)) ? candidate : null;
   }, [filters.leagueId, preferredLeagueId, availableLeagues]);
 
   // If no league is passed in URL, auto-select preferredLeagueId on this page
@@ -1568,9 +1619,9 @@ export default function CareerPage() {
     if (preferredAppliedRef.current) return;
     if (urlLeagueId) return;
     if (!preferredLeagueId) return;
-    const existsInAvailable = availableLeagues.some((l) => l.id === preferredLeagueId);
+    const existsInAvailable = availableLeagues.some((l) => sameId(l.id, preferredLeagueId));
     if (!existsInAvailable) return;
-    if (filters.leagueId !== preferredLeagueId) {
+    if (!sameId(filters.leagueId, preferredLeagueId)) {
       dispatch(setLeagueFilter(preferredLeagueId));
     }
     preferredAppliedRef.current = true;
@@ -1591,7 +1642,7 @@ export default function CareerPage() {
 
   const selectedSeasonLabel = useMemo(() => {
     if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';
-    const selected = availableSeasons.find((s) => s.id === seasonFilter);
+    const selected = availableSeasons.find((s) => sameId(s.id, seasonFilter));
     if (!selected) return 'All Seasons';
     return `${selected.name}${selected.isActive ? ' (Active)' : ''}`;
   }, [seasonFilter, availableSeasons]);
@@ -1929,7 +1980,7 @@ export default function CareerPage() {
                         {availableLeagues.map((league: LeagueWithMatches & { name?: string }) => (
                           <MenuItem
                             key={league.id}
-                            selected={(filters.leagueId || 'all') === league.id}
+                            selected={sameId((filters.leagueId || 'all'), league.id)}
                             onClick={() => handleLeagueFilterChange(league.id)}
                             sx={{
                               color: '#fff',
@@ -2053,7 +2104,7 @@ export default function CareerPage() {
                         {availableSeasons.map((season) => (
                           <MenuItem
                             key={season.id}
-                            selected={seasonFilter === season.id}
+                            selected={sameId(seasonFilter, season.id)}
                             onClick={() => handleSeasonFilterChange(season.id)}
                             sx={{
                               color: '#fff',
@@ -2934,9 +2985,20 @@ export default function CareerPage() {
                 }}>
                   Toughest Rival
                   <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 18, height: 18 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  <span style={{ color: themeColors.primary, fontWeight: 600 }}>Kyle Stanley</span>
-                  Losses vs <span style={{ color: themeColors.danger }}>3</span>
-                  <span style={{ color: themeColors.textDim, fontSize: 11 }}>(5 matches - 21 loss rate)</span>
+                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
+                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
+                  {playerId && synergyError && <span style={{ color: themeColors.danger }}>{synergyError}</span>}
+                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && <span style={{ color: themeColors.textDim }}>No matches yet.</span>}
+                  {!synergyLoading && !synergyError && toughestRival && (
+                    <>
+                      <span style={{ color: themeColors.primary, fontWeight: 600 }}>{toughestRival.name || 'Player'}</span>
+                      Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
+                      <span style={{ color: themeColors.textDim, fontSize: 11 }}>
+                        {` (${toughestRival.matchesAgainst} matches - ${Number(toughestRival.lossRate || 0).toFixed(1).replace(/\.0$/, '')}% loss rate)`}
+                      </span>
+                    </>
+                  )}
+                  {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && <span style={{ color: themeColors.textDim }}>Need rival data.</span>}
                 </Typography>
               </Box>
             </Box>

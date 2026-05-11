@@ -163,7 +163,10 @@ const PlayerCard = ({
   const lastInitial = nameParts.length > 1
     ? nameParts[nameParts.length - 1].charAt(0).toUpperCase()
     : '';
-  const displayCardName = firstNameOnly
+  const isPlaceholderName = normalizedName.toLowerCase() === 'player name';
+  const displayCardName = isPlaceholderName
+    ? 'Player Name'
+    : firstNameOnly
     ? (lastInitial ? `${firstNameOnly} ${lastInitial}.` : firstNameOnly)
     : 'Player Name';
   const avatarInitials = getAvatarInitials({ name: normalizedName });

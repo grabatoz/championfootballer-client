@@ -3792,6 +3792,24 @@ export default function LeagueDetailPage() {
                                         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                                         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                                         marginThreshold={0}
+                                        MenuListProps={{
+                                            sx: {
+                                                maxHeight: { xs: 260, sm: 320 },
+                                                overflowY: 'auto',
+                                                overflowX: 'hidden',
+                                                scrollbarWidth: 'thin',
+                                                '&::-webkit-scrollbar': {
+                                                    width: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    background: 'rgba(255,255,255,0.08)',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    background: 'rgba(255,255,255,0.35)',
+                                                    borderRadius: '999px',
+                                                },
+                                            },
+                                        }}
                                         PaperProps={{
                                             sx: {
                                                 p: 0.5,
@@ -3925,6 +3943,24 @@ export default function LeagueDetailPage() {
                                         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                                         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                                         marginThreshold={0}
+                                        MenuListProps={{
+                                            sx: {
+                                                maxHeight: { xs: 260, sm: 320 },
+                                                overflowY: 'auto',
+                                                overflowX: 'hidden',
+                                                scrollbarWidth: 'thin',
+                                                '&::-webkit-scrollbar': {
+                                                    width: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    background: 'rgba(255,255,255,0.08)',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    background: 'rgba(255,255,255,0.35)',
+                                                    borderRadius: '999px',
+                                                },
+                                            },
+                                        }}
                                         PaperProps={{
                                             sx: {
                                                 p: 0.5,
