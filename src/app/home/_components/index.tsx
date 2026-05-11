@@ -1650,6 +1650,22 @@ export default function PlayerDashboard() {
     dispatch(initializeFromStorage());
   }, [dispatch]);
 
+  const dispatchLeagueMutationEvent = useCallback(
+    (eventName: 'league-created' | 'league-updated' | 'league-deleted', detail: Record<string, unknown>) => {
+      if (typeof window === 'undefined') return;
+      try {
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: { ...detail, timestamp: Date.now() },
+          })
+        );
+      } catch {
+        // ignore event dispatch errors
+      }
+    },
+    []
+  );
+
   // Fetch user global stats
   useEffect(() => {
     const fetchUserStats = async () => {

@@ -1901,6 +1901,7 @@ export default function LeagueDetailPage() {
         // Get season object and its members
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
         let filteredMembers: User[] = [];
+        let seasonMembersPayloadProvided = false;
         let declinedIdsFromSeason = new Set<string>();
         
         console.log('🔍 All seasons:', seasonsUnknown);
@@ -1948,8 +1949,9 @@ export default function LeagueDetailPage() {
                 console.log('🔍 Is array?', Array.isArray(membersUnknown));
                 console.log('🔍 Length:', Array.isArray(membersUnknown) ? membersUnknown.length : 0);
                 
-                if (Array.isArray(membersUnknown) && membersUnknown.length > 0) {
-                    // Use season members from backend
+                if (Array.isArray(membersUnknown)) {
+                    seasonMembersPayloadProvided = true;
+                    // Use season members from backend (including empty arrays)
                     console.log('🔍 Member IDs from season:', membersUnknown.map((m: unknown) => {
                         const memberObj = m as Record<string, unknown>;
                         return `${String(memberObj?.id ?? '')}: ${String(memberObj?.firstName ?? '')} ${String(memberObj?.lastName ?? '')}`;
@@ -1961,29 +1963,15 @@ export default function LeagueDetailPage() {
                     );
                     console.log('🔍 All league members:', league.members.map(m => `${m.id}: ${m.firstName} ${m.lastName}`));
                     const membersFromSeason = league.members.filter((member: User) => seasonMemberIds.has(normalizeEntityId(member.id)));
-                    const isActiveSeason = seasonObj?.isActive === true;
-                    const shouldUseLeagueMembersFallback =
-                        isActiveSeason &&
-                        filteredMatches.length === 0 &&
-                        membersFromSeason.length > 0 &&
-                        membersFromSeason.length < league.members.length;
-
-                    if (shouldUseLeagueMembersFallback) {
-                        // New active season can briefly return partial season members from backend.
-                        // Show all league members until season membership is fully synced.
-                        filteredMembers = league.members.filter((member: User) => !declinedIds.has(normalizeEntityId(member.id)));
-                        console.log('⚠️ Active season has partial members; falling back to all league members:', filteredMembers.length);
-                    } else {
-                        filteredMembers = membersFromSeason;
-                        console.log('✅ Using season members from backend:', filteredMembers.length);
-                        console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
-                    }
+                    filteredMembers = membersFromSeason;
+                    console.log('✅ Using season members from backend:', filteredMembers.length);
+                    console.log('✅ Filtered member names:', filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
                 }
             }
         }
         
         // If no season members found from backend, get players who played in matches
-        if (filteredMembers.length === 0) {
+        if (filteredMembers.length === 0 && !seasonMembersPayloadProvided) {
             console.log('⚠️ No season members from backend, using match players');
             const playersInSeasonSet = new Set<string>();
             filteredMatches.forEach(match => {
@@ -5391,9 +5379,10 @@ export default function LeagueDetailPage() {
                                                 {/* Header Bar aligned to table grid */}
                                             <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
                                                 <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
-                                                    <span className="text-muted-foreground">Invites Players To</span>
-                                                    <span className="font-bold text-primary">{league?.name || 'League'}</span>
-                                                    <span className="text-muted-foreground">Using The Code</span>
+                                                    <span className="text-muted-foreground">Invite Code:</span>
+                                                    <span className="font-bold text-primary">
+                                                        {(league?.name || 'League')} - Season {selectedSeasonNumber || 1}
+                                                    </span>
                                                     <span className="font-bold">{league?.inviteCode || league?.id || '-'}</span>
                                                     <button
                                                         className="p-1.5 hover:bg-muted rounded transition-colors"
@@ -5428,7 +5417,7 @@ export default function LeagueDetailPage() {
                                                 <div className="text-center">L</div>
                                                 <div className="text-center">GD</div>
                                                 <div className="text-center">W%</div>
-                                                <div className="text-center">{filteredLeague?.showPoints === true ? 'PTS' : 'XP'}</div>
+                                                <div className="text-center">{filteredLeague?.showPoints === true ? 'XP' : 'PTS'}</div>
                                             </div>
 
                                             {/* Table Rows */}
@@ -5438,7 +5427,7 @@ export default function LeagueDetailPage() {
                                                         filteredLeagueShowPoints: filteredLeague?.showPoints,
                                                         leagueShowPoints: league?.showPoints,
                                                         selectedSeasonId: selectedSeasonId,
-                                                        willUsePoints: filteredLeague?.showPoints === true
+                                                        willUseXp: filteredLeague?.showPoints === true
                                                     });
                                                     return null;
                                                 })()}
@@ -5448,10 +5437,10 @@ export default function LeagueDetailPage() {
                                                         const bPts = (b.wins ?? 0) * 3 + (b.draws ?? 0);
                                                         const aXP = a.xp ?? 0;
                                                         const bXP = b.xp ?? 0;
-                                                        // Use season's showPoints if available, otherwise league's
-                                                        const usePoints = filteredLeague?.showPoints === true;
-                                                        const aScore = usePoints ? aPts : aXP;
-                                                        const bScore = usePoints ? bPts : bXP;
+                                                        // showPoints=true means Advanced Scoring, so the final column uses XP.
+                                                        const useXpScoring = filteredLeague?.showPoints === true;
+                                                        const aScore = useXpScoring ? aXP : aPts;
+                                                        const bScore = useXpScoring ? bXP : bPts;
                                                         if (bScore !== aScore) return bScore - aScore;
                                                         if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0);
                                                         if ((a.played ?? 0) !== (b.played ?? 0)) return (a.played ?? 0) - (b.played ?? 0);
@@ -5461,9 +5450,9 @@ export default function LeagueDetailPage() {
                                                         const points = (player.wins ?? 0) * 3 + (player.draws ?? 0);
                                                         const firstName = player.name.split(' ')[0] || player.name;
                                                         const lastName = player.name.split(' ').slice(1).join(' ') || '';
-                                                        // Use season's showPoints if available, otherwise league's
-                                                        const usePoints = filteredLeague?.showPoints === true;
-                                                        const xpPts = usePoints ? points : (player.xp ?? 0);
+                                                        // showPoints=true means Advanced Scoring, so the final column uses XP.
+                                                        const useXpScoring = filteredLeague?.showPoints === true;
+                                                        const xpPts = useXpScoring ? (player.xp ?? 0) : points;
 
                                                         const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || 'Striker';
                                                         const member = (league?.members || []).find(m => String(m.id) === String(player.id));

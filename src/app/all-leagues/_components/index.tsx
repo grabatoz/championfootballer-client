@@ -217,9 +217,11 @@ interface LeagueMembersDialogProps {
   currentUserId: string
   onRemoveMember: (memberId: string) => void
   onLeaveLeague: (preferredAdminId?: string) => void
+  onLeaveSeason?: () => void | Promise<void>
   onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
   onDeleteLeague: () => Promise<void> | void
   openSettingsOnOpen?: boolean
+  onMembersChanged?: () => void | Promise<void>
   onArchiveLeague?: () => void | Promise<void>
   onUnarchiveLeague?: () => void | Promise<void>
   onSeasonArchived?: (payload: { leagueId: string; seasonId: string }) => void
@@ -236,9 +238,11 @@ function LeagueMembersDialog({
   currentUserId,
   onRemoveMember,
   onLeaveLeague,
+  onLeaveSeason,
   onUpdateLeague,
   onDeleteLeague,
   openSettingsOnOpen,
+  onMembersChanged,
   onArchiveLeague,
   onUnarchiveLeague,
   onSeasonArchived,
@@ -585,28 +589,52 @@ function LeagueMembersDialog({
         }}
       >
         {!isAdmin && (
-          <Button
-            startIcon={<ExitToApp />}
-            onClick={handleLeaveLeague}
-            sx={{
-              fontWeight: 600,
-              bgcolor: "#fff",
-              color: "#d32f2f",
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              "&:hover": {
-                bgcolor: "#ffebee",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            Leave League
-          </Button>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <Button
+              startIcon={<ExitToApp />}
+              onClick={() => { try { void onLeaveSeason?.() } catch {} }}
+              sx={{
+                fontWeight: 600,
+                bgcolor: "#e56a16",
+                color: "#fff",
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                "&:hover": {
+                  bgcolor: "#c75712",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              Leave Active Season
+            </Button>
+            <Button
+              startIcon={<ExitToApp />}
+              onClick={handleLeaveLeague}
+              sx={{
+                fontWeight: 600,
+                bgcolor: "#fff",
+                color: "#d32f2f",
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                "&:hover": {
+                  bgcolor: "#ffebee",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              Leave League
+            </Button>
+          </Box>
         )}
 
         <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
@@ -671,6 +699,7 @@ function LeagueMembersDialog({
             setOpenSettings(false)
           }}
           currentUserId={currentUserId}
+          onMembersChanged={onMembersChanged}
           onRemoveMember={onRemoveMember}
           onLeaveLeague={onLeaveLeague}
           onArchive={onArchiveLeague}
@@ -854,6 +883,24 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }, [currentSeason, league.maxGames])
 
   const handleUpdate = async () => {
+    if (!canManageLeagueSettings) return
+
+    if (selectedSeasonId) {
+      const seasonRoster = Array.isArray(currentSeason?.members) && currentSeason.members.length > 0
+        ? currentSeason.members
+        : (Array.isArray(currentSeason?.players) ? currentSeason.players : [])
+      const seasonMemberIds = new Set(
+        seasonRoster
+          .map((member) => String(member.id || '').trim())
+          .filter((id) => id.length > 0),
+      )
+
+      if (seasonMemberIds.size > 0 && (!adminId || !seasonMemberIds.has(String(adminId)))) {
+        toast.error('Select a league admin who is active in the selected season.')
+        return
+      }
+    }
+
     const updatedData: LeagueUpdatePayload = {
       name,
       active: isActive,
@@ -1054,6 +1101,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   }
 
   const currentUserIsAdmin = isUserLeagueAdmin(currentUserId)
+  const canManageLeagueSettings = currentUserIsAdmin
   const leagueIsArchived = Boolean((league as League & { archived?: boolean }).archived)
 
   const fetchArchivedMatches = useCallback(async () => {
@@ -1266,9 +1314,33 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     }
   }, [getSeasonLabel, league?.id, onMembersChanged, selectedSeasonId, token])
 
-  // Sort members: Admins first, then current user, then by name
-  const sortedMembers = React.useMemo(() => {
-    const list = Array.isArray(league?.members) ? [...league.members] : [] as User[];
+  const currentSeasonRoster = React.useMemo(() => {
+    const rosterFromMembers = Array.isArray(currentSeason?.members) ? currentSeason.members : []
+    if (rosterFromMembers.length > 0) return rosterFromMembers
+    return Array.isArray(currentSeason?.players) ? currentSeason.players : []
+  }, [currentSeason?.members, currentSeason?.players])
+
+  const seasonMembers = React.useMemo(() => {
+    const leagueMembers = Array.isArray(league?.members) ? league.members : [] as User[]
+    if (currentSeasonRoster.length === 0) return [] as User[]
+
+    const bySeasonId = new Map(
+      currentSeasonRoster
+        .map((member) => [String(member.id || '').trim(), member] as const)
+        .filter(([id]) => id.length > 0)
+    )
+
+    return leagueMembers
+      .filter((member) => bySeasonId.has(String(member.id || '').trim()))
+      .map((member) => {
+        const seasonScopedMember = bySeasonId.get(String(member.id || '').trim())
+        return seasonScopedMember ? { ...member, ...seasonScopedMember } : member
+      })
+  }, [currentSeasonRoster, league?.members])
+
+  // Sort season members: Admins first, then current user, then by name
+  const sortedSeasonMembers = React.useMemo(() => {
+    const list = [...seasonMembers]
     return list.sort((a, b) => {
       const aAdmin = isUserLeagueAdmin(a.id) ? 1 : 0;
       const bAdmin = isUserLeagueAdmin(b.id) ? 1 : 0;
@@ -1280,7 +1352,72 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       const bn = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
       return an.localeCompare(bn);
     });
-  }, [league?.members, currentUserId]);
+  }, [seasonMembers, currentUserId, isUserLeagueAdmin]);
+
+  const currentUserInSelectedSeason = React.useMemo(
+    () => sortedSeasonMembers.some((member) => String(member.id) === String(currentUserId)),
+    [sortedSeasonMembers, currentUserId],
+  )
+
+  const handleLeaveSelectedSeason = useCallback(async () => {
+    if (!token || !league?.id || !selectedSeasonId) {
+      toast.error('Please select a season first')
+      return
+    }
+    if (!currentUserInSelectedSeason) {
+      toast.error('You are not part of this selected season')
+      return
+    }
+
+    const seasonLabel = currentSeason ? getSeasonLabel(currentSeason) : 'this season'
+    const confirmed = window.confirm(`Are you sure you want to leave "${seasonLabel}"?`)
+    if (!confirmed) return
+
+    const attempts = [
+      `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${selectedSeasonId}/leave`,
+    ]
+
+    let success = false
+    let message = 'Failed to leave season'
+
+    for (const url of attempts) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        })
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}))
+        const payload = isRecord(payloadUnknown) ? payloadUnknown as { success?: boolean; message?: string } : {}
+
+        if (response.ok && payload.success !== false) {
+          success = true
+          break
+        }
+        if (payload.message) message = payload.message
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : ''
+        if (errMsg) message = errMsg
+      }
+    }
+
+    if (!success) {
+      toast.error(message)
+      return
+    }
+
+    toast.success('You have left the selected season')
+    if (typeof onMembersChanged === 'function') {
+      await Promise.resolve(onMembersChanged())
+    }
+    onClose()
+  }, [currentSeason, currentUserInSelectedSeason, getSeasonLabel, league?.id, onClose, onMembersChanged, selectedSeasonId, token])
 
   // Do not return before declaring hooks to preserve hook order. Render nothing if no league.
   if (!league) return null
@@ -1409,8 +1546,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   Select league admin
                 </Typography>
                 <Select
-                  value={adminId}
+                  value={sortedSeasonMembers.some((member) => String(member.id) === String(adminId)) ? adminId : ''}
                   onChange={(e) => setAdminId(e.target.value as string)}
+                  disabled={!canManageLeagueSettings || sortedSeasonMembers.length === 0}
                   sx={{
                     color: '#E5E7EB',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
@@ -1430,12 +1568,18 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     },
                   }}
                 >
-                  {sortedMembers.map((member: User) => (
+                  <MenuItem value="" disabled>
+                    {sortedSeasonMembers.length > 0 ? 'Select active season player' : 'No active players in this season'}
+                  </MenuItem>
+                  {sortedSeasonMembers.map((member: User) => (
                     <MenuItem key={member.id} value={member.id}>
                       {member.firstName} {member.lastName}
                     </MenuItem>
                   ))}
                 </Select>
+                <Typography variant="caption" sx={{ color: '#9CA3AF', mt: 0.5 }}>
+                  Only players active in the selected season can be assigned as league admin.
+                </Typography>
               </FormControl>
 
               <FormControl fullWidth>
@@ -1450,6 +1594,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     const cleaned = raw.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 30)
                     setName(cleaned)
                   }}
+                  disabled={!canManageLeagueSettings}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       color: '#E5E7EB',
@@ -1505,69 +1650,77 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<CloudUpload />}
-                    sx={{
-                      color: '#0388E3',
-                      borderColor: 'rgba(3,136,227,0.5)',
-                      borderRadius: 2,
-                      px: 2,
-                      fontWeight: 600,
-                      fontSize: 13,
-                      '&:hover': {
-                        borderColor: '#0388E3',
-                        backgroundColor: 'rgba(3,136,227,0.08)',
-                      },
-                    }}
-                  >
-                    {settingsImagePreview && !settingsRemoveImage ? 'Change Image' : 'Upload Image'}
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      ref={settingsFileInputRef}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        if (!validateLeagueImageFile(file)) {
-                          try { (e.target as HTMLInputElement).value = '' } catch {}
-                          return
-                        }
-                        setSettingsImageFile(file)
-                        setSettingsRemoveImage(false)
-                        const reader = new FileReader()
-                        reader.onload = (ev) => setSettingsImagePreview(ev.target?.result as string)
-                        reader.readAsDataURL(file)
-                      }}
-                      onClick={(e) => { try { (e.target as HTMLInputElement).value = '' } catch {} }}
-                    />
-                  </Button>
-                  {settingsImagePreview && !settingsRemoveImage && (
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setSettingsImageFile(null)
-                        setSettingsImagePreview(null)
-                        setSettingsRemoveImage(true)
-                        if (settingsFileInputRef.current) { try { settingsFileInputRef.current.value = '' } catch {} }
-                      }}
-                      sx={{
-                        color: '#ff6b6b',
-                        borderColor: 'rgba(255,107,107,0.5)',
-                        borderRadius: 2,
-                        px: 2,
-                        fontWeight: 600,
-                        fontSize: 13,
-                        '&:hover': {
-                          borderColor: '#ff6b6b',
-                          backgroundColor: 'rgba(255,107,107,0.08)',
-                        },
-                      }}
-                    >
-                      Remove
-                    </Button>
+                  {canManageLeagueSettings ? (
+                    <>
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        startIcon={<CloudUpload />}
+                        sx={{
+                          color: '#0388E3',
+                          borderColor: 'rgba(3,136,227,0.5)',
+                          borderRadius: 2,
+                          px: 2,
+                          fontWeight: 600,
+                          fontSize: 13,
+                          '&:hover': {
+                            borderColor: '#0388E3',
+                            backgroundColor: 'rgba(3,136,227,0.08)',
+                          },
+                        }}
+                      >
+                        {settingsImagePreview && !settingsRemoveImage ? 'Change Image' : 'Upload Image'}
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          ref={settingsFileInputRef}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            if (!validateLeagueImageFile(file)) {
+                              try { (e.target as HTMLInputElement).value = '' } catch {}
+                              return
+                            }
+                            setSettingsImageFile(file)
+                            setSettingsRemoveImage(false)
+                            const reader = new FileReader()
+                            reader.onload = (ev) => setSettingsImagePreview(ev.target?.result as string)
+                            reader.readAsDataURL(file)
+                          }}
+                          onClick={(e) => { try { (e.target as HTMLInputElement).value = '' } catch {} }}
+                        />
+                      </Button>
+                      {settingsImagePreview && !settingsRemoveImage && (
+                        <Button
+                          variant="outlined"
+                          onClick={() => {
+                            setSettingsImageFile(null)
+                            setSettingsImagePreview(null)
+                            setSettingsRemoveImage(true)
+                            if (settingsFileInputRef.current) { try { settingsFileInputRef.current.value = '' } catch {} }
+                          }}
+                          sx={{
+                            color: '#ff6b6b',
+                            borderColor: 'rgba(255,107,107,0.5)',
+                            borderRadius: 2,
+                            px: 2,
+                            fontWeight: 600,
+                            fontSize: 13,
+                            '&:hover': {
+                              borderColor: '#ff6b6b',
+                              backgroundColor: 'rgba(255,107,107,0.08)',
+                            },
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                      Only league admins can change league image settings.
+                    </Typography>
                   )}
                 </Box>
               </FormControl>
@@ -1579,11 +1732,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
                   <FormControlLabel
                     value="active"
+                    disabled={!canManageLeagueSettings}
                     control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
                     label="Active"
                   />
                   <FormControlLabel
                     value="inactive"
+                    disabled={!canManageLeagueSettings}
                     control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: 'red' } }} />}
                     label="Inactive"
                   />
@@ -1599,7 +1754,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   type="number"
                   value={seasonMaxGames}
                   onChange={(e) => setSeasonMaxGames(Number(e.target.value))}
-                  disabled={!selectedSeasonId}
+                  disabled={!selectedSeasonId || !canManageLeagueSettings}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       color: '#E5E7EB',
@@ -1619,7 +1774,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   <Switch
                     checked={seasonShowPoints}
                     onChange={(e) => setSeasonShowPoints(e.target.checked)}
-                    disabled={!selectedSeasonId}
+                    disabled={!selectedSeasonId || !canManageLeagueSettings}
                     sx={{
                       '& .MuiSwitch-switchBase': {
                         color: '#9CA3AF',
@@ -1659,7 +1814,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 Manage members
               </Typography>
               <List sx={{ py: 0 }}>
-                {sortedMembers.map((member: User, index: number) => {
+                {sortedSeasonMembers.map((member: User, index: number) => {
                   const memberName = `${member.firstName} ${member.lastName}`.trim()
                   const isLeagueAdmin = isUserLeagueAdmin(member.id)
                   const isCurrentUser = member.id === currentUserId
@@ -1733,12 +1888,17 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           </Tooltip>
                         )}
                       </ListItem>
-                      {index < (sortedMembers?.length || 0) - 1 && (
+                      {index < (sortedSeasonMembers?.length || 0) - 1 && (
                         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
                       )}
                     </Box>
                   )
                 })}
+                {sortedSeasonMembers.length === 0 && (
+                  <Typography variant="body2" sx={{ color: '#9CA3AF', px: 2, py: 1 }}>
+                    No active members found in this selected season.
+                  </Typography>
+                )}
               </List>
             </Box>
           </Grid>
@@ -1835,35 +1995,51 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               Leave League
             </Button>
           )}
-          <Button
-            variant="contained"
-            color="error"
-            onClick={openArchiveSeasonConfirm}
-            disabled={!currentSeason || seasonArchiveLoading}
-            sx={{
-              // borderColor: 'rgba(255,107,107,0.55)',
-              // color: '#ff6b6b',
-              width: { xs: '100%', md: 'auto' },
-              flex: { md: 1 },
-              minHeight: { xs: 42, md: 'auto' },
-              // '&:hover': { borderColor: '#ff6b6b', bgcolor: 'rgba(255,107,107,0.08)' },
-              // '&:disabled': { borderColor: 'rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.45)' },
-            }}
-          >
-            {seasonArchiveLoading ? 'Archiving Season...' : 'Delete Season'}
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            // onClick={onDelete}
-             onClick={() => {
-                 if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
+          {!canManageLeagueSettings && currentUserInSelectedSeason && (
+            <Button
+              startIcon={<ExitToApp />}
+              variant="contained"
+              onClick={() => { void handleLeaveSelectedSeason() }}
+              sx={{
+                bgcolor: '#e56a16',
+                color: '#fff',
+                width: { xs: '100%', md: 'auto' },
+                flex: { md: 1 },
+                minHeight: { xs: 42, md: 'auto' },
+                '&:hover': { bgcolor: '#c75712' },
+              }}
+            >
+              Leave Season
+            </Button>
+          )}
+          {canManageLeagueSettings && (
+            <>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={openArchiveSeasonConfirm}
+                disabled={!currentSeason || seasonArchiveLoading}
+                sx={{
+                  width: { xs: '100%', md: 'auto' },
+                  flex: { md: 1 },
+                  minHeight: { xs: 42, md: 'auto' },
+                }}
+              >
+                {seasonArchiveLoading ? 'Archiving Season...' : 'Delete Season'}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => {
+                  if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
                   onArchive?.();
                 }}
-            sx={{ width: { xs: '100%', md: 'auto' }, flex: { md: 1 }, minHeight: { xs: 42, md: 'auto' } }}
-            >
-            Delete League
-          </Button>
+                sx={{ width: { xs: '100%', md: 'auto' }, flex: { md: 1 }, minHeight: { xs: 42, md: 'auto' } }}
+              >
+                Delete League
+              </Button>
+            </>
+          )}
           {/* <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
@@ -1929,19 +2105,21 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           >
             Archived Seasons ({archivedSeasons.length})
           </Button> */}
-          <Button
-            onClick={handleUpdate}
-            variant="contained"
-            sx={{
-              bgcolor: '#27ab83',
-              width: { xs: '100%', md: 'auto' },
-              flex: { md: 1 },
-              minHeight: { xs: 42, md: 'auto' },
-              '&:hover': { bgcolor: '#1e8463' },
-            }}
-          >
-            Update League
-          </Button>
+          {canManageLeagueSettings && (
+            <Button
+              onClick={handleUpdate}
+              variant="contained"
+              sx={{
+                bgcolor: '#27ab83',
+                width: { xs: '100%', md: 'auto' },
+                flex: { md: 1 },
+                minHeight: { xs: 42, md: 'auto' },
+                '&:hover': { bgcolor: '#1e8463' },
+              }}
+            >
+              Update League
+            </Button>
+          )}
         </Box>
       </DialogActions>
 
@@ -2381,6 +2559,58 @@ function AllLeagues() {
     }
     return false;
   }, [user?.id]);
+
+  useEffect(() => {
+    if (selectedLeague) {
+      const refreshedSelected = leagues.find((leagueItem) => String(leagueItem.id) === String(selectedLeague.id));
+      if (refreshedSelected) {
+        const selectedSeasonCount = Array.isArray((selectedLeague as League & { seasons?: Season[] }).seasons)
+          ? ((selectedLeague as League & { seasons?: Season[] }).seasons as Season[]).length
+          : 0;
+        const refreshedSeasonCount = Array.isArray((refreshedSelected as LeagueWithStatus & { seasons?: Season[] }).seasons)
+          ? (((refreshedSelected as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).length)
+          : 0;
+        const needsSelectedSync =
+          String(selectedLeague.updatedAt || '') !== String(refreshedSelected.updatedAt || '') ||
+          (selectedLeague.members?.length || 0) !== (refreshedSelected.members?.length || 0) ||
+          (selectedLeague.administrators?.length || 0) !== (refreshedSelected.administrators?.length || 0) ||
+          (selectedLeague.matches?.length || 0) !== (refreshedSelected.matches?.length || 0) ||
+          selectedSeasonCount !== refreshedSeasonCount;
+
+        if (needsSelectedSync) {
+          setSelectedLeague((prev) => {
+            if (!prev || String(prev.id) !== String(refreshedSelected.id)) return prev;
+            return { ...prev, ...refreshedSelected };
+          });
+        }
+      }
+    }
+
+    if (adminSettingsLeague) {
+      const refreshedAdminLeague = leagues.find((leagueItem) => String(leagueItem.id) === String(adminSettingsLeague.id));
+      if (refreshedAdminLeague) {
+        const adminSeasonCount = Array.isArray((adminSettingsLeague as League & { seasons?: Season[] }).seasons)
+          ? ((adminSettingsLeague as League & { seasons?: Season[] }).seasons as Season[]).length
+          : 0;
+        const refreshedAdminSeasonCount = Array.isArray((refreshedAdminLeague as LeagueWithStatus & { seasons?: Season[] }).seasons)
+          ? (((refreshedAdminLeague as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).length)
+          : 0;
+        const needsAdminSync =
+          String(adminSettingsLeague.updatedAt || '') !== String(refreshedAdminLeague.updatedAt || '') ||
+          (adminSettingsLeague.members?.length || 0) !== (refreshedAdminLeague.members?.length || 0) ||
+          (adminSettingsLeague.administrators?.length || 0) !== (refreshedAdminLeague.administrators?.length || 0) ||
+          (adminSettingsLeague.matches?.length || 0) !== (refreshedAdminLeague.matches?.length || 0) ||
+          adminSeasonCount !== refreshedAdminSeasonCount;
+
+        if (needsAdminSync) {
+          setAdminSettingsLeague((prev) => {
+            if (!prev || String(prev.id) !== String(refreshedAdminLeague.id)) return prev;
+            return { ...prev, ...refreshedAdminLeague };
+          });
+        }
+      }
+    }
+  }, [adminSettingsLeague, leagues, selectedLeague]);
 
   // Dynamic years: keep previous years that exist in leagues, and always keep current/latest year on top.
   const yearOptions = useMemo(() => {
@@ -3279,6 +3509,71 @@ function AllLeagues() {
     }
   };
 
+  const handleLeaveActiveSeason = async () => {
+    const league = selectedLeague || adminSettingsLeague;
+    if (!league || !token) return;
+
+    const leagueWithSeasons = league as League & { seasons?: Season[]; currentSeason?: Season | null };
+    const seasons = Array.isArray(leagueWithSeasons.seasons) ? leagueWithSeasons.seasons : [];
+    const nonArchivedSeasons = seasons.filter((season) => !Boolean(season.archived) && !Boolean((season as Season & { deleted?: boolean }).deleted));
+    const activeSeason = nonArchivedSeasons.find((season) => season.isActive)
+      || leagueWithSeasons.currentSeason
+      || nonArchivedSeasons.sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0))[0]
+      || null;
+
+    if (!activeSeason?.id) {
+      toast.error('No active season found')
+      return;
+    }
+
+    const seasonName = activeSeason.name?.trim() || `Season ${activeSeason.seasonNumber || ''}`.trim();
+    if (!window.confirm(`Leave ${seasonName}?`)) return;
+
+    const attempts = [
+      `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${activeSeason.id}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${activeSeason.id}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${activeSeason.id}/leave`,
+    ];
+
+    let success = false;
+    let message = 'Failed to leave active season';
+
+    for (const url of attempts) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = isRecord(payloadUnknown) ? payloadUnknown as { success?: boolean; message?: string } : {};
+
+        if (response.ok && payload.success !== false) {
+          success = true;
+          break;
+        }
+        if (payload.message) message = payload.message;
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : '';
+        if (errMsg) message = errMsg;
+      }
+    }
+
+    if (!success) {
+      toast.error(message);
+      return;
+    }
+
+    toast.success('You left the active season');
+    await fetchAllLeagues();
+    setOpenMembers(false);
+    setSelectedLeague(null);
+  };
+
   // Admin: settings update/delete handlers for LeagueMembersDialog
   const handleUpdateLeagueFromSettings = useCallback(async (data: LeagueUpdatePayload) => {
     if (!selectedLeague) return;
@@ -4008,6 +4303,11 @@ function AllLeagues() {
                   )
                 : [];
               const totalSeasons = leagueSeasons.length > 0 ? leagueSeasons.length : 1;
+              const activeSeasonForInvite = leagueSeasons.find((season) => season.isActive) || leagueSeasons[0] || null;
+              const inviteSeasonLabel = activeSeasonForInvite
+                ? (activeSeasonForInvite.name?.trim() || `Season ${activeSeasonForInvite.seasonNumber || 1}`)
+                : 'Season 1';
+              const inviteContextLabel = `${inviteSeasonLabel}`;
               return (
                 <Box
                   key={league.id}
@@ -4265,7 +4565,7 @@ function AllLeagues() {
                                   fontWeight: 300,
                                   fontSize: { xs: '10px', sm: '16px' }
                                 }}>
-                                  Invite Code:  {league.inviteCode}
+                                  Invite Code: {inviteContextLabel}: {league.inviteCode}
                                 </Typography>
                                 <IconButton
                                   size="small"
@@ -4298,12 +4598,12 @@ function AllLeagues() {
                                     e.stopPropagation();
                                     const shareData = {
                                       title: `Join ${league.name}`,
-                                      text: `Join my league with code: ${league.inviteCode}`,
+                                      text: `Join ${inviteContextLabel} with code: ${league.inviteCode}`,
                                     };
                                     if (navigator.share) {
                                       navigator.share(shareData).catch(() => {});
                                     } else {
-                                      navigator.clipboard.writeText(`Join ${league.name} with code: ${league.inviteCode}`);
+                                      navigator.clipboard.writeText(`Join ${inviteContextLabel} with code: ${league.inviteCode}`);
                                       toast.success('League info copied!');
                                     }
                                   }}
@@ -4380,7 +4680,7 @@ function AllLeagues() {
                                   justifyContent: { xs: 'flex-start', md: 'flex-start' },
                                   alignItems: 'center',
                                   height: '100%',
-                                  ml: { xs: 0, md: -5 }
+                                  ml: { xs: 0, md: -3 }
                                 }}
                               >
                                 <Image
@@ -5565,8 +5865,10 @@ function AllLeagues() {
         onClose={() => setOpenMembers(false)}
         league={selectedLeague}
         currentUserId={user?.id || ''}
+        onMembersChanged={fetchAllLeagues}
         onRemoveMember={handleRemoveMember}
         onLeaveLeague={handleLeaveLeague}
+        onLeaveSeason={handleLeaveActiveSeason}
         onUpdateLeague={handleUpdateLeagueFromSettings}
         onDeleteLeague={handleDeleteLeagueFromSettings}
         openSettingsOnOpen={Boolean(selectedLeague && (selectedLeague.adminId || selectedLeague.administrators?.[0]?.id) === (user?.id || ''))}
