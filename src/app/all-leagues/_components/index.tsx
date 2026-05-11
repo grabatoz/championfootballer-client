@@ -827,6 +827,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     () => ((league?.matches || []) as MatchWithSeason[]),
     [league?.matches],
   )
+  const leagueHasAnyMatches = useMemo(() => seasonAwareMatches.length > 0, [seasonAwareMatches])
 
   useEffect(() => {
     if (league) {
@@ -917,16 +918,16 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       ...(settingsImageFile ? { imageFile: settingsImageFile } : {}),
       ...(settingsRemoveImage ? { removeImage: true } : {}),
     }
-    await Promise.resolve(onUpdate(updatedData))
-    
-    // Season settings are now handled by the league PATCH endpoint
-    // so we just need to trigger refresh and close
-    if (selectedSeasonId) {
+    try {
+      await Promise.resolve(onUpdate(updatedData))
       toast.success('Settings updated successfully')
       if (onMembersChanged) {
         await Promise.resolve(onMembersChanged())
       }
       onClose()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to update league settings'
+      toast.error(msg)
     }
   }
 
@@ -2031,8 +2032,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 variant="contained"
                 color="error"
                 onClick={() => {
-                  if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
-                  onArchive?.();
+                  if (leagueHasAnyMatches) {
+                    if (!window.confirm('This League will be moved to Archived Leagues. You can restore it or permanently delete it later from Archived Leagues Section..')) return;
+                    onArchive?.();
+                    return;
+                  }
+
+                  onDelete?.();
                 }}
                 sx={{ width: { xs: '100%', md: 'auto' }, flex: { md: 1 }, minHeight: { xs: 42, md: 'auto' } }}
               >
@@ -3577,90 +3583,167 @@ function AllLeagues() {
   // Admin: settings update/delete handlers for LeagueMembersDialog
   const handleUpdateLeagueFromSettings = useCallback(async (data: LeagueUpdatePayload) => {
     if (!selectedLeague) return;
-    try {
-      const hasImageChange = !!data.imageFile || !!data.removeImage;
-      let fetchOptions: RequestInit;
+    const hasImageChange = !!data.imageFile || !!data.removeImage;
+    let fetchOptions: RequestInit;
 
-      if (hasImageChange) {
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('active', String(data.active));
-        formData.append('maxGames', String(data.maxGames));
-        formData.append('showPoints', String(data.showPoints));
-        if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
-        if (data.seasonId) formData.append('seasonId', data.seasonId);
-        if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
-        if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
-        if (data.imageFile) formData.append('image', data.imageFile);
-        if (data.removeImage) formData.append('removeImage', 'true');
-        fetchOptions = {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData,
-        };
-      } else {
-        fetchOptions = {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: data.name,
-            active: data.active,
-            maxGames: data.maxGames,
-            showPoints: data.showPoints,
-            admins: data.admins,
-            seasonId: data.seasonId,
-            seasonMaxGames: data.seasonMaxGames,
-            seasonShowPoints: data.seasonShowPoints,
-          }),
-        };
-      }
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, fetchOptions);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || json.success === false) {
-        throw new Error(json.message || 'Failed to update league');
-      }
-
-      const newImage = json.league?.image ?? (data.removeImage ? '' : selectedLeague.image);
-
-      toast.success('League updated');
-      // Update local list optimistically
-      setLeagues(prev => prev.map(l => String(l.id) === String(selectedLeague.id) ? {
-        ...l,
-        name: data.name ?? l.name,
-        active: data.active ?? l.active,
-        maxGames: data.maxGames ?? l.maxGames,
-        showPoints: data.showPoints ?? l.showPoints,
-        image: newImage,
-        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
-        administrators: data.admins && data.admins.length > 0
-          ? (l.members || []).filter(m => data.admins!.includes(m.id))
-          : l.administrators,
-        updatedAt: new Date().toISOString(),
-      } : l));
-
-      // Also refresh the selectedLeague details to reflect new admin etc.
-      setSelectedLeague(prev => prev ? {
-        ...prev,
-        name: data.name ?? prev.name,
-        active: data.active ?? prev.active,
-        maxGames: data.maxGames ?? prev.maxGames,
-        showPoints: data.showPoints ?? prev.showPoints,
-        image: newImage,
-        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
-        administrators: data.admins && data.admins.length > 0
-          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
-          : prev.administrators,
-        updatedAt: new Date().toISOString(),
-      } : prev);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to update league';
-      toast.error(msg);
+    if (hasImageChange) {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('active', String(data.active));
+      formData.append('maxGames', String(data.maxGames));
+      formData.append('showPoints', String(data.showPoints));
+      if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
+      if (data.seasonId) formData.append('seasonId', data.seasonId);
+      if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
+      if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+      if (data.imageFile) formData.append('image', data.imageFile);
+      if (data.removeImage) formData.append('removeImage', 'true');
+      fetchOptions = {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      };
+    } else {
+      fetchOptions = {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          active: data.active,
+          maxGames: data.maxGames,
+          showPoints: data.showPoints,
+          admins: data.admins,
+          seasonId: data.seasonId,
+          seasonMaxGames: data.seasonMaxGames,
+          seasonShowPoints: data.seasonShowPoints,
+        }),
+      };
     }
-  }, [selectedLeague, token]);
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}`, fetchOptions);
+    const jsonUnknown: unknown = await res.json().catch(() => ({}));
+    const json = isRecord(jsonUnknown) ? (jsonUnknown as Record<string, unknown>) : {};
+
+    if (!res.ok || json.success === false) {
+      const serverMessage = typeof json.message === 'string' ? json.message.trim() : '';
+      const normalizedServerMessage = serverMessage.toLowerCase();
+      const looksLikeUploadError =
+        res.status === 413 ||
+        normalizedServerMessage.includes('file too large') ||
+        normalizedServerMessage.includes('limit_file_size') ||
+        normalizedServerMessage.includes('payload too large') ||
+        normalizedServerMessage.includes('size limit') ||
+        normalizedServerMessage.includes('larger than');
+      const genericServerMessage =
+        !serverMessage ||
+        normalizedServerMessage.includes('something went wrong') ||
+        normalizedServerMessage.includes('failed to update league');
+
+      const uploadMessage = `Unable to upload image. Please ensure the file size is under ${LEAGUE_IMAGE_MAX_SIZE_MB}MB.`;
+      const message = (hasImageChange && (looksLikeUploadError || genericServerMessage))
+        ? uploadMessage
+        : (serverMessage || 'Failed to update league');
+      throw new Error(message);
+    }
+
+    const leaguePayload = isRecord(json.league) ? (json.league as Record<string, unknown>) : null;
+    const nextLeagueName =
+      typeof leaguePayload?.name === 'string' && leaguePayload.name.trim().length > 0
+        ? leaguePayload.name
+        : (data.name ?? selectedLeague.name);
+    const nextLeagueActive = typeof leaguePayload?.active === 'boolean' ? leaguePayload.active : data.active;
+    const nextLeagueMaxGames = typeof leaguePayload?.maxGames === 'number' ? leaguePayload.maxGames : data.maxGames;
+    const nextLeagueShowPoints = typeof leaguePayload?.showPoints === 'boolean' ? leaguePayload.showPoints : data.showPoints;
+    const nextLeagueImage =
+      typeof leaguePayload?.image === 'string'
+        ? leaguePayload.image
+        : (data.removeImage ? '' : selectedLeague.image);
+    const nextAdminId = data.admins && data.admins.length > 0 ? data.admins[0] : selectedLeague.adminId;
+    const selectedSeasonId = data.seasonId ? String(data.seasonId) : '';
+    const updatedAtIso = new Date().toISOString();
+
+    const patchSeasons = (rawSeasons?: Season[]): Season[] | undefined => {
+      if (!Array.isArray(rawSeasons)) return rawSeasons;
+      if (!selectedSeasonId) return rawSeasons;
+      return rawSeasons.map((season) => (
+        String(season.id) === selectedSeasonId
+          ? {
+            ...season,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+          }
+          : season
+      ));
+    };
+
+    // Update local list optimistically
+    setLeagues(prev => prev.map(l => {
+      if (String(l.id) !== String(selectedLeague.id)) return l;
+      const leagueWithSeasons = l as League & { seasons?: Season[]; currentSeason?: Season | null };
+      const nextSeasons = patchSeasons(leagueWithSeasons.seasons);
+      const nextCurrentSeason = leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
+        ? {
+          ...leagueWithSeasons.currentSeason,
+          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+        }
+        : leagueWithSeasons.currentSeason;
+
+      return {
+        ...leagueWithSeasons,
+        name: nextLeagueName ?? leagueWithSeasons.name,
+        active: nextLeagueActive ?? leagueWithSeasons.active,
+        maxGames: nextLeagueMaxGames ?? leagueWithSeasons.maxGames,
+        showPoints: nextLeagueShowPoints ?? leagueWithSeasons.showPoints,
+        image: nextLeagueImage,
+        adminId: nextAdminId,
+        administrators: data.admins && data.admins.length > 0
+          ? (leagueWithSeasons.members || []).filter(m => data.admins!.includes(m.id))
+          : leagueWithSeasons.administrators,
+        seasons: nextSeasons,
+        currentSeason: nextCurrentSeason,
+        updatedAt: updatedAtIso,
+      } as LeagueWithStatus;
+    }));
+
+    // Keep selected league details in sync
+    setSelectedLeague(prev => {
+      if (!prev) return prev;
+      const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
+      const nextSeasons = patchSeasons(prevWithSeasons.seasons);
+      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+        ? {
+          ...prevWithSeasons.currentSeason,
+          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+        }
+        : prevWithSeasons.currentSeason;
+
+      return {
+        ...prevWithSeasons,
+        name: nextLeagueName ?? prevWithSeasons.name,
+        active: nextLeagueActive ?? prevWithSeasons.active,
+        maxGames: nextLeagueMaxGames ?? prevWithSeasons.maxGames,
+        showPoints: nextLeagueShowPoints ?? prevWithSeasons.showPoints,
+        image: nextLeagueImage,
+        adminId: nextAdminId,
+        administrators: data.admins && data.admins.length > 0
+          ? (prevWithSeasons.members || []).filter(m => data.admins!.includes(m.id))
+          : prevWithSeasons.administrators,
+        seasons: nextSeasons,
+        currentSeason: nextCurrentSeason,
+        updatedAt: updatedAtIso,
+      };
+    });
+
+    dispatchLeagueMutationEvent('league-updated', {
+      leagueId: String(selectedLeague.id),
+      reason: 'settings-updated',
+    });
+  }, [selectedLeague, token, dispatchLeagueMutationEvent]);
 
   const handleDeleteLeagueFromSettings = useCallback(async () => {
     if (!selectedLeague) return;
@@ -3672,7 +3755,9 @@ function AllLeagues() {
           'Authorization': `Bearer ${token}`,
         },
       });
-      if (!res.ok) throw new Error('Failed to delete league');
+      const payloadUnknown: unknown = await res.json().catch(() => ({}));
+      const payload = isRecord(payloadUnknown) ? payloadUnknown as { success?: boolean; message?: string } : {};
+      if (!res.ok || payload.success === false) throw new Error(payload.message || 'Failed to delete league');
       toast.success('League deleted');
       // Remove from local state
       const deletedLeagueId = String(selectedLeague.id);
@@ -3740,109 +3825,196 @@ function AllLeagues() {
   // Admin Settings dialog: update/delete handlers that operate on adminSettingsLeague
   const handleUpdateLeagueFromAdminSettings = useCallback(async (data: LeagueUpdatePayload) => {
     if (!adminSettingsLeague) return;
-    try {
-      const hasImageChange = !!data.imageFile || !!data.removeImage;
-      let fetchOptions: RequestInit;
+    const hasImageChange = !!data.imageFile || !!data.removeImage;
+    let fetchOptions: RequestInit;
 
-      if (hasImageChange) {
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('active', String(data.active));
-        formData.append('maxGames', String(data.maxGames));
-        formData.append('showPoints', String(data.showPoints));
-        if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
-        if (data.seasonId) formData.append('seasonId', data.seasonId);
-        if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
-        if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
-        if (data.imageFile) formData.append('image', data.imageFile);
-        if (data.removeImage) formData.append('removeImage', 'true');
-        fetchOptions = {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData,
-        };
-      } else {
-        fetchOptions = {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: data.name,
-            active: data.active,
-            maxGames: data.maxGames,
-            showPoints: data.showPoints,
-            admins: data.admins,
-            seasonId: data.seasonId,
-            seasonMaxGames: data.seasonMaxGames,
-            seasonShowPoints: data.seasonShowPoints,
-          }),
-        };
-      }
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, fetchOptions);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || json.success === false) {
-        throw new Error(json.message || 'Failed to update league');
-      }
-
-      const newImage = json.league?.image ?? (data.removeImage ? '' : adminSettingsLeague.image);
-
-      toast.success('League updated');
-
-      // Update leagues list optimistically
-      setLeagues(prev => prev.map(l => String(l.id) === String(adminSettingsLeague.id) ? {
-        ...l,
-        name: data.name ?? l.name,
-        active: data.active ?? l.active,
-        maxGames: data.maxGames ?? l.maxGames,
-        showPoints: data.showPoints ?? l.showPoints,
-        image: newImage,
-        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : l.adminId,
-        administrators: data.admins && data.admins.length > 0
-          ? (l.members || []).filter(m => data.admins!.includes(m.id))
-          : l.administrators,
-        updatedAt: new Date().toISOString(),
-      } : l));
-
-      // Update adminSettingsLeague details
-      setAdminSettingsLeague(prev => prev ? {
-        ...prev,
-        name: data.name ?? prev.name,
-        active: data.active ?? prev.active,
-        maxGames: data.maxGames ?? prev.maxGames,
-        showPoints: data.showPoints ?? prev.showPoints,
-        image: newImage,
-        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
-        administrators: data.admins && data.admins.length > 0
-          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
-          : prev.administrators,
-        updatedAt: new Date().toISOString(),
-      } : prev);
-
-      // If currently selectedLeague matches, keep it in sync as well
-      setSelectedLeague(prev => (prev && prev.id === adminSettingsLeague.id) ? {
-        ...prev,
-        name: data.name ?? prev.name,
-        active: data.active ?? prev.active,
-        maxGames: data.maxGames ?? prev.maxGames,
-        showPoints: data.showPoints ?? prev.showPoints,
-        image: newImage,
-        adminId: data.admins && data.admins.length > 0 ? data.admins[0] : prev.adminId,
-        administrators: data.admins && data.admins.length > 0
-          ? (prev.members || []).filter(m => data.admins!.includes(m.id))
-          : prev.administrators,
-        updatedAt: new Date().toISOString(),
-      } : prev);
-
-      // Optional: refresh full data for consistency
-      await fetchAllLeagues();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to update league';
-      toast.error(msg);
+    if (hasImageChange) {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('active', String(data.active));
+      formData.append('maxGames', String(data.maxGames));
+      formData.append('showPoints', String(data.showPoints));
+      if (data.admins?.length) formData.append('admins', JSON.stringify(data.admins));
+      if (data.seasonId) formData.append('seasonId', data.seasonId);
+      if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
+      if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+      if (data.imageFile) formData.append('image', data.imageFile);
+      if (data.removeImage) formData.append('removeImage', 'true');
+      fetchOptions = {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      };
+    } else {
+      fetchOptions = {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          active: data.active,
+          maxGames: data.maxGames,
+          showPoints: data.showPoints,
+          admins: data.admins,
+          seasonId: data.seasonId,
+          seasonMaxGames: data.seasonMaxGames,
+          seasonShowPoints: data.seasonShowPoints,
+        }),
+      };
     }
-  }, [adminSettingsLeague, token, fetchAllLeagues]);
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${adminSettingsLeague.id}`, fetchOptions);
+    const jsonUnknown: unknown = await res.json().catch(() => ({}));
+    const json = isRecord(jsonUnknown) ? (jsonUnknown as Record<string, unknown>) : {};
+    if (!res.ok || json.success === false) {
+      const serverMessage = typeof json.message === 'string' ? json.message.trim() : '';
+      const normalizedServerMessage = serverMessage.toLowerCase();
+      const looksLikeUploadError =
+        res.status === 413 ||
+        normalizedServerMessage.includes('file too large') ||
+        normalizedServerMessage.includes('limit_file_size') ||
+        normalizedServerMessage.includes('payload too large') ||
+        normalizedServerMessage.includes('size limit') ||
+        normalizedServerMessage.includes('larger than');
+      const genericServerMessage =
+        !serverMessage ||
+        normalizedServerMessage.includes('something went wrong') ||
+        normalizedServerMessage.includes('failed to update league');
+
+      const uploadMessage = `Unable to upload image. Please ensure the file size is under ${LEAGUE_IMAGE_MAX_SIZE_MB}MB.`;
+      const message = (hasImageChange && (looksLikeUploadError || genericServerMessage))
+        ? uploadMessage
+        : (serverMessage || 'Failed to update league');
+      throw new Error(message);
+    }
+
+    const leaguePayload = isRecord(json.league) ? (json.league as Record<string, unknown>) : null;
+    const nextLeagueName =
+      typeof leaguePayload?.name === 'string' && leaguePayload.name.trim().length > 0
+        ? leaguePayload.name
+        : (data.name ?? adminSettingsLeague.name);
+    const nextLeagueActive = typeof leaguePayload?.active === 'boolean' ? leaguePayload.active : data.active;
+    const nextLeagueMaxGames = typeof leaguePayload?.maxGames === 'number' ? leaguePayload.maxGames : data.maxGames;
+    const nextLeagueShowPoints = typeof leaguePayload?.showPoints === 'boolean' ? leaguePayload.showPoints : data.showPoints;
+    const nextLeagueImage =
+      typeof leaguePayload?.image === 'string'
+        ? leaguePayload.image
+        : (data.removeImage ? '' : adminSettingsLeague.image);
+    const nextAdminId = data.admins && data.admins.length > 0 ? data.admins[0] : adminSettingsLeague.adminId;
+    const selectedSeasonId = data.seasonId ? String(data.seasonId) : '';
+    const updatedAtIso = new Date().toISOString();
+
+    const patchSeasons = (rawSeasons?: Season[]): Season[] | undefined => {
+      if (!Array.isArray(rawSeasons)) return rawSeasons;
+      if (!selectedSeasonId) return rawSeasons;
+      return rawSeasons.map((season) => (
+        String(season.id) === selectedSeasonId
+          ? {
+            ...season,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+          }
+          : season
+      ));
+    };
+
+    // Update leagues list optimistically
+    setLeagues(prev => prev.map(l => {
+      if (String(l.id) !== String(adminSettingsLeague.id)) return l;
+      const leagueWithSeasons = l as League & { seasons?: Season[]; currentSeason?: Season | null };
+      const nextSeasons = patchSeasons(leagueWithSeasons.seasons);
+      const nextCurrentSeason = leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
+        ? {
+          ...leagueWithSeasons.currentSeason,
+          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+        }
+        : leagueWithSeasons.currentSeason;
+
+      return {
+        ...leagueWithSeasons,
+        name: nextLeagueName ?? leagueWithSeasons.name,
+        active: nextLeagueActive ?? leagueWithSeasons.active,
+        maxGames: nextLeagueMaxGames ?? leagueWithSeasons.maxGames,
+        showPoints: nextLeagueShowPoints ?? leagueWithSeasons.showPoints,
+        image: nextLeagueImage,
+        adminId: nextAdminId,
+        administrators: data.admins && data.admins.length > 0
+          ? (leagueWithSeasons.members || []).filter(m => data.admins!.includes(m.id))
+          : leagueWithSeasons.administrators,
+        seasons: nextSeasons,
+        currentSeason: nextCurrentSeason,
+        updatedAt: updatedAtIso,
+      } as LeagueWithStatus;
+    }));
+
+    // Update admin settings league details
+    setAdminSettingsLeague(prev => {
+      if (!prev) return prev;
+      const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
+      const nextSeasons = patchSeasons(prevWithSeasons.seasons);
+      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+        ? {
+          ...prevWithSeasons.currentSeason,
+          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+        }
+        : prevWithSeasons.currentSeason;
+
+      return {
+        ...prevWithSeasons,
+        name: nextLeagueName ?? prevWithSeasons.name,
+        active: nextLeagueActive ?? prevWithSeasons.active,
+        maxGames: nextLeagueMaxGames ?? prevWithSeasons.maxGames,
+        showPoints: nextLeagueShowPoints ?? prevWithSeasons.showPoints,
+        image: nextLeagueImage,
+        adminId: nextAdminId,
+        administrators: data.admins && data.admins.length > 0
+          ? (prevWithSeasons.members || []).filter(m => data.admins!.includes(m.id))
+          : prevWithSeasons.administrators,
+        seasons: nextSeasons,
+        currentSeason: nextCurrentSeason,
+        updatedAt: updatedAtIso,
+      };
+    });
+
+    // If currently selectedLeague matches, keep it in sync as well
+    setSelectedLeague(prev => {
+      if (!prev || prev.id !== adminSettingsLeague.id) return prev;
+      const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
+      const nextSeasons = patchSeasons(prevWithSeasons.seasons);
+      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+        ? {
+          ...prevWithSeasons.currentSeason,
+          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+        }
+        : prevWithSeasons.currentSeason;
+
+      return {
+        ...prevWithSeasons,
+        name: nextLeagueName ?? prevWithSeasons.name,
+        active: nextLeagueActive ?? prevWithSeasons.active,
+        maxGames: nextLeagueMaxGames ?? prevWithSeasons.maxGames,
+        showPoints: nextLeagueShowPoints ?? prevWithSeasons.showPoints,
+        image: nextLeagueImage,
+        adminId: nextAdminId,
+        administrators: data.admins && data.admins.length > 0
+          ? (prevWithSeasons.members || []).filter(m => data.admins!.includes(m.id))
+          : prevWithSeasons.administrators,
+        seasons: nextSeasons,
+        currentSeason: nextCurrentSeason,
+        updatedAt: updatedAtIso,
+      };
+    });
+
+    dispatchLeagueMutationEvent('league-updated', {
+      leagueId: String(adminSettingsLeague.id),
+      reason: 'admin-settings-updated',
+    });
+  }, [adminSettingsLeague, token, dispatchLeagueMutationEvent]);
 
   const handleDeleteLeagueFromAdminSettings = useCallback(async () => {
     if (!adminSettingsLeague) return;
@@ -3854,7 +4026,9 @@ function AllLeagues() {
           'Authorization': `Bearer ${token}`,
         },
       });
-      if (!res.ok) throw new Error('Failed to delete league');
+      const payloadUnknown: unknown = await res.json().catch(() => ({}));
+      const payload = isRecord(payloadUnknown) ? payloadUnknown as { success?: boolean; message?: string } : {};
+      if (!res.ok || payload.success === false) throw new Error(payload.message || 'Failed to delete league');
       toast.success('League deleted');
       // Remove from local state
       const deletedLeagueId = String(adminSettingsLeague.id);

@@ -1368,13 +1368,14 @@ export default function LeagueDetailPage() {
                     } as League;
                 });
 
-                // Show only visible leagues (active + non-archived + not completed)
-                const activeLeagues = simpleLeagues.filter(
-                    (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+                // Keep leagues visible for switching, including inactive ones.
+                // Only hide archived/completed leagues.
+                const visibleLeagues = simpleLeagues.filter(
+                    (l) => l.archived !== true && !leagueIsCompleted(l)
                 );
 
                 // Sort alphabetically by name
-                activeLeagues.sort((a, b) => {
+                visibleLeagues.sort((a, b) => {
                     const an = (a?.name ?? '').toString().trim().toLowerCase();
                     const bn = (b?.name ?? '').toString().trim().toLowerCase();
                     if (an < bn) return -1;
@@ -1382,13 +1383,13 @@ export default function LeagueDetailPage() {
                     return String(a.id).localeCompare(String(b.id));
                 });
 
-                setAllLeagues(activeLeagues);
+                setAllLeagues(visibleLeagues);
 
                 // Debug log
                 console.log('[League Detail] Fetched leagues:', {
                     total: simpleLeagues.length,
-                    active: activeLeagues.length,
-                    completed: simpleLeagues.length - activeLeagues.length
+                    visible: visibleLeagues.length,
+                    hidden: simpleLeagues.length - visibleLeagues.length
                 });
             }
         } catch (error) {
@@ -1443,6 +1444,9 @@ export default function LeagueDetailPage() {
     useEffect(() => {
         if (!token || !leagueId || allLeagues.length === 0) return;
 
+        // If current route league already loaded, do not auto-switch to another league.
+        if (league && String(league.id) === String(leagueId)) return;
+
         const currentLeagueExists = allLeagues.some((leagueItem) => String(leagueItem.id) === String(leagueId));
         if (currentLeagueExists) return;
 
@@ -1469,7 +1473,7 @@ export default function LeagueDetailPage() {
 
         setError(null);
         router.replace(`/league/${encodeURIComponent(fallbackLeagueId)}?tab=table`, { scroll: false });
-    }, [token, leagueId, allLeagues, router]);
+    }, [token, leagueId, allLeagues, router, league]);
 
     // Fetch seasons from dedicated endpoint to avoid stale/incomplete seasons lists on league payload
     useEffect(() => {
@@ -1756,6 +1760,8 @@ export default function LeagueDetailPage() {
         }
     };
 
+    const inactiveLeagueMatchMessage = 'This league is currently inactive. To create new matches, please reactivate the league in League Settings.';
+
     // Current season number resolver (no `any`; checks currentSeason, active `seasons`, computedStatus, and top-level fields)
     const resolveSeasonNumber = (l?: League | null): number | undefined => {
         const toNum = (v: unknown): number | undefined => {
@@ -1986,16 +1992,6 @@ export default function LeagueDetailPage() {
             } else {
                 filteredMembers = league.members.filter((member: User) => playersInSeasonSet.has(member.id));
                 console.log('✅ Players from matches:', filteredMembers.length);
-            }
-        }
-        
-        // Always include admin
-        const adminId = league.administrators?.[0]?.id;
-        if (adminId && !filteredMembers.find(m => m.id === adminId)) {
-            const admin = league.members.find((m: User) => m.id === adminId);
-            if (admin) {
-                filteredMembers.push(admin);
-                console.log('✅ Added admin to filtered members');
             }
         }
         
@@ -4095,6 +4091,7 @@ export default function LeagueDetailPage() {
                                     // p: 2
                                 }}>
                                 {isAdmin && (
+                                    league?.active ? (
                                         <Link href={`/league/${leagueId}/match`} passHref>
                                             <Button
                                                 fullWidth
@@ -4102,27 +4099,41 @@ export default function LeagueDetailPage() {
                                                 sx={{
                                                     background: '#dddddd',
                                                     color: '#e1671e',
-                                                    fontSize: { xs: '0.9rem', sm: '1rem' ,md :'1.5rem'},
+                                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
                                                     fontWeight: 600,
                                                     py: 0.5,
                                                     mb: 3,
                                                     borderRadius: 1,
                                                     textTransform: 'none',
-                                                     '&:hover': {
+                                                    '&:hover': {
                                                         background: '#cbcaca',
                                                     },
-                                                    '&.Mui-disabled': {
-                                                        background: 'rgba(255,255,255,0.12)',
-                                                        color: 'rgba(255,255,255,0.3)'
-                                                    }
                                                 }}
-                                               
-                                                disabled={!league.active}
                                             >
-                                             <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                                <span className="mr-2 text-[#656565]">+ </span>   New Match
                                             </Button>
                                         </Link>
-                                    )}
+                                    ) : (
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            onClick={() => toast.error(inactiveLeagueMatchMessage)}
+                                            sx={{
+                                                background: 'rgba(255,255,255,0.12)',
+                                                color: 'rgba(255,255,255,0.45)',
+                                                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
+                                                fontWeight: 600,
+                                                py: 0.5,
+                                                mb: 3,
+                                                borderRadius: 1,
+                                                textTransform: 'none',
+                                                '&:hover': { background: 'rgba(255,255,255,0.18)' },
+                                            }}
+                                        >
+                                            <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                        </Button>
+                                    )
+                                )}
 
                                     {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
@@ -4503,33 +4514,48 @@ export default function LeagueDetailPage() {
                                     // p: 2
                                 }}>
                                     {isAdmin && (
-                                        <Link href={`/league/${leagueId}/match`} passHref>
+                                        league?.active ? (
+                                            <Link href={`/league/${leagueId}/match`} passHref>
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    sx={{
+                                                        background: '#dddddd',
+                                                        color: '#e1671e',
+                                                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
+                                                        fontWeight: 600,
+                                                        py: 0.5,
+                                                        mb: 3,
+                                                        borderRadius: 1,
+                                                        textTransform: 'none',
+                                                        '&:hover': {
+                                                            background: '#cbcaca',
+                                                        },
+                                                    }}
+                                                >
+                                                    <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                                </Button>
+                                            </Link>
+                                        ) : (
                                             <Button
                                                 fullWidth
                                                 variant="contained"
+                                                onClick={() => toast.error(inactiveLeagueMatchMessage)}
                                                 sx={{
-                                                    background: '#dddddd',
-                                                    color: '#e1671e',
-                                                    fontSize: { xs: '0.9rem', sm: '1rem' ,md :'1.5rem'},
+                                                    background: 'rgba(255,255,255,0.12)',
+                                                    color: 'rgba(255,255,255,0.45)',
+                                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
                                                     fontWeight: 600,
                                                     py: 0.5,
                                                     mb: 3,
                                                     borderRadius: 1,
                                                     textTransform: 'none',
-                                                     '&:hover': {
-                                                        background: '#cbcaca',
-                                                    },
-                                                    '&.Mui-disabled': {
-                                                        background: 'rgba(255,255,255,0.12)',
-                                                        color: 'rgba(255,255,255,0.3)'
-                                                    }
+                                                    '&:hover': { background: 'rgba(255,255,255,0.18)' },
                                                 }}
-                                               
-                                                disabled={!league.active}
                                             >
-                                             <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                                <span className="mr-2 text-[#656565]">+ </span>   New Match
                                             </Button>
-                                        </Link>
+                                        )
                                     )}
 
                                     {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
@@ -5396,12 +5422,21 @@ export default function LeagueDetailPage() {
                                                 </div>
                                                 {isAdmin && (
                                                     <div className="col-start-10 col-span-2 justify-self-end">
-                                                        <Link href={`/league/${leagueId}/match`} passHref>
-                                                            <button disabled={!league?.active} className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
-                                                                {/* <Plus className="w-4 h-4 mr-2" /> */}
+                                                        {league?.active ? (
+                                                            <Link href={`/league/${leagueId}/match`} passHref>
+                                                                <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                                    + New Match
+                                                                </button>
+                                                            </Link>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toast.error(inactiveLeagueMatchMessage)}
+                                                                className="bg-white/15 text-white/55 font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap hover:bg-white/20"
+                                                            >
                                                                 + New Match
                                                             </button>
-                                                        </Link>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -6746,5 +6781,6 @@ export default function LeagueDetailPage() {
         </Box>
     );
 }
+
 
 
