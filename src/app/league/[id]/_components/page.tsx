@@ -975,6 +975,7 @@ export default function LeagueDetailPage() {
 
     const fetchLeagueDetails = useCallback(async (seasonIdOverride?: string | null) => {
         try {
+            setError(null);
             console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
 
             // 🔄 Add cache busting to force fresh data from backend
@@ -998,6 +999,7 @@ export default function LeagueDetailPage() {
             const data = await response.json();
             console.log('✅ League details fetched successfully from API', data);
             if (data.success) {
+                setError(null);
                 console.log('✅ Fresh League Data Received:', data.league);
                 console.log('✅ Total Matches:', data.league.matches?.length || 0);
                 console.log('✅ Total Members:', data.league.members?.length || 0);
@@ -1278,10 +1280,11 @@ export default function LeagueDetailPage() {
         if (!token) return;
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store',
             });
 
             interface LeagueData {
@@ -1436,6 +1439,37 @@ export default function LeagueDetailPage() {
         fetchAllLeagues();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
+
+    useEffect(() => {
+        if (!token || !leagueId || allLeagues.length === 0) return;
+
+        const currentLeagueExists = allLeagues.some((leagueItem) => String(leagueItem.id) === String(leagueId));
+        if (currentLeagueExists) return;
+
+        let fallbackLeagueId = '';
+        try {
+            const preferredLeagueId = localStorage.getItem('preferredLeagueId');
+            if (preferredLeagueId && allLeagues.some((leagueItem) => String(leagueItem.id) === String(preferredLeagueId))) {
+                fallbackLeagueId = preferredLeagueId;
+            }
+        } catch {
+            // ignore localStorage errors
+        }
+
+        if (!fallbackLeagueId) {
+            fallbackLeagueId = String(allLeagues[0]?.id || '');
+        }
+        if (!fallbackLeagueId) return;
+
+        try {
+            localStorage.setItem('preferredLeagueId', fallbackLeagueId);
+        } catch {
+            // ignore localStorage errors
+        }
+
+        setError(null);
+        router.replace(`/league/${encodeURIComponent(fallbackLeagueId)}?tab=table`, { scroll: false });
+    }, [token, leagueId, allLeagues, router]);
 
     // Fetch seasons from dedicated endpoint to avoid stale/incomplete seasons lists on league payload
     useEffect(() => {

@@ -2308,8 +2308,25 @@ function AllLeagues() {
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
   const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
   const [pendingSeasonLeague, setPendingSeasonLeague] = useState<LeagueWithStatus | null>(null);
+  const [locallyDeletedLeagueIds, setLocallyDeletedLeagueIds] = useState<string[]>([]);
   // Persist preferred league selection across app
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+
+  const dispatchLeagueMutationEvent = useCallback(
+    (eventName: 'league-created' | 'league-updated' | 'league-deleted', detail: Record<string, unknown>) => {
+      if (typeof window === 'undefined') return;
+      try {
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: { ...detail, timestamp: Date.now() },
+          })
+        );
+      } catch {
+        // ignore event dispatch issues
+      }
+    },
+    []
+  );
 
   const handleSeasonArchivedInState = useCallback(({ leagueId, seasonId }: { leagueId: string; seasonId: string }) => {
     const applySeasonArchive = <T extends { id: string | number }>(
@@ -2502,10 +2519,13 @@ function AllLeagues() {
         try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(joined.id)); } catch {}
         // Update local state with new league at the TOP
         setLeagues(prev => {
-          const filtered = prev.filter(l => l.id !== joined.id);
+          const filtered = prev.filter(l => String(l.id) !== String(joined.id));
           const enriched: LeagueWithStatus = { ...joined };
           return sortLeaguesByRecency([enriched, ...filtered]);
         });
+        setLocallyDeletedLeagueIds(prev => prev.filter((id) => id !== String(joined.id)));
+        dispatchLeagueMutationEvent('league-created', { leagueId: String(joined.id), reason: 'joined-league' });
+        dispatchLeagueMutationEvent('league-updated', { leagueId: String(joined.id), reason: 'joined-league' });
         console.log('Joined league successfully:', joined.name);
       } else {
         console.log('Join succeeded but payload missing league');
@@ -2557,10 +2577,11 @@ function AllLeagues() {
 
       // First get the user's leagues from auth/status
       const ts = Date.now();
-      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?bust=${ts}`, {
+      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&bust=${ts}`, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        cache: 'no-store',
       });
 
       if (authResponse.ok) {
@@ -2615,7 +2636,13 @@ function AllLeagues() {
             })
           );
 
-          setLeagues(sortLeaguesByRecency(detailedLeagues.filter(Boolean) as LeagueWithStatus[]));
+          const sortedLeagues = sortLeaguesByRecency(detailedLeagues.filter(Boolean) as LeagueWithStatus[]);
+          if (locallyDeletedLeagueIds.length > 0) {
+            const deletedIds = new Set(locallyDeletedLeagueIds.map((id) => String(id)));
+            setLeagues(sortedLeagues.filter((leagueItem) => !deletedIds.has(String(leagueItem.id))));
+          } else {
+            setLeagues(sortedLeagues);
+          }
           console.log('Setting detailed leagues:', detailedLeagues);
           console.log('Leagues archived status:', detailedLeagues.map(l => ({ name: l?.name, archived: (l as any)?.archived, active: l?.active })));
         }
@@ -2629,12 +2656,35 @@ function AllLeagues() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, locallyDeletedLeagueIds]);
 
   useEffect(() => {
     if (token) {
       fetchAllLeagues();
     }
+  }, [token, fetchAllLeagues]);
+
+  useEffect(() => {
+    if (!token || typeof window === 'undefined') return;
+
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        void fetchAllLeagues();
+      }, 150);
+    };
+
+    window.addEventListener('league-created', scheduleRefresh as EventListener);
+    window.addEventListener('league-updated', scheduleRefresh as EventListener);
+    window.addEventListener('league-deleted', scheduleRefresh as EventListener);
+
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      window.removeEventListener('league-created', scheduleRefresh as EventListener);
+      window.removeEventListener('league-updated', scheduleRefresh as EventListener);
+      window.removeEventListener('league-deleted', scheduleRefresh as EventListener);
+    };
   }, [token, fetchAllLeagues]);
 
   const handlePermanentDeleteArchivedLeague = useCallback(async (league: LeagueWithStatus) => {
@@ -2655,25 +2705,27 @@ function AllLeagues() {
       if (!res.ok) throw new Error('Failed to delete league');
 
       toast.success('League permanently deleted');
-      setLeagues(prev => prev.filter(l => l.id !== league.id));
+      setLeagues(prev => prev.filter(l => String(l.id) !== leagueId));
+      setLocallyDeletedLeagueIds((prev) => (prev.includes(leagueId) ? prev : [...prev, leagueId]));
+      dispatchLeagueMutationEvent('league-deleted', { leagueId, reason: 'permanent-delete-archived' });
 
-      if (selectedLeague && selectedLeague.id === league.id) {
+      if (selectedLeague && String(selectedLeague.id) === leagueId) {
         setSelectedLeague(null);
         setOpenMembers(false);
       }
-      if (adminSettingsLeague && adminSettingsLeague.id === league.id) {
+      if (adminSettingsLeague && String(adminSettingsLeague.id) === leagueId) {
         setAdminSettingsLeague(null);
         setOpenAdminSettings(false);
       }
 
-      await fetchAllLeagues();
+      void fetchAllLeagues();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to delete league';
       toast.error(msg);
     } finally {
       setArchivedLeagueActionId(null);
     }
-  }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues]);
+  }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   const handleRestoreArchivedSeasonGlobal = useCallback(async (league: LeagueWithStatus, season: Season) => {
     if (!token) return;
@@ -3034,10 +3086,12 @@ function AllLeagues() {
 
           // Add new league at TOP
           setLeagues(prevLeagues => {
-            const filtered = prevLeagues.filter(l => l.id !== normalized.id);
+            const filtered = prevLeagues.filter(l => String(l.id) !== String(normalized.id));
             const enriched: LeagueWithStatus = { ...normalized };
             return sortLeaguesByRecency([enriched, ...filtered]);
           });
+          dispatchLeagueMutationEvent('league-created', { leagueId: String(normalized.id), reason: 'created-league' });
+          dispatchLeagueMutationEvent('league-updated', { leagueId: String(normalized.id), reason: 'created-league' });
           console.log('Added new league to state:', normalized);
         }
       } else {
@@ -3063,7 +3117,7 @@ function AllLeagues() {
 
       if (response.status === 403) {
         // Lost access—remove from UI and inform the user
-        setLeagues(prev => prev.filter(l => l.id !== league.id));
+        setLeagues(prev => prev.filter(l => String(l.id) !== String(league.id)));
         setSelectedLeague(null);
         setOpenMembers(false);
         toast.error("You don't have access to this league anymore");
@@ -3173,7 +3227,7 @@ function AllLeagues() {
         await fetchAllLeagues();
       } else {
         // Optimistic local update for instant UI feedback
-        setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
+        setLeagues(prev => prev.map(l => String(l.id) === String(selectedLeague.id) ? {
           ...l,
           members: Array.isArray(l.members) ? l.members.filter(m => String(m.id) !== String(memberId)) : l.members,
           administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => String(a.id) !== String(memberId)) : l.administrators,
@@ -3279,7 +3333,7 @@ function AllLeagues() {
 
       toast.success('League updated');
       // Update local list optimistically
-      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? {
+      setLeagues(prev => prev.map(l => String(l.id) === String(selectedLeague.id) ? {
         ...l,
         name: data.name ?? l.name,
         active: data.active ?? l.active,
@@ -3326,14 +3380,17 @@ function AllLeagues() {
       if (!res.ok) throw new Error('Failed to delete league');
       toast.success('League deleted');
       // Remove from local state
-      setLeagues(prev => prev.filter(l => l.id !== selectedLeague.id));
+      const deletedLeagueId = String(selectedLeague.id);
+      setLeagues(prev => prev.filter(l => String(l.id) !== deletedLeagueId));
+      setLocallyDeletedLeagueIds((prev) => (prev.includes(deletedLeagueId) ? prev : [...prev, deletedLeagueId]));
+      dispatchLeagueMutationEvent('league-deleted', { leagueId: deletedLeagueId, reason: 'settings-delete' });
       setOpenMembers(false);
       setSelectedLeague(null);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to delete league';
       toast.error(msg);
     }
-  }, [selectedLeague, token]);
+  }, [selectedLeague, token, dispatchLeagueMutationEvent]);
 
   const handleArchiveLeagueFromSettings = useCallback(async () => {
     if (!selectedLeague) return;
@@ -3348,7 +3405,9 @@ function AllLeagues() {
       });
       if (!res.ok) throw new Error('Failed to archive league');
       toast.success('League archived');
-      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? { ...l, active: false, archived: true } as typeof l : l));
+      const updatedLeagueId = String(selectedLeague.id);
+      setLeagues(prev => prev.map(l => String(l.id) === updatedLeagueId ? { ...l, active: false, archived: true } as typeof l : l));
+      dispatchLeagueMutationEvent('league-updated', { leagueId: updatedLeagueId, reason: 'archived' });
       setOpenMembers(false);
       setSelectedLeague(null);
       await fetchAllLeagues();
@@ -3356,7 +3415,7 @@ function AllLeagues() {
       const msg = e instanceof Error ? e.message : 'Failed to archive league';
       toast.error(msg);
     }
-  }, [selectedLeague, token, fetchAllLeagues]);
+  }, [selectedLeague, token, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   const handleUnarchiveLeagueFromSettings = useCallback(async () => {
     if (!selectedLeague) return;
@@ -3371,7 +3430,9 @@ function AllLeagues() {
       });
       if (!res.ok) throw new Error('Failed to unarchive league');
       toast.success('League restored');
-      setLeagues(prev => prev.map(l => l.id === selectedLeague.id ? { ...l, active: true, archived: false } as typeof l : l));
+      const updatedLeagueId = String(selectedLeague.id);
+      setLeagues(prev => prev.map(l => String(l.id) === updatedLeagueId ? { ...l, active: true, archived: false } as typeof l : l));
+      dispatchLeagueMutationEvent('league-updated', { leagueId: updatedLeagueId, reason: 'restored' });
       setOpenMembers(false);
       setSelectedLeague(null);
       await fetchAllLeagues();
@@ -3379,7 +3440,7 @@ function AllLeagues() {
       const msg = e instanceof Error ? e.message : 'Failed to unarchive league';
       toast.error(msg);
     }
-  }, [selectedLeague, token, fetchAllLeagues]);
+  }, [selectedLeague, token, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   // Admin Settings dialog: update/delete handlers that operate on adminSettingsLeague
   const handleUpdateLeagueFromAdminSettings = useCallback(async (data: LeagueUpdatePayload) => {
@@ -3436,7 +3497,7 @@ function AllLeagues() {
       toast.success('League updated');
 
       // Update leagues list optimistically
-      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? {
+      setLeagues(prev => prev.map(l => String(l.id) === String(adminSettingsLeague.id) ? {
         ...l,
         name: data.name ?? l.name,
         active: data.active ?? l.active,
@@ -3501,11 +3562,14 @@ function AllLeagues() {
       if (!res.ok) throw new Error('Failed to delete league');
       toast.success('League deleted');
       // Remove from local state
-      setLeagues(prev => prev.filter(l => l.id !== adminSettingsLeague.id));
+      const deletedLeagueId = String(adminSettingsLeague.id);
+      setLeagues(prev => prev.filter(l => String(l.id) !== deletedLeagueId));
+      setLocallyDeletedLeagueIds((prev) => (prev.includes(deletedLeagueId) ? prev : [...prev, deletedLeagueId]));
+      dispatchLeagueMutationEvent('league-deleted', { leagueId: deletedLeagueId, reason: 'admin-settings-delete' });
       // Clear dialog/selection states
       setAdminSettingsLeague(null);
       setOpenAdminSettings(false);
-      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+      if (selectedLeague && String(selectedLeague.id) === deletedLeagueId) {
         setSelectedLeague(null);
         setOpenMembers(false);
       }
@@ -3515,7 +3579,7 @@ function AllLeagues() {
       const msg = e instanceof Error ? e.message : 'Failed to delete league';
       toast.error(msg);
     }
-  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   const handleArchiveLeagueFromAdminSettings = useCallback(async () => {
     if (!adminSettingsLeague) return;
@@ -3531,11 +3595,13 @@ function AllLeagues() {
       if (!res.ok) throw new Error('Failed to archive league');
       toast.success('League archived');
       // Update local state
-      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? { ...l, active: false, archived: true } as typeof l : l));
+      const updatedLeagueId = String(adminSettingsLeague.id);
+      setLeagues(prev => prev.map(l => String(l.id) === updatedLeagueId ? { ...l, active: false, archived: true } as typeof l : l));
+      dispatchLeagueMutationEvent('league-updated', { leagueId: updatedLeagueId, reason: 'archived' });
       // Clear dialog/selection states
       setAdminSettingsLeague(null);
       setOpenAdminSettings(false);
-      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+      if (selectedLeague && String(selectedLeague.id) === updatedLeagueId) {
         setSelectedLeague(null);
         setOpenMembers(false);
       }
@@ -3544,7 +3610,7 @@ function AllLeagues() {
       const msg = e instanceof Error ? e.message : 'Failed to archive league';
       toast.error(msg);
     }
-  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   const handleUnarchiveLeagueFromAdminSettings = useCallback(async () => {
     if (!adminSettingsLeague) return;
@@ -3559,10 +3625,12 @@ function AllLeagues() {
       });
       if (!res.ok) throw new Error('Failed to unarchive league');
       toast.success('League restored');
-      setLeagues(prev => prev.map(l => l.id === adminSettingsLeague.id ? { ...l, active: true, archived: false } as typeof l : l));
+      const updatedLeagueId = String(adminSettingsLeague.id);
+      setLeagues(prev => prev.map(l => String(l.id) === updatedLeagueId ? { ...l, active: true, archived: false } as typeof l : l));
+      dispatchLeagueMutationEvent('league-updated', { leagueId: updatedLeagueId, reason: 'restored' });
       setAdminSettingsLeague(null);
       setOpenAdminSettings(false);
-      if (selectedLeague && selectedLeague.id === adminSettingsLeague.id) {
+      if (selectedLeague && String(selectedLeague.id) === updatedLeagueId) {
         setSelectedLeague(null);
         setOpenMembers(false);
       }
@@ -3571,7 +3639,7 @@ function AllLeagues() {
       const msg = e instanceof Error ? e.message : 'Failed to unarchive league';
       toast.error(msg);
     }
-  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues]);
+  }, [adminSettingsLeague, token, selectedLeague, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   // const handleBackToAllLeagues = () => {
   //   router.push('/home');
@@ -3934,6 +4002,12 @@ function AllLeagues() {
               const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
               const canCreateSeason = isLeagueAdminForCurrentUser(league);
               const isCreatingSeason = creatingSeasonLeagueId === String(league.id);
+              const leagueSeasons = Array.isArray((league as LeagueWithStatus & { seasons?: Season[] }).seasons)
+                ? ((league as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).filter(
+                    (season) => !Boolean((season as Season & { deleted?: boolean }).deleted)
+                  )
+                : [];
+              const totalSeasons = leagueSeasons.length > 0 ? leagueSeasons.length : 1;
               return (
                 <Box
                   key={league.id}
@@ -4098,6 +4172,19 @@ function AllLeagues() {
                               </Typography>
                             </Box>
 
+                            {/* Seasons */}
+                            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+                              <Image src={leagueIcon} alt="Seasons" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Typography sx={{
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
+                              }}>
+                                Seasons {totalSeasons}
+                              </Typography>
+                            </Box>
+
                             {/* Created */}
                             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
                               <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
@@ -4124,6 +4211,18 @@ function AllLeagues() {
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
                                 Players {league.members?.length || 0}
+                              </Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.4, md: 1 } }}>
+                              <Image src={leagueIcon} alt="Seasons" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Typography sx={{
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: '"League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
+                              }}>
+                                Seasons {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -4519,7 +4618,8 @@ function AllLeagues() {
                                   });
                                   if (!res.ok) throw new Error('Failed');
                                   toast.success('League restored');
-                                  setLeagues(prev => prev.map(l => l.id === league.id ? { ...l, active: true, archived: false } as typeof l : l));
+                                  setLeagues(prev => prev.map(l => String(l.id) === String(league.id) ? { ...l, active: true, archived: false } as typeof l : l));
+                                  dispatchLeagueMutationEvent('league-updated', { leagueId: String(league.id), reason: 'restored-from-archive-list' });
                                   await fetchAllLeagues();
                                 } catch { toast.error('Failed to restore league'); }
                               })();
@@ -5429,14 +5529,14 @@ function AllLeagues() {
                 } : prev);
 
                 // If selectedLeague is the same league, update it too
-                setSelectedLeague(prev => (prev && prev.id === lid) ? {
+                setSelectedLeague(prev => (prev && String(prev.id) === String(lid)) ? {
                   ...prev,
                   members: (prev.members || []).filter(m => String(m.id) !== String(memberId)),
                   administrators: (prev.administrators || []).filter(a => String(a.id) !== String(memberId)),
                 } : prev);
 
                 // Update the leagues list if it contains members/admins
-                setLeagues(prev => prev.map(l => l.id === lid ? {
+                setLeagues(prev => prev.map(l => String(l.id) === String(lid) ? {
                   ...l,
                   members: Array.isArray(l.members) ? l.members.filter(m => String(m.id) !== String(memberId)) : l.members,
                   administrators: Array.isArray(l.administrators) ? l.administrators.filter(a => String(a.id) !== String(memberId)) : l.administrators,

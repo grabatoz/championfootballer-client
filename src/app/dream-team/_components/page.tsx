@@ -291,10 +291,10 @@ const DreamTeamPage = () => {
     
     try {
       // Use optimized fetch with caching
-      const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+      const data = await optimizedFetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` },
-        cacheTTL: 5 * 60 * 1000, // 5 minutes cache
-        staleWhileRevalidate: 2 * 60 * 1000,
+        cacheTTL: 15 * 1000,
+        staleWhileRevalidate: 5 * 1000,
       }) as { user?: { adminLeagues?: unknown[]; administeredLeagues?: unknown[]; leagues?: unknown[] } };
       
       if (!data?.user) {
@@ -386,6 +386,24 @@ const DreamTeamPage = () => {
     if (token) {
       fetchLeagues();
     }
+  }, [token, fetchLeagues]);
+
+  useEffect(() => {
+    if (!token || typeof window === 'undefined') return;
+
+    const refreshLeagues = () => {
+      void fetchLeagues();
+    };
+
+    window.addEventListener('league-created', refreshLeagues as EventListener);
+    window.addEventListener('league-updated', refreshLeagues as EventListener);
+    window.addEventListener('league-deleted', refreshLeagues as EventListener);
+
+    return () => {
+      window.removeEventListener('league-created', refreshLeagues as EventListener);
+      window.removeEventListener('league-updated', refreshLeagues as EventListener);
+      window.removeEventListener('league-deleted', refreshLeagues as EventListener);
+    };
   }, [token, fetchLeagues]);
 
   useEffect(() => {

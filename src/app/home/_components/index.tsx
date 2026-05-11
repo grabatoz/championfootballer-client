@@ -203,6 +203,22 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   // Persist selection across navigation
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
+  const dispatchLeagueMutationEvent = useCallback(
+    (eventName: 'league-created' | 'league-updated' | 'league-deleted', detail: Record<string, unknown>) => {
+      if (typeof window === 'undefined') return;
+      try {
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: { ...detail, timestamp: Date.now() },
+          })
+        );
+      } catch {
+        // ignore event dispatch errors
+      }
+    },
+    []
+  );
+
   // Auto-save any selected league as the preferred league
   useEffect(() => {
     try {
@@ -1756,9 +1772,12 @@ export default function PlayerDashboard() {
         updateLeaguesCacheWithNewLeague();
         setCreatedLeague(normalized); // instantly visible in selector
         setLeaguesRefreshKey((k) => k + 1); // background refetch to stay in sync
+        dispatchLeagueMutationEvent('league-created', { leagueId: String(normalized.id), reason: 'joined-league' });
+        dispatchLeagueMutationEvent('league-updated', { leagueId: String(normalized.id), reason: 'joined-league' });
       } else {
         // If API didn't include league payload, still trigger a background refresh to get latest
         setLeaguesRefreshKey((k) => k + 1);
+        dispatchLeagueMutationEvent('league-updated', { reason: 'joined-league-no-payload' });
       }
 
       setInviteCode('');
@@ -1846,6 +1865,8 @@ export default function PlayerDashboard() {
 
           // Update cache with new league
           updateLeaguesCacheWithNewLeague();
+          dispatchLeagueMutationEvent('league-created', { leagueId: String(newLeague.id), reason: 'created-league' });
+          dispatchLeagueMutationEvent('league-updated', { leagueId: String(newLeague.id), reason: 'created-league' });
 
           // Update local state
           setLeagues(prevLeagues => [newLeague, ...prevLeagues]);
