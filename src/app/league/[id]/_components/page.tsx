@@ -422,6 +422,9 @@ export default function LeagueDetailPage() {
     console.log('leagues matches', league?.matches)
     console.log('league archived status:', league?.archived, '| league active:', league?.active, '| league name:', league?.name)
     const [error, setError] = useState<string | null>(null);
+    const [isSigningOut, setIsSigningOut] = useState(false);
+    const [hasLoadedAllLeagues, setHasLoadedAllLeagues] = useState(false);
+    const [allLeaguesFetchFailed, setAllLeaguesFetchFailed] = useState(false);
     const { user, token, loading: authLoading, isAuthenticated } = useAuth();
     const params = useParams();
     const router = useRouter();
@@ -686,6 +689,9 @@ export default function LeagueDetailPage() {
         isActive?: boolean;
         active?: boolean;
         status?: string | null;
+        inviteCode?: string;
+        seasonInviteCode?: string;
+        inviteLink?: string;
     }>>([]);
     const seasonCreatedToastShownRef = React.useRef(false);
 
@@ -954,6 +960,22 @@ export default function LeagueDetailPage() {
         seasonCreatedToastShownRef.current = true;
     }, [searchParams]);
 
+    useEffect(() => {
+        const handleSignOutStart = () => setIsSigningOut(true);
+        window.addEventListener('app-signout-start', handleSignOutStart as EventListener);
+        return () => {
+            window.removeEventListener('app-signout-start', handleSignOutStart as EventListener);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            setIsSigningOut(false);
+        } else {
+            setError(null);
+        }
+    }, [isAuthenticated]);
+
     // Declare isMember and isAdmin here so they are available for useEffect and logic below
     const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
     const isAdmin = !!(
@@ -974,11 +996,12 @@ export default function LeagueDetailPage() {
     console.log('league', league)
 
     const fetchLeagueDetails = useCallback(async (seasonIdOverride?: string | null) => {
+        if (!token || !leagueId || isSigningOut) return;
         try {
-            setError(null);
-            console.log("🔄 Fetching league details - Token:", token ? 'Present' : 'Missing');
+            setError((prev) => (prev === 'No leagues found' ? prev : null));
+            console.log("Fetching league details - Token:", token ? 'Present' : 'Missing');
 
-            // 🔄 Add cache busting to force fresh data from backend
+            // Add cache busting to force fresh data from backend
             const params = new URLSearchParams();
             params.set('_t', String(Date.now()));
             const seasonIdForRequest = seasonIdOverride ?? selectedSeasonId;
@@ -993,24 +1016,76 @@ export default function LeagueDetailPage() {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                let apiMessage = '';
+                try {
+                    const errorPayload = await response.json();
+                    const payloadRecord = (errorPayload && typeof errorPayload === 'object')
+                        ? (errorPayload as Record<string, unknown>)
+                        : {};
+                    apiMessage = String(
+                        payloadRecord.message ??
+                        payloadRecord.error ??
+                        payloadRecord.detail ??
+                        ''
+                    ).trim();
+                } catch {
+                    // ignore non-json responses
+                }
+
+                const status = response.status;
+                const messageNormalized = apiMessage.toLowerCase();
+                const looksLikeAccessIssue =
+                    status === 401 ||
+                    status === 403 ||
+                    status === 404 ||
+                    messageNormalized.includes('access') ||
+                    messageNormalized.includes('not found');
+
+                if (looksLikeAccessIssue) {
+                    // Avoid flashing fetch/access errors during signout/auth transition.
+                    if (isSigningOut || !isAuthenticated) return;
+
+                    // If user has no leagues, show friendly empty-state message.
+                    if (hasLoadedAllLeagues && !allLeaguesFetchFailed && allLeagues.length === 0) {
+                        setLeague(null);
+                        setError('No leagues found');
+                        return;
+                    }
+
+                    // If user has other leagues, fallback redirect effect will switch to a valid league.
+                    setError(null);
+                    return;
+                }
+
+                throw new Error(apiMessage || `HTTP error! status: ${status}`);
             }
 
             const data = await response.json();
-            console.log('✅ League details fetched successfully from API', data);
+            console.log('League details fetched successfully from API', data);
             if (data.success) {
                 setError(null);
-                console.log('✅ Fresh League Data Received:', data.league);
-                console.log('✅ Total Matches:', data.league.matches?.length || 0);
-                console.log('✅ Total Members:', data.league.members?.length || 0);
-                console.log('✅ Members:', data.league.members?.map((m: User) => `${m.firstName} ${m.lastName}`));
-                console.log('✅ Seasons:', data.league.seasons);
+                console.log('Fresh League Data Received:', data.league);
+                console.log('Total Matches:', data.league.matches?.length || 0);
+                console.log('Total Members:', data.league.members?.length || 0);
+                console.log('Members:', data.league.members?.map((m: User) => `${m.firstName} ${m.lastName}`));
+                console.log('Seasons:', data.league.seasons);
                 if (Array.isArray(data.league.seasons)) {
-                    data.league.seasons.forEach((s: any, i: number) => {
+                    data.league.seasons.forEach((seasonUnknown: unknown, i: number) => {
+                        const seasonRecord = (seasonUnknown && typeof seasonUnknown === 'object')
+                            ? (seasonUnknown as Record<string, unknown>)
+                            : {};
+                        const members = Array.isArray(seasonRecord.members)
+                            ? seasonRecord.members.map((memberUnknown: unknown) => {
+                                const memberRecord = (memberUnknown && typeof memberUnknown === 'object')
+                                    ? (memberUnknown as Record<string, unknown>)
+                                    : {};
+                                return `${String(memberRecord.firstName || '')} ${String(memberRecord.lastName || '')}`.trim();
+                            })
+                            : 'no members array';
                         console.log(`  Season ${i + 1}:`, {
-                            id: s.id,
-                            seasonNumber: s.seasonNumber,
-                            members: Array.isArray(s.members) ? s.members.map((m: any) => `${m.firstName} ${m.lastName}`) : 'no members array'
+                            id: seasonRecord.id,
+                            seasonNumber: seasonRecord.seasonNumber,
+                            members
                         });
                     });
                 }
@@ -1020,16 +1095,46 @@ export default function LeagueDetailPage() {
                     });
                 }
                 setLeague(data.league);
-                console.log('✅ League state updated successfully');
+                try {
+                    const preferredId = String((data.league as Record<string, unknown>)?.id || leagueId || '').trim();
+                    if (preferredId) {
+                        localStorage.setItem('preferredLeagueId', preferredId);
+                    }
+                } catch {
+                    // ignore localStorage errors
+                }
+                console.log('League state updated successfully');
             } else {
-                setError(data.message || 'Failed to fetch league details');
-                console.error('❌ API Error:', data.message);
+                const apiMessage = String(data.message || '').trim();
+                const normalizedMessage = apiMessage.toLowerCase();
+                const looksLikeAccessIssue =
+                    normalizedMessage.includes('access') ||
+                    normalizedMessage.includes('not found');
+                if (looksLikeAccessIssue && hasLoadedAllLeagues && !allLeaguesFetchFailed && allLeagues.length === 0) {
+                    setLeague(null);
+                    setError('No leagues found');
+                } else if (looksLikeAccessIssue) {
+                    setError(null);
+                } else {
+                    setError(apiMessage || 'Failed to fetch league details');
+                }
+                console.error('API Error:', data.message);
             }
         } catch (error) {
-            console.error('❌ Error fetching league details:', error);
+            console.error('Error fetching league details:', error);
+            if (isSigningOut || !isAuthenticated) return;
             setError('Failed to fetch league details');
         }
-    }, [leagueId, token, selectedSeasonId]);
+    }, [
+        leagueId,
+        token,
+        selectedSeasonId,
+        isSigningOut,
+        isAuthenticated,
+        hasLoadedAllLeagues,
+        allLeaguesFetchFailed,
+        allLeagues.length
+    ]);
 
     // Fetch dream team data based on selected league and season
     const fetchDreamTeam = useCallback(async () => {
@@ -1280,12 +1385,20 @@ export default function LeagueDetailPage() {
         if (!token) return;
 
         try {
+            setHasLoadedAllLeagues(false);
+            setAllLeaguesFetchFailed(false);
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
                 cache: 'no-store',
             });
+
+            if (!response.ok) {
+                setAllLeagues([]);
+                setAllLeaguesFetchFailed(true);
+                return;
+            }
 
             interface LeagueData {
                 id: string | number;
@@ -1384,6 +1497,14 @@ export default function LeagueDetailPage() {
                 });
 
                 setAllLeagues(visibleLeagues);
+                if (visibleLeagues.length === 0) {
+                    try {
+                        localStorage.removeItem('preferredLeagueId');
+                        localStorage.removeItem('prefferdLeagueId');
+                    } catch {
+                        // ignore localStorage errors
+                    }
+                }
 
                 // Debug log
                 console.log('[League Detail] Fetched leagues:', {
@@ -1391,11 +1512,44 @@ export default function LeagueDetailPage() {
                     visible: visibleLeagues.length,
                     hidden: simpleLeagues.length - visibleLeagues.length
                 });
+            } else {
+                setAllLeagues([]);
             }
         } catch (error) {
             console.error('Error fetching leagues:', error);
+            setAllLeagues([]);
+            setAllLeaguesFetchFailed(true);
+        } finally {
+            setHasLoadedAllLeagues(true);
         }
     }, [token, leagueIsCompleted]);
+
+    useEffect(() => {
+        if (!token) return;
+        const refreshAllLeagues = () => {
+            void fetchAllLeagues();
+        };
+        const handleLeagueMutation = (evt: Event) => {
+            const customEvt = evt as CustomEvent<{ leagueId?: string | number }>;
+            const changedLeagueId = String(customEvt?.detail?.leagueId ?? '').trim();
+            if (!changedLeagueId || String(leagueId) === changedLeagueId) {
+                void fetchLeagueDetails();
+            }
+            refreshAllLeagues();
+        };
+
+        window.addEventListener('league-created', handleLeagueMutation as EventListener);
+        window.addEventListener('league-updated', handleLeagueMutation as EventListener);
+        window.addEventListener('league-deleted', handleLeagueMutation as EventListener);
+        window.addEventListener('league-joined', handleLeagueMutation as EventListener);
+
+        return () => {
+            window.removeEventListener('league-created', handleLeagueMutation as EventListener);
+            window.removeEventListener('league-updated', handleLeagueMutation as EventListener);
+            window.removeEventListener('league-deleted', handleLeagueMutation as EventListener);
+            window.removeEventListener('league-joined', handleLeagueMutation as EventListener);
+        };
+    }, [token, leagueId, fetchLeagueDetails, fetchAllLeagues]);
 
     // Fetch XP for all users in this league (from API)
     // Also refetch when league details refresh so table XP does not stay stale.
@@ -1436,13 +1590,18 @@ export default function LeagueDetailPage() {
 
     // Fetch all leagues for dropdown
     useEffect(() => {
-        if (!token) return;
+        if (!token) {
+            setAllLeagues([]);
+            setHasLoadedAllLeagues(false);
+            setAllLeaguesFetchFailed(false);
+            return;
+        }
         fetchAllLeagues();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     useEffect(() => {
-        if (!token || !leagueId || allLeagues.length === 0) return;
+        if (!token || !leagueId || isSigningOut || allLeagues.length === 0) return;
 
         // If current route league already loaded, do not auto-switch to another league.
         if (league && String(league.id) === String(leagueId)) return;
@@ -1473,7 +1632,25 @@ export default function LeagueDetailPage() {
 
         setError(null);
         router.replace(`/league/${encodeURIComponent(fallbackLeagueId)}?tab=table`, { scroll: false });
-    }, [token, leagueId, allLeagues, router, league]);
+    }, [token, leagueId, allLeagues, router, league, isSigningOut]);
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (!isAuthenticated || !token || !leagueId || isSigningOut) return;
+        if (!hasLoadedAllLeagues || allLeaguesFetchFailed) return;
+        if (allLeagues.length > 0 || league) return;
+        setError('No leagues found');
+    }, [
+        authLoading,
+        isAuthenticated,
+        token,
+        leagueId,
+        isSigningOut,
+        hasLoadedAllLeagues,
+        allLeaguesFetchFailed,
+        allLeagues.length,
+        league
+    ]);
 
     // Fetch seasons from dedicated endpoint to avoid stale/incomplete seasons lists on league payload
     useEffect(() => {
@@ -1557,6 +1734,15 @@ export default function LeagueDetailPage() {
                         isActive: seasonRaw.isActive === true,
                         active: seasonRaw.active === true,
                         status: typeof seasonRaw.status === 'string' ? seasonRaw.status : null,
+                        inviteCode: typeof seasonRaw.inviteCode === 'string'
+                            ? seasonRaw.inviteCode.trim()
+                            : (typeof seasonRaw.invite_code === 'string' ? seasonRaw.invite_code.trim() : ''),
+                        seasonInviteCode: typeof seasonRaw.seasonInviteCode === 'string'
+                            ? seasonRaw.seasonInviteCode.trim()
+                            : (typeof seasonRaw.season_invite_code === 'string' ? seasonRaw.season_invite_code.trim() : ''),
+                        inviteLink: typeof seasonRaw.inviteLink === 'string'
+                            ? seasonRaw.inviteLink.trim()
+                            : (typeof seasonRaw.invite_link === 'string' ? seasonRaw.invite_link.trim() : ''),
                     }))
                     .filter((season) => season.id && season.seasonNumber > 0)
                     .filter((season, index, arr) => arr.findIndex((s) => s.id === season.id) === index)
@@ -1641,6 +1827,11 @@ export default function LeagueDetailPage() {
                         // Update league data first
                         setLeague(data.league);
                         setError(null);
+                        try {
+                            localStorage.setItem('preferredLeagueId', String(selectedLeagueId));
+                        } catch {
+                            // ignore localStorage errors
+                        }
 
                         // Update URL after data is set
                         router.replace(`/league/${selectedLeagueId}`, { scroll: false });
@@ -1838,6 +2029,93 @@ export default function LeagueDetailPage() {
     }, [selectedSeasonId, league, currentSeasonNumber, seasonOptions]);
     
     const seasonLabel = React.useMemo(() => (selectedSeasonNumber ? `(#Season ${selectedSeasonNumber})` : ''), [selectedSeasonNumber]);
+
+    const readSeasonInviteCode = useCallback((seasonLike: unknown): string => {
+        if (!seasonLike || typeof seasonLike !== 'object') return '';
+        const seasonRecord = seasonLike as Record<string, unknown>;
+        const codeCandidate = seasonRecord.inviteCode
+            ?? seasonRecord.seasonInviteCode
+            ?? seasonRecord.invite_code
+            ?? seasonRecord.season_invite_code
+            ?? seasonRecord.code;
+        return typeof codeCandidate === 'string' ? codeCandidate.trim() : '';
+    }, []);
+
+    const inviteCodeForSelectedSeason = React.useMemo(() => {
+        if (selectedSeasonId) {
+            const seasonFromOptions = seasonOptions.find((season) => season.id === selectedSeasonId);
+            const codeFromOptions = readSeasonInviteCode(seasonFromOptions);
+            if (codeFromOptions) return codeFromOptions;
+        }
+
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        if (Array.isArray(seasonsUnknown)) {
+            const selectedSeasonFromLeague = selectedSeasonId
+                ? seasonsUnknown.find((seasonUnknown) => {
+                    const seasonRecord = (seasonUnknown && typeof seasonUnknown === 'object')
+                        ? (seasonUnknown as Record<string, unknown>)
+                        : {};
+                    return String(seasonRecord.id || '').trim() === selectedSeasonId;
+                })
+                : seasonsUnknown[0];
+
+            const selectedSeasonCode = readSeasonInviteCode(selectedSeasonFromLeague);
+            if (selectedSeasonCode) return selectedSeasonCode;
+        }
+
+        const currentSeasonUnknown = (league as unknown as Record<string, unknown>)?.currentSeason;
+        const currentSeasonCode = readSeasonInviteCode(currentSeasonUnknown);
+        if (currentSeasonCode) return currentSeasonCode;
+
+        return String(league?.inviteCode || '').trim();
+    }, [league, selectedSeasonId, seasonOptions, readSeasonInviteCode]);
+
+    const inviteCodeDisplay = inviteCodeForSelectedSeason || '-';
+    const inviteSeasonLabel = `${league?.name || 'League'} - Season ${selectedSeasonNumber || 1}`;
+    const invitePlayersMessage = inviteCodeForSelectedSeason
+        ? `Invites players to using the code`
+        : `Invites players to ${inviteSeasonLabel}`;
+
+    const handleCopySeasonInviteCode = useCallback(async () => {
+        const code = inviteCodeForSelectedSeason.trim();
+        if (!code) {
+            toast.error('Invite code is not available for this season yet.');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(code);
+            toast.success('Invite code copied.');
+        } catch {
+            toast.error('Unable to copy invite code right now.');
+        }
+    }, [inviteCodeForSelectedSeason]);
+
+    const handleShareSeasonInvite = useCallback(async () => {
+        const code = inviteCodeForSelectedSeason.trim();
+        if (!code) {
+            toast.error('Invite code is not available for this season yet.');
+            return;
+        }
+        const shareText = `Invites players to ${inviteSeasonLabel} using the code ${code}`;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: `League invite - ${inviteSeasonLabel}`,
+                    text: shareText,
+                });
+                return;
+            }
+        } catch (error) {
+            const shareError = error as { name?: string };
+            if (shareError?.name === 'AbortError') return;
+        }
+        try {
+            await navigator.clipboard.writeText(shareText);
+            toast.success('Invite details copied.');
+        } catch {
+            toast.error('Unable to share invite details right now.');
+        }
+    }, [inviteCodeForSelectedSeason, inviteSeasonLabel]);
     
     // Check if selected season is active
     const isSelectedSeasonActive = React.useMemo(() => {
@@ -2501,7 +2779,7 @@ export default function LeagueDetailPage() {
         return st.includes('UPLOAD') || st.includes('REVISION') || (st.includes('CONFIRM') && !st.includes('CONFIRMED'));
     }
 
-    if (error) {
+    if (error && !isSigningOut) {
         return (
             <Box
                 sx={{
@@ -3208,7 +3486,7 @@ export default function LeagueDetailPage() {
             {/* </Box> */}
             <Container>
                 {/* Access control for non-members - only show when league data is available */}
-                {league && !isMember && !hasCommonLeague ? (
+                {league && isAuthenticated && !!user && !isMember && !hasCommonLeague ? (
                     <Box sx={{ p: 4, minHeight: '100vh' }}>
                         <Typography color="error" variant="h6">
                             You don&apos;t have access to this league.
@@ -5405,18 +5683,22 @@ export default function LeagueDetailPage() {
                                                 {/* Header Bar aligned to table grid */}
                                             <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
                                                 <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
-                                                    <span className="text-muted-foreground">Invite Code:</span>
-                                                    <span className="font-bold text-primary">
-                                                        {(league?.name || 'League')} - Season {selectedSeasonNumber || 1}
-                                                    </span>
-                                                    <span className="font-bold">{league?.inviteCode || league?.id || '-'}</span>
+                                                    <span className="text-muted-foreground">{invitePlayersMessage}</span>
+                                                    <span className="font-bold">{inviteCodeDisplay}</span>
                                                     <button
+                                                        type="button"
                                                         className="p-1.5 hover:bg-muted rounded transition-colors"
-                                                        onClick={() => { const code = league?.inviteCode || ''; if (code) navigator.clipboard?.writeText(code); }}
+                                                        onClick={handleCopySeasonInviteCode}
+                                                        aria-label="Copy invite code"
                                                     >
                                                         <Copy className="w-4 h-4" />
                                                     </button>
-                                                    <button className="p-1.5 hover:bg-muted rounded transition-colors">
+                                                    <button
+                                                        type="button"
+                                                        className="p-1.5 hover:bg-muted rounded transition-colors"
+                                                        onClick={handleShareSeasonInvite}
+                                                        aria-label="Share invite code"
+                                                    >
                                                         <Share2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -6781,6 +7063,7 @@ export default function LeagueDetailPage() {
         </Box>
     );
 }
+
 
 
 

@@ -1947,6 +1947,9 @@ const [matchMetaCache, setMatchMetaCache] = useState<Record<string, {
 
   const handleSignOut = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app-signout-start'));
+      }
       await dispatch(logout());
       // Clear notifications on logout
       setNotifications([]);
@@ -2531,6 +2534,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
   function getNavHref(label: string, fallbackHref: string): string {
     if (label === 'TABLE') {
+      const currentLeagueMatch = pathname?.match(/^\/league\/([^/?#]+)/);
+      const currentLeagueId = currentLeagueMatch?.[1] ? decodeURIComponent(currentLeagueMatch[1]) : '';
+      if (currentLeagueId) {
+        return `/league/${encodeURIComponent(currentLeagueId)}?tab=table`;
+      }
       if (typeof window === 'undefined') return fallbackHref;
       const preferredLeagueId =
         localStorage.getItem('preferredLeagueId') ||

@@ -22,6 +22,7 @@ import { useParams, useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloseIcon from '@mui/icons-material/Close';
 import mapImg from '@/Components/images/map.png';
 import Image from 'next/image';
 import ScheduleMatchLoadingSkeleton from '@/Components/loading/ScheduleMatchLoadingSkeleton';
@@ -412,6 +413,13 @@ export default function ScheduleMatchPage() {
   const params = useParams();
   const router = useRouter();
   const leagueId = params?.id ? String(params.id) : '';
+  const handleCloseForm = useCallback(() => {
+    if (leagueId) {
+      router.push(`/league/${encodeURIComponent(leagueId)}?tab=table`);
+      return;
+    }
+    router.back();
+  }, [leagueId, router]);
 
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1001,6 +1009,25 @@ export default function ScheduleMatchPage() {
             transform: 'translateX(-50%)',
           }}
         >
+          <IconButton
+            aria-label="Close create match form"
+            onClick={handleCloseForm}
+            sx={{
+              position: 'absolute',
+              right: { xs: 12, md: 18 },
+              top: { xs: 12, md: 18 },
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.35)',
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.06)',
+              zIndex: 2,
+              '&:hover': {
+                background: 'rgba(255,255,255,0.14)',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           <Typography
             variant="h3"
             sx={{

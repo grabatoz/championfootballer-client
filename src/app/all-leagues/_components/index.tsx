@@ -717,6 +717,8 @@ interface Season {
   leagueId: string;
   seasonNumber: number;
   name: string;
+  inviteCode?: string;
+  seasonInviteCode?: string;
   isActive: boolean;
   archived?: boolean;
   deleted?: boolean;
@@ -4482,6 +4484,14 @@ function AllLeagues() {
                 ? (activeSeasonForInvite.name?.trim() || `Season ${activeSeasonForInvite.seasonNumber || 1}`)
                 : 'Season 1';
               const inviteContextLabel = `${inviteSeasonLabel}`;
+              const activeSeasonInviteCode = (
+                activeSeasonForInvite?.inviteCode
+                || activeSeasonForInvite?.seasonInviteCode
+                || league.inviteCode
+                || ''
+              ).trim();
+              const inviteCodeDisplay = activeSeasonInviteCode || '-';
+              const inviteShareText = `Join ${inviteContextLabel} with code: ${inviteCodeDisplay}`;
               return (
                 <Box
                   key={league.id}
@@ -4739,7 +4749,7 @@ function AllLeagues() {
                                   fontWeight: 300,
                                   fontSize: { xs: '10px', sm: '16px' }
                                 }}>
-                                  Invite Code: {inviteContextLabel}: {league.inviteCode}
+                                  Invite Code: {inviteContextLabel}: {inviteCodeDisplay}
                                 </Typography>
                                 <IconButton
                                   size="small"
@@ -4750,7 +4760,11 @@ function AllLeagues() {
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigator.clipboard.writeText(league.inviteCode);
+                                    if (!activeSeasonInviteCode) {
+                                      toast.error('Invite code is not available for this season yet.');
+                                      return;
+                                    }
+                                    navigator.clipboard.writeText(activeSeasonInviteCode);
                                     toast.success('Invite code copied!');
                                   }}
                                 >
@@ -4770,14 +4784,18 @@ function AllLeagues() {
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    if (!activeSeasonInviteCode) {
+                                      toast.error('Invite code is not available for this season yet.');
+                                      return;
+                                    }
                                     const shareData = {
                                       title: `Join ${league.name}`,
-                                      text: `Join ${inviteContextLabel} with code: ${league.inviteCode}`,
+                                      text: inviteShareText,
                                     };
                                     if (navigator.share) {
                                       navigator.share(shareData).catch(() => {});
                                     } else {
-                                      navigator.clipboard.writeText(`Join ${inviteContextLabel} with code: ${league.inviteCode}`);
+                                      navigator.clipboard.writeText(inviteShareText);
                                       toast.success('League info copied!');
                                     }
                                   }}
