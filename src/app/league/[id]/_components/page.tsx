@@ -2110,7 +2110,7 @@ export default function LeagueDetailPage() {
         }
         try {
             await navigator.clipboard.writeText(code);
-            toast.success('Invite code copied.');
+            toast.success('Invite code copied successfully.');
         } catch {
             toast.error('Unable to copy invite code right now.');
         }
@@ -5811,11 +5811,12 @@ export default function LeagueDetailPage() {
                                                     <span className="font-bold">{inviteCodeDisplay}</span>
                                                     <button
                                                         type="button"
-                                                        className="p-1.5 hover:bg-muted rounded transition-colors"
+                                                        className="group p-1.5 rounded border border-transparent cursor-pointer transition-all duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffff]"
                                                         onClick={handleCopySeasonInviteCode}
                                                         aria-label="Copy invite code"
+                                                        title="Copy invite code"
                                                     >
-                                                        <Copy className="w-4 h-4" />
+                                                        <Copy className="w-4 h-4 transition-all duration-150 group-hover:text-[#00000] group-hover:scale-110" />
                                                     </button>
                                                     <button
                                                         type="button"
