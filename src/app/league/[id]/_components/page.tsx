@@ -2613,7 +2613,7 @@ export default function LeagueDetailPage() {
                         value: Number.isFinite(valueNum) ? valueNum : 0,
                     };
                 })
-                .filter((player) => metricKey === 'contribution' ? player.value >= 0 : player.value > 0)
+                .filter((player) => player.value > 0)
                 .slice(0, 5);
         };
 
