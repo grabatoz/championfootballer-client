@@ -217,7 +217,7 @@ interface LeagueMembersDialogProps {
   currentUserId: string
   onRemoveMember: (memberId: string) => void
   onLeaveLeague: (preferredAdminId?: string) => void
-  onLeaveSeason?: () => void | Promise<void>
+  onLeaveSeason?: (seasonId?: string) => void | Promise<void>
   onUpdateLeague: (data: LeagueUpdatePayload) => Promise<void> | void
   onDeleteLeague: () => Promise<void> | void
   openSettingsOnOpen?: boolean
@@ -250,11 +250,67 @@ function LeagueMembersDialog({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const [openSettings, setOpenSettings] = useState(false)
+  const [selectedLeaveSeasonId, setSelectedLeaveSeasonId] = useState<string>('')
   useEffect(() => {
     if (open && openSettingsOnOpen && league && league.adminId === currentUserId) {
       setOpenSettings(true)
     }
   }, [open, openSettingsOnOpen, league, currentUserId])
+
+  const availableSeasonsForCurrentUser = useMemo(() => {
+    if (!league || !currentUserId) return [] as Season[]
+    const leagueWithSeasons = league as League & { seasons?: Season[] }
+    const seasons = Array.isArray(leagueWithSeasons.seasons) ? leagueWithSeasons.seasons : []
+    const userId = String(currentUserId).trim()
+
+    return seasons
+      .filter((season) => !Boolean(season.archived) && !Boolean((season as Season & { deleted?: boolean }).deleted))
+      .filter((season) => {
+        const roster = Array.isArray(season.members) && season.members.length > 0
+          ? season.members
+          : (Array.isArray(season.players) ? season.players : [])
+        return roster.some((member) => String(member?.id || '').trim() === userId)
+      })
+      .sort((a, b) => {
+        const activeA = a.isActive ? 1 : 0
+        const activeB = b.isActive ? 1 : 0
+        if (activeA !== activeB) return activeB - activeA
+        const numA = Number(a.seasonNumber || 0)
+        const numB = Number(b.seasonNumber || 0)
+        if (numA !== numB) return numB - numA
+        return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
+      })
+  }, [league, currentUserId])
+
+  const getSeasonDisplayName = useCallback((season: Season): string => {
+    const baseName = season.name?.trim()
+    if (baseName) return baseName
+    if (season.seasonNumber) return `Season ${season.seasonNumber}`
+    return 'Season'
+  }, [])
+
+  const selectedLeaveSeason = useMemo(
+    () => availableSeasonsForCurrentUser.find((season) => String(season.id) === String(selectedLeaveSeasonId)) || null,
+    [availableSeasonsForCurrentUser, selectedLeaveSeasonId]
+  )
+
+  useEffect(() => {
+    if (!open || !league) return
+    if (availableSeasonsForCurrentUser.length === 0) {
+      if (selectedLeaveSeasonId) setSelectedLeaveSeasonId('')
+      return
+    }
+    if (selectedLeaveSeasonId && availableSeasonsForCurrentUser.some((season) => String(season.id) === String(selectedLeaveSeasonId))) {
+      return
+    }
+    const leagueWithSeasons = league as League & { currentSeason?: Season | null }
+    const currentSeasonId = String(leagueWithSeasons.currentSeason?.id || '').trim()
+    const preferredSeason =
+      availableSeasonsForCurrentUser.find((season) => season.isActive)
+      || availableSeasonsForCurrentUser.find((season) => String(season.id) === currentSeasonId)
+      || availableSeasonsForCurrentUser[0]
+    setSelectedLeaveSeasonId(String(preferredSeason?.id || ''))
+  }, [availableSeasonsForCurrentUser, league, open, selectedLeaveSeasonId])
 
   if (!league) return null
 
@@ -529,6 +585,87 @@ function LeagueMembersDialog({
                 bgcolor: 'rgba(255,255,255,0.03)',
               }}
             >
+              <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>
+                Select Season
+              </Typography>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={selectedLeaveSeasonId}
+                  onChange={(e) => setSelectedLeaveSeasonId(String(e.target.value || ''))}
+                  displayEmpty
+                  MenuProps={{
+                    ...dropdownMenuBaseProps,
+                    PaperProps: {
+                      sx: {
+                        ...dropdownPaperBaseSx,
+                        bgcolor: '#111827',
+                        color: '#E5E7EB',
+                        borderRadius: 2,
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 10px 28px rgba(0,0,0,0.45)',
+                        '& .MuiMenuItem-root': {
+                          py: 1,
+                          fontSize: 14,
+                          color: '#E5E7EB',
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(229,106,22,0.2)',
+                          },
+                          '&.Mui-selected:hover': {
+                            bgcolor: 'rgba(229,106,22,0.28)',
+                          },
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.08)',
+                          },
+                        },
+                      },
+                    },
+                  }}
+                  sx={{
+                    bgcolor: '#0f172a',
+                    color: '#E5E7EB',
+                    borderRadius: 1.5,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(255,255,255,0.2)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(229,106,22,0.6)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e56a16',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#9CA3AF',
+                    },
+                  }}
+                >
+                  {availableSeasonsForCurrentUser.length > 0 ? (
+                    availableSeasonsForCurrentUser.map((season) => (
+                      <MenuItem key={season.id} value={season.id}>
+                        {getSeasonDisplayName(season)} {season.isActive ? '(Active)' : ''}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No season membership found
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+              <Typography sx={{ mt: 1, color: 'rgba(229,231,235,0.68)', fontSize: 12 }}>
+                {selectedLeaveSeason
+                  ? `Selected: ${getSeasonDisplayName(selectedLeaveSeason)}`
+                  : 'Select a season to leave.'}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.08)',
+                bgcolor: 'rgba(255,255,255,0.03)',
+              }}
+            >
               <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 League Admin
               </Typography>
@@ -592,7 +729,8 @@ function LeagueMembersDialog({
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
             <Button
               startIcon={<ExitToApp />}
-              onClick={() => { try { void onLeaveSeason?.() } catch {} }}
+              onClick={() => { try { void onLeaveSeason?.(selectedLeaveSeasonId || undefined) } catch {} }}
+              disabled={!selectedLeaveSeasonId}
               sx={{
                 fontWeight: 600,
                 bgcolor: "#e56a16",
@@ -610,7 +748,7 @@ function LeagueMembersDialog({
                 transition: "all 0.2s ease",
               }}
             >
-              Leave Active Season
+              Leave Season
             </Button>
             <Button
               startIcon={<ExitToApp />}
@@ -3521,34 +3659,44 @@ function AllLeagues() {
     }
   };
 
-  const handleLeaveActiveSeason = async () => {
+  const handleLeaveActiveSeason = async (seasonId?: string) => {
     const league = selectedLeague || adminSettingsLeague;
     if (!league || !token) return;
 
     const leagueWithSeasons = league as League & { seasons?: Season[]; currentSeason?: Season | null };
     const seasons = Array.isArray(leagueWithSeasons.seasons) ? leagueWithSeasons.seasons : [];
     const nonArchivedSeasons = seasons.filter((season) => !Boolean(season.archived) && !Boolean((season as Season & { deleted?: boolean }).deleted));
-    const activeSeason = nonArchivedSeasons.find((season) => season.isActive)
-      || leagueWithSeasons.currentSeason
-      || nonArchivedSeasons.sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0))[0]
-      || null;
+    const requestedSeasonId = String(seasonId || '').trim();
 
-    if (!activeSeason?.id) {
-      toast.error('No active season found')
+    const targetSeason = requestedSeasonId
+      ? (
+        nonArchivedSeasons.find((season) => String(season.id) === requestedSeasonId)
+        || seasons.find((season) => String(season.id) === requestedSeasonId)
+        || null
+      )
+      : (
+        nonArchivedSeasons.find((season) => season.isActive)
+        || leagueWithSeasons.currentSeason
+        || nonArchivedSeasons.sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0))[0]
+        || null
+      );
+
+    if (!targetSeason?.id) {
+      toast.error(requestedSeasonId ? 'Selected season not found' : 'No active season found')
       return;
     }
 
-    const seasonName = activeSeason.name?.trim() || `Season ${activeSeason.seasonNumber || ''}`.trim();
+    const seasonName = targetSeason.name?.trim() || `Season ${targetSeason.seasonNumber || ''}`.trim();
     if (!window.confirm(`Leave ${seasonName}?`)) return;
 
     const attempts = [
-      `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${activeSeason.id}/leave`,
-      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${activeSeason.id}/leave`,
-      `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${activeSeason.id}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${targetSeason.id}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${targetSeason.id}/leave`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${targetSeason.id}/leave`,
     ];
 
     let success = false;
-    let message = 'Failed to leave active season';
+    let message = 'Failed to leave season';
 
     for (const url of attempts) {
       try {
@@ -3580,7 +3728,7 @@ function AllLeagues() {
       return;
     }
 
-    toast.success('You left the active season');
+    toast.success('You left the selected season');
     await fetchAllLeagues();
     setOpenMembers(false);
     setSelectedLeague(null);
