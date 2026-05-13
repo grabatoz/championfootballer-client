@@ -727,29 +727,7 @@ function LeagueMembersDialog({
       >
         {!isAdmin && (
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Button
-              startIcon={<ExitToApp />}
-              onClick={() => { try { void onLeaveSeason?.(selectedLeaveSeasonId || undefined) } catch {} }}
-              disabled={!selectedLeaveSeasonId}
-              sx={{
-                fontWeight: 600,
-                bgcolor: "#e56a16",
-                color: "#fff",
-                borderRadius: 2,
-                px: 3,
-                py: 1,
-                textTransform: "none",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                "&:hover": {
-                  bgcolor: "#c75712",
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-                },
-                transition: "all 0.2s ease",
-              }}
-            >
-              Leave Season
-            </Button>
+           
             <Button
               startIcon={<ExitToApp />}
               onClick={handleLeaveLeague}
@@ -771,6 +749,29 @@ function LeagueMembersDialog({
               }}
             >
               Leave League
+            </Button>
+             <Button
+              startIcon={<ExitToApp />}
+              onClick={() => { try { void onLeaveSeason?.(selectedLeaveSeasonId || undefined) } catch {} }}
+              disabled={!selectedLeaveSeasonId}
+              sx={{
+                fontWeight: 600,
+                bgcolor: "#e56a16",
+                color: "#fff",
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                "&:hover": {
+                  bgcolor: "#c75712",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              Leave Season
             </Button>
           </Box>
         )}
