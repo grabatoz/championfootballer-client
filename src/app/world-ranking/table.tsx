@@ -583,7 +583,8 @@ export default function WorldRankingTable() {
           overflow: 'hidden',
           border: '1px solid #2a2a2a',
           position: 'relative',
-          py: 1.5,
+          pt: 0,
+          pb: 1.5,
           px: 0,
         }}>
           {loading && (
