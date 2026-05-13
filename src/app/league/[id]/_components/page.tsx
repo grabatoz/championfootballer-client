@@ -5344,9 +5344,16 @@ export default function LeagueDetailPage() {
                                                                                             setMatchStatsOpen(true);
                                                                                         }
                                                                                     }}
-                                                                                    sx={{ cursor: 'pointer', width: '100%' }}
+                                                                                    sx={{
+                                                                                        cursor: 'pointer',
+                                                                                        width: '100%',
+                                                                                        '&:hover .add-stats-btn': {
+                                                                                            backgroundColor: '#444',
+                                                                                        },
+                                                                                    }}
                                                                                 >
                                                                                 <Button
+                                                                                    className="add-stats-btn"
                                                                                     size="small"
                                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                     disabled={isDisabled && (isAdmin || !!isInMatch)}
