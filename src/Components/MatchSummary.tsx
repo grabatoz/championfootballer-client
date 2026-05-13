@@ -360,12 +360,10 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               variant="caption"
               sx={{ fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' }, color: '#fff', textAlign: 'center', whiteSpace: 'nowrap', mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
             >
-              {captainsConfirmed ? (
+              {captainsConfirmed && (
                 <>
                   Captains Confirmed <Image src={ThumImg} alt="thumbs up" width={10} height={10} style={{ filter: 'brightness(0) invert(1)' }} />
                 </>
-              ) : (
-                'Awaiting Captains'
               )}
             </Typography>
           </Box>
@@ -454,33 +452,86 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           >
           
             {!isCompleted ? (
-              <Button
-                variant="contained"
-                onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
-                disabled={availabilityLoading[matchId]}
-                sx={{
-                  backgroundColor: isUserAvailable ? "#4caf50" : "#f44336",
-                  "&:hover": {
-                    backgroundColor: isUserAvailable ? "#388e3c" : "#d32f2f",
-                  },
-                  "&.Mui-disabled": {
-                    backgroundColor: "rgba(255,255,255,0.3)",
-                    color: "rgba(255,255,255,0.5)",
-                  },
-                  fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" },
-                  px: { xs: 1, sm: 1.5, md: 2 },
-                  py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
-                  minWidth: { xs: "auto", sm: 120, md: 140 },
-                }}
-              >
-                {availabilityLoading[matchId] ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : isUserAvailable ? (
-                  "Unavailable"
-                ) : (
-                  "Available"
-                )}
-              </Button>
+              embeddedInDialog ? (
+                <>
+                  {isAdmin && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<Add />}
+                      onClick={() => {
+                        setShouldShowAdminGoals(true);
+                        setStatsDialogOpen(true);
+                      }}
+                      sx={{
+                        bgcolor: "#2B2B2B",
+                        color: "white",
+                        fontWeight: "bold",
+                        border: '1px solid #e16419',
+                        "&:hover": { bgcolor: "#2B2B2B" },
+                        fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
+                        px: { xs: 1, sm: 1.5, md: 2 },
+                        py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
+                        minWidth: { xs: "auto", sm: 120, md: 140 },
+                      }}
+                    >
+                      Add Score
+                    </Button>
+                  )}
+                  {!isAdmin && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<Add />}
+                      onClick={() => {
+                        setShouldShowAdminGoals(false);
+                        setStatsDialogOpen(true);
+                      }}
+                      sx={{
+                        bgcolor: "#2B2B2B",
+                        color: "white",
+                        fontWeight: "bold",
+                        border: '1px solid #e16419',
+                        "&:hover": { bgcolor: "#2B2B2B" },
+                        fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
+                        px: { xs: 1, sm: 1.5, md: 2 },
+                        py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
+                        minWidth: { xs: "auto", sm: 120, md: 140 },
+                      }}
+                    >
+                      Add Your Stats
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
+                  disabled={availabilityLoading[matchId]}
+                  sx={{
+                    backgroundColor: isUserAvailable ? "#4caf50" : "#f44336",
+                    "&:hover": {
+                      backgroundColor: isUserAvailable ? "#388e3c" : "#d32f2f",
+                    },
+                    "&.Mui-disabled": {
+                      backgroundColor: "rgba(255,255,255,0.3)",
+                      color: "rgba(255,255,255,0.5)",
+                    },
+                    fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" },
+                    px: { xs: 1, sm: 1.5, md: 2 },
+                    py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                    minWidth: { xs: "auto", sm: 120, md: 140 },
+                  }}
+                >
+                  {availabilityLoading[matchId] ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : isUserAvailable ? (
+                    "Unavailable"
+                  ) : (
+                    "Available"
+                  )}
+                </Button>
+              )
             ) : (
               <>
                 {/* Admin-only: ADD Score button */}

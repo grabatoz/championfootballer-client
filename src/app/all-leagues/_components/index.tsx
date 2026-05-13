@@ -922,10 +922,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     }
     try {
       await Promise.resolve(onUpdate(updatedData))
-      toast.success('Settings updated successfully')
       if (onMembersChanged) {
-        await Promise.resolve(onMembersChanged())
+        try {
+          await Promise.resolve(onMembersChanged())
+        } catch (refreshErr) {
+          console.warn('League settings saved, but member refresh failed:', refreshErr)
+        }
       }
+      toast.success('Settings updated successfully')
       onClose()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to update league settings'

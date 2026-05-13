@@ -47,7 +47,6 @@ import AwayTeamShirt from '@/Components/images/awayteamshirt.png'
 import MOMT from '@/Components/images/momt.png'
 import DEFIMP from '@/Components/images/defimp.png'
 import MENTALITY from '@/Components/images/metality.png'
-import PlayerImg from '@/Components/images/playerimg.png'
 import Image from 'next/image'
 import MatchStatsPopupLoadingSkeleton from '@/Components/loading/MatchStatsPopupLoadingSkeleton';
 import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
@@ -358,6 +357,47 @@ const VotedPlayerAvatar = ({
         >
             {initials}
         </Box>
+    );
+};
+
+const PlayerInitialsAvatar = ({
+    player,
+    size = 40,
+    borderColor = '#00C48C',
+}: {
+    player?: { firstName?: string | null; lastName?: string | null; profilePicture?: string | null } | null;
+    size?: number;
+    borderColor?: string;
+}) => {
+    const fullName = formatGuestAwarePlayerName(player);
+    const profilePicture = String(player?.profilePicture || '').trim();
+    const initials = getAvatarInitials({
+        name: fullName,
+        firstName: player?.firstName ?? '',
+        lastName: player?.lastName ?? '',
+    });
+    const bg = getAvatarBackgroundColor(fullName || initials);
+
+    return (
+        <Avatar
+            src={profilePicture || undefined}
+            sx={{
+                width: size,
+                height: size,
+                mb: 0.5,
+                border: '3px solid',
+                borderColor,
+                bgcolor: profilePicture ? '#000' : bg,
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
+            }}
+            aria-label={fullName || 'Player'}
+            title={fullName || 'Player'}
+        >
+            {!profilePicture ? initials : null}
+        </Avatar>
     );
 };
 
@@ -1376,7 +1416,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 }
             }
 
-            toast.success('Match details saved successfully!');
+            toast.success('Match scores uploaded successfully.');
 
             // Trigger notification refresh for captains to see the confirmation request
             console.log('ًں”” Triggering notification refresh event');
@@ -1477,21 +1517,46 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const teamGoalsSafe = (match && currentUserId)
         ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
         : 0;
+    const matchTotalGoalsSafe = Math.max(
+        0,
+        Number(match?.homeTeamGoals || 0) + Number(match?.awayTeamGoals || 0)
+    );
+    const normalizeComparableId = (value?: string | null): string => {
+        const raw = String(value || '').trim();
+        return raw.startsWith('guest-') ? raw.slice(6) : raw;
+    };
+    const isSamePlayer = (left?: string | null, right?: string | null): boolean => {
+        const l = normalizeComparableId(left);
+        const r = normalizeComparableId(right);
+        return Boolean(l && r && l === r);
+    };
+    const isCurrentUserMentalityPick =
+        isSamePlayer(currentUserId, matchCaptainPicks.home?.influence) ||
+        isSamePlayer(currentUserId, matchCaptainPicks.away?.influence);
+    const selectedPlayerIdForImpact = selectedPlayerForAdmin ? String(selectedPlayerForAdmin.id || '') : '';
+    const isAdminSelectedMentalityPick =
+        isSamePlayer(selectedPlayerIdForImpact, matchCaptainPicks.home?.influence) ||
+        isSamePlayer(selectedPlayerIdForImpact, matchCaptainPicks.away?.influence);
 
     // Compute Impact % to match backend/client-shared contribution formula.
     const computeImpactPercent = useCallback(
-        (s: { goals: number; assists: number; cleanSheets: number; defence: number }, tGoals: number) => {
+        (
+            s: { goals: number; assists: number; cleanSheets: number; defence: number },
+            totalGoals: number,
+            isMentalityPick: boolean
+        ) => {
             const safeGoals = Math.max(0, Number(s.goals) || 0);
             const safeAssists = Math.max(0, Number(s.assists) || 0);
             const safeCleanSheets = Math.max(0, Number(s.cleanSheets) || 0);
             const safeDefence = Math.max(0, Number(s.defence) || 0);
-            const teamGoals = Math.max(0, Number(tGoals) || 0);
+            const goalsBaseline = Math.max(0, Number(totalGoals) || 0);
 
-            const goalContribution = teamGoals > 0 ? (safeGoals / teamGoals) * 100 : 0;
-            const assistContribution = teamGoals > 0 ? (safeAssists / teamGoals) * 50 : 0;
+            const goalContribution = goalsBaseline > 0 ? (safeGoals / goalsBaseline) * 100 : 0;
+            const assistContribution = goalsBaseline > 0 ? (safeAssists / goalsBaseline) * 50 : 0;
             const cleanSheetContribution = safeCleanSheets > 0 ? 15 * safeCleanSheets : 0;
             const defensiveContribution = safeDefence * 10;
-            const raw = goalContribution + assistContribution + cleanSheetContribution + defensiveContribution;
+            const mentalityContribution = isMentalityPick ? 5 : 0;
+            const raw = goalContribution + assistContribution + cleanSheetContribution + defensiveContribution + mentalityContribution;
 
             // Participation default when no contribution action exists.
             if (raw <= 0) return 15;
@@ -1503,32 +1568,35 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const computedImpact = useMemo(
         () => computeImpactPercent(
             { goals: stats.goals, assists: stats.assists, cleanSheets: stats.cleanSheets, defence: stats.defence },
-            teamGoalsSafe
+            matchTotalGoalsSafe,
+            isCurrentUserMentalityPick
         ),
-        [stats.goals, stats.assists, stats.cleanSheets, stats.defence, teamGoalsSafe, computeImpactPercent]
+        [
+            stats.goals,
+            stats.assists,
+            stats.cleanSheets,
+            stats.defence,
+            matchTotalGoalsSafe,
+            isCurrentUserMentalityPick,
+            computeImpactPercent
+        ]
     );
-
-    // For admin modal: compute impact for selected player using that player's team goals
-    const adminSelectedTeamGoals = useMemo(() => {
-        if (!match || !selectedPlayerForAdmin) return teamGoalsSafe;
-        const selectedId = String(selectedPlayerForAdmin.id || '');
-        const normalizedSelectedId = selectedId.startsWith('guest-') ? selectedId.slice(6) : selectedId;
-        const isHome = (match.homeTeamUsers ?? []).some(p => String(p.id) === selectedId);
-        const isAway = (match.awayTeamUsers ?? []).some(p => String(p.id) === selectedId);
-        const guestTeam = (match.guests || []).find(g => String(g.id) === normalizedSelectedId)?.team;
-        if (isHome) return match.homeTeamGoals || 0;
-        if (isAway) return match.awayTeamGoals || 0;
-        if (guestTeam === 'home') return match.homeTeamGoals || 0;
-        if (guestTeam === 'away') return match.awayTeamGoals || 0;
-        return teamGoalsSafe;
-    }, [selectedPlayerForAdmin, match, teamGoalsSafe]);
 
     const computedAdminImpact = useMemo(
         () => computeImpactPercent(
             { goals: adminStats.goals, assists: adminStats.assists, cleanSheets: adminStats.cleanSheets, defence: adminStats.defence },
-            adminSelectedTeamGoals
+            matchTotalGoalsSafe,
+            isAdminSelectedMentalityPick
         ),
-        [adminStats.goals, adminStats.assists, adminStats.cleanSheets, adminStats.defence, adminSelectedTeamGoals, computeImpactPercent]
+        [
+            adminStats.goals,
+            adminStats.assists,
+            adminStats.cleanSheets,
+            adminStats.defence,
+            matchTotalGoalsSafe,
+            isAdminSelectedMentalityPick,
+            computeImpactPercent
+        ]
     );
 
     // Helper function to extract numeric match index from various field names
@@ -2946,17 +3014,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                 }}
                                             >
                                                 <Box sx={{ position: 'relative' }}>
-                                                    <Avatar
-                                                        src={p.profilePicture || PlayerImg.src}
-                                                        sx={{
-                                                            width: 40,
-                                                            height: 40,
-                                                            mb: 0.5,
-                                                            border: '3px solid',
-                                                            borderColor: selected ? '#00C48C' : '#fff',
-                                                            bgcolor: '#000',
-                                                            '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
-                                                        }}
+                                                    <PlayerInitialsAvatar
+                                                        player={p}
+                                                        size={40}
+                                                        borderColor={selected ? '#00C48C' : '#fff'}
                                                     />
                                                 </Box>
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
@@ -3073,17 +3134,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     minHeight: 'auto',
                                                 }}
                                             >
-                                                <Avatar
-                                                    src={p.profilePicture || PlayerImg.src}
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        mb: 0.5,
-                                                        border: '3px solid',
-                                                         borderColor: selected ? '#00C48C' : '#fff',
-                                                        bgcolor: '#000',
-                                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
-                                                    }}
+                                                <PlayerInitialsAvatar
+                                                    player={p}
+                                                    size={40}
+                                                    borderColor={selected ? '#00C48C' : '#fff'}
                                                 />
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {formatGuestAwarePlayerName(p)}
@@ -3199,17 +3253,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                     minHeight: 'auto',
                                                 }}
                                             >
-                                                <Avatar
-                                                    src={p.profilePicture || PlayerImg.src}
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        mb: 0.5,
-                                                        border: '3px solid',
-                                                        borderColor: '#00C48C',
-                                                        bgcolor: '#000',
-                                                        '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
-                                                    }}
+                                                <PlayerInitialsAvatar
+                                                    player={p}
+                                                    size={40}
+                                                    borderColor="#00C48C"
                                                 />
                                                 <Typography variant="caption" sx={{ textAlign: 'center', lineHeight: 1.1, color: '#fff' }}>
                                                     {formatGuestAwarePlayerName(p)}

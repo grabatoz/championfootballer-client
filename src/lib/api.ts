@@ -1399,7 +1399,7 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
   // Each ranking item has `xp` which is totalXP or avgXP depending on the requested mode
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawList: any[] = Array.isArray(raw?.rankings) ? raw.rankings : (Array.isArray(raw?.players) ? raw.players : []);
-  const players: WorldRankingPlayer[] = rawList.map(p => ({
+  const mappedPlayers: WorldRankingPlayer[] = rawList.map(p => ({
     id: p.id,
     name: p.name,
     position: p.position || '',
@@ -1411,6 +1411,14 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
     rank: p.rank ?? 0,
     country: p.country || undefined,
   }));
+  const dedupedById = new Map<string, WorldRankingPlayer>();
+  mappedPlayers.forEach((player) => {
+    if (!player.id) return;
+    if (!dedupedById.has(player.id)) {
+      dedupedById.set(player.id, player);
+    }
+  });
+  const players = Array.from(dedupedById.values());
   return {
     players,
     mode: mode as 'avg' | 'total',

@@ -120,7 +120,7 @@ const forgotPopupTheme = {
 }
 
 const REGISTER_DRAFT_STORAGE_KEY = "cf_register_draft_v1"
-const EMAIL_MAX_LENGTH = 254
+const EMAIL_MAX_LENGTH = 100
 const PASSWORD_MAX_LENGTH = 16
 const PASSWORD_MIN_LENGTH = 6
 

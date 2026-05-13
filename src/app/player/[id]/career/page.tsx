@@ -34,6 +34,7 @@ import dynamic from 'next/dynamic';
 import { styled, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '@/lib/useAuth';
+import Cookies from 'js-cookie';
 import CloseButton from '@/Components/CloseButton';
 import PlayerCareerLoadingSkeleton from '@/Components/loading/PlayerCareerLoadingSkeleton';
 // import api from '@/lib/api'; // Adjust the import based on your project structure
@@ -115,10 +116,15 @@ interface LeagueMatch {
 interface SeasonInfo {
   id: string;
   name: string;
-  seasonNumber: number;
-  isActive: boolean;
+  seasonNumber?: number;
+  isActive?: boolean;
+  active?: boolean;
   startDate?: string;
   endDate?: string;
+  isMember?: boolean;
+  membershipStatus?: string;
+  memberStatus?: string;
+  inviteStatus?: string;
 }
 
 interface LeagueWithMatches {
@@ -207,6 +213,75 @@ const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
 
 const sameId = (a: unknown, b: unknown): boolean =>
   String(a ?? '').trim() === String(b ?? '').trim();
+
+const isSeasonExplicitlyDeclined = (season: SeasonInfo): boolean => {
+  const statusTokens = [
+    season.membershipStatus,
+    season.memberStatus,
+    season.inviteStatus,
+  ]
+    .map((token) => String(token || '').trim().toLowerCase())
+    .filter(Boolean);
+  return statusTokens.some((token) => token.includes('declin') || token.includes('reject'));
+};
+
+const isSeasonActiveLike = (season: SeasonInfo): boolean => {
+  if (season.isActive === true || season.active === true) return true;
+  const endDate = String(season.endDate || '').trim();
+  return !endDate;
+};
+
+const formatSeasonDisplayLabel = (season: SeasonInfo): string => {
+  if (typeof season.seasonNumber === 'number' && Number.isFinite(season.seasonNumber) && season.seasonNumber > 0) {
+    return `Season ${season.seasonNumber}`;
+  }
+  const raw = String(season.name || '').trim();
+  if (!raw) return 'Season';
+  const numberHit = raw.match(/season\s*#?\s*(\d+)/i);
+  if (numberHit?.[1]) return `Season ${numberHit[1]}`;
+  return raw;
+};
+
+const normalizeSeasonInfo = (season: unknown): SeasonInfo | null => {
+  if (!season || typeof season !== 'object') return null;
+  const source = season as Record<string, unknown>;
+  const id = String(source.id ?? source._id ?? '').trim();
+  if (!id) return null;
+
+  const seasonNumberRaw = source.seasonNumber;
+  const parsedSeasonNumber = typeof seasonNumberRaw === 'number'
+    ? seasonNumberRaw
+    : typeof seasonNumberRaw === 'string' && seasonNumberRaw.trim()
+      ? Number(seasonNumberRaw)
+      : undefined;
+  const seasonNumber = typeof parsedSeasonNumber === 'number' && Number.isFinite(parsedSeasonNumber)
+    ? parsedSeasonNumber
+    : undefined;
+
+  const name = typeof source.name === 'string' && source.name.trim()
+    ? source.name.trim()
+    : (seasonNumber && seasonNumber > 0 ? `Season ${seasonNumber}` : 'Season');
+
+  const toOptionalBool = (value: unknown): boolean | undefined => {
+    if (value === true || value === 'true' || value === 1 || value === '1') return true;
+    if (value === false || value === 'false' || value === 0 || value === '0') return false;
+    return undefined;
+  };
+
+  return {
+    id,
+    name,
+    seasonNumber,
+    startDate: typeof source.startDate === 'string' ? source.startDate : undefined,
+    endDate: typeof source.endDate === 'string' ? source.endDate : undefined,
+    isMember: toOptionalBool(source.isMember),
+    isActive: toOptionalBool(source.isActive),
+    active: toOptionalBool(source.active),
+    membershipStatus: typeof source.membershipStatus === 'string' ? source.membershipStatus : undefined,
+    memberStatus: typeof source.memberStatus === 'string' ? source.memberStatus : undefined,
+    inviteStatus: typeof source.inviteStatus === 'string' ? source.inviteStatus : undefined,
+  };
+};
 
 // Row used for weekly / monthly aggregation
 interface PerformanceRow {
@@ -540,7 +615,7 @@ export default function CareerPage() {
       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
   }, [data]);
 
-  // Keep season options scoped to the viewed player's actual matches in the selected league.
+  // Match-scoped season data is used only as a fallback when season API is unavailable.
   const playerSeasonIdsForSelectedLeague = useMemo(() => {
     const selectedLeagueId = filters.leagueId;
     if (!selectedLeagueId || selectedLeagueId === 'all') return [] as string[];
@@ -553,6 +628,59 @@ export default function CareerPage() {
     }
     return Array.from(ids);
   }, [matches, filters.leagueId]);
+
+  // If we only have season IDs, derive stable season numbers from chronology.
+  const playerSeasonIdFallbackForSelectedLeague = useMemo<SeasonInfo[]>(() => {
+    const selectedLeagueId = filters.leagueId;
+    if (!selectedLeagueId || selectedLeagueId === 'all') return [];
+    if (playerSeasonIdsForSelectedLeague.length === 0) return [];
+
+    const firstMatchTsBySeasonId = new Map<string, number>();
+    for (const match of matches) {
+      if (!sameId(match.leagueId, selectedLeagueId)) continue;
+      const sid = typeof match.seasonId === 'string' ? match.seasonId.trim() : '';
+      if (!sid) continue;
+      const ts = dayjs(match.date).valueOf();
+      const safeTs = Number.isFinite(ts) ? ts : Number.MAX_SAFE_INTEGER;
+      const prev = firstMatchTsBySeasonId.get(sid);
+      if (prev === undefined || safeTs < prev) firstMatchTsBySeasonId.set(sid, safeTs);
+    }
+
+    const orderedSeasonIds = [...playerSeasonIdsForSelectedLeague].sort((a, b) => {
+      const ta = firstMatchTsBySeasonId.get(a) ?? Number.MAX_SAFE_INTEGER;
+      const tb = firstMatchTsBySeasonId.get(b) ?? Number.MAX_SAFE_INTEGER;
+      if (ta !== tb) return ta - tb;
+      return a.localeCompare(b);
+    });
+
+    return orderedSeasonIds.map((sid, index) => ({
+      id: sid,
+      name: `Season ${index + 1}`,
+      seasonNumber: index + 1,
+      isActive: index === orderedSeasonIds.length - 1,
+    }));
+  }, [filters.leagueId, matches, playerSeasonIdsForSelectedLeague]);
+
+  const playerSeasonYearFallbackForSelectedLeague = useMemo<SeasonInfo[]>(() => {
+    const selectedLeagueId = filters.leagueId;
+    if (!selectedLeagueId || selectedLeagueId === 'all') return [];
+    const years = new Set<number>();
+    for (const match of matches) {
+      if (!sameId(match.leagueId, selectedLeagueId)) continue;
+      const y = dayjs(match.date).year();
+      if (Number.isFinite(y)) years.add(y);
+    }
+    return Array.from(years)
+      .sort((a, b) => b - a)
+      .map((year) => ({
+        id: `year-${year}`,
+        name: `Season ${year}`,
+        seasonNumber: year,
+        isActive: year === dayjs().year(),
+        startDate: `${year}-01-01`,
+        endDate: `${year}-12-31`,
+      }));
+  }, [filters.leagueId, matches]);
 
   // ---------- State for seasons filter ----------
   const [seasonFilter, setSeasonFilter] = useState<string>('all');
@@ -572,60 +700,101 @@ export default function CareerPage() {
       setSeasonFilter('all');
       return;
     }
-    if (!token) return; // Need auth token
     let cancelled = false;
     setSeasonsLoading(true);
-    const playerSeasonIdSet = new Set(playerSeasonIdsForSelectedLeague);
+    const authToken = token || Cookies.get('token') || '';
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
-    fetch(`${apiUrl}/api/leagues/${filters.leagueId}/seasons`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
-      .then((data: { success?: boolean; seasons?: SeasonInfo[] } | SeasonInfo[]) => {
-        if (!cancelled) {
-          // API returns { success: true, seasons: [...] }
-          const list = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
-          const sorted = sortSeasonsLatestFirst(list);
-          const playerScopedSeasons = playerSeasonIdSet.size > 0
-            ? sorted.filter((s) => playerSeasonIdSet.has(String(s.id)))
-            : sorted;
-          setAvailableSeasons(playerScopedSeasons);
-          setSeasonFilter((prev) => {
-            if (prev !== 'all' && playerScopedSeasons.some((s) => s.id === prev)) return prev;
-            return playerScopedSeasons[0]?.id || 'all';
-          });
-          setSeasonsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          if (playerSeasonIdsForSelectedLeague.length > 0) {
-            const fallback = sortSeasonsLatestFirst(
-              playerSeasonIdsForSelectedLeague.map((sid) => ({
-                id: sid,
-                name: `Season ${sid.slice(-6)}`,
-                seasonNumber: 0,
-                isActive: false,
-              }))
-            );
-            setAvailableSeasons(fallback);
-            setSeasonFilter((prev) => {
-              if (prev !== 'all' && fallback.some((s) => s.id === prev)) return prev;
-              return fallback[0]?.id || 'all';
+    const timestamp = Date.now();
+    const endpoints = [
+      `${apiUrl}/leagues/${filters.leagueId}/seasons?_t=${timestamp}`,
+      `${apiUrl}/api/leagues/${filters.leagueId}/seasons?_t=${timestamp}`,
+    ];
+
+    (async () => {
+      try {
+        let response: Response | null = null;
+        const baseHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (authToken) baseHeaders.Authorization = `Bearer ${authToken}`;
+        for (const endpoint of endpoints) {
+          try {
+            const res = await fetch(endpoint, {
+              headers: baseHeaders,
+              credentials: 'include',
+              cache: 'no-store',
             });
-          } else {
-            setAvailableSeasons([]);
-            setSeasonFilter('all');
+            if (res.ok) {
+              response = res;
+              break;
+            }
+          } catch {
+            // Try next endpoint.
           }
-          setSeasonsLoading(false);
         }
-      });
+        if (!response) throw new Error('seasons_fetch_failed');
+
+        const payload: unknown = await response.json().catch(() => ({}));
+        const payloadRecord = (!Array.isArray(payload) && payload && typeof payload === 'object')
+          ? payload as { seasons?: unknown; data?: unknown }
+          : null;
+        const rawList = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payloadRecord?.seasons)
+            ? payloadRecord.seasons
+            : Array.isArray(payloadRecord?.data)
+              ? payloadRecord.data
+              : [];
+        const normalized = rawList
+          .map((season) => normalizeSeasonInfo(season))
+          .filter((season): season is SeasonInfo => Boolean(season));
+        const dedupedById = Array.from(new Map(normalized.map((season) => [String(season.id), season])).values());
+        const sorted = sortSeasonsLatestFirst(dedupedById);
+        const visibleSeasons = sorted.filter((season) => !isSeasonExplicitlyDeclined(season));
+        const activeVisibleSeason = visibleSeasons.find((season) => isSeasonActiveLike(season));
+        const defaultSeason = activeVisibleSeason || visibleSeasons[0] || sorted[0];
+        let finalSeasons = sorted;
+        if (finalSeasons.length === 0 && playerSeasonIdFallbackForSelectedLeague.length > 0) {
+          finalSeasons = playerSeasonIdFallbackForSelectedLeague;
+        }
+        if (finalSeasons.length === 0 && playerSeasonYearFallbackForSelectedLeague.length > 0) {
+          finalSeasons = playerSeasonYearFallbackForSelectedLeague;
+        }
+        const resolvedDefaultSeasonId = finalSeasons.length === 0
+          ? 'all'
+          : (defaultSeason && finalSeasons.some((season) => sameId(season.id, defaultSeason.id))
+            ? defaultSeason.id
+            : finalSeasons[0].id);
+
+        if (cancelled) return;
+        setAvailableSeasons(finalSeasons);
+        setSeasonFilter((prev) => {
+          if (prev !== 'all' && finalSeasons.some((s) => sameId(s.id, prev))) return prev;
+          return resolvedDefaultSeasonId;
+        });
+        setSeasonsLoading(false);
+      } catch (error) {
+        if (cancelled) return;
+        console.warn('[CareerSeason] Falling back to match-derived seasons:', error);
+        if (playerSeasonIdFallbackForSelectedLeague.length > 0) {
+          setAvailableSeasons(playerSeasonIdFallbackForSelectedLeague);
+          setSeasonFilter((prev) => {
+            if (prev !== 'all' && playerSeasonIdFallbackForSelectedLeague.some((s) => sameId(s.id, prev))) return prev;
+            return playerSeasonIdFallbackForSelectedLeague[0]?.id || 'all';
+          });
+        } else if (playerSeasonYearFallbackForSelectedLeague.length > 0) {
+          setAvailableSeasons(playerSeasonYearFallbackForSelectedLeague);
+          setSeasonFilter((prev) => {
+            if (prev !== 'all' && playerSeasonYearFallbackForSelectedLeague.some((s) => sameId(s.id, prev))) return prev;
+            return playerSeasonYearFallbackForSelectedLeague[0]?.id || 'all';
+          });
+        } else {
+          setAvailableSeasons([]);
+          setSeasonFilter('all');
+        }
+        setSeasonsLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
-  }, [filters.leagueId, token, playerSeasonIdsForSelectedLeague]);
+  }, [filters.leagueId, token, playerSeasonIdFallbackForSelectedLeague, playerSeasonYearFallbackForSelectedLeague]);
 
   // Matches filtered by selected league, year, and season (for "Your Stats")
   const filteredMatches = useMemo(() => {
@@ -1644,8 +1813,33 @@ export default function CareerPage() {
     if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';
     const selected = availableSeasons.find((s) => sameId(s.id, seasonFilter));
     if (!selected) return 'All Seasons';
-    return `${selected.name}${selected.isActive ? ' (Active)' : ''}`;
+    return `${formatSeasonDisplayLabel(selected)}${selected.isActive ? ' (Active)' : ''}`;
   }, [seasonFilter, availableSeasons]);
+
+  const topTeammateLine = useMemo(() => {
+    if (!playerId) return 'Top Teammate: No player selected';
+    if (synergyLoading && !synergyError) return 'Top Teammate: Loading...';
+    if (synergyError) return `Top Teammate: ${synergyError}`;
+    if (participatedMatches === 0) return 'Top Teammate: No top teammate identified yet';
+    if (!bestPairing) return 'Top Teammate: No top teammate identified yet';
+    const wins = Number(bestPairing.winsTogether || 0);
+    const winWord = wins === 1 ? 'win' : 'wins';
+    return `Top Teammate: ${bestPairing.name || 'Player'} | ${wins} ${winWord} together | ${bestPairing.winRate}% win rate`;
+  }, [playerId, synergyLoading, synergyError, participatedMatches, bestPairing]);
+
+  const toughestRivalLine = useMemo(() => {
+    if (!playerId) return 'No toughest opponent identified yet';
+    if (synergyLoading && !synergyError) return 'Toughest Rival: Loading...';
+    if (synergyError) return `Toughest Rival: ${synergyError}`;
+    if (participatedMatches === 0) return 'No toughest opponent identified yet';
+    if (!toughestRival || Number(toughestRival.lossesAgainst || 0) <= 0) {
+      return 'No toughest opponent identified yet';
+    }
+    const losses = Number(toughestRival.lossesAgainst || 0);
+    const lossWord = losses === 1 ? 'loss' : 'losses';
+    const lossRateText = `${Number(toughestRival.lossRate || 0).toFixed(1).replace(/\\.0$/, '')}%`;
+    return `Toughest Rival: ${toughestRival.name || 'Player'} | ${losses} ${lossWord} | ${lossRateText} loss rate`;
+  }, [playerId, synergyLoading, synergyError, participatedMatches, toughestRival]);
 
   const handleYearFilterChange = (value: string) => {
     dispatch(setYearFilter(value));
@@ -2117,7 +2311,7 @@ export default function CareerPage() {
                               '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
                             }}
                           >
-                            {season.name}{season.isActive ? ' (Active)' : ''}
+                            {formatSeasonDisplayLabel(season)}{season.isActive ? ' (Active)' : ''}
                           </MenuItem>
                         ))}
                       </Menu>
@@ -2150,7 +2344,7 @@ export default function CareerPage() {
                       <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
                       {availableSeasons.map(season => (
                         <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                          {season.name}
+                          {formatSeasonDisplayLabel(season)}
                         </option>
                       ))}
                     </select>
@@ -2947,58 +3141,22 @@ export default function CareerPage() {
                 <Typography sx={{ 
                   fontSize: 13, 
                   fontWeight: 'bold', 
-                  mb: 1, 
-                  display: 'flex', 
-                  flexWrap: 'wrap',
-                  alignItems: 'center', 
-                  gap: 1, 
+                  mb: 1,
+                  textAlign: 'center',
                   lineHeight: 1.45,
                   color: themeColors.text 
                 }}>
-                  You Play Best With
-                  <Box component="img" src="/assets/icons/shirt.png" alt="shirt" sx={{ width: 18, height: 18 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-                  {playerId && synergyError && <span style={{ color: themeColors.danger }}>{synergyError}</span>}
-                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && <span style={{ color: themeColors.textDim }}>No matches yet.</span>}
-                  {!synergyLoading && !synergyError && bestPairing && (
-                    <>
-                      <span style={{ color: themeColors.primary, fontWeight: 600 }}>{bestPairing.name || 'Player'}</span>:
-                      Wins together <span style={{ color: themeColors.success }}>{bestPairing.winsTogether}</span>
-                      <span style={{ color: themeColors.textDim, fontSize: 11 }}>
-                        {` (${bestPairing.matchesTogether} matches • ${bestPairing.winRate}% win rate)`}
-                      </span>
-                    </>
-                  )}
-                  {!synergyLoading && !synergyError && participatedMatches > 0 && !bestPairing && <span style={{ color: themeColors.textDim }}>Need team wins.</span>}
+                  {topTeammateLine}
                 </Typography>
 
                 <Typography sx={{ 
                   fontSize: 13, 
                   fontWeight: 'bold', 
-                  display: 'flex', 
-                  flexWrap: 'wrap',
-                  alignItems: 'center', 
-                  gap: 1, 
+                  textAlign: 'center',
                   lineHeight: 1.45,
-                  color: themeColors.text 
+                  color: toughestRivalLine === 'No toughest opponent identified yet' ? themeColors.textDim : themeColors.text 
                 }}>
-                  Toughest Rival
-                  <Box component="img" src="/assets/icons/awayshirt.png" alt="away shirt" sx={{ width: 18, height: 18 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  {!playerId && <span style={{ color: themeColors.textDim }}>No player.</span>}
-                  {playerId && synergyLoading && !synergyError && <span style={{ color: themeColors.textDim }}>Loading…</span>}
-                  {playerId && synergyError && <span style={{ color: themeColors.danger }}>{synergyError}</span>}
-                  {playerId && !synergyLoading && !synergyError && participatedMatches === 0 && <span style={{ color: themeColors.textDim }}>No matches yet.</span>}
-                  {!synergyLoading && !synergyError && toughestRival && (
-                    <>
-                      <span style={{ color: themeColors.primary, fontWeight: 600 }}>{toughestRival.name || 'Player'}</span>
-                      Losses vs <span style={{ color: themeColors.danger }}>{toughestRival.lossesAgainst}</span>
-                      <span style={{ color: themeColors.textDim, fontSize: 11 }}>
-                        {` (${toughestRival.matchesAgainst} matches - ${Number(toughestRival.lossRate || 0).toFixed(1).replace(/\.0$/, '')}% loss rate)`}
-                      </span>
-                    </>
-                  )}
-                  {!synergyLoading && !synergyError && participatedMatches > 0 && !toughestRival && <span style={{ color: themeColors.textDim }}>Need rival data.</span>}
+                  {toughestRivalLine}
                 </Typography>
               </Box>
             </Box>

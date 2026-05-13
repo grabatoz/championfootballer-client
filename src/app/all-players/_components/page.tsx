@@ -82,6 +82,9 @@ interface Match {
 
 const WORLD_RANKING_POSITION_OPTIONS = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper'] as const;
 
+const normalizeSearchText = (value: string): string =>
+  value.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
 // League option used by the UI select
 interface LeagueOption { 
   id: string; 
@@ -853,8 +856,16 @@ const AllPlayersPage = () => {
 
   const positionOptions = WORLD_RANKING_POSITION_OPTIONS;
 
+  useEffect(() => {
+    if (normalizeSearchText(searchQuery) === '' && searchTerm !== '') {
+      setSearchTerm('');
+    }
+  }, [searchQuery, searchTerm]);
+
+  const activeSearchTerm = normalizeSearchText(searchQuery) === '' ? '' : normalizeSearchText(searchTerm);
+
   const filteredPlayers = sourcePlayers.filter((player: Player) => {
-    const matchesSearch = getPlayerName(player).toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = getPlayerName(player).toLowerCase().includes(activeSearchTerm.toLowerCase());
     const normalizedPosition = normalizeToWorldRankingPosition(getPositionLabel(player));
     const matchesPosition =
       selectedPosition === 'all' ||
@@ -987,10 +998,18 @@ const AllPlayersPage = () => {
               variant="outlined"
               placeholder="Search player name and hit enter..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const nextQuery = e.target.value;
+                setSearchQuery(nextQuery);
+                if (normalizeSearchText(nextQuery) === '') {
+                  setSearchTerm('');
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  setSearchTerm(searchQuery);
+                  const target = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+                  const inputValue = typeof target?.value === 'string' ? target.value : searchQuery;
+                  setSearchTerm(normalizeSearchText(inputValue));
                 }
               }}
               sx={{
@@ -1342,7 +1361,7 @@ const AllPlayersPage = () => {
         </Box>
 
         {/* Player List Content */}
-        {searchTerm && filteredPlayers.length === 0 && (
+        {activeSearchTerm && filteredPlayers.length === 0 && (
           <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', py: 4, textAlign: 'center' }}>
             <Typography sx={{ color: 'white', fontWeight: 500 }}>
               User not found

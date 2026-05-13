@@ -1668,7 +1668,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
       const hasHomeCaptainSelected = Boolean(homeCaptain && !homeCaptain.isGuest);
       const hasAwayCaptainSelected = Boolean(awayCaptain && !awayCaptain.isGuest);
-      if (!hasHomeCaptainSelected || !hasAwayCaptainSelected) {
+      const hasTeamSelections = totalCount > 0;
+      if (hasTeamSelections && (!hasHomeCaptainSelected || !hasAwayCaptainSelected)) {
         const confirmedWithoutCaptains = window.confirm('Do you want to save the match without selecting captains?');
         if (!confirmedWithoutCaptains) {
           setIsSubmitting(false);

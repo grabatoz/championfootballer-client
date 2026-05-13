@@ -242,7 +242,7 @@ export default function LeaderBoardPage() {
           positionType: String(p.positionType ?? '-'),
           profilePicture: p.profilePicture,
           value: Number(p.value ?? 0),
-        }));
+        })).filter((player: Player) => Number.isFinite(player.value) && player.value > 0);
 
         setPlayers(filteredPlayers);
       })

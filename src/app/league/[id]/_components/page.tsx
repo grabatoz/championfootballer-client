@@ -387,7 +387,7 @@ const LEADERBOARD_METRIC_CONFIG = [
         label: 'CONTRIBUTION INDEX %',
         icon: Goals,
         infoSummary: 'Shows overall contribution as a percentage.',
-        infoFormula: 'Uses the contribution value returned by leaderboard API for selected league/season and displays it as %.',
+        infoFormula: 'Averages each player’s match impact percentage from RESULT_PUBLISHED matches for the selected league/season.',
     },
 ] as const;
 
@@ -2582,7 +2582,10 @@ export default function LeagueDetailPage() {
         const metrics = LEADERBOARD_METRIC_CONFIG.map((metric) => metric.key);
         const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard`;
 
-        const normalizeLeaderboardPlayers = (raw: unknown): Array<{ id: string; name: string; positionType: string; value: number }> => {
+        const normalizeLeaderboardPlayers = (
+            raw: unknown,
+            metricKey: string
+        ): Array<{ id: string; name: string; positionType: string; value: number }> => {
             const rawPlayers = Array.isArray((raw as { players?: unknown[] })?.players)
                 ? (raw as { players: unknown[] }).players
                 : [];
@@ -2610,7 +2613,7 @@ export default function LeagueDetailPage() {
                         value: Number.isFinite(valueNum) ? valueNum : 0,
                     };
                 })
-                .filter((player) => player.value > 0)
+                .filter((player) => metricKey === 'contribution' ? player.value >= 0 : player.value > 0)
                 .slice(0, 5);
         };
 
@@ -2628,17 +2631,7 @@ export default function LeagueDetailPage() {
                 try {
                     const primaryRes = await fetch(urlSeason, requestInit);
                     const primaryJson = await primaryRes.json().catch(() => ({}));
-                    let players = normalizeLeaderboardPlayers(primaryJson);
-
-                    // If selected season is too sparse, fallback to all-seasons for better top-5 coverage
-                    if (selectedSeasonId && players.length <= 1) {
-                        const allRes = await fetch(urlAll, requestInit);
-                        const allJson = await allRes.json().catch(() => ({}));
-                        const allPlayers = normalizeLeaderboardPlayers(allJson);
-                        if (allPlayers.length > players.length) {
-                            players = allPlayers;
-                        }
-                    }
+                    const players = normalizeLeaderboardPlayers(primaryJson, metric);
 
                     return { metric, players };
                 } catch {
