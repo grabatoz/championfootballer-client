@@ -583,7 +583,8 @@ export default function WorldRankingTable() {
           overflow: 'hidden',
           border: '1px solid #2a2a2a',
           position: 'relative',
-          p: 1.5,
+          py: 1.5,
+          px: 0,
         }}>
           {loading && (
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.45)', zIndex: 2 }}>
