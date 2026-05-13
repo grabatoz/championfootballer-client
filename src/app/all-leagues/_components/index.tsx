@@ -4819,7 +4819,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                               Total Seasons : {totalSeasons}
+                               Total Seasons: {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -4860,7 +4860,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                               Total Seasons : {totalSeasons}
+                               Total Seasons: {totalSeasons}
                               </Typography>
                             </Box>
 
