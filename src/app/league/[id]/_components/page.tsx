@@ -4405,7 +4405,7 @@ export default function LeagueDetailPage() {
                                                             <div
                                                                 key={member.id}
                                                                 onClick={() => router.push(`/player/${member.id}`)}
-                                                                className={`grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-2 py-3 cursor-pointer transition-colors  ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset ${isLast ? 'mb-2' : 'mb-0'}`}
+                                                                className={`grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-2 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset ${isLast ? 'mb-2' : 'mb-0'}`}
                                                             >
                                                                 {/* Player Info - under ALL POSITIONS */}
                                                                 <div className="flex items-center gap-3 min-w-0">

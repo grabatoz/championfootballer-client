@@ -1427,9 +1427,9 @@ const AllPlayersPage = () => {
                         fontWeight,
                         cursor: 'pointer',
                         transition: 'background-color 0.2s',
-                        // '&:hover': {
-                        //   backgroundColor: rowBgColorHover,
-                        // }
+                        '&:hover': {
+                          backgroundColor: rowBgColorHover,
+                        }
                       }}
                     >
                       {/* Avatar + Name column (fixed width for stable alignment) */}
