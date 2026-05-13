@@ -4600,9 +4600,10 @@ function AllLeagues() {
                             mx: { xs: 'auto', md: 0 },
                             flexShrink: 0,
                             position: 'relative',
-                            bgcolor: 'white',
+                            // bgcolor: 'white',
                             borderRadius: '50%',
                             overflow: 'hidden',
+                            // border:"1px solid white",
                           }}>
                             <Box
                               sx={{
@@ -4669,7 +4670,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Seasons {totalSeasons}
+                               Total Seasons {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -4710,7 +4711,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Seasons {totalSeasons}
+                               Total Seasons {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -4818,7 +4819,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Matches: {league.matches?.length || 0}
+                               Total Matches: {league.matches?.length || 0}
                               </Typography>
                             </Box>
 
