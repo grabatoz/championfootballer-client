@@ -2571,7 +2571,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                     type='submit'
                     variant='contained'
                     fullWidth
-                    sx={{ mt: 3, py: { xs: 0.9, sm: 1 }, background: 'linear-gradient(135deg, #00a77f, #00a77f)', color: 'white', fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' }, borderRadius: 1,  '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
+                    sx={{ mt: 3, py: { xs: 0.9, sm: 1 }, background: 'linear-gradient(135deg, #00a77f, #00a77f)', color: 'white', fontWeight: 'bold', borderRadius: 1,  '&:hover': { background: 'linear-gradient(135deg, #157a62, #126b55)' } }}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? <CircularProgress size={28} sx={{ color: 'white' }} /> : 'SAVE'}
