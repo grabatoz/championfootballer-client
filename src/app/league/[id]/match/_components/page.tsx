@@ -1009,25 +1009,6 @@ export default function ScheduleMatchPage() {
             transform: 'translateX(-50%)',
           }}
         >
-          <IconButton
-            aria-label="Close create match form"
-            onClick={handleCloseForm}
-            sx={{
-              position: 'absolute',
-              right: { xs: 12, md: 18 },
-              top: { xs: 12, md: 18 },
-              color: '#fff',
-              border: '1px solid rgba(255,255,255,0.35)',
-              borderRadius: 2,
-              background: 'rgba(255,255,255,0.06)',
-              zIndex: 2,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.14)',
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
           <Typography
             variant="h3"
             sx={{
@@ -1074,6 +1055,26 @@ export default function ScheduleMatchPage() {
         <GradientCard
           title=""
         >
+          <IconButton
+            aria-label="Close create match form"
+            onClick={handleCloseForm}
+            sx={{
+              position: 'absolute',
+              right: { xs: 0, md: 0 },
+              top: { xs: 0, md: 0 },
+              color: '#111827',
+              border: '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 2,
+              background: '#ffffff',
+              zIndex: 3,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.22)',
+              '&:hover': {
+                background: '#f3f4f6',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           <Grid container spacing={{ xs: 2.25, md: 4 }}>
             {/* DATE */}
             <Grid item xs={12} md={6}>
