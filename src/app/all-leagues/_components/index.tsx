@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/lib/hooks';
 import dynamic from 'next/dynamic';
-import { AdminPanelSettings, Close, Delete, ExitToApp, People, CloudUpload, CheckCircle, Search, ExpandMore, Add as AddIcon } from '@mui/icons-material'
+import { AdminPanelSettings, Close, Delete, ExitToApp, People, CloudUpload, CheckCircle, Search, ExpandMore, Add as AddIcon, PowerSettingsNew } from '@mui/icons-material'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography, Container, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, useTheme, useMediaQuery, Fade, Chip, CircularProgress, MenuItem, InputAdornment, FormControl, Select, RadioGroup, Radio, Switch, FormControlLabel, Grid } from '@mui/material'
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -2632,13 +2632,14 @@ function AllLeagues() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
+  const [completionTab, setCompletionTab] = useState<'completed' | 'live'>('live');
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedSeasons, setShowArchivedSeasons] = useState(false);
   const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
   const [archivedSeasonActionId, setArchivedSeasonActionId] = useState<string | null>(null);
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
+  const [leagueLiveUpdatingId, setLeagueLiveUpdatingId] = useState<string | null>(null);
   const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
   const [pendingSeasonLeague, setPendingSeasonLeague] = useState<LeagueWithStatus | null>(null);
   const [locallyDeletedLeagueIds, setLocallyDeletedLeagueIds] = useState<string[]>([]);
@@ -2780,78 +2781,171 @@ function AllLeagues() {
       .map(String);
   }, [leagues]);
 
-  // A league is considered completed when:
-  // 1. Active/current season reaches its maxGames target, OR
-  // 2. Explicit backend completion/lock flags are true, OR
-  // 3. Backward-compatible league-level fallback reaches maxGames.
-  const isLeagueCompleted = (l: LeagueWithStatus): boolean => {
-    const computed = l.computedStatus;
-    const withTopFlags = l as LeagueWithStatus & { isComplete?: boolean; isCompleted?: boolean };
-    const withSeasons = l as LeagueWithStatus & { seasons?: Season[]; currentSeason?: Season | null };
+  const completedStatusTokens = useMemo(
+    () => new Set([
+      'completed',
+      'complete',
+      'inactive',
+      'finished',
+      'ended',
+      'result_published',
+      'result_uploaded',
+      'result_complete',
+      'result_finished',
+      'result_ended',
+      'result_done',
+      'closed',
+    ]),
+    []
+  );
 
-    const leagueSeasons = Array.isArray(withSeasons.seasons)
-      ? withSeasons.seasons.filter((season) => !Boolean(season.archived) && !Boolean((season as Season & { deleted?: boolean }).deleted))
-      : [];
-    const currentSeason =
-      leagueSeasons.find((season) => season.isActive)
-      || (withSeasons.currentSeason && !withSeasons.currentSeason.archived ? withSeasons.currentSeason : null)
-      || [...leagueSeasons].sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0))[0]
-      || null;
+  const isLeagueCompleted = useCallback((l: LeagueWithStatus): boolean => {
+    const withFlags = l as LeagueWithStatus & {
+      isComplete?: boolean;
+      isCompleted?: boolean;
+      archived?: boolean;
+    };
 
-    const playedFromComputed = typeof computed?.matchesPlayed === 'number'
-      ? computed.matchesPlayed
-      : (typeof computed?.gamesPlayed === 'number' ? computed.gamesPlayed : undefined);
-    const maxFromComputed = typeof computed?.maxGames === 'number' ? computed.maxGames : undefined;
-    const maxFromSeason = typeof currentSeason?.maxGames === 'number' ? currentSeason.maxGames : undefined;
-    const leagueMax = typeof l.maxGames === 'number' ? l.maxGames : 0;
-    const max = maxFromSeason ?? maxFromComputed ?? leagueMax;
+    // Explicit backend status values
+    const status = String(l.status || '').toLowerCase().trim();
+    if (completedStatusTokens.has(status)) return true;
 
-    const countCompletedMatches = (matches: Match[]): number => matches.reduce((acc, m) => {
-      const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-      const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended'
-        || status === 'result_published' || status === 'result_uploaded';
-      const endedByFlag = m.active === false;
-      const endedByEnd = Boolean(m.end);
-      return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-    }, 0);
-
-    const allMatches: Match[] = Array.isArray(l.matches) ? l.matches : [];
-    const hasSeasonTaggedMatches = allMatches.some((m) => Boolean((m as MatchWithSeason).seasonId));
-    const seasonMatches = currentSeason
-      ? allMatches.filter((m) => String((m as MatchWithSeason).seasonId || '') === String(currentSeason.id))
-      : allMatches;
-    const seasonScopedMax = currentSeason ? (maxFromSeason ?? leagueMax) : 0;
-
-    // Season-first rule: if there is an active/current season, decide completion from that season target.
-    // This avoids stale old "completed" flags keeping league inactive after creating a new season.
-    if (currentSeason && seasonScopedMax > 0) {
-      const matchesToEvaluate = hasSeasonTaggedMatches ? seasonMatches : allMatches;
-      const seasonCompletedCount = countCompletedMatches(matchesToEvaluate);
-      return seasonCompletedCount >= seasonScopedMax;
+    // Explicit backend completion flags
+    if (
+      l.computedStatus?.isComplete === true ||
+      l.computedStatus?.isCompleted === true ||
+      l.computedStatus?.locked === true ||
+      withFlags.isComplete === true ||
+      withFlags.isCompleted === true ||
+      l.isLocked === true
+    ) {
+      return true;
     }
 
-    // Primary flags from backend (support both spellings for compatibility)
-    if (computed?.isComplete === true || computed?.isCompleted === true) return true;
-    if (computed?.locked === true || l.isLocked === true) return true;
-    if (withTopFlags.isComplete === true || withTopFlags.isCompleted === true) return true;
+    // If backend marks active=false and league is not archived, treat it as completed.
+    if (l.active === false && !Boolean(withFlags.archived)) return true;
 
-    // Use computed counters when available
-    if (typeof playedFromComputed === 'number' && max > 0) {
-      return playedFromComputed >= max;
+    return false;
+  }, [completedStatusTokens]);
+
+  const isLeagueLive = useCallback((l: LeagueWithStatus): boolean => {
+    if (isLeagueCompleted(l)) return false;
+    if (Boolean((l as LeagueWithStatus & { archived?: boolean }).archived)) return false;
+    return true;
+  }, [isLeagueCompleted]);
+
+  const isArchivedLeague = useCallback((l: LeagueWithStatus): boolean => {
+    if (isLeagueCompleted(l)) return false;
+    return Boolean((l as LeagueWithStatus & { archived?: boolean }).archived);
+  }, [isLeagueCompleted]);
+
+  const handleToggleLeagueLiveStatus = useCallback(async (league: LeagueWithStatus, nextLive: boolean) => {
+    if (!token) {
+      toast.error('Please login again and try.');
+      return;
     }
 
-    // Fallback: old logic for backward compatibility
-    if (max <= 0) return false; // without a target, don't show as completed
+    if (!isLeagueAdminForCurrentUser(league)) {
+      toast.error('Only league admin can change league live/completed status.');
+      return;
+    }
 
-    const completedCount = countCompletedMatches(allMatches);
-    return completedCount >= max;
-  };
+    const leagueId = String(league.id);
+    if (leagueLiveUpdatingId === leagueId) return;
+    setLeagueLiveUpdatingId(leagueId);
+
+    try {
+      type StatusAttempt = { url: string; payload: Record<string, unknown> };
+      const livePayload = { active: true, archived: false, status: 'active', isComplete: false, isCompleted: false, locked: false };
+      const completedPayload = { active: false, archived: false, status: 'completed', isComplete: true, isCompleted: true, locked: true };
+      const attempts: StatusAttempt[] = nextLive
+        ? [
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: livePayload },
+          ]
+        : [
+            // For completed state, prefer direct league patch so backend stores completion
+            // without translating it to archived/inactive.
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: completedPayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: completedPayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: completedPayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: completedPayload },
+          ];
+
+      let success = false;
+
+      for (let i = 0; i < attempts.length; i += 1) {
+        const res = await fetch(attempts[i].url, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(attempts[i].payload),
+        });
+        if (res.ok) {
+          success = true;
+          break;
+        }
+        const shouldTryFallback = res.status === 404 || res.status === 405;
+        if (!shouldTryFallback) break;
+      }
+
+      if (!success) throw new Error('Failed to update league status');
+
+      const now = new Date().toISOString();
+      setLeagues((prev) =>
+        prev.map((item) => (String(item.id) === leagueId
+          ? {
+              ...item,
+              active: nextLive,
+              archived: false,
+              status: (nextLive ? 'active' : 'completed') as League['status'],
+              isLocked: !nextLive,
+              computedStatus: {
+                ...(item.computedStatus || {}),
+                locked: !nextLive,
+                isComplete: !nextLive,
+                isCompleted: !nextLive,
+              },
+              updatedAt: now,
+            }
+          : item))
+      );
+
+      setSelectedLeague((prev) => (prev && String(prev.id) === leagueId
+        ? {
+            ...prev,
+            active: nextLive,
+            status: (nextLive ? 'active' : 'completed') as League['status'],
+            updatedAt: now,
+          }
+        : prev));
+
+      setAdminSettingsLeague((prev) => (prev && String(prev.id) === leagueId
+        ? {
+            ...prev,
+            active: nextLive,
+            status: (nextLive ? 'active' : 'completed') as League['status'],
+            updatedAt: now,
+          }
+        : prev));
+      toast.success(nextLive ? 'League marked as live' : 'League marked as completed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to update league status';
+      toast.error(msg);
+    } finally {
+      setLeagueLiveUpdatingId(null);
+    }
+  }, [token, isLeagueAdminForCurrentUser, leagueLiveUpdatingId]);
 
   // Apply filters: by completion, by year (createdAt) and by league name
   // Archived leagues are always excluded from main list
   const filteredLeagues = useMemo(() => {
-    const nonArchived = leagues.filter(l => !(l as any).archived);
-    const byCompletion = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : !isLeagueCompleted(l));
+    const nonArchived = leagues.filter((l) => !isArchivedLeague(l));
+    const byCompletion = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : isLeagueLive(l));
     const byYear = selectedYear === 'all'
       ? byCompletion
       : byCompletion.filter(l => {
@@ -2864,7 +2958,7 @@ function AllLeagues() {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return byYear;
     return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
-  }, [leagues, selectedYear, searchTerm, completionTab]);
+  }, [leagues, selectedYear, searchTerm, completionTab, isLeagueCompleted, isLeagueLive, isArchivedLeague]);
 
   // Show all filtered leagues, or only user-selected league
   const leaguesToDisplay = useMemo(() => {
@@ -2885,8 +2979,8 @@ function AllLeagues() {
 
   // Archived leagues — always separate from the main list
   const archivedLeagues = useMemo(() => {
-    return leagues.filter(l => Boolean((l as any).archived));
-  }, [leagues]);
+    return leagues.filter((l) => isArchivedLeague(l));
+  }, [leagues, isArchivedLeague]);
 
   const archivedSeasons = useMemo(() => {
     const items: Array<{ league: LeagueWithStatus; season: Season }> = [];
@@ -3015,14 +3109,42 @@ function AllLeagues() {
       if (authResponse.ok) {
         const authData = await authResponse.json();
         if (authData.success && authData.user) {
-          // Combine joined and managed leagues
-          const userLeagues: League[] = [
-            ...(authData.user.leagues || []),
-            ...(authData.user.administeredLeagues || [])
-          ].filter((league: League) => league && league.id);
+          // Merge leagues from all known user keys + fallback list endpoint.
+          // This keeps completed/inactive leagues from disappearing after refresh when backend keying differs.
+          const authLeagueSources: unknown[] = [
+            ...(Array.isArray(authData.user.leagues) ? authData.user.leagues : []),
+            ...(Array.isArray(authData.user.adminLeagues) ? authData.user.adminLeagues : []),
+            ...(Array.isArray(authData.user.administeredLeagues) ? authData.user.administeredLeagues : []),
+            ...(Array.isArray(authData.user.managedLeagues) ? authData.user.managedLeagues : []),
+          ];
+
+          let fallbackLeagueSources: unknown[] = [];
+          try {
+            const leaguesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues?refresh=1&bust=${Date.now()}`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+              cache: 'no-store',
+            });
+            if (leaguesResponse.ok) {
+              const leaguesPayloadUnknown: unknown = await leaguesResponse.json().catch(() => ({}));
+              const leaguesPayload = isRecord(leaguesPayloadUnknown)
+                ? leaguesPayloadUnknown as { success?: boolean; leagues?: unknown[] }
+                : {};
+              if (leaguesPayload.success !== false && Array.isArray(leaguesPayload.leagues)) {
+                fallbackLeagueSources = leaguesPayload.leagues;
+              }
+            }
+          } catch (err) {
+            console.warn('[Leagues] Fallback /leagues fetch failed:', err);
+          }
+
+          const mergedLeagues: League[] = [...authLeagueSources, ...fallbackLeagueSources]
+            .map((leaguePayload) => normalizeLeagueFromPayload(leaguePayload))
+            .filter((league): league is League => Boolean(league && league.id));
 
           // Remove duplicates
-          const uniqueLeagues: League[] = Array.from(new Map(userLeagues.map((league: League) => [league.id, league])).values());
+          const uniqueLeagues: League[] = Array.from(
+            new Map(mergedLeagues.map((league) => [String(league.id), league])).values()
+          );
 
           // Now fetch detailed information for each league
           const detailedLeagues: Array<LeagueWithStatus | null> = await Promise.all(
@@ -3072,7 +3194,10 @@ function AllLeagues() {
             setLeagues(sortedLeagues);
           }
           console.log('Setting detailed leagues:', detailedLeagues);
-          console.log('Leagues archived status:', detailedLeagues.map(l => ({ name: l?.name, archived: (l as any)?.archived, active: l?.active })));
+          console.log('Leagues archived status:', detailedLeagues.map((l) => {
+            const leagueWithArchived = l as (LeagueWithStatus & { archived?: boolean }) | null;
+            return { name: l?.name, archived: leagueWithArchived?.archived, active: l?.active };
+          }));
         }
       } else {
         console.error('Failed to fetch leagues');
@@ -4633,7 +4758,7 @@ function AllLeagues() {
               
               <Button 
                 variant="outlined" 
-                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setSelectedLeagueId('all'); setCompletionTab('uncompleted'); }} 
+                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setSelectedLeagueId('all'); setCompletionTab('live'); }} 
                 sx={{
                   color: 'white',
                   borderRadius: 6,
@@ -4656,63 +4781,55 @@ function AllLeagues() {
             </Box>
           </Box>
 
-          {/* Complete/Live Leagues Toggle Section */}
+          {/* Complete/Live Leagues Filter Buttons */}
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
-            gap: { xs: 1.5, md: 6 },
+            gap: { xs: 1.2, md: 2 },
             mt: { xs: 2, md: 3 },
             mb: 2
           }}>
-            <Typography sx={{ 
-              color: completionTab === 'completed' ? 'white' : 'rgba(255,255,255,0.5)',
-              fontWeight: completionTab === 'completed' ? 600 : 'normal',
-              fontSize: { xs: '16px', md: '22px' },
-              lineHeight: 1.2,
-              textAlign: 'center',
-              transition: 'all 0.3s ease'
-            }}>
-              Completed Leagues
-            </Typography>
-            
-            <Box 
-              onClick={() => setCompletionTab(completionTab === 'completed' ? 'uncompleted' : 'completed')}
-              sx={{ 
-                width: 60, 
-                height: 30, 
-                borderRadius: 15, 
-                bgcolor: completionTab === 'uncompleted' ? '#00A896' : 'rgba(255,255,255,0.2)',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '3px'
+            <Button
+              variant={completionTab === 'live' ? 'contained' : 'outlined'}
+              onClick={() => setCompletionTab('live')}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 6,
+                px: { xs: 2, md: 3 },
+                py: { xs: 0.75, md: 1 },
+                fontSize: { xs: '14px', md: '18px' },
+                fontWeight: 700,
+                bgcolor: completionTab === 'live' ? '#00A896' : 'transparent',
+                color: 'white',
+                borderColor: 'rgba(255,255,255,0.35)',
+                '&:hover': {
+                  bgcolor: completionTab === 'live' ? '#008c7a' : 'rgba(255,255,255,0.08)',
+                },
               }}
             >
-              <Box sx={{ 
-                width: 24, 
-                height: 24, 
-                borderRadius: '50%', 
-                bgcolor: 'white',
-                position: 'absolute',
-                left: completionTab === 'uncompleted' ? '33px' : '3px',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }} />
-            </Box>
-
-            <Typography sx={{ 
-              color: completionTab === 'uncompleted' ? 'white' : 'rgba(255,255,255,0.5)',
-              fontWeight: completionTab === 'uncompleted' ? 600 : 'normal',
-              fontSize: { xs: '16px', md: '22px' },
-              lineHeight: 1.2,
-              textAlign: 'center',
-              transition: 'all 0.3s ease'
-            }}>
               Live Leagues
-            </Typography>
+            </Button>
+            <Button
+              variant={completionTab === 'completed' ? 'contained' : 'outlined'}
+              onClick={() => setCompletionTab('completed')}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 6,
+                px: { xs: 2, md: 3 },
+                py: { xs: 0.75, md: 1 },
+                fontSize: { xs: '14px', md: '18px' },
+                fontWeight: 700,
+                bgcolor: completionTab === 'completed' ? '#6b7280' : 'transparent',
+                color: 'white',
+                borderColor: 'rgba(255,255,255,0.35)',
+                '&:hover': {
+                  bgcolor: completionTab === 'completed' ? '#4b5563' : 'rgba(255,255,255,0.08)',
+                },
+              }}
+            >
+              Completed Leagues
+            </Button>
           </Box>
         </Box>
 
@@ -4739,9 +4856,12 @@ function AllLeagues() {
           ) : (
             leaguesToDisplay.map((league) => {
               const isCompleted = isLeagueCompleted(league);
+              const isLive = isLeagueLive(league);
               const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
               const canCreateSeason = isLeagueAdminForCurrentUser(league);
               const isCreatingSeason = creatingSeasonLeagueId === String(league.id);
+              const canManageLiveStatus = isLeagueAdminForCurrentUser(league);
+              const isUpdatingLiveStatus = leagueLiveUpdatingId === String(league.id);
               const leagueSeasons = Array.isArray((league as LeagueWithStatus & { seasons?: Season[] }).seasons)
                 ? ((league as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).filter(
                     (season) => !Boolean((season as Season & { deleted?: boolean }).deleted)
@@ -4867,14 +4987,58 @@ function AllLeagues() {
                             position: 'relative',
                             // bgcolor: 'white',
                             borderRadius: '50%',
-                            overflow: 'hidden',
+                            overflow: 'visible',
                             // border:"1px solid white",
                           }}>
+                            <Box
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{
+                                position: 'absolute',
+                                top: -6,
+                                left: -6,
+                                zIndex: 5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.3,
+                                bgcolor: isLive ? 'rgba(0,168,150,0.95)' : 'rgba(31,41,55,0.9)',
+                                borderRadius: 999,
+                                pl: 0.7,
+                                pr: 0.25,
+                                py: 0.1,
+                                border: '1px solid rgba(255,255,255,0.35)',
+                              }}
+                            >
+                              <PowerSettingsNew sx={{ fontSize: 13, color: 'white' }} />
+                              <Switch
+                                size="small"
+                                checked={isLive}
+                                disabled={isUpdatingLiveStatus || !canManageLiveStatus}
+                                onChange={(e, checked) => {
+                                  e.stopPropagation();
+                                  void handleToggleLeagueLiveStatus(league, checked);
+                                }}
+                                sx={{
+                                  m: 0,
+                                  '& .MuiSwitch-switchBase': { p: 0.5 },
+                                  '& .MuiSwitch-thumb': { width: 11, height: 11, bgcolor: 'white' },
+                                  '& .MuiSwitch-track': {
+                                    borderRadius: 999,
+                                    opacity: '1 !important',
+                                    bgcolor: isLive ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.28)',
+                                  },
+                                  '& .Mui-checked + .MuiSwitch-track': {
+                                    bgcolor: 'rgba(255,255,255,0.42) !important',
+                                  },
+                                }}
+                              />
+                            </Box>
                             <Box
                               sx={{
                                 position: 'relative',
                                 width: '100%',
                                 height: '100%',
+                                borderRadius: '50%',
+                                overflow: 'hidden',
                                 p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
                                 boxSizing: 'border-box',
                               }}
