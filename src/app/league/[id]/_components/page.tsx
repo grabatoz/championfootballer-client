@@ -281,6 +281,17 @@ const formatPlayerName = (firstName?: string, lastName?: string): string => {
     return fullName;
 };
 
+// Match player-card naming format: FirstName + last initial (e.g., "Alex K.")
+const formatPlayerCardStyleName = (firstName?: string, lastName?: string): string => {
+    const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+    if (!fullName) return 'Player Name';
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    const firstNameOnly = parts[0] || '';
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1].charAt(0).toUpperCase() : '';
+    if (!firstNameOnly) return 'Player Name';
+    return lastInitial ? `${firstNameOnly} ${lastInitial}.` : firstNameOnly;
+};
+
 const getTopMotmPlayerName = (match: Match, fallbackPlayers: User[] = []): string | null => {
     const votes = match.manOfTheMatchVotes;
     if (!votes || typeof votes !== 'object') return null;
@@ -4427,7 +4438,7 @@ export default function LeagueDetailPage() {
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
                                                                         <div className="flex items-center gap-1.5 min-w-0">
-                                                                            <span className="text-foreground font-semibold truncate">{formatMatchName(firstName)} {formatMatchName(lastName)}</span>
+                                                                            <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                         </div>
                                                                         <span className="text-muted-foreground font-normal text-xs">{getMemberPositionLabel(member) === '-' ? 'Striker' : getMemberPositionLabel(member)}</span>
                                                                     </div>
@@ -5749,8 +5760,7 @@ export default function LeagueDetailPage() {
                                                                         // border: '1px solid rgba(255,255,255,0.2)',
                                                                     }}
                                                                 >
-                                                                    {player?.firstName} 
-                                                                    {/* {player?.lastName} */}
+                                                                    {formatPlayerCardStyleName(player?.firstName, player?.lastName)}
                                                                 </Typography>
                                                             </Box>
                                                         </Box>
@@ -5957,7 +5967,7 @@ export default function LeagueDetailPage() {
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
                                                                         <div className="flex items-center gap-1.5 min-w-0">
-                                                                            <span className="text-foreground font-semibold truncate">{formatMatchName(firstName)} {formatMatchName(lastName)}</span>
+                                                                            <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                             {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                         </div>
                                                                         <span className="text-muted-foreground font-normal text-xs">{posLabel}</span>

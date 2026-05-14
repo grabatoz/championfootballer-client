@@ -786,6 +786,19 @@ const AllPlayersPage = () => {
     return `${player.firstName || ''} ${player.lastName || ''}`.trim() || 'Unknown Player';
   }
 
+  // Match player-card naming format: FirstName + last initial (e.g., "Alex K.")
+  function getPlayerCardStyleName(player: Player): string {
+    const first = (player.firstName || '').trim();
+    const last = (player.lastName || '').trim();
+    const fullName = `${first} ${last}`.trim() || getPlayerName(player);
+    if (!fullName) return 'Player Name';
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    const firstNameOnly = parts[0] || '';
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1].charAt(0).toUpperCase() : '';
+    if (!firstNameOnly) return 'Player Name';
+    return lastInitial ? `${firstNameOnly} ${lastInitial}.` : firstNameOnly;
+  }
+
   function getPlayingStyle(player: Player): string {
     const fromStyle = (player.style || '').toString().trim();
     if (fromStyle) return fromStyle;
@@ -1497,12 +1510,13 @@ const AllPlayersPage = () => {
                               color: '#fff',
                               lineHeight: 1.4,
                               fontFamily: '"Woodford Bourne Pro", sans-serif',
+                              textTransform: 'uppercase',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
                             }}
                           >
-                            {getPlayerName(player)}
+                            {getPlayerCardStyleName(player)}
                           </Typography>
                           <Typography sx={{ 
                             fontSize: { xs: 10, sm: 12 },

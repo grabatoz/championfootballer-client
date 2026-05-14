@@ -375,8 +375,9 @@ input:-webkit-autofill:active {
   margin-right: 12px;
 }
 .league-header-inset {
-  margin-left: 0px;
-  margin-right: 0px;
+  /* Keep header column grid width aligned with row grid width */
+  margin-left: 12px;
+  margin-right: 12px;
   /* Keep content inset but visually stretch header background to full width */
   box-shadow: -12px 0 0 var(--league-table-header-bg), 12px 0 0 var(--league-table-header-bg);
 }
