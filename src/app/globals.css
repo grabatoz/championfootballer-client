@@ -367,6 +367,7 @@ input:-webkit-autofill:active {
 .league-row {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
+  min-height: 50px;
 }
 
 /* Small left-right spacing inside the table */
@@ -494,6 +495,7 @@ input:-webkit-autofill:active {
   .league-row {
     padding-top: 5px !important;
     padding-bottom: 5px !important;
+    min-height: 50px;
   }
   .league-row-inset,
   .league-header-inset {
@@ -597,6 +599,9 @@ input:-webkit-autofill:active {
   }
   .league-standings-row {
     margin-bottom: 3px !important;
+  }
+  .league-row {
+    min-height: 50px;
   }
   .league-player-cell {
     gap: 4px;

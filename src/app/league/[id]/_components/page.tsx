@@ -4440,12 +4440,12 @@ export default function LeagueDetailPage() {
                                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                                             <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                         </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs">{getMemberPositionLabel(member) === '-' ? 'Striker' : getMemberPositionLabel(member)}</span>
+                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{getMemberPositionLabel(member) === '-' ? 'Striker' : getMemberPositionLabel(member)}</span>
                                                                     </div>
                                                                 </div>
 
                                                                 {/* Playing Style */}
-                                                                <div className="text-center text-foreground">{member.style}</div>
+                                                                <div className="text-center text-foreground truncate px-1">{member.style}</div>
 
                                                                 {/* Empty spacer */}
                                                                 <div></div>
@@ -5970,7 +5970,7 @@ export default function LeagueDetailPage() {
                                                                             <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                             {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                         </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs">{posLabel}</span>
+                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
                                                                     </div>
                                                                 </div>
 
