@@ -36,7 +36,11 @@ type LeagueStatusTotals = Record<string, number>;
 type LeagueStatusMissing = Array<string | { field: string; reason?: string }>;
 type LeagueStatus = {
   isComplete?: boolean;
+  isCompleted?: boolean;
   locked?: boolean;
+  matchesPlayed?: number;
+  gamesPlayed?: number;
+  maxGames?: number;
   totals?: LeagueStatusTotals;
   missing?: LeagueStatusMissing;
 };
@@ -2777,18 +2781,32 @@ function AllLeagues() {
   }, [leagues]);
 
   // A league is considered completed when:
-  // 1. Backend computedStatus.isCompleted is true (season-based: all season matches completed), OR
-  // 2. Fallback: completed matches >= maxGames (when maxGames > 0)
+  // 1. Active/current season reaches its maxGames target, OR
+  // 2. Explicit backend completion/lock flags are true, OR
+  // 3. Backward-compatible league-level fallback reaches maxGames.
   const isLeagueCompleted = (l: LeagueWithStatus): boolean => {
-    // Prefer backend-computed completion status (season-aware)
-    if ((l as any).computedStatus?.isCompleted === true) return true;
+    const computed = l.computedStatus;
+    const withTopFlags = l as LeagueWithStatus & { isComplete?: boolean; isCompleted?: boolean };
+    const withSeasons = l as LeagueWithStatus & { seasons?: Season[]; currentSeason?: Season | null };
 
-    // Fallback: old logic for backward compatibility
-    const max = typeof l.maxGames === 'number' ? l.maxGames : 0;
-    if (max <= 0) return false; // without a target, don't show as completed
+    const leagueSeasons = Array.isArray(withSeasons.seasons)
+      ? withSeasons.seasons.filter((season) => !Boolean(season.archived) && !Boolean((season as Season & { deleted?: boolean }).deleted))
+      : [];
+    const currentSeason =
+      leagueSeasons.find((season) => season.isActive)
+      || (withSeasons.currentSeason && !withSeasons.currentSeason.archived ? withSeasons.currentSeason : null)
+      || [...leagueSeasons].sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0))[0]
+      || null;
 
-    const matches: Match[] = Array.isArray(l.matches) ? l.matches : [];
-    const completedCount = matches.reduce((acc, m) => {
+    const playedFromComputed = typeof computed?.matchesPlayed === 'number'
+      ? computed.matchesPlayed
+      : (typeof computed?.gamesPlayed === 'number' ? computed.gamesPlayed : undefined);
+    const maxFromComputed = typeof computed?.maxGames === 'number' ? computed.maxGames : undefined;
+    const maxFromSeason = typeof currentSeason?.maxGames === 'number' ? currentSeason.maxGames : undefined;
+    const leagueMax = typeof l.maxGames === 'number' ? l.maxGames : 0;
+    const max = maxFromSeason ?? maxFromComputed ?? leagueMax;
+
+    const countCompletedMatches = (matches: Match[]): number => matches.reduce((acc, m) => {
       const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
       const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended'
         || status === 'result_published' || status === 'result_uploaded';
@@ -2797,6 +2815,35 @@ function AllLeagues() {
       return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
     }, 0);
 
+    const allMatches: Match[] = Array.isArray(l.matches) ? l.matches : [];
+    const hasSeasonTaggedMatches = allMatches.some((m) => Boolean((m as MatchWithSeason).seasonId));
+    const seasonMatches = currentSeason
+      ? allMatches.filter((m) => String((m as MatchWithSeason).seasonId || '') === String(currentSeason.id))
+      : allMatches;
+    const seasonScopedMax = currentSeason ? (maxFromSeason ?? leagueMax) : 0;
+
+    // Season-first rule: if there is an active/current season, decide completion from that season target.
+    // This avoids stale old "completed" flags keeping league inactive after creating a new season.
+    if (currentSeason && seasonScopedMax > 0) {
+      const matchesToEvaluate = hasSeasonTaggedMatches ? seasonMatches : allMatches;
+      const seasonCompletedCount = countCompletedMatches(matchesToEvaluate);
+      return seasonCompletedCount >= seasonScopedMax;
+    }
+
+    // Primary flags from backend (support both spellings for compatibility)
+    if (computed?.isComplete === true || computed?.isCompleted === true) return true;
+    if (computed?.locked === true || l.isLocked === true) return true;
+    if (withTopFlags.isComplete === true || withTopFlags.isCompleted === true) return true;
+
+    // Use computed counters when available
+    if (typeof playedFromComputed === 'number' && max > 0) {
+      return playedFromComputed >= max;
+    }
+
+    // Fallback: old logic for backward compatibility
+    if (max <= 0) return false; // without a target, don't show as completed
+
+    const completedCount = countCompletedMatches(allMatches);
     return completedCount >= max;
   };
 
@@ -3364,6 +3411,75 @@ function AllLeagues() {
         }
       }
 
+      // Ensure league is re-activated when a fresh season is created
+      try {
+        const statusEndpoints = [
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`,
+        ];
+        for (let i = 0; i < statusEndpoints.length; i += 1) {
+          const res = await fetch(statusEndpoints[i], {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ active: true }),
+          });
+          if (res.ok) break;
+          const shouldTryFallback = i === 0 && (res.status === 404 || res.status === 405);
+          if (!shouldTryFallback) break;
+        }
+      } catch {
+        // Best effort: local state below still unblocks UI even if status endpoint fails.
+      }
+
+      setLeagues((prevLeagues) => prevLeagues.map((entry) => {
+        if (String(entry.id) !== leagueId) return entry;
+
+        const leagueEntry = entry as LeagueWithStatus & {
+          seasons?: Season[];
+          currentSeason?: Season | null;
+          archived?: boolean;
+          isComplete?: boolean;
+          isCompleted?: boolean;
+        };
+
+        const nextSeasons = Array.isArray(leagueEntry.seasons) && createdSeasonId
+          ? leagueEntry.seasons.map((season) => ({
+              ...season,
+              isActive: String(season.id) === String(createdSeasonId),
+              archived: String(season.id) === String(createdSeasonId) ? false : season.archived,
+            }))
+          : leagueEntry.seasons;
+
+        const nextCurrentSeason = createdSeasonId && Array.isArray(nextSeasons)
+          ? (nextSeasons.find((season) => String(season.id) === String(createdSeasonId)) || leagueEntry.currentSeason || null)
+          : leagueEntry.currentSeason;
+
+        return {
+          ...leagueEntry,
+          seasons: nextSeasons,
+          currentSeason: nextCurrentSeason,
+          active: true,
+          status: 'active' as League['status'],
+          archived: false,
+          isLocked: false,
+          isComplete: false,
+          isCompleted: false,
+          computedStatus: {
+            ...(leagueEntry.computedStatus || {}),
+            isComplete: false,
+            isCompleted: false,
+            locked: false,
+            matchesPlayed: 0,
+            gamesPlayed: 0,
+          },
+          updatedAt: new Date().toISOString(),
+        } as LeagueWithStatus;
+      }));
+      dispatchLeagueMutationEvent('league-updated', { leagueId, reason: 'season-created-reactivated' });
+
       toast.success(successMessage);
       await fetchAllLeagues();
 
@@ -3379,7 +3495,7 @@ function AllLeagues() {
     } finally {
       setCreatingSeasonLeagueId(null);
     }
-  }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues, router]);
+  }, [token, isLeagueAdminForCurrentUser, creatingSeasonLeagueId, fetchAllLeagues, router, dispatchLeagueMutationEvent]);
 
   const openCreateSeasonConfirm = useCallback((league: LeagueWithStatus) => {
     setPendingSeasonLeague(league);
