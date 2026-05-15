@@ -2930,7 +2930,7 @@ function AllLeagues() {
     setLeagueLiveUpdatingId(leagueId);
 
     try {
-      type StatusAttempt = { url: string; payload: Record<string, unknown>; method?: 'PATCH' };
+      type StatusAttempt = { url: string; payload: Record<string, unknown>; method?: 'PATCH' | 'POST' };
       const livePayload = { active: true, archived: false, status: 'active', isComplete: false, isCompleted: false, locked: false, isLocked: false };
       const completedPayload = { active: false, archived: false, status: 'completed', isComplete: true, isCompleted: true, locked: true, isLocked: true };
       const readLeagueLikeFromResponse = (payload: Record<string, unknown>): Record<string, unknown> | null => {
