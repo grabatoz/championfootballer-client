@@ -4448,7 +4448,7 @@ export default function LeagueDetailPage() {
                                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                                             <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                         </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{getMemberPositionLabel(member) === '-' ? 'Striker' : getMemberPositionLabel(member)}</span>
+                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{getMemberPositionLabel(member) === '-' ? '-' : getMemberPositionLabel(member)}</span>
                                                                     </div>
                                                                 </div>
 
@@ -5921,7 +5921,7 @@ export default function LeagueDetailPage() {
                                                         const useXpScoring = filteredLeague?.showPoints === true;
                                                         const xpPts = useXpScoring ? (player.xp ?? 0) : points;
 
-                                                        const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || 'Striker';
+                                                        const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || '-';
                                                         const member = (league?.members || []).find(m => String(m.id) === String(player.id));
                                                         const playerWithOptionalImage = player as TableData & {
                                                             imageUrl?: string;
