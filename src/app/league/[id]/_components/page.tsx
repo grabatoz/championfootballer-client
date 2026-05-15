@@ -1330,75 +1330,50 @@ export default function LeagueDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, profilePlayerId, token]);
 
-    // Helper: determine if a league is completed (exclude from dropdown)
+    const completedStatusTokens = useMemo(
+        () => new Set([
+            'completed',
+            'complete',
+            'inactive',
+            'finished',
+            'ended',
+            'result_published',
+            'result_uploaded',
+            'result_complete',
+            'result_finished',
+            'result_ended',
+            'result_done',
+            'closed',
+        ]),
+        []
+    );
+
+    // Helper: determine if a league is completed (kept in sync with All Leagues card logic)
     const leagueIsCompleted = useCallback((l: League): boolean => {
-        // Prefer backend-computed season-based completion status
-        if (l?.computedStatus?.isCompleted === true) return true;
-
-        // If there are any missing items (e.g., pending stats), do NOT treat as completed
-        const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-        if (missingArr.length > 0) return false;
-
-        // If we have counters, prefer them to decide completion:
-        // require matchesPlayed >= maxGames when maxGames is provided (> 0)
-        const toNum = (v: unknown): number | undefined => {
-            const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-            return Number.isFinite(n) ? n : undefined;
+        const withFlags = l as League & {
+            isComplete?: boolean;
+            isCompleted?: boolean;
+            archived?: boolean;
         };
-        const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-        const playedFromList = undefined; // not available reliably here
-        const played = playedFromComputed ?? playedFromList;
-        const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
 
-        // Ported logic from All Leagues: derive completion from matches list when available
-        if (Array.isArray(l.matches)) {
-            const matches = l.matches ?? [];
-            const completedCount = matches.reduce((acc, m) => {
-                const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-                const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-                const endedByFlag = m.active === false;
-                const endedByEnd = Boolean(m.end);
-                return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-            }, 0);
-            if (typeof maxG === 'number' && maxG > 0) {
-                if (completedCount < maxG) return false; // not complete yet
-                // completed by matches threshold -> consider complete (missing already checked above)
-                return true;
-            }
-        }
+        const status = String(l?.status || '').toLowerCase().trim();
+        if (completedStatusTokens.has(status)) return true;
 
-        if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-            if (played < maxG) {
-                // Even if backend flags it completed/locked, do NOT treat as completed until maxGames reached
-                return false;
-            }
-            // Counters meet threshold and missing is empty -> complete
+        if (
+            l?.computedStatus?.isComplete === true ||
+            l?.computedStatus?.isCompleted === true ||
+            l?.computedStatus?.locked === true ||
+            withFlags.isComplete === true ||
+            withFlags.isCompleted === true ||
+            l?.isLocked === true
+        ) {
             return true;
         }
 
-        // Primary: explicit completion flags coming from backend
-        if (l?.computedStatus?.isComplete === true) return true;
-        if (l?.computedStatus?.locked === true) return true;
-        if (l?.isComplete === true) return true;
-        if (l?.isCompleted === true) return true;
-        if (l?.isLocked === true) return true;
+        if (l?.active === false && !Boolean(withFlags.archived)) return true;
 
-        // Backward-compat: infer completion from status/active when flags are absent
-        const sRaw = (l?.status ?? '').toString();
-        const s = sRaw.trim().toUpperCase();
-        const completionStatuses = new Set([
-            'RESULT_PUBLISHED',
-            'RESULT_UPLOADED',
-            'RESULT_COMPLETE',
-            'RESULT_FINISHED',
-            'RESULT_ENDED',
-            'RESULT_DONE',
-            'COMPLETED'
-        ]);
-        if (completionStatuses.has(s)) return true;
-        if (typeof l?.active === 'boolean' && l.active === false) return true;
         return false;
-    }, []);
+    }, [completedStatusTokens]);
 
     // Fetch all user leagues for dropdown
     const fetchAllLeagues = useCallback(async () => {
@@ -1971,7 +1946,9 @@ export default function LeagueDetailPage() {
         }
     };
 
-    const inactiveLeagueMatchMessage = 'This league is currently inactive. To create new matches, please reactivate the league in League Settings.';
+    const inactiveLeagueMatchMessage = league && leagueIsCompleted(league)
+        ? 'This league is completed. New matches are disabled for completed leagues.'
+        : 'This league is currently inactive. To create new matches, please reactivate the league in League Settings.';
 
     // Current season number resolver (no `any`; checks currentSeason, active `seasons`, computedStatus, and top-level fields)
     const resolveSeasonNumber = (l?: League | null): number | undefined => {
@@ -3583,10 +3560,12 @@ export default function LeagueDetailPage() {
                             // height: '30vh',
                             background: '#0e0e0e',
                         }}>
-                               {/* League inactive warning - only show when league data is available */}
+                               {/* League state warning (inactive/completed) */}
                         {league && !league.active && (
                             <Alert severity="warning" sx={{ mb: 2 }}>
-                                This league is currently inactive. All actions are disabled until an admin reactivates it.
+                                {leagueIsCompleted(league)
+                                    ? 'This league is completed. New matches are disabled for completed leagues.'
+                                    : 'This league is currently inactive. All actions are disabled until an admin reactivates it.'}
                             </Alert>
                         )}
                             <Paper sx={{
