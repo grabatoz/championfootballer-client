@@ -4795,7 +4795,7 @@ function AllLeagues() {
               onClick={() => setCompletionTab('live')}
               sx={{
                 textTransform: 'none',
-                borderRadius: 6,
+                borderRadius: 2,
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.75, md: 1 },
                 fontSize: { xs: '14px', md: '18px' },
@@ -4815,7 +4815,7 @@ function AllLeagues() {
               onClick={() => setCompletionTab('completed')}
               sx={{
                 textTransform: 'none',
-                borderRadius: 6,
+                borderRadius: 2,
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.75, md: 1 },
                 fontSize: { xs: '14px', md: '18px' },
