@@ -4796,6 +4796,7 @@ function AllLeagues() {
               sx={{
                 textTransform: 'none',
                 borderRadius: 2,
+                width: { xs: 150, sm: 180, md: 220 },
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.75, md: 1 },
                 fontSize: { xs: '14px', md: '18px' },
@@ -4816,6 +4817,7 @@ function AllLeagues() {
               sx={{
                 textTransform: 'none',
                 borderRadius: 2,
+                width: { xs: 150, sm: 180, md: 220 },
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.75, md: 1 },
                 fontSize: { xs: '14px', md: '18px' },
@@ -4994,7 +4996,7 @@ function AllLeagues() {
                               onClick={(e) => e.stopPropagation()}
                               sx={{
                                 position: 'absolute',
-                                top: -6,
+                                top: -33,
                                 left: -6,
                                 zIndex: 5,
                                 display: 'flex',
@@ -5019,8 +5021,9 @@ function AllLeagues() {
                                 }}
                                 sx={{
                                   m: 0,
-                                  '& .MuiSwitch-switchBase': { p: 0.5 },
-                                  '& .MuiSwitch-thumb': { width: 11, height: 11, bgcolor: 'white' },
+                                  // '& .MuiSwitch-switchBase': { p: 0.5 },
+                                  '& .MuiSwitch-thumb': { bgcolor: 'white' },
+                                  // ya MuiSwitch-thumb is ma add kerna hn width: 11, height: 11, 
                                   '& .MuiSwitch-track': {
                                     borderRadius: 999,
                                     opacity: '1 !important',
@@ -5255,7 +5258,7 @@ function AllLeagues() {
                             {canCreateSeason && (
                               <Button
                                 size="small"
-                                disabled={isCreatingSeason}
+                                disabled={isCreatingSeason || isCompleted}
                                 startIcon={!isCreatingSeason ? <AddIcon sx={{ fontSize: 22 }} /> : undefined}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -5269,22 +5272,37 @@ function AllLeagues() {
                                   minHeight: 28,
                                   borderRadius: 1,
                                   textTransform: 'none',
-                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
-                                fontWeight: 600,
-                                fontSize: { xs: '10px', sm: '16px' },
+                                  color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontWeight: 600,
+                                  fontSize: { xs: '10px', sm: '16px' },
                                   textDecoration: 'underline',
                                   textUnderlineOffset: '3px',
+                                  '& .MuiButton-startIcon .MuiSvgIcon-root': {
+                                    color: '#ffffff',
+                                  },
                                   // color: isCompleted ? '#ffffff' : '#d1fae5',
                                   // border: isCompleted ? '1px solid #111827' : '1px solid rgba(39,171,131,0.85)',
                                   // backgroundColor: isCompleted ? '#111827' : 'rgba(39,171,131,0.2)',
                                   // '&:hover': {
                                   //   backgroundColor: isCompleted ? '#1f2937' : 'rgba(39,171,131,0.32)',
                                   // },
-                                  '&:disabled': {
-                                    // color: 'rgba(255,255,255,0.6)',
-                                    // borderColor: 'rgba(255,255,255,0.25)',
-                                    // backgroundColor: 'rgba(255,255,255,0.08)',
+                                  ...(isCompleted && {
+                                    '&.Mui-disabled': {
+                                      color: '#111827',
+                                      WebkitTextFillColor: '#111827',
+                                      opacity: 1,
+                                    },
+                                  }),
+                                  ...(!isCompleted && {
+                                    '&.Mui-disabled': {
+                                      color: 'rgba(255,255,255,0.9)',
+                                      WebkitTextFillColor: 'rgba(255,255,255,0.9)',
+                                      opacity: 0.75,
+                                    },
+                                  }),
+                                  '&.Mui-disabled .MuiButton-startIcon .MuiSvgIcon-root': {
+                                    color: '#ffffff',
                                   },
                                   
                                 }}
@@ -5297,14 +5315,14 @@ function AllLeagues() {
 
                         {/* View Button - 4 */}
                         <Grid item xs={12} md={4} sx={{ position: 'relative', minHeight: { md: 96 } }}>
-                          <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
+                          <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 2 }} alignItems="flex-end" sx={{ height: '100%' }}>
                             {/* Image - 6 */}
                             <Grid item xs={6} md={6}>
                               <Box
                                 sx={{
                                   display: 'flex',
                                   justifyContent: { xs: 'flex-start', md: 'flex-start' },
-                                  alignItems: 'center',
+                                  alignItems: 'flex-end',
                                   height: '100%',
                                   ml: { xs: 0, md: -3 }
                                 }}
@@ -5341,12 +5359,10 @@ function AllLeagues() {
                                   '&:hover .view-play-icon': {
                                     filter: 'brightness(0) saturate(100%) invert(56%) sepia(84%) saturate(2061%) hue-rotate(354deg) brightness(95%) contrast(92%)',
                                   },
-                                  ...(!isCompleted && {
-                                    position: { xs: 'static', md: 'absolute' },
-                                    top: { md: 46 },
-                                    right: { md: 6 },
-                                    zIndex: 4,
-                                  }),
+                                  position: { xs: 'static', md: 'absolute' },
+                                  bottom: { md: -37 },
+                                  right: { md: 6 },
+                                  zIndex: 4,
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -5736,14 +5752,14 @@ function AllLeagues() {
 
                           {/* View Button - 4 */}
                           <Grid item xs={12} md={4}>
-                            <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
+                            <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="flex-end" sx={{ height: '100%' }}>
                               {/* Image - 6 */}
                               <Grid item xs={6} md={6}>
                                 <Box
                                   sx={{
                                     display: 'flex',
                                     justifyContent: { xs: 'flex-start', md: 'flex-start' },
-                                    alignItems: 'center',
+                                    alignItems: 'flex-end',
                                     height: '100%',
                                     ml: { xs: 0, md: -5 }
                                   }}
