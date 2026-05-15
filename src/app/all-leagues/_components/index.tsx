@@ -5095,7 +5095,13 @@ function AllLeagues() {
 
                             {/* Seasons */}
                             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-                              <Image src={leagueIcon} alt="Seasons" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Image
+                                src={leagueIcon}
+                                alt="Seasons"
+                                width={16}
+                                height={16}
+                                style={{ flexShrink: 0, filter: isCompleted ? 'brightness(0) invert(1)' : 'none' }}
+                              />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                                 fontFamily: '"League Spartan", sans-serif',
@@ -5136,7 +5142,13 @@ function AllLeagues() {
                             </Box>
 
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.4, md: 1 } }}>
-                              <Image src={leagueIcon} alt="Seasons" width={16} height={16} style={{ flexShrink: 0 }} />
+                              <Image
+                                src={leagueIcon}
+                                alt="Seasons"
+                                width={16}
+                                height={16}
+                                style={{ flexShrink: 0, filter: isCompleted ? 'brightness(0) invert(1)' : 'none' }}
+                              />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
                                 fontFamily: '"League Spartan", sans-serif',
