@@ -1334,7 +1334,6 @@ export default function LeagueDetailPage() {
         () => new Set([
             'completed',
             'complete',
-            'inactive',
             'finished',
             'ended',
             'result_published',
@@ -1354,6 +1353,11 @@ export default function LeagueDetailPage() {
             isComplete?: boolean;
             isCompleted?: boolean;
             archived?: boolean;
+            seasons?: Array<{
+                isActive?: boolean;
+                archived?: boolean;
+                status?: unknown;
+            }>;
         };
 
         const status = String(l?.status || '').toLowerCase().trim();
@@ -1370,7 +1374,32 @@ export default function LeagueDetailPage() {
             return true;
         }
 
-        if (l?.active === false && !Boolean(withFlags.archived)) return true;
+        // Season-level fallback kept in sync with All Leagues.
+        const seasons = Array.isArray(withFlags.seasons) ? withFlags.seasons : [];
+        if (seasons.length > 0) {
+            const seasonDoneTokens = new Set([
+                'completed',
+                'complete',
+                'finished',
+                'ended',
+                'locked',
+                'archived',
+                'result_published',
+                'result_uploaded',
+                'result_complete',
+                'result_finished',
+                'result_ended',
+                'result_done',
+            ]);
+            const hasActiveSeason = seasons.some((s) => s?.isActive === true && s?.archived !== true);
+            const hasArchivedOrCompletedSeason = seasons.some((s) => {
+                if (!s) return false;
+                if (s.archived === true) return true;
+                const st = typeof s.status === 'string' ? s.status.toLowerCase().trim() : '';
+                return seasonDoneTokens.has(st);
+            });
+            if (!hasActiveSeason && hasArchivedOrCompletedSeason) return true;
+        }
 
         return false;
     }, [completedStatusTokens]);

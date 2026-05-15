@@ -68,6 +68,34 @@ const formatLeagueName = (name: string | undefined | null): string => {
 
 // Safe type guards/utilities
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+const toFiniteNumber = (v: unknown): number | undefined => {
+  const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const normalizeLeagueComputedStatus = (value: unknown): LeagueStatus | undefined => {
+  if (!isRecord(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+
+  const matchesPlayed = toFiniteNumber(
+    raw.matchesPlayed ?? raw.gamesPlayed ?? raw.played ?? raw.completedMatches ?? raw.totalPlayed
+  );
+  const maxGames = toFiniteNumber(
+    raw.maxGames ?? raw.allowedGames ?? raw.totalGames ?? raw.totalMaxGames
+  );
+  const locked = raw.locked === true;
+  const isComplete = raw.isComplete === true || raw.isCompleted === true;
+  const missing = Array.isArray(raw.missing) ? (raw.missing as LeagueStatusMissing) : undefined;
+
+  return {
+    ...(raw as LeagueStatus),
+    ...(typeof matchesPlayed === 'number' ? { matchesPlayed, gamesPlayed: matchesPlayed } : {}),
+    ...(typeof maxGames === 'number' ? { maxGames } : {}),
+    ...(locked ? { locked: true } : {}),
+    ...(isComplete ? { isComplete: true, isCompleted: true } : {}),
+    ...(missing ? { missing } : {}),
+  };
+};
 
 // Normalize league.status into the union type from League
 const normalizeLeagueStatus = (v: unknown): League['status'] => {
@@ -150,8 +178,18 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
 
   const createdAt = str('createdAt', nowISO);
   const updatedAtCandidate = str('updatedAt', createdAt || nowISO);
+  const computedStatus = normalizeLeagueComputedStatus(raw['computedStatus']);
+  const isCompleteRaw = raw['isComplete'];
+  const isCompletedRaw = raw['isCompleted'];
+  const isLockedRaw = raw['isLocked'];
+  const lockedRaw = raw['locked'];
+  const archivedRaw = raw['archived'];
 
-  const normalized: League = {
+  const normalized: LeagueWithStatus & {
+    isComplete?: boolean;
+    isCompleted?: boolean;
+    archived?: boolean;
+  } = {
     id: String(idVal),
     name: str('name', 'My League'),
     inviteCode: str('inviteCode', ''),
@@ -170,6 +208,14 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     maxTeams: num('maxTeams'),
     currentTeams: num('currentTeams'),
     status: normalizeLeagueStatus(raw['status']),
+    computedStatus,
+    isLocked:
+      (typeof isLockedRaw === 'boolean' && isLockedRaw)
+      || (typeof lockedRaw === 'boolean' && lockedRaw)
+      || computedStatus?.locked === true,
+    ...(typeof isCompleteRaw === 'boolean' ? { isComplete: isCompleteRaw } : {}),
+    ...(typeof isCompletedRaw === 'boolean' ? { isCompleted: isCompletedRaw } : {}),
+    ...(typeof archivedRaw === 'boolean' ? { archived: archivedRaw } : {}),
   };
 
   return normalized;
@@ -2785,7 +2831,6 @@ function AllLeagues() {
     () => new Set([
       'completed',
       'complete',
-      'inactive',
       'finished',
       'ended',
       'result_published',
@@ -2804,6 +2849,11 @@ function AllLeagues() {
       isComplete?: boolean;
       isCompleted?: boolean;
       archived?: boolean;
+      seasons?: Array<{
+        isActive?: boolean;
+        archived?: boolean;
+        status?: unknown;
+      }>;
     };
 
     // Explicit backend status values
@@ -2822,8 +2872,33 @@ function AllLeagues() {
       return true;
     }
 
-    // If backend marks active=false and league is not archived, treat it as completed.
-    if (l.active === false && !Boolean(withFlags.archived)) return true;
+    // Season-level fallback: if there is no active season and at least one season is archived/completed,
+    // keep the league in completed tab after refresh.
+    const seasons = Array.isArray(withFlags.seasons) ? withFlags.seasons : [];
+    if (seasons.length > 0) {
+      const seasonDoneTokens = new Set([
+        'completed',
+        'complete',
+        'finished',
+        'ended',
+        'locked',
+        'archived',
+        'result_published',
+        'result_uploaded',
+        'result_complete',
+        'result_finished',
+        'result_ended',
+        'result_done',
+      ]);
+      const hasActiveSeason = seasons.some((s) => s?.isActive === true && s?.archived !== true);
+      const hasArchivedOrCompletedSeason = seasons.some((s) => {
+        if (!s) return false;
+        if (s.archived === true) return true;
+        const st = typeof s.status === 'string' ? s.status.toLowerCase().trim() : '';
+        return seasonDoneTokens.has(st);
+      });
+      if (!hasActiveSeason && hasArchivedOrCompletedSeason) return true;
+    }
 
     return false;
   }, [completedStatusTokens]);
@@ -2855,19 +2930,59 @@ function AllLeagues() {
     setLeagueLiveUpdatingId(leagueId);
 
     try {
-      type StatusAttempt = { url: string; payload: Record<string, unknown> };
-      const livePayload = { active: true, archived: false, status: 'active', isComplete: false, isCompleted: false, locked: false };
-      const completedPayload = { active: false, archived: false, status: 'completed', isComplete: true, isCompleted: true, locked: true };
+      type StatusAttempt = { url: string; payload: Record<string, unknown>; method?: 'PATCH' };
+      const livePayload = { active: true, archived: false, status: 'active', isComplete: false, isCompleted: false, locked: false, isLocked: false };
+      const completedPayload = { active: false, archived: false, status: 'completed', isComplete: true, isCompleted: true, locked: true, isLocked: true };
+      const readLeagueLikeFromResponse = (payload: Record<string, unknown>): Record<string, unknown> | null => {
+        const asRecord = (v: unknown): Record<string, unknown> | null => (isRecord(v) ? (v as Record<string, unknown>) : null);
+        const direct = asRecord(payload.league);
+        if (direct) return direct;
+        const dataObj = asRecord(payload.data);
+        if (dataObj) {
+          const nestedLeague = asRecord(dataObj.league);
+          if (nestedLeague) return nestedLeague;
+          return dataObj;
+        }
+        return null;
+      };
+      const responseLooksPersisted = (payload: Record<string, unknown>): boolean => {
+        const leagueLike = readLeagueLikeFromResponse(payload);
+        if (!leagueLike) return true; // no inspectable body, allow fallback rules by HTTP code
+
+        const statusRaw = typeof leagueLike.status === 'string' ? leagueLike.status.toLowerCase().trim() : '';
+        const computedRaw = isRecord(leagueLike.computedStatus) ? (leagueLike.computedStatus as Record<string, unknown>) : null;
+        const activeRaw = typeof leagueLike.active === 'boolean' ? leagueLike.active : undefined;
+        const isComplete = leagueLike.isComplete === true || leagueLike.isCompleted === true;
+        const isLocked = leagueLike.isLocked === true || leagueLike.locked === true;
+        const computedComplete = computedRaw?.isComplete === true || computedRaw?.isCompleted === true || computedRaw?.locked === true;
+
+        if (nextLive) {
+          if (statusRaw === 'active') return true;
+          if (activeRaw === true && !isComplete && !isLocked && !computedComplete) return true;
+          return false;
+        }
+
+        if (statusRaw === 'completed') return true;
+        if (isComplete || isLocked || computedComplete) return true;
+        return false;
+      };
       const attempts: StatusAttempt[] = nextLive
         ? [
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/live`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/live`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
             { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: livePayload },
             { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: livePayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: livePayload },
           ]
         : [
-            // For completed state, prefer direct league patch so backend stores completion
-            // without translating it to archived/inactive.
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/complete`, payload: completedPayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/complete`, payload: completedPayload },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
+            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
+            // Completed should persist lock/completion fields, so prefer direct league update first.
             { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: completedPayload },
             { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: completedPayload },
             { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: completedPayload },
@@ -2878,17 +2993,25 @@ function AllLeagues() {
 
       for (let i = 0; i < attempts.length; i += 1) {
         const res = await fetch(attempts[i].url, {
-          method: 'PATCH',
+          method: attempts[i].method || 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(attempts[i].payload),
         });
-        if (res.ok) {
+        const payloadUnknown: unknown = await res.json().catch(() => ({}));
+        const payload = isRecord(payloadUnknown) ? (payloadUnknown as { success?: boolean }) : {};
+
+        if (res.ok && payload.success !== false && responseLooksPersisted(payload as Record<string, unknown>)) {
           success = true;
           break;
         }
+
+        if (res.ok) {
+          continue;
+        }
+
         const shouldTryFallback = res.status === 404 || res.status === 405;
         if (!shouldTryFallback) break;
       }
@@ -3146,9 +3269,112 @@ function AllLeagues() {
             new Map(mergedLeagues.map((league) => [String(league.id), league])).values()
           );
 
+          type LeagueCompletionSnapshot = {
+            active?: boolean;
+            archived?: boolean;
+            status?: League['status'];
+            isComplete?: boolean;
+            isCompleted?: boolean;
+            isLocked?: boolean;
+            computedStatus?: LeagueStatus;
+          };
+
+          const applyCompletionSnapshot = (
+            source: LeagueWithStatus,
+            snapshot?: LeagueCompletionSnapshot
+          ): LeagueWithStatus => {
+            if (!snapshot) return source;
+            const next = {
+              ...source,
+            } as LeagueWithStatus & {
+              archived?: boolean;
+              isComplete?: boolean;
+              isCompleted?: boolean;
+            };
+            if (typeof snapshot.active === 'boolean') next.active = snapshot.active;
+            if (typeof snapshot.archived === 'boolean') next.archived = snapshot.archived;
+            if (snapshot.status) next.status = snapshot.status;
+            if (typeof snapshot.isLocked === 'boolean') next.isLocked = snapshot.isLocked;
+            if (typeof snapshot.isComplete === 'boolean') next.isComplete = snapshot.isComplete;
+            if (typeof snapshot.isCompleted === 'boolean') next.isCompleted = snapshot.isCompleted;
+            if (snapshot.computedStatus) {
+              next.computedStatus = {
+                ...(next.computedStatus || {}),
+                ...snapshot.computedStatus,
+              };
+            }
+            return next;
+          };
+
+          const completionSnapshotByLeagueId = new Map<string, LeagueCompletionSnapshot>();
+          try {
+            const statusEndpoints = [
+              `${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
+              `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
+            ];
+
+            for (let i = 0; i < statusEndpoints.length; i += 1) {
+              const statusResponse = await fetch(statusEndpoints[i], {
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store',
+              });
+
+              if (!statusResponse.ok) {
+                const shouldTryFallback = i === 0 && (statusResponse.status === 404 || statusResponse.status === 405);
+                if (shouldTryFallback) continue;
+                break;
+              }
+
+              const statusPayloadUnknown: unknown = await statusResponse.json().catch(() => ({}));
+              const statusPayload = isRecord(statusPayloadUnknown)
+                ? (statusPayloadUnknown as { success?: boolean; leagues?: unknown[] })
+                : {};
+              const statusLeagues = Array.isArray(statusPayload.leagues) ? statusPayload.leagues : [];
+
+              if (statusPayload.success === false || statusLeagues.length === 0) break;
+
+              statusLeagues.forEach((rawLeague) => {
+                if (!isRecord(rawLeague)) return;
+                const idValue = rawLeague.id;
+                if (!(typeof idValue === 'string' || typeof idValue === 'number')) return;
+                const id = String(idValue);
+                const computedStatus = normalizeLeagueComputedStatus(rawLeague.computedStatus);
+                const snapshot: LeagueCompletionSnapshot = {
+                  active: typeof rawLeague.active === 'boolean' ? rawLeague.active : undefined,
+                  archived: typeof rawLeague.archived === 'boolean' ? rawLeague.archived : undefined,
+                  status: normalizeLeagueStatus(rawLeague.status),
+                  isComplete:
+                    rawLeague.isComplete === true
+                    || computedStatus?.isComplete === true
+                    || computedStatus?.isCompleted === true
+                    || undefined,
+                  isCompleted:
+                    rawLeague.isCompleted === true
+                    || rawLeague.isComplete === true
+                    || computedStatus?.isCompleted === true
+                    || computedStatus?.isComplete === true
+                    || undefined,
+                  isLocked:
+                    rawLeague.isLocked === true
+                    || rawLeague.locked === true
+                    || computedStatus?.locked === true
+                    || undefined,
+                  computedStatus,
+                };
+
+                completionSnapshotByLeagueId.set(id, snapshot);
+              });
+
+              break;
+            }
+          } catch (statusError) {
+            console.warn('[Leagues] Failed to load user-leagues completion snapshot:', statusError);
+          }
+
           // Now fetch detailed information for each league
           const detailedLeagues: Array<LeagueWithStatus | null> = await Promise.all(
             uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus | null> => {
+              const snapshot = completionSnapshotByLeagueId.get(String(league.id));
               try {
                 const bust = Date.now();
                 // NOTE: Removed 'Cache-Control' and 'Pragma' custom request headers to avoid CORS preflight rejection
@@ -3157,7 +3383,7 @@ function AllLeagues() {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                let enriched: LeagueWithStatus = { ...league };
+                let enriched: LeagueWithStatus = applyCompletionSnapshot({ ...league }, snapshot);
 
                 // If access is forbidden now, drop this league from the list
                 if (leagueResponse.status === 403) {
@@ -3175,13 +3401,14 @@ function AllLeagues() {
                       matches: leagueData.league.matches || [],
                       administrators: leagueData.league.administrators || [],
                     };
+                    enriched = applyCompletionSnapshot(enriched, snapshot);
                   }
                 }
 
                 return enriched;
               } catch (error) {
                 console.warn(`Failed to fetch details/status for league ${league.id}:`, error);
-                return { ...league } as LeagueWithStatus;
+                return applyCompletionSnapshot({ ...league } as LeagueWithStatus, snapshot);
               }
             })
           );
