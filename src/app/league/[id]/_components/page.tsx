@@ -4523,9 +4523,9 @@ export default function LeagueDetailPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'center',
-                                                                    pr: { xs: 0.5, sm: 2 }
+                                                                    pr: { xs: 0.5, sm: 2 },
                                                                 }}>
-                                                                    <Typography sx={{ fontSize: { xs: 11, sm: 13 }, color: 'rgba(255,255,255,0.9)', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
                                                                         {member.style}
                                                                     </Typography>
                                                                 </Box>

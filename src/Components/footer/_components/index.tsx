@@ -201,7 +201,7 @@ export default function Footer() {
                 whiteSpace: 'nowrap',
               }}
             >
-              {new Date().getFullYear()} Champion Footballer. All rights reserved.
+              &copy; {new Date().getFullYear()} Champion Footballer. All rights reserved.
             </Typography>
             {/* <Typography
               variant="body2"
