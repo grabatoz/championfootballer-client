@@ -127,13 +127,15 @@ export default function LandingPage() {
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'baseline',
+                  justifyContent: { xs: 'center', md: 'flex-start' },
                   mt: { xs: 0.5, md: -3.5 },
                   whiteSpace: { xs: 'normal', md: 'nowrap' },
                   flexWrap: { xs: 'wrap', md: 'nowrap' },
                   gap: 0,
                   width: '100%',
                   maxWidth: { xs: '100%', md: '826px' },
-                  height: { xs: 'auto', md: '90px' }
+                  height: { xs: 'auto', md: '90px' },
+                  textAlign: { xs: 'center', md: 'left' }
                 }}
               >
                 <Typography

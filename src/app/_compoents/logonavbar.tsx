@@ -13,12 +13,12 @@ function LogoNavbar() {
           width: '100%',
           backgroundColor: '#101010',
           display: 'flex',
-          justifyContent: 'flex-start',
+          justifyContent: { xs: 'center', md: 'flex-start' },
           py: 1,
           px: { xs: 2, md: 7 }
         }}
       >
-        <Box sx={{ width: { xs: 250, sm: 340, md: 700 } }}>
+        <Box sx={{ width: { xs: 250, sm: 340, md: 700 }, mx: { xs: 'auto', md: 0 } }}>
           <Image
             src={Layer}
             alt="Champion Footballer Logo"
