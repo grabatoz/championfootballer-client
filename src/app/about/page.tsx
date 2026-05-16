@@ -43,8 +43,7 @@ export default function AboutCF() {
             connects football fans all around the world. It's a fun way to bring social media experience and playing
             football together!`}
           </p> */}
-          <p className="font-bold text-white">{`Play hard! Compete harder!
-`}</p>
+          <p className="font-bold text-white">{`Play hard! Compete harder!`}</p>
           <p className="font-bold text-white -mt-6">{`Become Champion Footballer!`}</p>
           {/* <p>
             {` CF is for everyone at all playing levels, who would like to relish the chance to become their local champion!`} {" "}

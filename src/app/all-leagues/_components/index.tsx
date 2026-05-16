@@ -5649,8 +5649,8 @@ function AllLeagues() {
                               <Box
                                 sx={{
                                   display: 'flex',
-                                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
-                                  pl: { xs: 4, sm: 6, md: 0 },
+                                  justifyContent: { xs: 'flex-end', md: 'flex-end' },
+                                  pr: { xs: 0, md: 0 },
                                   alignItems: 'center',
                                   height: '100%',
                                   cursor: 'pointer',
