@@ -210,15 +210,15 @@ const orderedTrophyKeys = [
     'Star Keeper',
 ];
 
-const TROPHY_ICON_FRAME_SIZE = 65;
+const TROPHY_ICON_FRAME_SIZE = 60;
 const TROPHY_ICON_SIZE_BY_LABEL: Record<string, number> = {
-    'League Champion': 56,
-    'Runner-Up': 55,
-    "Ballon d'Or": 55,
-    'Golden Boot': 54,
-    'King Playmaker': 54,
-    'Legendary Shield': 52,
-    'The Dark Horse': 46,
+    'League Champion': 50,
+    'Runner-Up': 50,
+    "Ballon d'Or": 50,
+    'Golden Boot': 50,
+    'King Playmaker': 50,
+    'Legendary Shield': 50,
+    'The Dark Horse': 50,
     'Star Keeper': 50,
 };
 
