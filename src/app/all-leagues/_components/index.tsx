@@ -5036,7 +5036,7 @@ function AllLeagues() {
                   bgcolor: completionTab === 'live' ? '#00a896' : 'transparent',
                   color: completionTab === 'live' ? '#ffffff' : '#FFFFFF',
                   '&:hover': {
-                    bgcolor: completionTab === 'live' ? '#00a896' : 'rgba(255,255,255,0.1)',
+                    bgcolor: completionTab === 'live' ? '#00a896' : '#3f4652',
                   },
                   transition: 'all 0.3s ease',
                 }}
@@ -5056,7 +5056,7 @@ function AllLeagues() {
                   bgcolor: completionTab === 'completed' ? '#00a896' : 'transparent',
                   color: completionTab === 'completed' ? '#ffffff' : '#FFFFFF',
                   '&:hover': {
-                    bgcolor: completionTab === 'completed' ? '#00a896' : 'rgba(255,255,255,0.1)',
+                    bgcolor: completionTab === 'completed' ? '#00a896' : '#3f4652',
                   },
                   transition: 'all 0.3s ease',
                 }}
