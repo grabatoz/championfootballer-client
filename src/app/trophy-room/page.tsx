@@ -2848,67 +2848,63 @@ export default function GlobalTrophyRoom() {
             {/* Center: Navigation buttons */}
             <Box sx={{
               display: 'flex',
-              flexDirection: 'row',
-              flexWrap: { xs: 'nowrap', sm: 'nowrap' },
-              gap: { xs: 1, sm: 0.8 },
-              mt: { xs: 0.6, sm: 2 },
-              position: { xs: 'relative', sm: (filter === 'my' ? 'relative' : 'absolute') },
-              left: { xs: 'auto', sm: (filter === 'my' ? 'auto' : '50%') },
-              transform: { xs: 'none', sm: (filter === 'my' ? 'none' : 'translateX(-50%)') },
               justifyContent: 'center',
-              width: { xs: '100%', sm: (filter === 'my' ? '100%' : 'auto') },
+              alignItems: 'center',
+              mt: { xs: 2, md:filter === 'all' ? -8.5 : 0 },
+              mb: 1,
+              width: '100%',
+              zIndex: 5
             }}>
-              <Box
-                onClick={() => setFilter('all')}
-                sx={{
-                  px: { xs: 1.5, sm: 6, md: 7 },
-                  py: { xs: 0.3, sm: 0.4, md: 0.5 },
-                  fontSize: { xs: '0.82rem', sm: '1.1rem', md: '1.6rem' },
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  backgroundColor: filter === 'all' ? '#00a77f' : 'transparent',
-                  color: 'white',
-                  border: filter === 'all' ? 'none' : '2px solid white',
-                  borderRadius: 1,
-                  width: { xs: 'calc(50% - 4px)', sm: 'auto' },
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'background-color 0.2s',
-                  '&:hover': {
-                    backgroundColor: filter === 'all' ? '#0d9488' : 'rgba(255,255,255,0.1)',
-                  }
-                }}
-              >
-                Trophy Room
-              </Box>
-              <Box
-                onClick={() => setFilter('my')}
-                sx={{
-                  px: { xs: 1.5, sm: 3.5, md: 3 },
-                  py: { xs: 0.3, sm: 0.4, md: 0.5 },
-                  fontSize: { xs: '0.82rem', sm: '1.1rem', md: '1.8rem' },
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  backgroundColor: filter === 'my' ? '#14B8A6' : 'transparent',
-                  color: 'white',
-                  border: filter === 'my' ? 'none' : '1px solid white',
-                  borderRadius: 1,
-                  width: { xs: 'calc(50% - 4px)', sm: 'auto' },
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'background-color 0.2s',
-                  '&:hover': {
-                    backgroundColor: filter === 'my' ? '#0d9488' : 'rgba(255,255,255,0.1)',
-                  }
-                }}
-              >
-                My Achievements
+              <Box sx={{
+                display: 'flex',
+                bgcolor: '#3F4652',
+                borderRadius: '12px',
+                p: 0.5,
+                width: { xs: '90%', sm: 400, md: 600 }
+              }}>
+                <Button
+                  onClick={() => setFilter('all')}
+                  sx={{
+                    flex: 1,
+                    textTransform: 'uppercase',
+                    borderRadius: '10px',
+                    py: { xs: 1, md: 1.5 },
+                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                    fontFamily: 'Woodford Bourne Pro, sans-serif',
+                    fontWeight: 700,
+                    bgcolor: filter === 'all' ? '#00a896' : 'transparent',
+                    color: '#ffffff',
+                    '&:hover': {
+                      bgcolor: filter === 'all' ? '#00a896' : '#3f4652',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Trophy Room
+                </Button>
+                <Button
+                  onClick={() => setFilter('my')}
+                  sx={{
+                    flex: 1,
+                    textTransform: 'uppercase',
+                    borderRadius: '10px',
+                    py: { xs: 1, md: 1.5 },
+                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                    fontFamily: 'Woodford Bourne Pro, sans-serif',
+                    fontWeight: 700,
+                    bgcolor: filter === 'my' ? '#00a896' : 'transparent',
+                    color: '#ffffff',
+                    '&:hover': {
+                      bgcolor: filter === 'my' ? '#00a896' : '#3f4652',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Achievements
+                </Button>
               </Box>
             </Box>
+
           </Box>
         </Paper>
       </Box>
