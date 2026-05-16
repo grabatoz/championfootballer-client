@@ -2952,7 +2952,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <VisibilityOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
-                      <Box>How to play</Box>
+                      <Box>How to Play</Box>
                     </Box>
                   </MenuItem>
                   <MenuItem
@@ -2978,7 +2978,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <GavelOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
-                      <Box>Game rules</Box>
+                      <Box>Game Rules</Box>
                     </Box>
                   </MenuItem>
                   <MenuItem
@@ -4236,7 +4236,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           fontWeight: 600,
           fontSize: { xs: '24px', md: '32px' }
         }}>
-          Game rules
+          Game Rules
           <IconButton
             aria-label="close"
             onClick={() => setGameRulesOpen(false)}
@@ -4246,7 +4246,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ bgcolor: '#ffffff', color: '#222', py: 3 }}>
-          <Typography variant="h6" sx={{ justifyContent: 'center', display: 'flex', textAlign: 'center', mt: 5, mb: 1, color: '#111827', fontWeight: 700 }}>Waiting For Information </Typography>
+          <Typography variant="h6" sx={{ justifyContent: 'center', display: 'flex', textAlign: 'center', mt: 5, mb: 1, color: '#111827', fontWeight: 700 }}>Information Coming Soon </Typography>
           {/* <Typography variant="h6" sx={{ mb: 1, color: '#111827', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
             <li style={{ listStyleType: 'disc' }}>Play fair</li>
