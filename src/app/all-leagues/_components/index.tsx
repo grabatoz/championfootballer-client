@@ -777,7 +777,7 @@ function LeagueMembersDialog({
       >
         {!isAdmin && (
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-           
+
             <Button
               startIcon={<ExitToApp />}
               onClick={handleLeaveLeague}
@@ -800,9 +800,9 @@ function LeagueMembersDialog({
             >
               Leave League
             </Button>
-             <Button
+            <Button
               startIcon={<ExitToApp />}
-              onClick={() => { try { void onLeaveSeason?.(selectedLeaveSeasonId || undefined) } catch {} }}
+              onClick={() => { try { void onLeaveSeason?.(selectedLeaveSeasonId || undefined) } catch { } }}
               disabled={!selectedLeaveSeasonId}
               sx={{
                 fontWeight: 600,
@@ -1036,12 +1036,12 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       setSettingsRemoveImage(false)
       // Prefer explicit adminId, fall back to first administrator if present
       setAdminId(league.adminId || league.administrators?.[0]?.id || '')
-      
+
       // Set selected season to active season or first non-archived season
       const nonArchivedSeasons = (league.seasons || []).filter((s) => !Boolean(s.archived) && !Boolean((s as Season & { deleted?: boolean }).deleted))
       const activeSeason = nonArchivedSeasons.find(s => s.isActive)
       const currentSeason = activeSeason || (nonArchivedSeasons.length > 0 ? nonArchivedSeasons[0] : null)
-      
+
       if (currentSeason) {
         setSelectedSeasonId(currentSeason.id)
         setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
@@ -1354,7 +1354,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         try {
           const payload = await res.json();
           if (payload?.message) msg = payload.message;
-        } catch {}
+        } catch { }
         throw new Error(msg);
       }
       setArchivedMatches(prev => prev.filter(m => m.id !== matchId));
@@ -1382,7 +1382,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         try {
           const json = await res.json();
           if (json?.message) msg = json.message;
-        } catch {}
+        } catch { }
         throw new Error(msg);
       }
 
@@ -1736,7 +1736,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   No active season available. Open Archived Seasons to review archived ones.
                 </Typography>
               )}
-              
+
               <FormControl fullWidth>
                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
                   Select league admin
@@ -1875,7 +1875,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             const file = e.target.files?.[0]
                             if (!file) return
                             if (!validateLeagueImageFile(file)) {
-                              try { (e.target as HTMLInputElement).value = '' } catch {}
+                              try { (e.target as HTMLInputElement).value = '' } catch { }
                               return
                             }
                             setSettingsImageFile(file)
@@ -1884,7 +1884,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             reader.onload = (ev) => setSettingsImagePreview(ev.target?.result as string)
                             reader.readAsDataURL(file)
                           }}
-                          onClick={(e) => { try { (e.target as HTMLInputElement).value = '' } catch {} }}
+                          onClick={(e) => { try { (e.target as HTMLInputElement).value = '' } catch { } }}
                         />
                       </Button>
                       {settingsImagePreview && !settingsRemoveImage && (
@@ -1894,7 +1894,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             setSettingsImageFile(null)
                             setSettingsImagePreview(null)
                             setSettingsRemoveImage(true)
-                            if (settingsFileInputRef.current) { try { settingsFileInputRef.current.value = '' } catch {} }
+                            if (settingsFileInputRef.current) { try { settingsFileInputRef.current.value = '' } catch { } }
                           }}
                           sx={{
                             color: '#ff6b6b',
@@ -2123,7 +2123,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         >
           {currentUserId && (
             <Button
-               startIcon={<ExitToApp />}
+              startIcon={<ExitToApp />}
               variant="outlined"
               color="warning"
               onClick={async () => {
@@ -2153,25 +2153,25 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 try { onClose() } catch { }
               }}
               sx={{
-                  fontWeight: 600,
-                 bgcolor: "#fff",
-              color: "#d32f2f",
+                fontWeight: 600,
+                bgcolor: "#fff",
+                color: "#d32f2f",
                 width: { xs: '100%', md: 'auto' },
                 flex: { md: 1 },
                 minHeight: { xs: 42, md: 'auto' },
-                   px: 3,
-              py: 1,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-              "&:hover": {
-                bgcolor: "#ffebee",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              },
-              transition: "all 0.2s ease",
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                "&:hover": {
+                  bgcolor: "#ffebee",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                },
+                transition: "all 0.2s ease",
               }}
             >
-            {/* onClick={handleLeaveLeague}
+              {/* onClick={handleLeaveLeague}
             sx={{
               fontWeight: 600,
               bgcolor: "#fff",
@@ -2968,26 +2968,26 @@ function AllLeagues() {
       };
       const attempts: StatusAttempt[] = nextLive
         ? [
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/live`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/live`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: livePayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: livePayload },
-          ]
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/live`, payload: livePayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/live`, payload: livePayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/unlock`, payload: livePayload, method: 'POST' },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: livePayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: livePayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: livePayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: livePayload },
+        ]
         : [
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/complete`, payload: completedPayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/complete`, payload: completedPayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
-            // Completed should persist lock/completion fields, so prefer direct league update first.
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: completedPayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: completedPayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: completedPayload },
-            { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: completedPayload },
-          ];
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/complete`, payload: completedPayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/complete`, payload: completedPayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/lock`, payload: completedPayload, method: 'POST' },
+          // Completed should persist lock/completion fields, so prefer direct league update first.
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`, payload: completedPayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`, payload: completedPayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/status`, payload: completedPayload },
+          { url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/status`, payload: completedPayload },
+        ];
 
       let success = false;
 
@@ -3022,38 +3022,38 @@ function AllLeagues() {
       setLeagues((prev) =>
         prev.map((item) => (String(item.id) === leagueId
           ? {
-              ...item,
-              active: nextLive,
-              archived: false,
-              status: (nextLive ? 'active' : 'completed') as League['status'],
-              isLocked: !nextLive,
-              computedStatus: {
-                ...(item.computedStatus || {}),
-                locked: !nextLive,
-                isComplete: !nextLive,
-                isCompleted: !nextLive,
-              },
-              updatedAt: now,
-            }
+            ...item,
+            active: nextLive,
+            archived: false,
+            status: (nextLive ? 'active' : 'completed') as League['status'],
+            isLocked: !nextLive,
+            computedStatus: {
+              ...(item.computedStatus || {}),
+              locked: !nextLive,
+              isComplete: !nextLive,
+              isCompleted: !nextLive,
+            },
+            updatedAt: now,
+          }
           : item))
       );
 
       setSelectedLeague((prev) => (prev && String(prev.id) === leagueId
         ? {
-            ...prev,
-            active: nextLive,
-            status: (nextLive ? 'active' : 'completed') as League['status'],
-            updatedAt: now,
-          }
+          ...prev,
+          active: nextLive,
+          status: (nextLive ? 'active' : 'completed') as League['status'],
+          updatedAt: now,
+        }
         : prev));
 
       setAdminSettingsLeague((prev) => (prev && String(prev.id) === leagueId
         ? {
-            ...prev,
-            active: nextLive,
-            status: (nextLive ? 'active' : 'completed') as League['status'],
-            updatedAt: now,
-          }
+          ...prev,
+          active: nextLive,
+          status: (nextLive ? 'active' : 'completed') as League['status'],
+          updatedAt: now,
+        }
         : prev));
       toast.success(nextLive ? 'League marked as live' : 'League marked as completed');
     } catch (e: unknown) {
@@ -3161,7 +3161,7 @@ function AllLeagues() {
 
       if (joined) {
         // Save joined league as preferred immediately
-        try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(joined.id)); } catch {}
+        try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(joined.id)); } catch { }
         // Update local state with new league at the TOP
         setLeagues(prev => {
           const filtered = prev.filter(l => String(l.id) !== String(joined.id));
@@ -3190,7 +3190,7 @@ function AllLeagues() {
     const file = event.target.files?.[0];
     if (file) {
       if (!validateLeagueImageFile(file)) {
-        try { event.target.value = ''; } catch {}
+        try { event.target.value = ''; } catch { }
         return;
       }
 
@@ -3211,7 +3211,7 @@ function AllLeagues() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch { }
   };
-  
+
 
   const fetchAllLeagues = useCallback(async () => {
     if (!token) return;
@@ -3799,10 +3799,10 @@ function AllLeagues() {
 
         const nextSeasons = Array.isArray(leagueEntry.seasons) && createdSeasonId
           ? leagueEntry.seasons.map((season) => ({
-              ...season,
-              isActive: String(season.id) === String(createdSeasonId),
-              archived: String(season.id) === String(createdSeasonId) ? false : season.archived,
-            }))
+            ...season,
+            isActive: String(season.id) === String(createdSeasonId),
+            archived: String(season.id) === String(createdSeasonId) ? false : season.archived,
+          }))
           : leagueEntry.seasons;
 
         const nextCurrentSeason = createdSeasonId && Array.isArray(nextSeasons)
@@ -3931,7 +3931,7 @@ function AllLeagues() {
           };
 
           // Save created league as preferred immediately
-          try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(normalized.id)); } catch {}
+          try { if (typeof window !== 'undefined') localStorage.setItem(PREFERRED_LEAGUE_KEY, String(normalized.id)); } catch { }
 
           // Add new league at TOP
           setLeagues(prevLeagues => {
@@ -4090,10 +4090,10 @@ function AllLeagues() {
         } : prev);
         try {
           window.dispatchEvent(new CustomEvent('league-updated', { detail: { leagueId: selectedLeague.id, reason: 'member-removed' } }));
-        } catch {}
+        } catch { }
         // Background refresh to ensure consistency (no-cache bust)
         await handleOpenMembers(selectedLeague);
-        try { toast.success('Member removed'); } catch {}
+        try { toast.success('Member removed'); } catch { }
       }
     } catch {
       toast.error('Failed to remove member');
@@ -4789,18 +4789,18 @@ function AllLeagues() {
           >
             LEAGUES
           </Typography>
-          
+
           {/* Divider line below heading */}
-          <Box sx={{ 
+          <Box sx={{
             width: '100vw',
             position: 'relative',
             left: '50%',
             transform: 'translateX(-50%)',
-            height: 'var(--header-divider-height)', 
+            height: 'var(--header-divider-height)',
             background: 'var(--header-divider-color)',
             mb: { xs: 2, md: 2 },
           }} />
-          
+
           {/* </Box> */}
           {/* Create/Join League Section */}
           {/* Single unified inline layout */}
@@ -4825,12 +4825,12 @@ function AllLeagues() {
               }}
             >
               <Button variant="contained" onClick={() => setIsDialogOpen(true)} sx={{
-                bgcolor: '#0388E3', 
-                color: 'white', 
-                fontFamily: 'Arial, Helvetica, sans-serif', 
+                bgcolor: '#0388E3',
+                color: 'white',
+                fontFamily: 'Arial, Helvetica, sans-serif',
                 fontWeight: 'semi-bold',
                 fontSize: { xs: '15px', md: '18px' },
-                '&:hover': { bgcolor: '#0266b8' }, 
+                '&:hover': { bgcolor: '#0266b8' },
                 borderRadius: 1,
                 width: { xs: '100%', sm: 'auto' },
                 minHeight: { xs: 42, md: 'auto' },
@@ -4838,7 +4838,7 @@ function AllLeagues() {
                 textTransform: 'none',
                 whiteSpace: 'nowrap'
               }}>+ Create New League</Button>
-              
+
               {/* Grouped Invite Code + Join Button */}
               <Box
                 sx={{
@@ -4848,13 +4848,13 @@ function AllLeagues() {
                   overflow: 'hidden',
                 }}
               >
-                <TextField 
-                  placeholder="Enter invite code" 
-                  value={inviteCode} 
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())} 
+                <TextField
+                  placeholder="Enter invite code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   size="small"
                   variant="outlined"
-                  autoComplete="off" 
+                  autoComplete="off"
                   sx={{
                     flex: 1,
                     minWidth: 0,
@@ -4878,18 +4878,18 @@ function AllLeagues() {
                       opacity: 1,
                       fontSize: { xs: '0.82rem', md: '0.9rem' },
                     }
-                  }} 
+                  }}
                 />
-                
-                <Button 
-                  variant="contained" 
-                  onClick={handleJoinLeague} 
-                  disabled={isJoining} 
+
+                <Button
+                  variant="contained"
+                  onClick={handleJoinLeague}
+                  disabled={isJoining}
                   sx={{
                     bgcolor: '#00A896',
-                    color: 'white', 
+                    color: 'white',
                     fontFamily: 'Arial, Helvetica, sans-serif',
-                    fontWeight: 'semi-bold', 
+                    fontWeight: 'semi-bold',
                     fontSize: { xs: '15px', md: '18px' },
                     '&:hover': { bgcolor: '#008c7a' },
                     '&:disabled': { bgcolor: '#00A896', opacity: 0.6 },
@@ -4917,45 +4917,45 @@ function AllLeagues() {
                 width: { xs: '100%', md: 'auto' }
               }}
             >
-                <TextField 
-                  select 
-                  value={selectedYear} 
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  size="small"
-                  sx={{
-                     minWidth: 150,
-                    width: { xs: '100%', sm: 180, md: 150 },
-                    '& .MuiOutlinedInput-root': { 
-                      color: 'white',
-                      borderRadius: 6,
-                      '& .MuiSelect-select': { py: 1.25, px: 2 },
-                      '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
-                      '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
-                      '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
-                    },
-                    '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
-                  }}
-                  SelectProps={{
-                    MenuProps: {
-                      ...dropdownMenuBaseProps,
-                      PaperProps: {
-                        sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
-                      }
+              <TextField
+                select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                size="small"
+                sx={{
+                  minWidth: 150,
+                  width: { xs: '100%', sm: 180, md: 150 },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    borderRadius: 6,
+                    '& .MuiSelect-select': { py: 1.25, px: 2 },
+                    '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
+                    '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
+                    '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
+                  },
+                  '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
+                }}
+                SelectProps={{
+                  MenuProps: {
+                    ...dropdownMenuBaseProps,
+                    PaperProps: {
+                      sx: { ...dropdownPaperBaseSx, bgcolor: '#1a1a1a', color: 'white' }
                     }
-                  }}
-                >
-                  <MenuItem value="all">All Years</MenuItem>
-                  {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
-                </TextField>
-              <TextField 
-                select 
-                value={selectedLeagueId} 
+                  }
+                }}
+              >
+                <MenuItem value="all">All Years</MenuItem>
+                {yearOptions.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+              </TextField>
+              <TextField
+                select
+                value={selectedLeagueId}
                 onChange={(e) => setSelectedLeagueId(e.target.value)}
                 size="small"
                 sx={{
                   minWidth: 150,
                   width: { xs: '100%', sm: 180, md: 150 },
-                  '& .MuiOutlinedInput-root': { 
+                  '& .MuiOutlinedInput-root': {
                     color: 'white',
                     borderRadius: 6,
                     '& .MuiSelect-select': { py: 1.25, px: 2 },
@@ -4981,25 +4981,25 @@ function AllLeagues() {
                   </MenuItem>
                 ))}
               </TextField>
-              
-              
-              <Button 
-                variant="outlined" 
-                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setSelectedLeagueId('all'); setCompletionTab('live'); }} 
+
+
+              <Button
+                variant="outlined"
+                onClick={() => { setSelectedYear('all'); setSearchTerm(''); setSelectedLeagueId('all'); setCompletionTab('live'); }}
                 sx={{
                   color: 'white',
                   borderRadius: 6,
                   borderColor: 'rgba(255,255,255,0.3)',
                   borderWidth: '3px',
-                  px: 2.5, 
+                  px: 2.5,
                   py: 1,
                   width: { xs: '100%', sm: 'auto' },
                   fontWeight: 'bold',
                   textTransform: 'none',
-                  '&:hover': { 
+                  '&:hover': {
                     borderColor: 'rgba(255,255,255,0.5)',
                     borderWidth: '3px',
-                    bgcolor: 'rgba(255,255,255,0.05)' 
+                    bgcolor: 'rgba(255,255,255,0.05)'
                   }
                 }}
               >
@@ -5009,61 +5009,66 @@ function AllLeagues() {
           </Box>
 
           {/* Complete/Live Leagues Filter Buttons */}
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            gap: { xs: 1.2, md: 2 },
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             mt: { xs: 2, md: 3 },
-            mb: 2
+            mb: 4
           }}>
-            <Button
-              variant={completionTab === 'live' ? 'contained' : 'outlined'}
-              onClick={() => setCompletionTab('live')}
-              sx={{
-                textTransform: 'none',
-                borderRadius: 2,
-                width: { xs: 150, sm: 180, md: 220 },
-                px: { xs: 2, md: 3 },
-                py: { xs: 0.75, md: 1 },
-                fontSize: { xs: '14px', md: '18px' },
-                fontWeight: 700,
-                bgcolor: completionTab === 'live' ? '#00A896' : 'transparent',
-                color: 'white',
-                borderColor: 'rgba(255,255,255,0.35)',
-                '&:hover': {
-                  bgcolor: completionTab === 'live' ? '#008c7a' : 'rgba(255,255,255,0.08)',
-                },
-              }}
-            >
-              Live Leagues
-            </Button>
-            <Button
-              variant={completionTab === 'completed' ? 'contained' : 'outlined'}
-              onClick={() => setCompletionTab('completed')}
-              sx={{
-                textTransform: 'none',
-                borderRadius: 2,
-                width: { xs: 150, sm: 180, md: 220 },
-                px: { xs: 2, md: 3 },
-                py: { xs: 0.75, md: 1 },
-                fontSize: { xs: '14px', md: '18px' },
-                fontWeight: 700,
-                bgcolor: completionTab === 'completed' ? '#6b7280' : 'transparent',
-                color: 'white',
-                borderColor: 'rgba(255,255,255,0.35)',
-                '&:hover': {
-                  bgcolor: completionTab === 'completed' ? '#4b5563' : 'rgba(255,255,255,0.08)',
-                },
-              }}
-            >
-              Completed Leagues
-            </Button>
+            <Box sx={{
+              display: 'flex',
+              bgcolor: '#3F4652',
+              borderRadius: '12px',
+              p: 0.5,
+              width: { xs: '90%', sm: 400, md: 500 }
+            }}>
+              <Button
+                onClick={() => setCompletionTab('live')}
+                sx={{
+                  flex: 1,
+                  textTransform: 'uppercase',
+                  borderRadius: '10px',
+                  py: { xs: 1, md: 1.5 },
+                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                  fontFamily: 'Woodford Bourne Pro, sans-serif',
+                  fontWeight: 700,
+                  bgcolor: completionTab === 'live' ? '#00a896' : 'transparent',
+                  color: completionTab === 'live' ? '#ffffff' : '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: completionTab === 'live' ? '#00a896' : 'rgba(255,255,255,0.1)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Live Leagues
+              </Button>
+              <Button
+                onClick={() => setCompletionTab('completed')}
+                sx={{
+                  flex: 1,
+                  textTransform: 'uppercase',
+                  borderRadius: '10px',
+                  py: { xs: 1, md: 1.5 },
+                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                  fontFamily: 'Woodford Bourne Pro, sans-serif',
+                  fontWeight: 700,
+                  bgcolor: completionTab === 'completed' ? '#00a896' : 'transparent',
+                  color: completionTab === 'completed' ? '#ffffff' : '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: completionTab === 'completed' ? '#00a896' : 'rgba(255,255,255,0.1)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Completed Leagues
+              </Button>
+            </Box>
           </Box>
         </Box>
 
         {/* Leagues List - Card Format */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 1, sm: 2, md: 13 } , mb :7}}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 1, sm: 2, md: 13 }, mb: 7 }}>
           {loading ? (
             <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
@@ -5093,8 +5098,8 @@ function AllLeagues() {
               const isUpdatingLiveStatus = leagueLiveUpdatingId === String(league.id);
               const leagueSeasons = Array.isArray((league as LeagueWithStatus & { seasons?: Season[] }).seasons)
                 ? ((league as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).filter(
-                    (season) => !Boolean((season as Season & { deleted?: boolean }).deleted)
-                  )
+                  (season) => !Boolean((season as Season & { deleted?: boolean }).deleted)
+                )
                 : [];
               const totalSeasons = leagueSeasons.length > 0 ? leagueSeasons.length : 1;
               const activeSeasonForInvite = leagueSeasons.find((season) => season.isActive) || leagueSeasons[0] || null;
@@ -5187,13 +5192,13 @@ function AllLeagues() {
                         }
                       }}
                     >
-                      <Image 
-                        src={setting} 
-                        alt="Settings" 
-                        width={24} 
-                        height={24} 
+                      <Image
+                        src={setting}
+                        alt="Settings"
+                        width={24}
+                        height={24}
                         className="settings-icon w-5 h-5 md:w-6 md:h-6"
-                        style={{ flexShrink: 0}} 
+                        style={{ flexShrink: 0 }}
                       />
                     </IconButton>
                   )}
@@ -5293,7 +5298,7 @@ function AllLeagues() {
                               color: isCompleted ? '#111827' : 'white',
                               fontFamily: '"Anton", sans-serif !important',
                               fontSize: { xs: '28px', sm: '32px', md: '36px' },
-                              
+
                               textOverflow: 'ellipsis',
                               overflow: 'hidden',
                               whiteSpace: 'nowrap',
@@ -5335,7 +5340,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                               Total Seasons: {totalSeasons}
+                                Total Seasons: {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -5382,7 +5387,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                               Total Seasons: {totalSeasons}
+                                Total Seasons: {totalSeasons}
                               </Typography>
                             </Box>
 
@@ -5407,9 +5412,9 @@ function AllLeagues() {
                       <Grid container spacing={0} alignItems="center">
                         {/* Code and Matches - 8 */}
                         <Grid item xs={12} md={8}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
+                          <Box sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
                             justifyContent: 'center',
                             gap: 1,
                             mt: { xs: 0.5, md: 0 },
@@ -5469,7 +5474,7 @@ function AllLeagues() {
                                       text: inviteShareText,
                                     };
                                     if (navigator.share) {
-                                      navigator.share(shareData).catch(() => {});
+                                      navigator.share(shareData).catch(() => { });
                                     } else {
                                       navigator.clipboard.writeText(inviteShareText);
                                       toast.success('League info copied!');
@@ -5490,7 +5495,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                               Total Matches: {league.matches?.length || 0}
+                                Total Matches: {league.matches?.length || 0}
                               </Typography>
                             </Box>
 
@@ -5543,7 +5548,7 @@ function AllLeagues() {
                                   '&.Mui-disabled .MuiButton-startIcon .MuiSvgIcon-root': {
                                     color: '#ffffff',
                                   },
-                                  
+
                                 }}
                               >
                                 {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
@@ -5578,11 +5583,11 @@ function AllLeagues() {
 
                             {/* View Text - 6 */}
                             <Grid item xs={6} md={6}>
-                              <Box 
-                                sx={{ 
-                                  display: 'flex', 
-                                  justifyContent: { xs: 'flex-start', md: 'flex-end' }, 
-                                  alignItems: 'center', 
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                                  alignItems: 'center',
                                   height: '100%',
                                   cursor: 'pointer',
                                   mt: { xs: 1, md: 0 },
@@ -5634,670 +5639,670 @@ function AllLeagues() {
 
         {/* Archived Leagues / Seasons Section */}
         {hasArchivedSections && (
-        <Box sx={{ mt: 4, mb: 2 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(2, minmax(0, 1fr))',
-              },
-              gap: 1.2
-            }}
-          >
+          <Box sx={{ mt: 4, mb: 2 }}>
             <Box
-              onClick={() => {
-                setShowArchived((prev) => {
-                  const next = !prev;
-                  if (next) setShowArchivedSeasons(false);
-                  return next;
-                });
-              }}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1.5,
-                cursor: 'pointer',
-                py: 1.5,
-                px: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
-                '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                },
+                gap: 1.2
               }}
             >
-              <Typography sx={{
-                color: 'white',
-                fontFamily: '"League Spartan", sans-serif',
-                fontWeight: 600,
-                fontSize: { xs: '15px', md: '18px' },
-                letterSpacing: '0.5px',
-              }}>
-                Archived Leagues ({archivedLeagues.length})
-              </Typography>
-              <ExpandMore sx={{
-                color: 'white',
-                transform: showArchived ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.3s ease',
-                fontSize: 22,
-              }} />
+              <Box
+                onClick={() => {
+                  setShowArchived((prev) => {
+                    const next = !prev;
+                    if (next) setShowArchivedSeasons(false);
+                    return next;
+                  });
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1.5,
+                  cursor: 'pointer',
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: 2,
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
+                  '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
+                }}
+              >
+                <Typography sx={{
+                  color: 'white',
+                  fontFamily: '"League Spartan", sans-serif',
+                  fontWeight: 600,
+                  fontSize: { xs: '15px', md: '18px' },
+                  letterSpacing: '0.5px',
+                }}>
+                  Archived Leagues ({archivedLeagues.length})
+                </Typography>
+                <ExpandMore sx={{
+                  color: 'white',
+                  transform: showArchived ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s ease',
+                  fontSize: 22,
+                }} />
+              </Box>
+
+              <Box
+                onClick={() => {
+                  setShowArchivedSeasons((prev) => {
+                    const next = !prev;
+                    if (next) setShowArchived(false);
+                    return next;
+                  });
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1.5,
+                  cursor: 'pointer',
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: 2,
+                  background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
+                  '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
+                }}
+              >
+                <Typography sx={{
+                  color: 'white',
+                  fontFamily: '"League Spartan", sans-serif',
+                  fontWeight: 600,
+                  fontSize: { xs: '15px', md: '18px' },
+                  letterSpacing: '0.5px',
+                }}>
+                  Archived Seasons ({archivedSeasons.length})
+                </Typography>
+                <ExpandMore sx={{
+                  color: 'white',
+                  transform: showArchivedSeasons ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s ease',
+                  fontSize: 22,
+                }} />
+              </Box>
             </Box>
 
-            <Box
-              onClick={() => {
-                setShowArchivedSeasons((prev) => {
-                  const next = !prev;
-                  if (next) setShowArchived(false);
-                  return next;
-                });
-              }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1.5,
-                cursor: 'pointer',
-                py: 1.5,
-                px: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(177deg, rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(229,106,22,0.3)',
-                '&:hover': { boxShadow: '0 6px 20px rgba(229,106,22,0.45)', transform: 'translateY(-1px)' },
-              }}
-            >
-              <Typography sx={{
-                color: 'white',
-                fontFamily: '"League Spartan", sans-serif',
-                fontWeight: 600,
-                fontSize: { xs: '15px', md: '18px' },
-                letterSpacing: '0.5px',
-              }}>
-                Archived Seasons ({archivedSeasons.length})
-              </Typography>
-              <ExpandMore sx={{
-                color: 'white',
-                transform: showArchivedSeasons ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.3s ease',
-                fontSize: 22,
-              }} />
-            </Box>
-          </Box>
-
-          {showArchived && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              {archivedLeagues.length === 0 && (
-                <Box
-                  sx={{
-                    px: { xs: 3, md: 3 },
-                    py: { xs: 2.4, md: 2.6 },
-                    borderRadius: 3,
-                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                    opacity: 0.8,
-                  }}
-                >
-                  <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
-                    No archived leagues found yet.
-                  </Typography>
-                </Box>
-              )}
-              {archivedLeagues.map((league) => {
+            {showArchived && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                {archivedLeagues.length === 0 && (
+                  <Box
+                    sx={{
+                      px: { xs: 3, md: 3 },
+                      py: { xs: 2.4, md: 2.6 },
+                      borderRadius: 3,
+                      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                      opacity: 0.8,
+                    }}
+                  >
+                    <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                      No archived leagues found yet.
+                    </Typography>
+                  </Box>
+                )}
+                {archivedLeagues.map((league) => {
                   const actionLoading = archivedLeagueActionId === String(league.id);
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
                   return (
-                  <Box
-                    key={league.id}
-                    sx={{
-                      px: { xs: 3, md: 3 },
-                      py: { xs: 2.6, md: 2.8 },
-                      borderRadius: 3,
-                      cursor: 'not-allowed',
-                      transition: 'all 0.3s ease',
-                      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                      position: 'relative',
-                      minHeight: { xs: '140px', md: '160px' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      opacity: 0.75,
-                      '&:hover': {
-                        opacity: 0.75,
-                        transform: 'none',
-                      }
-                    }}
-                  >
-                    {/* Archived Badge + Restore - Top Right */}
                     <Box
+                      key={league.id}
                       sx={{
-                        position: 'absolute',
-                        top: 14,
-                        right: 14,
+                        px: { xs: 3, md: 3 },
+                        py: { xs: 2.6, md: 2.8 },
+                        borderRadius: 3,
+                        cursor: 'not-allowed',
+                        transition: 'all 0.3s ease',
+                        background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                        position: 'relative',
+                        minHeight: { xs: '140px', md: '160px' },
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1,
-                        zIndex: 4,
+                        opacity: 0.75,
+                        '&:hover': {
+                          opacity: 0.75,
+                          transform: 'none',
+                        }
                       }}
                     >
-                      <Chip label="Archived" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
-                      {canManageArchivedLeague && (
-                        <>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            disabled={actionLoading}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
-                              (async () => {
-                                try {
-                                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
-                                    method: 'PATCH',
-                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ active: true }),
-                                  });
-                                  if (!res.ok) throw new Error('Failed');
-                                  toast.success('League restored');
-                                  setLeagues(prev => prev.map(l => String(l.id) === String(league.id) ? { ...l, active: true, archived: false } as typeof l : l));
-                                  dispatchLeagueMutationEvent('league-updated', { leagueId: String(league.id), reason: 'restored-from-archive-list' });
-                                  await fetchAllLeagues();
-                                } catch { toast.error('Failed to restore league'); }
-                              })();
-                            }}
-                            sx={{
-                              bgcolor: '#27ab83',
-                              '&:hover': { bgcolor: '#1e8463' },
-                              fontSize: '11px',
-                              px: 1.5,
-                              py: 0.3,
-                              minWidth: 'auto',
-                              textTransform: 'none',
-                            }}
-                          >
-                            Restore
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            disabled={actionLoading}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePermanentDeleteArchivedLeague(league);
-                            }}
-                            sx={{
-                              bgcolor: '#dc2626',
-                              '&:hover': { bgcolor: '#b91c1c' },
-                              fontSize: '11px',
-                              px: 1.5,
-                              py: 0.3,
-                              minWidth: 'auto',
-                              textTransform: 'none',
-                            }}
-                          >
-                            {actionLoading ? 'Deleting...' : 'Permanent Delete'}
-                          </Button>
-                        </>
-                      )}
-                    </Box>
+                      {/* Archived Badge + Restore - Top Right */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 14,
+                          right: 14,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          zIndex: 4,
+                        }}
+                      >
+                        <Chip label="Archived" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
+                        {canManageArchivedLeague && (
+                          <>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              disabled={actionLoading}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
+                                (async () => {
+                                  try {
+                                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/status`, {
+                                      method: 'PATCH',
+                                      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ active: true }),
+                                    });
+                                    if (!res.ok) throw new Error('Failed');
+                                    toast.success('League restored');
+                                    setLeagues(prev => prev.map(l => String(l.id) === String(league.id) ? { ...l, active: true, archived: false } as typeof l : l));
+                                    dispatchLeagueMutationEvent('league-updated', { leagueId: String(league.id), reason: 'restored-from-archive-list' });
+                                    await fetchAllLeagues();
+                                  } catch { toast.error('Failed to restore league'); }
+                                })();
+                              }}
+                              sx={{
+                                bgcolor: '#27ab83',
+                                '&:hover': { bgcolor: '#1e8463' },
+                                fontSize: '11px',
+                                px: 1.5,
+                                py: 0.3,
+                                minWidth: 'auto',
+                                textTransform: 'none',
+                              }}
+                            >
+                              Restore
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              disabled={actionLoading}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePermanentDeleteArchivedLeague(league);
+                              }}
+                              sx={{
+                                bgcolor: '#dc2626',
+                                '&:hover': { bgcolor: '#b91c1c' },
+                                fontSize: '11px',
+                                px: 1.5,
+                                py: 0.3,
+                                minWidth: 'auto',
+                                textTransform: 'none',
+                              }}
+                            >
+                              {actionLoading ? 'Deleting...' : 'Permanent Delete'}
+                            </Button>
+                          </>
+                        )}
+                      </Box>
 
-                    {/* Grid Layout - 6/6 Split (same as live league card) */}
-                    <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
-                      {/* Left Column - Trophy, Title, Players, Created */}
-                      <Grid item xs={12} md={6}>
-                        <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
-                          {/* Trophy Icon - 4 */}
-                          <Grid item xs={12} md={3}>
-                            <Box sx={{
-                              width: { xs: 60, sm: 80, md: 100 },
-                              height: { xs: 60, sm: 80, md: 100 },
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              mx: { xs: 'auto', md: 0 },
-                              flexShrink: 0,
-                              position: 'relative',
-                              bgcolor: 'white',
-                              borderRadius: '50%',
-                              overflow: 'hidden',
-                            }}>
-                              <Box
-                                sx={{
-                                  position: 'relative',
-                                  width: '100%',
-                                  height: '100%',
-                                  p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
-                                  boxSizing: 'border-box',
-                                }}
-                              >
-                                <Image
-                                  src={league?.image || trofy}
-                                  alt={`${league.name} icon`}
-                                  fill
-                                  priority
-                                  sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
-                                  style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
-                                />
-                              </Box>
-                            </Box>
-                          </Grid>
-
-                          {/* Title and Details - 8 */}
-                          <Grid item xs={12} md={9}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
-                              {/* League Title */}
-                              <Typography sx={{
-                                color: 'white',
-                                fontFamily: '"Anton", sans-serif !important',
-                                fontSize: { xs: '28px', sm: '32px', md: '36px' },
-                                textOverflow: 'ellipsis',
+                      {/* Grid Layout - 6/6 Split (same as live league card) */}
+                      <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
+                        {/* Left Column - Trophy, Title, Players, Created */}
+                        <Grid item xs={12} md={6}>
+                          <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
+                            {/* Trophy Icon - 4 */}
+                            <Grid item xs={12} md={3}>
+                              <Box sx={{
+                                width: { xs: 60, sm: 80, md: 100 },
+                                height: { xs: 60, sm: 80, md: 100 },
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                mx: { xs: 'auto', md: 0 },
+                                flexShrink: 0,
+                                position: 'relative',
+                                bgcolor: 'white',
+                                borderRadius: '50%',
                                 overflow: 'hidden',
-                                whiteSpace: 'nowrap',
-                                fontWeight: 'semi-bold',
-                                lineHeight: 1.3,
-                                letterSpacing: '1px',
-                                textTransform: 'uppercase',
-                                textAlign: { xs: 'center', md: 'left' },
-                                width: '100%'
                               }}>
-                                {formatLeagueName(league.name)}
-                              </Typography>
-
-                              {/* Players */}
-                              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-                                <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
-                                <Typography sx={{
-                                  color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 300,
-                                  fontSize: { xs: '10px', sm: '16px' }
-                                }}>
-                                  Players {league.members?.length || 0}
-                                </Typography>
-                              </Box>
-
-                              {/* Created */}
-                              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-                                <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
-                                <Typography sx={{
-                                  color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 300,
-                                  fontSize: { xs: '10px', sm: '16px' }
-                                }}>
-                                  Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Grid>
-
-                          <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.4, md: 1 } }}>
-                                <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
-                                <Typography sx={{
-                                  color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 300,
-                                  fontSize: { xs: '10px', sm: '16px' }
-                                }}>
-                                  Players {league.members?.length || 0}
-                                </Typography>
-                              </Box>
-
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
-                                <Typography sx={{
-                                  color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 300,
-                                  fontSize: { xs: '10px', sm: '16px' }
-                                }}>
-                                  Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </Grid>
-
-                      {/* Right Column - Matches, View */}
-                      <Grid item xs={12} md={6}>
-                        <Grid container spacing={0} alignItems="center">
-                          {/* Matches - 8 */}
-                          <Grid item xs={12} md={8}>
-                            <Box sx={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              justifyContent: 'center',
-                              gap: 1,
-                              mt: { xs: 0.5, md: 0 },
-                              height: '100%'
-                            }}>
-                              {/* Matches */}
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
-                                <Typography sx={{
-                                  color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
-                                  fontWeight: 300,
-                                  fontSize: { xs: '10px', sm: '16px' }
-                                }}>
-                                  Matches: {league.matches?.length || 0}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Grid>
-
-                          {/* View Button - 4 */}
-                          <Grid item xs={12} md={4}>
-                            <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="flex-end" sx={{ height: '100%' }}>
-                              {/* Image - 6 */}
-                              <Grid item xs={6} md={6}>
                                 <Box
                                   sx={{
-                                    display: 'flex',
-                                    justifyContent: { xs: 'flex-start', md: 'flex-start' },
-                                    alignItems: 'flex-end',
+                                    position: 'relative',
+                                    width: '100%',
                                     height: '100%',
-                                    ml: { xs: 0, md: -5 }
+                                    p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
+                                    boxSizing: 'border-box',
                                   }}
                                 >
-                                <Image
-                                  src={playerfull}
-                                  alt="View"
-                                  width={70}
-                                  height={70}
-                                  style={{ flexShrink: 0, width: 'clamp(50px, 12vw, 70px)', height: 'clamp(50px, 12vw, 70px)' }}
-                                />
+                                  <Image
+                                    src={league?.image || trofy}
+                                    alt={`${league.name} icon`}
+                                    fill
+                                    priority
+                                    sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                    style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                  />
                                 </Box>
-                              </Grid>
+                              </Box>
+                            </Grid>
 
-                              {/* View Text - 6 */}
-                              <Grid item xs={6} md={6}>
-                                <Box 
-                                sx={{ 
-                                  display: 'flex', 
-                                  justifyContent: 'flex-start', 
-                                  alignItems: 'center', 
-                                  height: '100%',
-                                  cursor: 'not-allowed',
-                                  mt: { xs: 1, md: 0 }
-                                }}
-                                >
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography sx={{
-                                      color: 'white',
-                                      fontFamily: '"League Spartan", sans-serif',
-                                      fontWeight: 'semi-bold',
-                                      fontSize: { xs: '22px', md: '22px' }
-                                    }}>
-                                      Archived
-                                    </Typography>
-                                  </Box>
+                            {/* Title and Details - 8 */}
+                            <Grid item xs={12} md={9}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
+                                {/* League Title */}
+                                <Typography sx={{
+                                  color: 'white',
+                                  fontFamily: '"Anton", sans-serif !important',
+                                  fontSize: { xs: '28px', sm: '32px', md: '36px' },
+                                  textOverflow: 'ellipsis',
+                                  overflow: 'hidden',
+                                  whiteSpace: 'nowrap',
+                                  fontWeight: 'semi-bold',
+                                  lineHeight: 1.3,
+                                  letterSpacing: '1px',
+                                  textTransform: 'uppercase',
+                                  textAlign: { xs: 'center', md: 'left' },
+                                  width: '100%'
+                                }}>
+                                  {formatLeagueName(league.name)}
+                                </Typography>
+
+                                {/* Players */}
+                                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+                                  <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
+                                  <Typography sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    Players {league.members?.length || 0}
+                                  </Typography>
                                 </Box>
-                              </Grid>
+
+                                {/* Created */}
+                                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+                                  <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                                  <Typography sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Grid>
+
+                            <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.4, md: 1 } }}>
+                                  <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
+                                  <Typography sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    Players {league.members?.length || 0}
+                                  </Typography>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                                  <Typography sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                  </Typography>
+                                </Box>
+                              </Box>
                             </Grid>
                           </Grid>
                         </Grid>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                  );
-              })}
-            </Box>
-          )}
 
-          {showArchivedSeasons && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, mt: 2 }}>
-              {archivedSeasons.length === 0 && (
-                <Box
-                  sx={{
-                    px: { xs: 3, md: 3 },
-                    py: { xs: 2.4, md: 2.6 },
-                    borderRadius: 3,
-                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                    opacity: 0.8,
-                  }}
-                >
-                  <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
-                    No archived seasons found yet.
-                  </Typography>
-                </Box>
-              )}
+                        {/* Right Column - Matches, View */}
+                        <Grid item xs={12} md={6}>
+                          <Grid container spacing={0} alignItems="center">
+                            {/* Matches - 8 */}
+                            <Grid item xs={12} md={8}>
+                              <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                gap: 1,
+                                mt: { xs: 0.5, md: 0 },
+                                height: '100%'
+                              }}>
+                                {/* Matches */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                                  <Typography sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    Matches: {league.matches?.length || 0}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Grid>
 
-              {groupedArchivedSeasons.map(({ league, seasons }) => (
-                <Box key={`archived-league-${league.id}`} sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-                  <Box sx={{ px: { xs: 1, md: 1.5 } }}>
-                    <Typography
-                      sx={{
-                        color: '#E5E7EB',
-                        fontFamily: '"League Spartan", sans-serif',
-                        fontWeight: 700,
-                        fontSize: { xs: '16px', md: '20px' },
-                        letterSpacing: '0.4px',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                     League Name : {formatLeagueName(league.name)}
-                    </Typography>
-                  </Box>
-
-                  {seasons.map((season) => {
-                    const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
-                    const seasonLabel = season.name?.trim() || `Season ${season.seasonNumber || ''}`.trim();
-                    const seasonCreatedAt = season.startDate || season.createdAt || league.createdAt;
-                    const seasonMatches = (league.matches || []).filter((m) => String(m.seasonId || '') === String(season.id)).length;
-                    const seasonPlayersCount = (season.members?.length || season.players?.length || 0);
-                    const seasonActionLoading = archivedSeasonActionId === `${league.id}:${season.id}`;
-
-                    return (
-                      <Box
-                        key={`${league.id}-${season.id}`}
-                        sx={{
-                          px: { xs: 3, md: 3 },
-                          py: { xs: 2.6, md: 2.8 },
-                          borderRadius: 3,
-                          transition: 'all 0.3s ease',
-                          background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
-                          position: 'relative',
-                          minHeight: { xs: '140px', md: '160px' },
-                          display: 'flex',
-                          alignItems: 'center',
-                          opacity: 0.8,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 14,
-                            right: 14,
-                            zIndex: 4,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          <Chip label="Archived Season" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
-                          {isLeagueAdminForCurrentUser(league) && (
-                            <>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                disabled={seasonActionLoading}
-                                onClick={() => { void handleRestoreArchivedSeasonGlobal(league, season); }}
-                                sx={{
-                                  bgcolor: '#27ab83',
-                                  '&:hover': { bgcolor: '#1e8463' },
-                                  fontSize: '11px',
-                                  px: 1.5,
-                                  py: 0.3,
-                                  minWidth: 'auto',
-                                  textTransform: 'none',
-                                }}
-                              >
-                                Restore
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                disabled={seasonActionLoading}
-                                onClick={() => { void handlePermanentDeleteArchivedSeasonGlobal(league, season); }}
-                                sx={{
-                                  bgcolor: '#dc2626',
-                                  '&:hover': { bgcolor: '#b91c1c' },
-                                  fontSize: '11px',
-                                  px: 1.5,
-                                  py: 0.3,
-                                  minWidth: 'auto',
-                                  textTransform: 'none',
-                                }}
-                              >
-                                {seasonActionLoading ? 'Deleting...' : 'Permanent Delete'}
-                              </Button>
-                            </>
-                          )}
-                        </Box>
-
-                        <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
-                          <Grid item xs={12} md={6}>
-                            <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
-                              <Grid item xs={12} md={3}>
-                                <Box sx={{
-                                  width: { xs: 60, sm: 80, md: 100 },
-                                  height: { xs: 60, sm: 80, md: 100 },
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  mx: { xs: 'auto', md: 0 },
-                                  flexShrink: 0,
-                                  position: 'relative',
-                                  bgcolor: 'white',
-                                  borderRadius: '50%',
-                                  overflow: 'hidden',
-                                }}>
+                            {/* View Button - 4 */}
+                            <Grid item xs={12} md={4}>
+                              <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="flex-end" sx={{ height: '100%' }}>
+                                {/* Image - 6 */}
+                                <Grid item xs={6} md={6}>
                                   <Box
                                     sx={{
-                                      position: 'relative',
-                                      width: '100%',
+                                      display: 'flex',
+                                      justifyContent: { xs: 'flex-start', md: 'flex-start' },
+                                      alignItems: 'flex-end',
                                       height: '100%',
-                                      p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
-                                      boxSizing: 'border-box',
+                                      ml: { xs: 0, md: -5 }
                                     }}
                                   >
                                     <Image
-                                      src={league?.image || trofy}
-                                      alt={`${league.name} icon`}
-                                      fill
-                                      priority
-                                      sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
-                                      style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                      src={playerfull}
+                                      alt="View"
+                                      width={70}
+                                      height={70}
+                                      style={{ flexShrink: 0, width: 'clamp(50px, 12vw, 70px)', height: 'clamp(50px, 12vw, 70px)' }}
                                     />
                                   </Box>
-                                </Box>
-                              </Grid>
+                                </Grid>
 
-                              <Grid item xs={12} md={9}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
-                                  <Typography sx={{
-                                    color: 'white',
-                                    fontFamily: '"Anton", sans-serif !important',
-                                    fontSize: { xs: '28px', sm: '32px', md: '36px' },
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 'semi-bold',
-                                    lineHeight: 1.3,
-                                    letterSpacing: '1px',
-                                    textTransform: 'uppercase',
-                                    textAlign: { xs: 'center', md: 'left' },
-                                    width: '100%'
-                                  }}>
-                                    {seasonLabel}
-                                  </Typography>
-
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Image src={faceicon} alt="Players" width={16} height={16} style={{ flexShrink: 0 }} />
-                                    <Typography sx={{
-                                      color: 'rgba(255,255,255,0.9)',
-                                      fontFamily: '"League Spartan", sans-serif',
-                                      fontWeight: 300,
-                                      fontSize: { xs: '10px', sm: '16px' }
-                                    }}>
-                                      Players: {seasonPlayersCount}
-                                    </Typography>
-                                  </Box>
-
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
-                                    <Typography sx={{
-                                      color: 'rgba(255,255,255,0.9)',
-                                      fontFamily: '"League Spartan", sans-serif',
-                                      fontWeight: 300,
-                                      fontSize: { xs: '10px', sm: '16px' }
-                                    }}>
-                                      Created At {new Date(seasonCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Grid>
-                            </Grid>
-                          </Grid>
-
-                          <Grid item xs={12} md={6}>
-                            <Grid container spacing={0} alignItems="center">
-                              <Grid item xs={12} md={8}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1, mt: { xs: 0.5, md: 0 }, height: '100%' }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
-                                    <Typography sx={{
-                                      color: 'rgba(255,255,255,0.9)',
-                                      fontFamily: '"League Spartan", sans-serif',
-                                      fontWeight: 300,
-                                      fontSize: { xs: '10px', sm: '16px' }
-                                    }}>
-                                      Matches: {seasonMatches}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Grid>
-
-                              <Grid item xs={12} md={4}>
-                                <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
-                                  <Grid item xs={6} md={6}>
-                                    <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-start' }, alignItems: 'center', height: '100%', ml: { xs: 0, md: -5 } }}>
-                                      <Image
-                                        src={playerfull}
-                                        alt="Archived"
-                                        width={70}
-                                        height={70}
-                                        style={{ flexShrink: 0, width: 'clamp(50px, 12vw, 70px)', height: 'clamp(50px, 12vw, 70px)' }}
-                                      />
+                                {/* View Text - 6 */}
+                                <Grid item xs={6} md={6}>
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      justifyContent: 'flex-start',
+                                      alignItems: 'center',
+                                      height: '100%',
+                                      cursor: 'not-allowed',
+                                      mt: { xs: 1, md: 0 }
+                                    }}
+                                  >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Typography sx={{
+                                        color: 'white',
+                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontWeight: 'semi-bold',
+                                        fontSize: { xs: '22px', md: '22px' }
+                                      }}>
+                                        Archived
+                                      </Typography>
                                     </Box>
-                                  </Grid>
-
-                                  <Grid item xs={6} md={6}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '100%', mt: { xs: 1, md: 0 } }}>
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography sx={{ color: 'white', fontFamily: '"League Spartan", sans-serif', fontWeight: 'semi-bold', fontSize: { xs: '22px', md: '22px' } }}>
-                                          Archived
-                                        </Typography>
-                                      </Box>
-                                    </Box>
-                                  </Grid>
+                                  </Box>
                                 </Grid>
                               </Grid>
                             </Grid>
                           </Grid>
                         </Grid>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
+                      </Grid>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+
+            {showArchivedSeasons && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, mt: 2 }}>
+                {archivedSeasons.length === 0 && (
+                  <Box
+                    sx={{
+                      px: { xs: 3, md: 3 },
+                      py: { xs: 2.4, md: 2.6 },
+                      borderRadius: 3,
+                      background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                      opacity: 0.8,
+                    }}
+                  >
+                    <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                      No archived seasons found yet.
+                    </Typography>
+                  </Box>
+                )}
+
+                {groupedArchivedSeasons.map(({ league, seasons }) => (
+                  <Box key={`archived-league-${league.id}`} sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                    <Box sx={{ px: { xs: 1, md: 1.5 } }}>
+                      <Typography
+                        sx={{
+                          color: '#E5E7EB',
+                          fontFamily: '"League Spartan", sans-serif',
+                          fontWeight: 700,
+                          fontSize: { xs: '16px', md: '20px' },
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        League Name : {formatLeagueName(league.name)}
+                      </Typography>
+                    </Box>
+
+                    {seasons.map((season) => {
+                      const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
+                      const seasonLabel = season.name?.trim() || `Season ${season.seasonNumber || ''}`.trim();
+                      const seasonCreatedAt = season.startDate || season.createdAt || league.createdAt;
+                      const seasonMatches = (league.matches || []).filter((m) => String(m.seasonId || '') === String(season.id)).length;
+                      const seasonPlayersCount = (season.members?.length || season.players?.length || 0);
+                      const seasonActionLoading = archivedSeasonActionId === `${league.id}:${season.id}`;
+
+                      return (
+                        <Box
+                          key={`${league.id}-${season.id}`}
+                          sx={{
+                            px: { xs: 3, md: 3 },
+                            py: { xs: 2.6, md: 2.8 },
+                            borderRadius: 3,
+                            transition: 'all 0.3s ease',
+                            background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
+                            position: 'relative',
+                            minHeight: { xs: '140px', md: '160px' },
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: 0.8,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 14,
+                              right: 14,
+                              zIndex: 4,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <Chip label="Archived Season" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.3)' }} variant="outlined" />
+                            {isLeagueAdminForCurrentUser(league) && (
+                              <>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  disabled={seasonActionLoading}
+                                  onClick={() => { void handleRestoreArchivedSeasonGlobal(league, season); }}
+                                  sx={{
+                                    bgcolor: '#27ab83',
+                                    '&:hover': { bgcolor: '#1e8463' },
+                                    fontSize: '11px',
+                                    px: 1.5,
+                                    py: 0.3,
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                  }}
+                                >
+                                  Restore
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  disabled={seasonActionLoading}
+                                  onClick={() => { void handlePermanentDeleteArchivedSeasonGlobal(league, season); }}
+                                  sx={{
+                                    bgcolor: '#dc2626',
+                                    '&:hover': { bgcolor: '#b91c1c' },
+                                    fontSize: '11px',
+                                    px: 1.5,
+                                    py: 0.3,
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                  }}
+                                >
+                                  {seasonActionLoading ? 'Deleting...' : 'Permanent Delete'}
+                                </Button>
+                              </>
+                            )}
+                          </Box>
+
+                          <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center" sx={{ width: '100%' }}>
+                            <Grid item xs={12} md={6}>
+                              <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
+                                <Grid item xs={12} md={3}>
+                                  <Box sx={{
+                                    width: { xs: 60, sm: 80, md: 100 },
+                                    height: { xs: 60, sm: 80, md: 100 },
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mx: { xs: 'auto', md: 0 },
+                                    flexShrink: 0,
+                                    position: 'relative',
+                                    bgcolor: 'white',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                  }}>
+                                    <Box
+                                      sx={{
+                                        position: 'relative',
+                                        width: '100%',
+                                        height: '100%',
+                                        p: hasCustomLeagueImage ? 0 : { xs: 0.8, sm: 1, md: 1.2 },
+                                        boxSizing: 'border-box',
+                                      }}
+                                    >
+                                      <Image
+                                        src={league?.image || trofy}
+                                        alt={`${league.name} icon`}
+                                        fill
+                                        priority
+                                        sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                        style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                      />
+                                    </Box>
+                                  </Box>
+                                </Grid>
+
+                                <Grid item xs={12} md={9}>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
+                                    <Typography sx={{
+                                      color: 'white',
+                                      fontFamily: '"Anton", sans-serif !important',
+                                      fontSize: { xs: '28px', sm: '32px', md: '36px' },
+                                      textOverflow: 'ellipsis',
+                                      overflow: 'hidden',
+                                      whiteSpace: 'nowrap',
+                                      fontWeight: 'semi-bold',
+                                      lineHeight: 1.3,
+                                      letterSpacing: '1px',
+                                      textTransform: 'uppercase',
+                                      textAlign: { xs: 'center', md: 'left' },
+                                      width: '100%'
+                                    }}>
+                                      {seasonLabel}
+                                    </Typography>
+
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Image src={faceicon} alt="Players" width={16} height={16} style={{ flexShrink: 0 }} />
+                                      <Typography sx={{
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontWeight: 300,
+                                        fontSize: { xs: '10px', sm: '16px' }
+                                      }}>
+                                        Players: {seasonPlayersCount}
+                                      </Typography>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
+                                      <Typography sx={{
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontWeight: 300,
+                                        fontSize: { xs: '10px', sm: '16px' }
+                                      }}>
+                                        Created At {new Date(seasonCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                            </Grid>
+
+                            <Grid item xs={12} md={6}>
+                              <Grid container spacing={0} alignItems="center">
+                                <Grid item xs={12} md={8}>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1, mt: { xs: 0.5, md: 0 }, height: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
+                                      <Typography sx={{
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontWeight: 300,
+                                        fontSize: { xs: '10px', sm: '16px' }
+                                      }}>
+                                        Matches: {seasonMatches}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
+                                </Grid>
+
+                                <Grid item xs={12} md={4}>
+                                  <Grid container spacing={{ xs: 1, md: 2 }} mt={{ xs: 0.5, md: 0 }} alignItems="center">
+                                    <Grid item xs={6} md={6}>
+                                      <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-start' }, alignItems: 'center', height: '100%', ml: { xs: 0, md: -5 } }}>
+                                        <Image
+                                          src={playerfull}
+                                          alt="Archived"
+                                          width={70}
+                                          height={70}
+                                          style={{ flexShrink: 0, width: 'clamp(50px, 12vw, 70px)', height: 'clamp(50px, 12vw, 70px)' }}
+                                        />
+                                      </Box>
+                                    </Grid>
+
+                                    <Grid item xs={6} md={6}>
+                                      <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '100%', mt: { xs: 1, md: 0 } }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                          <Typography sx={{ color: 'white', fontFamily: '"League Spartan", sans-serif', fontWeight: 'semi-bold', fontSize: { xs: '22px', md: '22px' } }}>
+                                            Archived
+                                          </Typography>
+                                        </Box>
+                                      </Box>
+                                    </Grid>
+                                  </Grid>
+                                </Grid>
+                              </Grid>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
         )}
 
         <Dialog
