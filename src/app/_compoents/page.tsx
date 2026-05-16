@@ -135,7 +135,7 @@ export default function LandingPage() {
                 }}
               >
                 {/* Apna mobile text yahan likhna */}
-                Create your matches, track your stats, and rise through the rankings
+                Create your matches, track your stats, and rise through the rankings.
                 Champion Footballer is your ultimate hub for football, performance, and bragging rights!
               </Typography>
               {/* Hero image with three football players */}
