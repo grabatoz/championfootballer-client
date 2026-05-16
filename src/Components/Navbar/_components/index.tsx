@@ -2981,6 +2981,32 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       <Box>Game rules</Box>
                     </Box>
                   </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleProfileMenuClose();
+                      setGameRulesOpen(true);
+                    }}
+                    sx={{
+                      color: '#E5E7EB',
+                      fontWeight: 700,
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.1,
+                      px: 1.5,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#FFFFFF',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GavelOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
+                      <Box>XP Status</Box>
+                    </Box>
+                  </MenuItem>
                   <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.08)' }} />
                   <MenuItem
                     onClick={handleSignOutClick}
@@ -4220,7 +4246,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ bgcolor: '#ffffff', color: '#222', py: 3 }}>
-          <Typography variant="h6" sx={{ mb: 1, color: '#111827', fontWeight: 700 }}>Rules</Typography>
+          <Typography variant="h6" sx={{ justifyContent: 'center', display: 'flex', textAlign: 'center', mt: 5, mb: 1, color: '#111827', fontWeight: 700 }}>Waiting For Information </Typography>
+          {/* <Typography variant="h6" sx={{ mb: 1, color: '#111827', fontWeight: 700 }}>Rules</Typography>
           <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
             <li style={{ listStyleType: 'disc' }}>Play fair</li>
             <li style={{ listStyleType: 'disc' }}>Pick balance teams</li>
@@ -4235,7 +4262,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             <li><span style={{ fontWeight: 900 }}>M</span>odest</li>
             <li><span style={{ fontWeight: 900 }}>O</span>ptimistic</li>
             <li><span style={{ fontWeight: 900 }}>N</span>oble</li>
-          </ul>
+          </ul> */}
         </DialogContent>
       </Dialog>
     </>

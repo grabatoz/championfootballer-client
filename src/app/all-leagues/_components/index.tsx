@@ -2929,7 +2929,55 @@ function AllLeagues() {
     if (leagueLiveUpdatingId === leagueId) return;
     setLeagueLiveUpdatingId(leagueId);
 
+    // Save previous state for revert if needed
+    const prevLeagues = [...leagues];
+    const prevSelectedLeague = selectedLeague;
+    const prevAdminSettingsLeague = adminSettingsLeague;
+
+    // Optimistically update the UI first (triggers animation)
+    const now = new Date().toISOString();
+    const applyOptimisticUpdate = (prev: LeagueWithStatus[]) =>
+      prev.map((item) => (String(item.id) === leagueId
+        ? {
+          ...item,
+          active: nextLive,
+          archived: false,
+          status: (nextLive ? 'active' : 'completed') as League['status'],
+          isLocked: !nextLive,
+          isComplete: !nextLive, // Clear root-level flag
+          isCompleted: !nextLive, // Clear root-level flag
+          computedStatus: {
+            ...(item.computedStatus || {}),
+            locked: !nextLive,
+            isComplete: !nextLive,
+            isCompleted: !nextLive,
+          },
+          updatedAt: now,
+        }
+        : item));
+
+    setLeagues(applyOptimisticUpdate);
+    setSelectedLeague((prev) => (prev && String(prev.id) === leagueId
+      ? {
+        ...prev,
+        active: nextLive,
+        status: (nextLive ? 'active' : 'completed') as League['status'],
+        updatedAt: now,
+      }
+      : prev));
+    setAdminSettingsLeague((prev) => (prev && String(prev.id) === leagueId
+      ? {
+        ...prev,
+        active: nextLive,
+        status: (nextLive ? 'active' : 'completed') as League['status'],
+        updatedAt: now,
+      }
+      : prev));
+
     try {
+      // Add delay to allow the switch animation to complete properly
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       type StatusAttempt = { url: string; payload: Record<string, unknown>; method?: 'PATCH' | 'POST' };
       const livePayload = { active: true, archived: false, status: 'active', isComplete: false, isCompleted: false, locked: false, isLocked: false };
       const completedPayload = { active: false, archived: false, status: 'completed', isComplete: true, isCompleted: true, locked: true, isLocked: true };
@@ -3018,45 +3066,13 @@ function AllLeagues() {
 
       if (!success) throw new Error('Failed to update league status');
 
-      const now = new Date().toISOString();
-      setLeagues((prev) =>
-        prev.map((item) => (String(item.id) === leagueId
-          ? {
-            ...item,
-            active: nextLive,
-            archived: false,
-            status: (nextLive ? 'active' : 'completed') as League['status'],
-            isLocked: !nextLive,
-            computedStatus: {
-              ...(item.computedStatus || {}),
-              locked: !nextLive,
-              isComplete: !nextLive,
-              isCompleted: !nextLive,
-            },
-            updatedAt: now,
-          }
-          : item))
-      );
-
-      setSelectedLeague((prev) => (prev && String(prev.id) === leagueId
-        ? {
-          ...prev,
-          active: nextLive,
-          status: (nextLive ? 'active' : 'completed') as League['status'],
-          updatedAt: now,
-        }
-        : prev));
-
-      setAdminSettingsLeague((prev) => (prev && String(prev.id) === leagueId
-        ? {
-          ...prev,
-          active: nextLive,
-          status: (nextLive ? 'active' : 'completed') as League['status'],
-          updatedAt: now,
-        }
-        : prev));
       toast.success(nextLive ? 'League marked as live' : 'League marked as completed');
     } catch (e: unknown) {
+      // Revert to previous state on failure
+      setLeagues(prevLeagues);
+      setSelectedLeague(prevSelectedLeague);
+      setAdminSettingsLeague(prevAdminSettingsLeague);
+
       const msg = e instanceof Error ? e.message : 'Failed to update league status';
       toast.error(msg);
     } finally {
@@ -3068,7 +3084,11 @@ function AllLeagues() {
   // Archived leagues are always excluded from main list
   const filteredLeagues = useMemo(() => {
     const nonArchived = leagues.filter((l) => !isArchivedLeague(l));
-    const byCompletion = nonArchived.filter(l => completionTab === 'completed' ? isLeagueCompleted(l) : isLeagueLive(l));
+    const byCompletion = nonArchived.filter(l => {
+      // Keep league in current view while it's updating to allow animation to show
+      if (leagueLiveUpdatingId === String(l.id)) return true;
+      return completionTab === 'completed' ? isLeagueCompleted(l) : isLeagueLive(l);
+    });
     const byYear = selectedYear === 'all'
       ? byCompletion
       : byCompletion.filter(l => {
@@ -3081,7 +3101,7 @@ function AllLeagues() {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return byYear;
     return byYear.filter(l => (l.name || '').toLowerCase().includes(term));
-  }, [leagues, selectedYear, searchTerm, completionTab, isLeagueCompleted, isLeagueLive, isArchivedLeague]);
+  }, [leagues, selectedYear, searchTerm, completionTab, isLeagueCompleted, isLeagueLive, isArchivedLeague, leagueLiveUpdatingId]);
 
   // Show all filtered leagues, or only user-selected league
   const leaguesToDisplay = useMemo(() => {
@@ -5246,7 +5266,7 @@ function AllLeagues() {
                               <Switch
                                 size="small"
                                 checked={isLive}
-                                disabled={isUpdatingLiveStatus || !canManageLiveStatus}
+                                disabled={!canManageLiveStatus}
                                 onChange={(e, checked) => {
                                   e.stopPropagation();
                                   void handleToggleLeagueLiveStatus(league, checked);
