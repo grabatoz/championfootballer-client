@@ -5159,6 +5159,49 @@ function AllLeagues() {
                     }
                   }}
                 >
+                  {/* Mobile Switch Button (Top Left) */}
+                  <Box
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{
+                      display: { xs: 'flex', md: 'none' },
+                      position: 'absolute',
+                      top: 14,
+                      left: 14,
+                      zIndex: 5,
+                      alignItems: 'center',
+                      gap: 0.3,
+                      bgcolor: isLive ? 'rgba(0,168,150,0.95)' : 'rgba(31,41,55,0.9)',
+                      borderRadius: 999,
+                      pl: 0.7,
+                      pr: 0.25,
+                      py: 0.1,
+                      border: '1px solid rgba(255,255,255,0.35)',
+                    }}
+                  >
+                    <PowerSettingsNew sx={{ fontSize: 13, color: 'white' }} />
+                    <Switch
+                      size="small"
+                      checked={isLive}
+                      disabled={!canManageLiveStatus}
+                      onChange={(e, checked) => {
+                        e.stopPropagation();
+                        void handleToggleLeagueLiveStatus(league, checked);
+                      }}
+                      sx={{
+                        m: 0,
+                        '& .MuiSwitch-thumb': { bgcolor: 'white' },
+                        '& .MuiSwitch-track': {
+                          borderRadius: 999,
+                          opacity: '1 !important',
+                          bgcolor: isLive ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.28)',
+                        },
+                        '& .Mui-checked + .MuiSwitch-track': {
+                          bgcolor: 'rgba(255,255,255,0.42) !important',
+                        },
+                      }}
+                    />
+                  </Box>
+
                   {/* Settings Icon - Top Right */}
                   {isCompleted ? (
                     <Box
@@ -5251,7 +5294,7 @@ function AllLeagues() {
                                 top: -33,
                                 left: -6,
                                 zIndex: 5,
-                                display: 'flex',
+                                display: { xs: 'none', md: 'flex' },
                                 alignItems: 'center',
                                 gap: 0.3,
                                 bgcolor: isLive ? 'rgba(0,168,150,0.95)' : 'rgba(31,41,55,0.9)',
@@ -5607,6 +5650,7 @@ function AllLeagues() {
                                 sx={{
                                   display: 'flex',
                                   justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                                  pl: { xs: 4, sm: 6, md: 0 },
                                   alignItems: 'center',
                                   height: '100%',
                                   cursor: 'pointer',
