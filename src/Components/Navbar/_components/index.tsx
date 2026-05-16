@@ -2689,8 +2689,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
   return (
     <>
       <AppBar
-        // position="static"
-          position="sticky"
+        position="fixed"
         sx={{
           background: '#0e0e0e',
           boxShadow: 3,
@@ -3045,6 +3044,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Box>
         </Toolbar>
       </AppBar>
+      <Toolbar sx={{ minHeight: { xs: '60px', md: '70px' } }} />
 
       {isAuthenticated && (
         <Box
