@@ -4,10 +4,10 @@ export default function AboutCF() {
   return (
     <main
       className="min-h-screen p-6"
-      // style={{
-      //   background:
-      //     "linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)",
-      // }}
+    // style={{
+    //   background:
+    //     "linear-gradient(177deg, rgba(229,106,22,0.08) 0%, rgba(207,35,38,0.08) 100%)",
+    // }}
     >
       <div
         className="max-w-3xl mx-auto rounded-2xl border border-white/10 shadow-xl overflow-hidden"
@@ -24,33 +24,29 @@ export default function AboutCF() {
 
         <div className="p-6 sm:p-8 flex flex-col gap-4 text-white/90 leading-relaxed">
           <p>
-            {`CF helps organise and records your football matches including number of games won, lost and goals scored when
-            playing football matches with your friends. It's a free service which allows you to connect your passion for
-            football with other football enthusiast.`}
+            {`Champion Footballer is where football becomes more than just a kickabout with friends it becomes your journey to greatness!`}
           </p>
           <p>
-            {` CF can be used for all occasions, whether playing a 5 or 7 aside football matches on an artificial pitch,
-            weekend kick around at the park or playing in your local "cage" to showcase your lethal ball skills. Why not
-            make it rewarding and competitive!`}
+            {` Whether you're playing 5 or 7-a-side under the lights, dominating the local cage, or enjoying a weekend match at the park, CF turns every game into a competitive and unforgettable experience.`}
           </p>
           <p>
-            {` CF platform provides user friendly features to easily arrange football matches with your friends. Including;
-            adding date/time, location of match and picking teams from a real-time player availability list.`}
+            {`Create your player card, organise matches with ease, choose teams from a live player availability list, and track every goal, win, result, and rivalry as you build your football legacy. Keep the competition alive with real stats, rankings, league tables, and match history where every performance counts and every goal matters.`}
           </p>
           <p>
-            {`  On CF you can have fun in setting up your player card, arrange a series of matches, mix up the teams every
-            time you play and see who comes up on top with the greatest number of wins!`}
+            {`Fight for the top spot, dominate your league, and prove who truly deserves Player of the Match. After every game, vote for standout players, earn virtual awards, and climb your way to football bragging rights.`}
           </p>
           <p>
-            {`After each match is played, you can go ahead and rate your best player on the pitch and win virtual awards.`}
+            {`CF combines the energy of football, competition, and social gaming into one experience built for true football fans. Connect with players, create unforgettable matches, and bring the beautiful game to life every time you step onto the pitch.`}
           </p>
-          <p>
+          {/* <p>
             {`          CF can help you have fun playing the world's most loved sport, providing you with a unique experience that
             connects football fans all around the world. It's a fun way to bring social media experience and playing
             football together!`}
-          </p>
-          <p className="font-bold text-white">{`Become Champion Footballer!`}</p>
-          <p>
+          </p> */}
+          <p className="font-bold text-white">{`Play hard! Compete harder!
+`}</p>
+          <p className="font-bold text-white -mt-6">{`Become Champion Footballer!`}</p>
+          {/* <p>
             {` CF is for everyone at all playing levels, who would like to relish the chance to become their local champion!`} {" "}
             <Link
               href="/"
@@ -59,7 +55,7 @@ export default function AboutCF() {
               Sign-up
             </Link>{" "}
             {` now to join an existing league or create a new league/group and invite your friends to play.`}
-          </p>
+          </p> */}
         </div>
 
         <footer className="px-6 sm:px-8 pb-8 pt-4 border-t border-white/10 bg-[#2b2b2b]">
