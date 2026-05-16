@@ -11,6 +11,13 @@ import {
   Badge,
   Popover,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
   // Divider,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -1020,6 +1027,7 @@ export default function NavigationBar() {
   const openProfileMenu = Boolean(profileMenuAnchor);
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   const [gameRulesOpen, setGameRulesOpen] = useState(false);
+  const [xpStatusOpen, setXpStatusOpen] = useState(false);
   const pathname = usePathname();
 
   // 🔥 NOTIFICATION STATES
@@ -2984,7 +2992,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   <MenuItem
                     onClick={() => {
                       handleProfileMenuClose();
-                      setGameRulesOpen(true);
+                      setXpStatusOpen(true);
                     }}
                     sx={{
                       color: '#E5E7EB',
@@ -3003,7 +3011,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <GavelOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
+                      <BarChartOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />
                       <Box>XP Status</Box>
                     </Box>
                   </MenuItem>
@@ -4263,6 +4271,66 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             <li><span style={{ fontWeight: 900 }}>O</span>ptimistic</li>
             <li><span style={{ fontWeight: 900 }}>N</span>oble</li>
           </ul> */}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={xpStatusOpen} onClose={() => setXpStatusOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle sx={{
+          background: '#0e0e0e',
+          color: 'white',
+          fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+          fontWeight: 600,
+          fontSize: { xs: '24px', md: '32px' },
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          XP Status
+          <IconButton
+            aria-label="close"
+            onClick={() => setXpStatusOpen(false)}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#1a1a1a', p: 0 }}>
+          <TableContainer component={Box} sx={{ maxHeight: '70vh', overflow: 'auto' }}>
+            <Table stickyHeader aria-label="xp milestones table">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Level</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Milestone Title</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>XP Range</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Description</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Card Color</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[
+                  { level: 1, title: 'Rookie', range: '0 - 500', desc: 'Building your way to football dominance, all the way to Champion Footballer', color: '#B0B0B0', label: 'Cool Gray' },
+                  { level: 2, title: 'Rising Star', range: '500 - 2,500', desc: 'Rising in prominence with every performance', color: '#4AA3FF', label: 'Sky Blue' },
+                  { level: 3, title: 'Baller', range: '2,500 - 5,000', desc: "A force on the field that can't be ignored", color: '#00a896', label: 'CF Green' },
+                  { level: 4, title: 'The Specialist', range: '5,000 - 8,000', desc: 'High mastery and control over the matches, consistently excelling and asserting dominance in your position', color: '#9B59B6', label: 'Purple' },
+                  { level: 5, title: 'Elite', range: '8,000 - 11,000', desc: 'Regarded as an elite player by peers, known for unwavering talent and a relentless winning mentality', color: '#3448FF', label: 'Royal Blue' },
+                  { level: 6, title: 'Champion Footballer', range: '11,000 - 15,000', desc: 'Attaining coveted status as a benchmark of excellence. A true icon of the game, respected by peers and feared by opponents', color: '#E74C3C', label: 'Crimson' },
+                  { level: 7, title: 'GOAT', range: '15,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold (Separate symbol)' },
+                ].map((row) => (
+                  <TableRow key={row.level} sx={{ '&:hover': { bgcolor: '#252525' } }}>
+                    <TableCell sx={{ color: 'white', borderBottom: '1px solid #333', fontWeight: 700 }}>{row.level}</TableCell>
+                    <TableCell sx={{ color: 'white', borderBottom: '1px solid #333', fontWeight: 600 }}>{row.title}</TableCell>
+                    <TableCell sx={{ color: 'white', borderBottom: '1px solid #333' }}>{row.range}</TableCell>
+                    <TableCell sx={{ color: 'rgba(255,255,255,0.7)', borderBottom: '1px solid #333', fontSize: '0.9rem' }}>{row.desc}</TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid #333' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: row.color, border: '1px solid rgba(255,255,255,0.2)' }} />
+                        <Typography sx={{ color: 'white', fontSize: '0.85rem' }}>{row.label}</Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </DialogContent>
       </Dialog>
     </>
