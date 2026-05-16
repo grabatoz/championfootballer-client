@@ -44,7 +44,7 @@ export default function LandingPage() {
   return (
     <>
       <LogoNavbar />
-      
+
       {/* Black Hero Section with Grid Layout */}
       <Box
         sx={{
@@ -52,7 +52,7 @@ export default function LandingPage() {
           backgroundColor: '#101010',
           overflowX: 'hidden',
           px: { xs: 2, md: 7 },
-          py: { xs: 4, md: 2},
+          py: { xs: 4, md: 2 },
         }}
       >
         <Grid container spacing={{ xs: 3, md: 4 }}>
@@ -84,7 +84,7 @@ export default function LandingPage() {
               </Typography>
 
               {/* Description */}
-              <Typography
+              {/* <Typography
                 sx={{
                   fontFamily: 'var(--font-inter), Inter, sans-serif !important',
                   fontWeight: '500 !important',
@@ -101,8 +101,43 @@ export default function LandingPage() {
               >
                 Create your matches, track your stats, and rise through the rankings<br />
                 Champion Footballer is your ultimate hub for football, performance, and bragging rights!
+              </Typography> */}
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-inter), Inter, sans-serif !important',
+                  fontWeight: '500 !important',
+                  fontSize: { xs: '0.86rem', md: '18px' },
+                  lineHeight: { xs: '1.4', md: '23px' },
+                  letterSpacing: '0% !important',
+                  color: 'orange',
+                  width: '100%',
+                  maxWidth: { md: '100%' },
+                  height: { xs: 'auto', md: '49px' },
+                  mb: { xs: 2.5, md: 2 },
+                  display: { xs: 'none', md: 'block' }, // 👈 yeh add karo
+                }}
+              >
+                Create your matches, track your stats, and rise through the rankings<br />
+                Champion Footballer is your ultimate hub for football, performance, and bragging rights!
               </Typography>
-
+              {/* Mobile only */}
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-inter), Inter, sans-serif !important',
+                  fontWeight: '500 !important',
+                  fontSize: '0.86rem',
+                  lineHeight: '1.4',
+                  letterSpacing: '0% !important',
+                  color: 'orange',
+                  width: '100%',
+                  mb: 2.5,
+                  display: { xs: 'block', md: 'none' }, // 👈 sirf mobile pe show
+                }}
+              >
+                {/* Apna mobile text yahan likhna */}
+                Create your matches, track your stats, and rise through the rankings
+                Champion Footballer is your ultimate hub for football, performance, and bragging rights!
+              </Typography>
               {/* Hero image with three football players */}
               <Box
                 sx={{
@@ -196,7 +231,7 @@ export default function LandingPage() {
                 alignItems: 'stretch',
                 height: '100%',
                 mt: { xs: 1, md: 0 },
-                
+
               }}
             >
               {/* Top Text */}
@@ -244,16 +279,16 @@ export default function LandingPage() {
                     fontSize: { xs: '0.95rem', md: '1rem' },
                     width: { xs: '100%', md: 'auto' },
                     height: { xs: '40px', md: 'auto' },
-                    
+
                     border: '1px solid #FFFFFF',
-                   
-                    '&:hover': { 
+
+                    '&:hover': {
                       backgroundColor: 'rgba(255,255,255,0.1)',
                       border: '1px solid #FFFFFF',
                     },
                     borderRadius: '7px',
                     px: { xs: 3, md: 4 },
-                    
+
                   }}
                 >
                   {showLogin ? 'Join' : 'Login'}
@@ -279,53 +314,53 @@ export default function LandingPage() {
               </Paper>
             </Box>
             {/* Join Modal - Popup for registration */}
-        <Modal
-          open={isJoinModalOpen}
-          onClose={() => setIsJoinModalOpen(false)}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Paper
-            elevation={8}
-            sx={{
-              width: { xs: '92vw', sm: '600px', md: '730px' },
-              maxWidth: '92vw',
-              height: { xs: '90vh', md: '1129px' },
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              borderRadius: '15px',
-              bgcolor: '#f5f6f6',
-              p: { xs: 3, md: 4 },
-              position: 'relative',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-              '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for Chrome/Safari/Opera
-              scrollbarWidth: 'none', // Hide scrollbar for Firefox
-              msOverflowStyle: 'none', // Hide scrollbar for IE/Edge
-            }}
-          >
-            {/* Close button */}
-            <IconButton
-              onClick={() => setIsJoinModalOpen(false)}
+            <Modal
+              open={isJoinModalOpen}
+              onClose={() => setIsJoinModalOpen(false)}
               sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: 'grey.500',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' }
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <CloseIcon />
-            </IconButton>
+              <Paper
+                elevation={8}
+                sx={{
+                  width: { xs: '92vw', sm: '600px', md: '730px' },
+                  maxWidth: '92vw',
+                  height: { xs: '90vh', md: '1129px' },
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  borderRadius: '15px',
+                  bgcolor: '#f5f6f6',
+                  p: { xs: 3, md: 4 },
+                  position: 'relative',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for Chrome/Safari/Opera
+                  scrollbarWidth: 'none', // Hide scrollbar for Firefox
+                  msOverflowStyle: 'none', // Hide scrollbar for IE/Edge
+                }}
+              >
+                {/* Close button */}
+                <IconButton
+                  onClick={() => setIsJoinModalOpen(false)}
+                  sx={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    color: 'grey.500',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' }
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
 
-            {/* Auth Tabs - Register form */}
-            <Box sx={{ width: '100%', overflow: 'visible' }}>
-              <AuthTabs showLogin={false} onToggleForm={() => {}} />
-            </Box>
-          </Paper>
-        </Modal>
+                {/* Auth Tabs - Register form */}
+                <Box sx={{ width: '100%', overflow: 'visible' }}>
+                  <AuthTabs showLogin={false} onToggleForm={() => { }} />
+                </Box>
+              </Paper>
+            </Modal>
           </Grid>
         </Grid>
       </Box>
@@ -335,136 +370,136 @@ export default function LandingPage() {
         sx={{
           width: '100%',
           overflowX: 'hidden',
-          
+
           position: 'relative',
           background: '#101010',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           px: { xs: 2, md: 3 },
-          
-      }}
-    >
-      {/* BOTTOM GROUP: move images into a separate, centered box anchored to bottom on md+ */}
-      {/* Separate images box — anchored bottom-center on md+, centered and stacked on small screens */}
-      <Box
-        sx={{
-          width: { xs: '100%', md: 'auto' },
-          display: 'flex',
-          justifyContent: 'center',
-          px: { xs: 2, md: 0 },
-          pointerEvents: 'none',
-          mt: { xs: 2, sm: 2, md: 10 },
-          mb: 4,
+
         }}
       >
+        {/* BOTTOM GROUP: move images into a separate, centered box anchored to bottom on md+ */}
+        {/* Separate images box — anchored bottom-center on md+, centered and stacked on small screens */}
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)', md: 'repeat(4, 1fr)' },
-            gap: { xs: 2, md: 2 },
-            pointerEvents: 'auto',
-            alignItems: 'stretch',
-            width: '100%',
+            width: { xs: '100%', md: 'auto' },
+            display: 'flex',
+            justifyContent: 'center',
+            px: { xs: 2, md: 0 },
+            pointerEvents: 'none',
+            mt: { xs: 2, sm: 2, md: 10 },
+            mb: 4,
           }}
         >
-          {features.map((f) => (
-            <Card
-              key={f.id}
-              elevation={0}
-              sx={{
-                width: '100%',
-                height: { xs: 230, sm: 238, md: 238 },
-                minHeight: { xs: 230, sm: 238, md: 238 },
-                borderRadius: 0.5,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)',
-                border: '2px solid #6a6f75',
-                // background: 'linear-gradient(180deg, #51565b 0%, #24292f 34%, #020407 100%)',
-                    background: 'linear-gradient(180deg, #3c4146 0%, #010305 100%)',
-
-                p: 0,
-              }}
-            >
-              <Box
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: { xs: 2, md: 2 },
+              pointerEvents: 'auto',
+              alignItems: 'stretch',
+              width: '100%',
+            }}
+          >
+            {features.map((f) => (
+              <Card
+                key={f.id}
+                elevation={0}
                 sx={{
                   width: '100%',
-                  px: { xs: 1.1, md: 1.25 },
-                  py: { xs: 0.75, md: 0.85 },
-                  minHeight: { xs: 36, md: 40 },
+                  height: { xs: 230, sm: 238, md: 238 },
+                  minHeight: { xs: 230, sm: 238, md: 238 },
+                  borderRadius: 0.5,
+                  overflow: 'hidden',
                   display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  // background: 'linear-gradient(180deg, #575b60 0%, #474b50 100%)',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)',
+                  border: '2px solid #6a6f75',
+                  // background: 'linear-gradient(180deg, #51565b 0%, #24292f 34%, #020407 100%)',
+                  background: 'linear-gradient(180deg, #3c4146 0%, #010305 100%)',
+
+                  p: 0,
                 }}
               >
-                <Typography
+                <Box
                   sx={{
-                    fontFamily: 'var(--font-inter), Inter, sans-serif',
-                    fontSize: { xs: '0.98rem', md: '0.97rem' },
-                    lineHeight: 1.1,
-                    letterSpacing: '0.01em',
-                    color: '#ffff',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    textAlign: 'center',
                     width: '100%',
-                    textShadow: '0 1px 0 rgba(0,0,0,0.55)',
+                    px: { xs: 1.1, md: 1.25 },
+                    py: { xs: 0.75, md: 0.85 },
+                    minHeight: { xs: 36, md: 40 },
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    // background: 'linear-gradient(180deg, #575b60 0%, #474b50 100%)',
                   }}
                 >
-                  {f.title}
-                </Typography>
-              </Box>
-              {/* <Box
+                  <Typography
+                    sx={{
+                      fontFamily: 'var(--font-inter), Inter, sans-serif',
+                      fontSize: { xs: '0.98rem', md: '0.97rem' },
+                      lineHeight: 1.1,
+                      letterSpacing: '0.01em',
+                      color: '#ffff',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      textAlign: 'center',
+                      width: '100%',
+                      textShadow: '0 1px 0 rgba(0,0,0,0.55)',
+                    }}
+                  >
+                    {f.title}
+                  </Typography>
+                </Box>
+                {/* <Box
                 sx={{
                   width: '100%',
                   height: 2.5,
                   bgcolor: '#0a0d10',
                 }}
               /> */}
-              <Box
-                sx={{
-                  flex: 1,
-                  width: '100%',
-                  p: { xs: 1.15, md: 1.3 },
-                  bgcolor: 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
                 <Box
                   sx={{
-                    position: 'relative',
+                    flex: 1,
                     width: '100%',
-                    height: '100%',
-                    maxWidth: '100%',
-                    mx: 'auto',
-                    // background: 'linear-gradient(180deg, #0b0f13 0%, #010305 100%)',
+                    p: { xs: 1.15, md: 1.3 },
+                    bgcolor: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  <Image
-                    src={f.img}
-                    alt={f.title}
-                    fill
-                    sizes="(max-width: 600px) 90vw, 25vw"
-                    style={{ objectFit: 'contain', padding: '8px 14px' }}
-                    loading="lazy"
-                    placeholder="blur"
-                  />
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: '100%',
+                      mx: 'auto',
+                      // background: 'linear-gradient(180deg, #0b0f13 0%, #010305 100%)',
+                    }}
+                  >
+                    <Image
+                      src={f.img}
+                      alt={f.title}
+                      fill
+                      sizes="(max-width: 600px) 90vw, 25vw"
+                      style={{ objectFit: 'contain', padding: '8px 14px' }}
+                      loading="lazy"
+                      placeholder="blur"
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </Box>
         </Box>
       </Box>
-    </Box>
     </>
   );
 }
