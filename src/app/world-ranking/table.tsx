@@ -348,10 +348,10 @@ export default function WorldRankingTable() {
       `}</style>
 
       {/* ────────── HEADER ────────── */}
-      <Box sx={{ 
-        mb: 0, 
-        bgcolor: '#0e0e0e', 
-        p: { xs: 2, md: 3 }, 
+      <Box sx={{
+        mb: 0,
+        bgcolor: '#0e0e0e',
+        p: { xs: 2, md: 3 },
         minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
         width: '100vw',
         position: 'relative',
@@ -373,14 +373,14 @@ export default function WorldRankingTable() {
         }}>
           WORLD RANKING
         </Typography>
-        
+
         {/* Divider line below heading */}
-        <Box sx={{ 
+        <Box sx={{
           width: '100vw',
           position: 'relative',
           left: '50%',
           transform: 'translateX(-50%)',
-          height: 'var(--header-divider-height)', 
+          height: 'var(--header-divider-height)',
           background: 'var(--header-divider-color)',
           mb: { xs: 0.25, md: -1 },
         }} />
@@ -407,9 +407,9 @@ export default function WorldRankingTable() {
           mx: 'auto',
         }}>
           {/* Left side - Mode toggle and Search */}
-          <Box sx={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
+          <Box sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
             gap: { xs: 1, md: 1.2 },
             alignItems: 'center',
             flex: { xs: '1 1 100%', md: '0 1 auto' }
@@ -471,14 +471,14 @@ export default function WorldRankingTable() {
           {/* Right side - Filters group */}
           <Box
             className="wr-right-filters"
-            sx={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: { xs: 1, md: 1.2 },
-            alignItems: 'center',
-            justifyContent: { xs: 'flex-start', md: 'flex-end' }
-          }}>
-             {/* Year */}
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: { xs: 1, md: 1.2 },
+              alignItems: 'center',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' }
+            }}>
+            {/* Year */}
             <FormControl className="wr-filter-control" size="small" sx={{ width: 150 }}>
               <Select
                 value={filters.year || ''}
@@ -529,7 +529,7 @@ export default function WorldRankingTable() {
               </Select>
             </FormControl>
 
-           
+
 
             {/* Clear */}
             <Box
@@ -576,7 +576,7 @@ export default function WorldRankingTable() {
       </Box>
 
       {/* ────────── TABLE ────────── */}
-      <Box sx={{ px: { xs: 1, md: 4 },mt: { xs: 2, md: 3 },pb: 6, maxWidth: 1220, mx: 'auto' }}>
+      <Box sx={{ px: { xs: 1, md: 4 }, mt: { xs: 2, md: 3 }, pb: 6, maxWidth: 1220, mx: 'auto' }}>
         <Box sx={{
           bgcolor: '#242424',
           borderRadius: 2,
@@ -592,28 +592,29 @@ export default function WorldRankingTable() {
               <CircularProgress size={40} sx={{ color: '#e56a16' }} />
             </Box>
           )}
-          <TableContainer 
-            sx={{ 
+          <TableContainer
+            sx={{
               maxHeight: 620,
               '&::-webkit-scrollbar': { display: 'none' },
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-            }} 
+            }}
             ref={tableContainerRef}
           >
-            <Table 
-              stickyHeader 
-              size="small" 
-              sx={{ 
+            <Table
+              stickyHeader
+              size="small"
+              sx={{
                 '& .MuiTableCell-root': { border: 'none' },
-                '& .MuiTableCell-head': { 
-                  bgcolor: '#1e1e1e !important',
-                  backgroundColor: '#1e1e1e !important'
+                '& .MuiTableCell-head': {
+                  bgcolor: '#dddddd !important',
+                  backgroundColor: '#dddddd !important',
+                  color: '#000000 !important'
                 }
               }}
             >
-              <TableHead sx={{ bgcolor: '#1e1e1e !important' }}>
-                <TableRow sx={{ bgcolor: '#1e1e1e !important' }}>
+              <TableHead sx={{ bgcolor: '#dddddd !important' }}>
+                <TableRow sx={{ bgcolor: '#dddddd !important' }}>
                   {(() => {
                     const showAvg = filters.mode === 'avg';
                     const cols: Column[] = [
@@ -631,8 +632,8 @@ export default function WorldRankingTable() {
                         sx={{
                           cursor: isSortableKey(col.key) ? 'pointer' : 'default',
                           userSelect: 'none',
-                          bgcolor: '#1e1e1e !important',
-                          color: '#fff',
+                          bgcolor: '#dddddd !important',
+                          color: '#000000 !important',
                           fontWeight: 700,
                           fontSize: 13,
                           letterSpacing: 0.5,
