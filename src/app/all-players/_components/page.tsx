@@ -86,8 +86,8 @@ const normalizeSearchText = (value: string): string =>
   value.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
 
 // League option used by the UI select
-interface LeagueOption { 
-  id: string; 
+interface LeagueOption {
+  id: string;
   name: string;
   computedStatus?: LeagueComputedStatus;
   isLocked?: boolean;
@@ -420,9 +420,9 @@ const AllPlayersPage = () => {
         userLeagues.forEach(league => {
           const id = String((league as { id?: string | number }).id);
           if (!uniqueLeaguesMap.has(id)) {
-        uniqueLeaguesMap.set(id, league);
-      }
-    });
+            uniqueLeaguesMap.set(id, league);
+          }
+        });
 
         // Fetch computed status for all leagues in one request (avoids GET /leagues/:id/status 405)
         const statusMap = new Map<string, LeagueComputedStatus>();
@@ -503,7 +503,7 @@ const AllPlayersPage = () => {
                 };
                 // Extract seasons from league data
                 const seasonsFromLeague = seasonsFromDetails ?? normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
-                
+
                 return {
                   ...league,
                   id: String(leagueId),
@@ -521,7 +521,7 @@ const AllPlayersPage = () => {
 
               // Extract seasons from league data
               const seasonsFromLeague = seasonsFromDetails ?? normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
-              
+
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
@@ -533,10 +533,10 @@ const AllPlayersPage = () => {
             } catch (error) {
               console.error(`Error fetching details for league`, error);
               const leagueId = String((league as { id?: string | number }).id);
-              
+
               // Extract seasons from league data even in error case
               const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
-              
+
               return {
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
@@ -611,7 +611,7 @@ const AllPlayersPage = () => {
       // When we have leagues, only auto-select if current league is invalid.
       // Keep explicit "all" selection intact so users can view players across all leagues.
       const currentLeagueExists = filteredLeagues.some(l => l.id === selectedLeague);
-      
+
       // Auto-select only if current selected league no longer exists in filtered list
       if (selectedLeague !== 'all' && !currentLeagueExists) {
         // Try to get preferred league from localStorage
@@ -624,8 +624,8 @@ const AllPlayersPage = () => {
               leagueToSelect = preferredLeagueId;
             }
           }
-        } catch {}
-        
+        } catch { }
+
         setSelectedLeague(leagueToSelect);
       }
     }
@@ -638,10 +638,10 @@ const AllPlayersPage = () => {
       setSelectedSeason('all');
       return;
     }
-    
+
     console.log('[All Players] Populating seasons for league:', leagueId);
     const selectedLeagueData = filteredLeagues.find(l => l.id === leagueId);
-    
+
     if (selectedLeagueData && selectedLeagueData.seasons && selectedLeagueData.seasons.length > 0) {
       const sortedSeasons = sortSeasonsLatestFirst(selectedLeagueData.seasons as SeasonOption[]);
       console.log('[All Players] Found seasons:', sortedSeasons);
@@ -662,17 +662,17 @@ const AllPlayersPage = () => {
 
   const fetchAllLeaguesPlayers = useCallback(async () => {
     if (!token) return;
-    
+
     // If no leagues for selected year, clear players
     if (filteredLeagues.length === 0) {
       dispatch({ type: 'user/fetchPlayedWithPlayers/fulfilled', payload: [] });
       return;
     }
-    
+
     try {
       const allPlayersMap = new Map<string, Player>();
       const requestTs = Date.now();
-      
+
       // Fetch players from ALL leagues in parallel (faster)
       const playerResponses = await Promise.all(
         filteredLeagues.map(league => {
@@ -684,12 +684,12 @@ const AllPlayersPage = () => {
           return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         })
       );
-      
+
       // Process all responses
       const allPlayerData = await Promise.all(
         playerResponses.map(response => response.json())
       );
-      
+
       // Add all players to map (avoiding duplicates)
       allPlayerData.forEach(data => {
         if (data?.success && data?.players) {
@@ -701,7 +701,7 @@ const AllPlayersPage = () => {
           });
         }
       });
-      
+
       // Dispatch to update the state with all unique players
       const allPlayers = Array.from(allPlayersMap.values());
       dispatch({ type: 'user/fetchPlayedWithPlayers/fulfilled', payload: allPlayers });
@@ -743,8 +743,8 @@ const AllPlayersPage = () => {
 
           const normalizedPlayers: Player[] = (data.success && Array.isArray(data.players))
             ? data.players
-                .map((rawPlayer) => normalizePlayer(rawPlayer))
-                .filter((p): p is Player => Boolean(p))
+              .map((rawPlayer) => normalizePlayer(rawPlayer))
+              .filter((p): p is Player => Boolean(p))
             : [];
 
           // New active season can temporarily return partial players from backend.
@@ -980,32 +980,32 @@ const AllPlayersPage = () => {
         overflowX: 'hidden',
         // background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
       }}>
-      {/* Full-width Header Section */}
-      <PageHeader
-        title="Players"
-        fullBleed={false}
-        sx={{ mb: 4 }}
-        dividerSx={{
-          width: '100vw',
-          position: 'relative',
-          left: '50%',
-          transform: 'translateX(-50%)',
-        }}
-      >
-        {/* Search and Filters Section */}
-        <Box sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'center' },
-          justifyContent: 'space-between',
-          gap: { xs: 2, md: 3 },
-          // Offset PageHeader internal padding so controls align with table edges.
-          // mx: { xs: -2, md: -3 },
-          px: { xs: 1, sm: 3, md: 7.5 },
-          py: { xs: 1.5, md: 1.3 },
-           maxWidth: '1280px',
-                        mx: 'auto',
-       }}>
+        {/* Full-width Header Section */}
+        <PageHeader
+          title="Players"
+          fullBleed={false}
+          sx={{ mb: 4 }}
+          dividerSx={{
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
+        >
+          {/* Search and Filters Section */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'center' },
+            justifyContent: 'space-between',
+            gap: { xs: 2, md: 3 },
+            // Offset PageHeader internal padding so controls align with table edges.
+            // mx: { xs: -2, md: -3 },
+            px: { xs: 1, sm: 3, md: 7.5 },
+            py: { xs: 1.5, md: 1.3 },
+            maxWidth: '1280px',
+            mx: 'auto',
+          }}>
             {/* Search Input */}
             <TextField
               variant="outlined"
@@ -1037,8 +1037,8 @@ const AllPlayersPage = () => {
                   '&:hover fieldset': { borderColor: '#e56a16' },
                   '&.Mui-focused fieldset': { borderColor: '#e56a16' }
                 },
-                '& .MuiInputBase-input': { 
-                  color: 'white', 
+                '& .MuiInputBase-input': {
+                  color: 'white',
                   fontSize: { xs: 14, sm: 16.5 },
                   py: 0.5,
                   fontFamily: '"Woodford Bourne Pro", sans-serif !important',
@@ -1047,7 +1047,7 @@ const AllPlayersPage = () => {
               }}
               InputProps={{
                 startAdornment: (
-                  <Box sx={{ mr: 3, ml:0.5, display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ mr: 3, ml: 0.5, display: 'flex', alignItems: 'center' }}>
                     <Image src={SearchIcon} alt="Search" width={25} height={25} />
                   </Box>
                 ),
@@ -1069,132 +1069,132 @@ const AllPlayersPage = () => {
             }}>
               {/* Year Filter */}
               <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-              <select
-                className="filter-select"
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  setYearDropdownOpen(false);
-                }}
-                onMouseDown={() => setYearDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
-                style={{
-                  height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 28px 0 12px',
-                  marginLeft: 0,
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: '1.5px solid #e56a16',
-                  borderRadius: '24px',
-                  fontSize: isMobile ? '13px' : '17px',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  width: '100%',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  fontWeight: isMobile ? 400 : 400,
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
-                }}
-              >
-                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
-                {yearOptions.map(year => (
-                  <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
-                ))}
-              </select>
+                <select
+                  className="filter-select"
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setYearDropdownOpen(false);
+                  }}
+                  onMouseDown={() => setYearDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
+                  style={{
+                    height: isMobile ? '34px' : '39px',
+                    padding: isMobile ? '0 30px 0 10px' : '0 28px 0 12px',
+                    marginLeft: 0,
+                    backgroundColor: 'transparent',
+                    color: '#fff',
+                    border: '1.5px solid #e56a16',
+                    borderRadius: '24px',
+                    fontSize: isMobile ? '13px' : '17px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    width: '100%',
+                    display: 'block',
+                    boxSizing: 'border-box',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    fontWeight: isMobile ? 400 : 400,
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  }}
+                >
+                  <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
+                  {yearOptions.map(year => (
+                    <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{year}</option>
+                  ))}
+                </select>
               </div>
 
               {/* League Filter */}
               <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-              <select
-                className="filter-select"
-                value={selectedLeague}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setSelectedLeague(newValue);
-                  setLeagueDropdownOpen(false);
-                  try { if (typeof window !== 'undefined' && newValue !== 'all') localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue); } catch {}
-                }}
-                onMouseDown={() => setLeagueDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
-                disabled={noLeagues || filteredLeagues.length === 0}
-                style={{
-                  height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
-                  marginLeft: 0,
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: '1.5px solid #e56a16',
-                  borderRadius: '24px',
-                  fontSize: isMobile ? '13px' : '17px',
-                  cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
-                  outline: 'none',
-                  width: '100%',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  fontWeight: isMobile ? 400 : 400,
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
-                {filteredLeagues.map((l) => (
-                  <option key={l.id} value={l.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{l.name}</option>
-                ))}
-              </select>
+                <select
+                  className="filter-select"
+                  value={selectedLeague}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setSelectedLeague(newValue);
+                    setLeagueDropdownOpen(false);
+                    try { if (typeof window !== 'undefined' && newValue !== 'all') localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue); } catch { }
+                  }}
+                  onMouseDown={() => setLeagueDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
+                  disabled={noLeagues || filteredLeagues.length === 0}
+                  style={{
+                    height: isMobile ? '34px' : '39px',
+                    padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
+                    marginLeft: 0,
+                    backgroundColor: 'transparent',
+                    color: '#fff',
+                    border: '1.5px solid #e56a16',
+                    borderRadius: '24px',
+                    fontSize: isMobile ? '13px' : '17px',
+                    cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
+                    outline: 'none',
+                    width: '100%',
+                    display: 'block',
+                    boxSizing: 'border-box',
+                    opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    fontWeight: isMobile ? 400 : 400,
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
+                  {filteredLeagues.map((l) => (
+                    <option key={l.id} value={l.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{l.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Season Filter */}
               <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-              <select
-                className="filter-select"
-                value={selectedSeason}
-                onChange={(e) => {
-                  setSelectedSeason(e.target.value);
-                  setSeasonDropdownOpen(false);
-                }}
-                onMouseDown={() => {
-                  if (selectedLeague !== 'all') {
-                    setSeasonDropdownOpen(true);
-                  }
-                }}
-                onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
-                disabled={selectedLeague === 'all'}
-                style={{
-                  height: isMobile ? '34px' : '39px',
-                  padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
-                  marginLeft: 0,
-                  backgroundColor: 'transparent',
-                  color: '#fff',
-                  border: '1.5px solid #e56a16',
-                  borderRadius: '24px',
-                  fontSize: isMobile ? '13px' : '17px',
-                  cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
-                  outline: 'none',
-                  width: '100%',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  opacity: selectedLeague === 'all' ? 0.6 : 1,
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  fontWeight: isMobile ? 400 : 400,
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
-                }}
-              >
-                <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
-                {seasons.map((season) => (
-                  <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                    {season.name}
-                  </option>
-                ))}
-              </select>
+                <select
+                  className="filter-select"
+                  value={selectedSeason}
+                  onChange={(e) => {
+                    setSelectedSeason(e.target.value);
+                    setSeasonDropdownOpen(false);
+                  }}
+                  onMouseDown={() => {
+                    if (selectedLeague !== 'all') {
+                      setSeasonDropdownOpen(true);
+                    }
+                  }}
+                  onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
+                  disabled={selectedLeague === 'all'}
+                  style={{
+                    height: isMobile ? '34px' : '39px',
+                    padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
+                    marginLeft: 0,
+                    backgroundColor: 'transparent',
+                    color: '#fff',
+                    border: '1.5px solid #e56a16',
+                    borderRadius: '24px',
+                    fontSize: isMobile ? '13px' : '17px',
+                    cursor: selectedLeague === 'all' ? 'not-allowed' : 'pointer',
+                    outline: 'none',
+                    width: '100%',
+                    display: 'block',
+                    boxSizing: 'border-box',
+                    opacity: selectedLeague === 'all' ? 0.6 : 1,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    fontWeight: isMobile ? 400 : 400,
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  }}
+                >
+                  <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                  {seasons.map((season) => (
+                    <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                      {season.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Clear Button */}
@@ -1232,366 +1232,366 @@ const AllPlayersPage = () => {
                 Clear
               </Button>
             </Box>
-        </Box>
-      </PageHeader>
+          </Box>
+        </PageHeader>
 
-      {/* Table Section */}
-      <Container
-        maxWidth={false}
-        sx={{
-          width: '100%',
-          maxWidth: 1280,
-          mx: 'auto',
-          px: { xs: 1, sm: 3, md: 7.5 },
-          pb: 4
-        }}
-      >
-        <Box
+        {/* Table Section */}
+        <Container
+          maxWidth={false}
           sx={{
             width: '100%',
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            '&::-webkit-scrollbar': { height: 4 },
-            '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
+            maxWidth: 1280,
+            mx: 'auto',
+            px: { xs: 1, sm: 3, md: 7.5 },
+            pb: 4
           }}
         >
-        <Box
-          sx={{
-            width: 'max-content',
-            minWidth: '100%',
-          }}
-        >
-        {/* Table Header */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          py: 2, 
-          px: { xs: 2, sm: 3 },
-          backgroundColor: 'rgba(30, 30, 30, 0.95)',
-          // borderRadius: '8px 8px 0 0',
-          borderBottom: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          {/* All Positions */}
           <Box
-            onClick={handleAllPositionsMenuOpen}
-            aria-haspopup="menu"
-            aria-expanded={allPositionsMenuOpen ? 'true' : undefined}
             sx={{
-            width: { xs: 196, sm: 280, md: 320 },
-            minWidth: { xs: 196, sm: 280, md: 320 },
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            pr: { xs: 1.2, sm: 2 },
-            cursor: 'pointer',
-            userSelect: 'none'
-          }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-              {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
-            </Typography>
-            <Box
-              sx={{
-                ml: 1,
-                width: 0,
-                height: 0,
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderTop: '8px solid #fff',
-                transform: allPositionsMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                transformOrigin: 'center',
-                transition: 'transform 0.3s ease',
-              }}
-            />
-          </Box>
-          <Menu
-            anchorEl={allPositionsMenuAnchor}
-            open={allPositionsMenuOpen}
-            onClose={handleAllPositionsMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            slotProps={{
-              paper: {
-                sx: {
-                  mt: 0.5,
-                  minWidth: { xs: 180, sm: 140 },
-                  backgroundColor: '#1f1f1f',
-                  border: '1px solid #e56a16',
-                  borderRadius: '8px',
-                  color: '#fff',
-                },
-              },
+              width: '100%',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              '&::-webkit-scrollbar': { height: 4 },
+              '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
             }}
           >
-            <MenuItem
-              selected={selectedPosition === 'all'}
-              onClick={() => handlePositionChange('all')}
-              sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+            <Box
+              sx={{
+                width: 'max-content',
+                minWidth: '100%',
+              }}
             >
-              All Positions
-            </MenuItem>
-            {positionOptions.map((position) => (
-              <MenuItem
-                key={position}
-                selected={selectedPosition === position}
-                onClick={() => handlePositionChange(position)}
-                sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
-              >
-                {position}
-              </MenuItem>
-            ))}
-          </Menu>
-          
-          {/* Playing Style */}
-          <Box sx={{
-            width: { xs: 108, sm: 150, md: 180 },
-            minWidth: { xs: 108, sm: 150, md: 180 },
-            flexShrink: 0,
-            pr: { xs: 0.5, sm: 2 },
-            display: 'block',
-            textAlign: 'center'
-          }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-              PLAYING STYLE
-            </Typography>
-          </Box>
-          
-          {/* Spacer */}
-          <Box sx={{ flex: 1 }} />
-          
-          {/* View Stats */}
-          <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-              VIEW STATS
-            </Typography>
-          </Box>
-          
-          {/* XP Points */}
-          <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5 , md : 7.5 }, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-              <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Player List Content */}
-        {activeSearchTerm && filteredPlayers.length === 0 && (
-          <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', py: 4, textAlign: 'center' }}>
-            <Typography sx={{ color: 'white', fontWeight: 500 }}>
-              User not found
-            </Typography>
-          </Box>
-        )}
-        {loading ? (
-          <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', p: 1.5 }}>
-            <AllPlayersLoadingSkeleton compact />
-          </Box>
-        ) : noLeagues ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
-            <Box sx={{ p: 3, textAlign: 'center', color: '#fff' }}>
-              <Typography variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Create a new league or join an existing one to see players here.</Typography>
-            </Box>
-          </Box>
-        ) : error ? (
-          <Typography color="error" align="center" sx={{ py: 4, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>{error}</Typography>
-        ) : (
-          <Box sx={{
-            flex: 1,
-            overflowY: 'auto',
-            overflowX: 'visible',
-            backgroundColor: '#383838',
-            borderRadius: '0 0 8px 8px',
-            '&::-webkit-scrollbar': { display: 'none' },
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-             px: { xs: 0, sm: 1.5 },
-             pb: { xs: 0, sm: 1.5 },
-             pt: 0.5,
-          
-          }}>
-            <List sx={{ p: 0 }}>
-              {sortedPlayers.map((player: Player, idx: number) => {
-                const isSelected = selectedPlayerId === player.id;
-                let textColor = '#fff';
-                let fontWeight = 500;
-                if (idx === 0) {
-                  textColor = '#fff';
-                  fontWeight = 700;
-                }
-                // Alternating row colors
-                const rowBgColor = idx % 2 === 0 ? '#383838' : '#2b2b2b';
-                const rowBgColorHover = idx % 2 === 0 ? '#464646' : '#3a3a3a';
-                
-                return (
-                  <React.Fragment key={player.id}>
-                    <ListItem
-                      onClick={() => {
-                        setSelectedPlayerId(player.id);
-                        router.push(`/player/${player.id}`);
-                      }}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        py: { xs: 0.7, sm: 0.7 },
-                        px: { xs: 2, sm: 3 },
-                        backgroundColor: rowBgColor,
-                        borderBottom: '1px solid rgba(255,255,255,0.08)',
-                        color: textColor,
-                        fontWeight,
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s',
-                        '&:hover': {
-                          backgroundColor: rowBgColorHover,
-                        }
-                      }}
+              {/* Table Header */}
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                py: 2,
+                px: { xs: 2, sm: 3 },
+                backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                // borderRadius: '8px 8px 0 0',
+                borderBottom: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                {/* All Positions */}
+                <Box
+                  onClick={handleAllPositionsMenuOpen}
+                  aria-haspopup="menu"
+                  aria-expanded={allPositionsMenuOpen ? 'true' : undefined}
+                  sx={{
+                    width: { xs: 196, sm: 280, md: 320 },
+                    minWidth: { xs: 196, sm: 280, md: 320 },
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    pr: { xs: 1.2, sm: 2 },
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                    {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
+                  </Typography>
+                  <Box
+                    sx={{
+                      ml: 1,
+                      width: 0,
+                      height: 0,
+                      borderLeft: '6px solid transparent',
+                      borderRight: '6px solid transparent',
+                      borderTop: '8px solid #fff',
+                      transform: allPositionsMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transformOrigin: 'center',
+                      transition: 'transform 0.3s ease',
+                    }}
+                  />
+                </Box>
+                <Menu
+                  anchorEl={allPositionsMenuAnchor}
+                  open={allPositionsMenuOpen}
+                  onClose={handleAllPositionsMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        mt: 0.5,
+                        minWidth: { xs: 180, sm: 140 },
+                        backgroundColor: '#1f1f1f',
+                        border: '1px solid #e56a16',
+                        borderRadius: '8px',
+                        color: '#fff',
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem
+                    selected={selectedPosition === 'all'}
+                    onClick={() => handlePositionChange('all')}
+                    sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                  >
+                    All Positions
+                  </MenuItem>
+                  {positionOptions.map((position) => (
+                    <MenuItem
+                      key={position}
+                      selected={selectedPosition === position}
+                      onClick={() => handlePositionChange(position)}
+                      sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
                     >
-                      {/* Avatar + Name column (fixed width for stable alignment) */}
-                      <Box sx={{
-                        width: { xs: 196, sm: 280, md: 320 },
-                        minWidth: { xs: 196, sm: 280, md: 320 },
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        pr: { xs: 1.2, sm: 2 }
-                      }}>
-                        <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
-                          <Box sx={{ 
-                            position: 'relative', 
-                            width: { xs: 38, sm: 42 }, 
-                            height: { xs: 38, sm: 42 },
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            backgroundColor: 'rgba(255,255,255,0.1)'
-                          }}>
-                            {player.profilePicture ? (
-                              <Box
-                                component="img"
-                                src={player.profilePicture}
-                                alt={player.name}
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  display: 'block',
-                                }}
-                              />
-                            ) : (
-                              <Box
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  backgroundColor: getAvatarBackgroundColor(getPlayerName(player)),
-                                  color: '#fff',
-                                  fontWeight: 800,
-                                  fontSize: { xs: 12, sm: 13 },
-                                  textTransform: 'uppercase',
-                                  letterSpacing: 0.4,
-                                }}
-                              >
-                                {getAvatarInitials({
-                                  name: getPlayerName(player),
-                                  firstName: player.firstName,
-                                  lastName: player.lastName,
-                                })}
-                              </Box>
-                            )}
-                          </Box>
-                        </ListItemAvatar>
-                        
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            noWrap
-                            sx={{ 
-                              fontWeight: 600, 
-                              fontSize: { xs: 12, sm: 15 },
-                              color: '#fff',
-                              lineHeight: 1.4,
-                              fontFamily: '"Woodford Bourne Pro", sans-serif',
-                              textTransform: 'uppercase',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                      {position}
+                    </MenuItem>
+                  ))}
+                </Menu>
+
+                {/* Playing Style */}
+                <Box sx={{
+                  width: { xs: 108, sm: 150, md: 180 },
+                  minWidth: { xs: 108, sm: 150, md: 180 },
+                  flexShrink: 0,
+                  pr: { xs: 0.5, sm: 2 },
+                  display: 'block',
+                  textAlign: 'center'
+                }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                    PLAYING STYLE
+                  </Typography>
+                </Box>
+
+                {/* Spacer */}
+                <Box sx={{ flex: 1 }} />
+
+                {/* View Stats */}
+                <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                    VIEW STATS
+                  </Typography>
+                </Box>
+
+                {/* XP Points */}
+                <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                    <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Player List Content */}
+              {activeSearchTerm && filteredPlayers.length === 0 && (
+                <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', py: 4, textAlign: 'center' }}>
+                  <Typography sx={{ color: 'white', fontWeight: 500 }}>
+                    User not found
+                  </Typography>
+                </Box>
+              )}
+              {loading ? (
+                <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', p: 1.5 }}>
+                  <AllPlayersLoadingSkeleton compact />
+                </Box>
+              ) : noLeagues ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
+                  <Box sx={{ p: 3, textAlign: 'center', color: '#fff' }}>
+                    <Typography variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Create a new league or join an existing one to see players here.</Typography>
+                  </Box>
+                </Box>
+              ) : error ? (
+                <Typography color="error" align="center" sx={{ py: 4, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>{error}</Typography>
+              ) : (
+                <Box sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  overflowX: 'visible',
+                  backgroundColor: '#383838',
+                  borderRadius: '0 0 8px 8px',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  px: { xs: 0, sm: 1.5 },
+                  pb: { xs: 0, sm: 1.5 },
+                  pt: 0.5,
+
+                }}>
+                  <List sx={{ p: 0 }}>
+                    {sortedPlayers.map((player: Player, idx: number) => {
+                      const isSelected = selectedPlayerId === player.id;
+                      let textColor = '#fff';
+                      let fontWeight = 500;
+                      if (idx === 0) {
+                        textColor = '#fff';
+                        fontWeight = 700;
+                      }
+                      // Alternating row colors
+                      const rowBgColor = idx % 2 === 0 ? '#383838' : '#2b2b2b';
+                      const rowBgColorHover = idx % 2 === 0 ? '#464646' : '#3a3a3a';
+
+                      return (
+                        <React.Fragment key={player.id}>
+                          <ListItem
+                            onClick={() => {
+                              setSelectedPlayerId(player.id);
+                              router.push(`/player/${player.id}`);
+                            }}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              py: { xs: 0.7, sm: 0.7 },
+                              px: { xs: 2, sm: 3 },
+                              backgroundColor: rowBgColor,
+                              borderBottom: '1px solid rgba(255,255,255,0.08)',
+                              color: textColor,
+                              fontWeight,
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s',
+                              '&:hover': {
+                                backgroundColor: rowBgColorHover,
+                              }
                             }}
                           >
-                            {getPlayerCardStyleName(player)}
-                          </Typography>
-                          <Typography sx={{ 
-                            fontSize: { xs: 10, sm: 12 },
-                            color: 'rgba(255,255,255,0.6)',
-                            mt: 0.25,
-                            fontFamily: '"Woodford Bourne Pro", sans-serif'
-                          }}>
-                            {getPositionLabel(player)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      
-                      {/* Playing Style Column */}
-                      <Box sx={{ 
-                        width: { xs: 108, sm: 150, md: 180 },
-                        minWidth: { xs: 108, sm: 150, md: 180 },
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pr: { xs: 0.5, sm: 2 }
-                      }}>
-                        <Typography sx={{ 
-                          fontSize: { xs: 11, sm: 13 },
-                          color: 'rgba(255,255,255,0.9)',
-                          fontFamily: '"Woodford Bourne Pro", sans-serif'
-                        }}>
-                          {getPlayingStyle(player)}
-                        </Typography>
-                      </Box>
-                      
-                      {/* Spacer */}
-                      <Box sx={{ flex: 1 }} />
-                      
-                      {/* View Stats Icon */}
-                      <Box sx={{ 
-                        minWidth: { xs: 90, sm: 120 }, 
-                        display: 'flex', 
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                      }}>
-                        <Image 
-                          src={TableGraphIcon} 
-                          alt="View Stats" 
-                          width={isMobile ? 23 : 30} 
-                          height={isMobile ? 23 : 30} 
-                          style={{ objectFit: 'contain' }}
-                        />
-                      </Box>
-                      
-                      {/* XP Points */}
-                      <Box sx={{ 
-                        minWidth: { xs: 90, sm: 120 }, 
-                        ml: { xs: 1, sm: 1.5 ,md : 5.5 },
-                        textAlign: 'center'
-                      }}>
-                        <Typography sx={{ 
-                          fontWeight: 'bold', 
-                          fontSize: { xs: 13, sm: 16 },
-                          color: '#fff',
-                          fontFamily: '"Woodford Bourne Pro", sans-serif'
-                        }}>
-                          {getCpPoints(player)}
-                        </Typography>
-                      </Box>
-                    </ListItem>
-                  </React.Fragment>
-                );
-              })}
-            </List>
+                            {/* Avatar + Name column (fixed width for stable alignment) */}
+                            <Box sx={{
+                              width: { xs: 196, sm: 280, md: 320 },
+                              minWidth: { xs: 196, sm: 280, md: 320 },
+                              flexShrink: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              pr: { xs: 1.2, sm: 2 }
+                            }}>
+                              <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
+                                <Box sx={{
+                                  position: 'relative',
+                                  width: { xs: 38, sm: 42 },
+                                  height: { xs: 38, sm: 42 },
+                                  borderRadius: '50%',
+                                  overflow: 'hidden',
+                                  backgroundColor: 'rgba(255,255,255,0.1)'
+                                }}>
+                                  {player.profilePicture ? (
+                                    <Box
+                                      component="img"
+                                      src={player.profilePicture}
+                                      alt={player.name}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                      }}
+                                    />
+                                  ) : (
+                                    <Box
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: getAvatarBackgroundColor(getPlayerName(player)),
+                                        color: '#fff',
+                                        fontWeight: 800,
+                                        fontSize: { xs: 12, sm: 13 },
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.4,
+                                      }}
+                                    >
+                                      {getAvatarInitials({
+                                        name: getPlayerName(player),
+                                        firstName: player.firstName,
+                                        lastName: player.lastName,
+                                      })}
+                                    </Box>
+                                  )}
+                                </Box>
+                              </ListItemAvatar>
+
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography
+                                  noWrap
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: 12, sm: 15 },
+                                    color: '#fff',
+                                    lineHeight: 1.4,
+                                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                                    textTransform: 'uppercase',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  {getPlayerCardStyleName(player)}
+                                </Typography>
+                                <Typography sx={{
+                                  fontSize: { xs: 10, sm: 12 },
+                                  color: 'rgba(255,255,255,0.6)',
+                                  mt: 0.25,
+                                  fontFamily: '"Woodford Bourne Pro", sans-serif'
+                                }}>
+                                  {getPositionLabel(player)}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            {/* Playing Style Column */}
+                            <Box sx={{
+                              width: { xs: 108, sm: 150, md: 180 },
+                              minWidth: { xs: 108, sm: 150, md: 180 },
+                              flexShrink: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              pr: { xs: 0.5, sm: 2 }
+                            }}>
+                              <Typography sx={{
+                                fontSize: { xs: 11, sm: 13 },
+                                color: 'rgba(255,255,255,0.9)',
+                                fontFamily: '"Woodford Bourne Pro", sans-serif'
+                              }}>
+                                {getPlayingStyle(player)}
+                              </Typography>
+                            </Box>
+
+                            {/* Spacer */}
+                            <Box sx={{ flex: 1 }} />
+
+                            {/* View Stats Icon */}
+                            <Box sx={{
+                              minWidth: { xs: 90, sm: 120 },
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}>
+                              <Image
+                                src={TableGraphIcon}
+                                alt="View Stats"
+                                width={isMobile ? 23 : 30}
+                                height={isMobile ? 23 : 30}
+                                style={{ objectFit: 'contain' }}
+                              />
+                            </Box>
+
+                            {/* XP Points */}
+                            <Box sx={{
+                              minWidth: { xs: 90, sm: 120 },
+                              ml: { xs: 1, sm: 1.5, md: 5.5 },
+                              textAlign: 'center'
+                            }}>
+                              <Typography sx={{
+                                fontWeight: 'bold',
+                                fontSize: { xs: 13, sm: 16 },
+                                color: '#fff',
+                                fontFamily: '"Woodford Bourne Pro", sans-serif'
+                              }}>
+                                {getCpPoints(player)}
+                              </Typography>
+                            </Box>
+                          </ListItem>
+                        </React.Fragment>
+                      );
+                    })}
+                  </List>
+                </Box>
+              )}
+            </Box>
           </Box>
-        )}
-        </Box>
-        </Box>
-      </Container>
+        </Container>
       </Box>
     </>
   );

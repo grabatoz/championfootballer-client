@@ -1151,7 +1151,7 @@ export default function LeagueDetailPage() {
     // Fetch dream team data based on selected league and season
     const fetchDreamTeam = useCallback(async () => {
         if (!leagueId || !token) return;
-        
+
         setDreamTeamLoading(true);
         try {
             const params = new URLSearchParams();
@@ -1159,14 +1159,14 @@ export default function LeagueDetailPage() {
             if (selectedSeasonId) {
                 params.append('seasonId', selectedSeasonId);
             }
-            
+
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/dream-team?${params.toString()}`, 
+                `${process.env.NEXT_PUBLIC_API_URL}/dream-team?${params.toString()}`,
                 {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }
             );
-            
+
             if (response.ok) {
                 const data = await response.json();
                 console.log('Dream Team API Response:', data);
@@ -1232,13 +1232,13 @@ export default function LeagueDetailPage() {
 
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
         if (!Array.isArray(seasonsUnknown) || seasonsUnknown.length === 0) return;
-        
+
         // Find active season
         const activeSeason = seasonsUnknown.find((s: unknown) => {
             const seasonObj = s as Record<string, unknown>;
             return seasonObj?.isActive === true;
         });
-        
+
         if (activeSeason) {
             const seasonObj = activeSeason as Record<string, unknown>;
             const activeSeasonId = String(seasonObj.id || '');
@@ -1252,7 +1252,7 @@ export default function LeagueDetailPage() {
                 const bNum = (b as Record<string, unknown>)?.seasonNumber as number || 0;
                 return bNum - aNum; // Descending order
             });
-            
+
             if (sortedSeasons.length > 0) {
                 const latestSeason = sortedSeasons[0] as Record<string, unknown>;
                 const latestSeasonId = String(latestSeason.id || '');
@@ -1281,7 +1281,7 @@ export default function LeagueDetailPage() {
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
-        
+
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
@@ -1823,7 +1823,7 @@ export default function LeagueDetailPage() {
         console.log('🎯 Season selected:', seasonId);
         setSelectedSeasonId(seasonId);
         handleSeasonDropdownClose();
-        
+
         // 🔄 Refresh league data to get latest season settings
         if (token && leagueId) {
             console.log('🔄 Refreshing league data after season selection...');
@@ -2048,7 +2048,7 @@ export default function LeagueDetailPage() {
     };
 
     const currentSeasonNumber = React.useMemo(() => resolveSeasonNumber(league) ?? 1, [league]);
-    
+
     // Get selected season number from selectedSeasonId
     const selectedSeasonNumber = React.useMemo(() => {
         if (!selectedSeasonId || !league) return currentSeasonNumber;
@@ -2070,7 +2070,7 @@ export default function LeagueDetailPage() {
         }
         return currentSeasonNumber;
     }, [selectedSeasonId, league, currentSeasonNumber, seasonOptions]);
-    
+
     const seasonLabel = React.useMemo(() => (selectedSeasonNumber ? `(#Season ${selectedSeasonNumber})` : ''), [selectedSeasonNumber]);
 
     const readSeasonInviteCode = useCallback((seasonLike: unknown): string => {
@@ -2159,7 +2159,7 @@ export default function LeagueDetailPage() {
             toast.error('Unable to share invite details right now.');
         }
     }, [inviteCodeForSelectedSeason, inviteSeasonLabel]);
-    
+
     // Check if selected season is active
     const isSelectedSeasonActive = React.useMemo(() => {
         if (!selectedSeasonId || !league) return true; // Default to active if no season selected
@@ -2181,18 +2181,18 @@ export default function LeagueDetailPage() {
         }
         return true; // Default to active
     }, [selectedSeasonId, league, seasonOptions]);
-    
+
     // Filter matches and members based on selected season
     const filteredLeague = React.useMemo(() => {
         console.log('🔄 filteredLeague useMemo triggered');
         console.log('   - league exists:', !!league);
         console.log('   - selectedSeasonId:', selectedSeasonId);
-        
+
         if (!league) {
             console.log('❌ No league, returning null');
             return null;
         }
-        
+
         if (!selectedSeasonId) {
             console.log('ℹ️ No season selected, returning league without archived matches');
             return {
@@ -2200,16 +2200,16 @@ export default function LeagueDetailPage() {
                 matches: (league.matches || []).filter(m => !m.archived),
             };
         }
-        
+
         console.log('🔍 Filtering league for season:', selectedSeasonId);
-        
+
         // Filter matches by seasonId
         console.log('🔍 All matches in league:', (league.matches || []).length);
         (league.matches || []).forEach((match, index) => {
             const matchSeasonId = (match as unknown as Record<string, unknown>)?.seasonId;
             console.log(`   Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | seasonId: ${matchSeasonId} | status: ${match.status}`);
         });
-        
+
         const filteredMatches = (league.matches || []).filter(match => {
             const matchSeasonId = (match as unknown as Record<string, unknown>)?.seasonId;
             const matches = String(matchSeasonId || '') === selectedSeasonId;
@@ -2219,28 +2219,28 @@ export default function LeagueDetailPage() {
             }
             return matches && notArchived;
         });
-        
+
         console.log('✅ Filtered matches:', filteredMatches.length);
         if (filteredMatches.length > 0) {
             filteredMatches.forEach(m => console.log(`   ✅ ${m.homeTeamName} vs ${m.awayTeamName}`));
         }
-        
+
         // Get season object and its members
         const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
         let filteredMembers: User[] = [];
         let seasonMembersPayloadProvided = false;
         let declinedIdsFromSeason = new Set<string>();
-        
+
         console.log('🔍 All seasons:', seasonsUnknown);
-        
+
         if (Array.isArray(seasonsUnknown)) {
             const selectedSeason = seasonsUnknown.find((s: unknown) => {
                 const seasonObj = s as Record<string, unknown>;
                 return String(seasonObj?.id || '') === selectedSeasonId;
             });
-            
+
             console.log('🔍 Selected season object:', selectedSeason);
-            
+
             if (selectedSeason) {
                 const seasonObj = selectedSeason as Record<string, unknown>;
                 const membersUnknown = seasonObj?.members;
@@ -2269,13 +2269,13 @@ export default function LeagueDetailPage() {
                 };
                 const declinedIds = extractDeclinedIds(seasonObj);
                 declinedIdsFromSeason = declinedIds;
-                
+
                 console.log('🔍 Selected season ID:', seasonObj?.id);
                 console.log('🔍 Selected season number:', seasonObj?.seasonNumber);
                 console.log('🔍 Season members from backend (raw):', membersUnknown);
                 console.log('🔍 Is array?', Array.isArray(membersUnknown));
                 console.log('🔍 Length:', Array.isArray(membersUnknown) ? membersUnknown.length : 0);
-                
+
                 if (Array.isArray(membersUnknown)) {
                     seasonMembersPayloadProvided = true;
                     // Use season members from backend (including empty arrays)
@@ -2296,7 +2296,7 @@ export default function LeagueDetailPage() {
                 }
             }
         }
-        
+
         // If no season members found from backend, get players who played in matches
         if (filteredMembers.length === 0 && !seasonMembersPayloadProvided) {
             console.log('⚠️ No season members from backend, using match players');
@@ -2305,7 +2305,7 @@ export default function LeagueDetailPage() {
                 match.homeTeamUsers?.forEach(user => playersInSeasonSet.add(user.id));
                 match.awayTeamUsers?.forEach(user => playersInSeasonSet.add(user.id));
             });
-            
+
             // If no one played in matches yet, show all league members for this season
             if (playersInSeasonSet.size === 0) {
                 console.log('⚠️ No matches played yet, showing all league members');
@@ -2315,25 +2315,25 @@ export default function LeagueDetailPage() {
                 console.log('✅ Players from matches:', filteredMembers.length);
             }
         }
-        
+
         console.log('✅ Final filtered members:', filteredMembers.length, filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
-        
+
         // Extract season settings (maxGames, showPoints)
         let seasonMaxGames = league.maxGames;
         let seasonShowPoints = league.showPoints;
-        
+
         if (Array.isArray(seasonsUnknown)) {
             const selectedSeason = seasonsUnknown.find((s: unknown) => {
                 const seasonObj = s as Record<string, unknown>;
                 return String(seasonObj?.id || '') === selectedSeasonId;
             });
-            
+
             if (selectedSeason) {
                 const seasonObj = selectedSeason as Record<string, unknown>;
-                
+
                 // Handle maxGames
                 seasonMaxGames = typeof seasonObj.maxGames === 'number' ? seasonObj.maxGames : league.maxGames;
-                
+
                 // Handle showPoints - be more flexible with types (boolean, number, string)
                 if (seasonObj.showPoints !== undefined && seasonObj.showPoints !== null) {
                     if (typeof seasonObj.showPoints === 'boolean') {
@@ -2349,7 +2349,7 @@ export default function LeagueDetailPage() {
                 } else {
                     seasonShowPoints = league.showPoints;
                 }
-                
+
                 console.log('✅ Season settings applied:', {
                     seasonId: selectedSeasonId,
                     maxGames: seasonMaxGames,
@@ -2360,7 +2360,7 @@ export default function LeagueDetailPage() {
                 });
             }
         }
-        
+
         return {
             ...league,
             matches: filteredMatches,
@@ -2376,17 +2376,17 @@ export default function LeagueDetailPage() {
         console.log('   filteredLeague members:', filteredLeague?.members?.length);
         console.log('   filteredLeague members names:', filteredLeague?.members?.map(m => `${m.firstName} ${m.lastName}`));
         console.log('   filteredLeague matches:', filteredLeague?.matches?.length);
-        
+
         if (!filteredLeague) {
             console.log('❌ No filteredLeague, returning empty array');
             return [];
         }
-        
+
         const playerStats = new Map<string, TableData>();
         const adminId = filteredLeague.administrators?.[0]?.id;
-        
+
         console.log('   Admin ID:', adminId);
-        
+
         // Initialize ALL filtered members first (whether they played or not)
         filteredLeague.members.forEach((member: User & { xp?: number }) => {
             playerStats.set(member.id, {
@@ -2406,9 +2406,9 @@ export default function LeagueDetailPage() {
                 motmCount: typeof motmCounts[member.id] === 'number' ? motmCounts[member.id] : 0,
             });
         });
-        
+
         console.log('   Initialized players:', playerStats.size);
-        
+
         // Process matches to build stats for players who played in this season
         filteredLeague.matches
             .filter(m => !m.archived) // <-- exclude archived
@@ -2505,10 +2505,10 @@ export default function LeagueDetailPage() {
     useEffect(() => {
         if (!league?.members?.length || !league?.id) return;
         const counts: Record<string, number> = {};
-        
+
         // Use filteredLeague matches when season is selected, otherwise use all league matches
         const matchesToCount = selectedSeasonId && filteredLeague ? filteredLeague.matches : (league.matches || []);
-        
+
         // Initialize all members with 0 to ensure everyone shows up
         league.members.forEach(m => { counts[m.id] = 0; });
         matchesToCount.forEach((match) => {
@@ -3356,7 +3356,7 @@ export default function LeagueDetailPage() {
             console.log('🔄 Refreshing league data after restore...');
             fetchLeagueDetails();
             console.log('✅ League data refreshed after restore');
-            
+
             // Log the updated match status after refresh
             setTimeout(() => {
                 const updatedMatch = league?.matches?.find(m => m.id === match.id);
@@ -3589,14 +3589,14 @@ export default function LeagueDetailPage() {
                             // height: '30vh',
                             background: '#0e0e0e',
                         }}>
-                               {/* League state warning (inactive/completed) */}
-                        {league && !league.active && (
-                            <Alert severity="warning" sx={{ mb: 2 }}>
-                                {leagueIsCompleted(league)
-                                    ? 'This league is completed. New matches are disabled for completed leagues.'
-                                    : 'This league is currently inactive. All actions are disabled until an admin reactivates it.'}
-                            </Alert>
-                        )}
+                            {/* League state warning (inactive/completed) */}
+                            {league && !league.active && (
+                                <Alert severity="warning" sx={{ mb: 2 }}>
+                                    {leagueIsCompleted(league)
+                                        ? 'This league is completed. New matches are disabled for completed leagues.'
+                                        : 'This league is currently inactive. All actions are disabled until an admin reactivates it.'}
+                                </Alert>
+                            )}
                             <Paper sx={{
                                 px: 0,
                                 py: { xs: 2, md: 2 },
@@ -3841,7 +3841,7 @@ export default function LeagueDetailPage() {
                                     >
                                         {(() => {
                                             const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
-                                            const availableSeasons: Array<{id: string, seasonNumber: number}> = [];
+                                            const availableSeasons: Array<{ id: string, seasonNumber: number }> = [];
                                             const addUniqueSeason = (id: string, seasonNumber: number) => {
                                                 if (!id || seasonNumber <= 0) return;
                                                 if (!availableSeasons.some((season) => season.id === id)) {
@@ -3916,11 +3916,11 @@ export default function LeagueDetailPage() {
                                                         gap: 1,
                                                         color: '#E5E7EB',
                                                         transition: 'all 0.2s ease',
-                                                        background: season.seasonNumber === currentSeasonNumber 
-                                                            ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' 
+                                                        background: season.seasonNumber === currentSeasonNumber
+                                                            ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)'
                                                             : 'transparent',
-                                                        border: season.seasonNumber === currentSeasonNumber 
-                                                            ? '1px solid rgba(3,136,227,0.35)' 
+                                                        border: season.seasonNumber === currentSeasonNumber
+                                                            ? '1px solid rgba(3,136,227,0.35)'
                                                             : 'none',
                                                         '&:hover': {
                                                             transform: 'translateY(-1px)',
@@ -4082,7 +4082,7 @@ export default function LeagueDetailPage() {
                                         px: 1,
                                         // mx: 'aut90100o',
                                         mt: 2,
-                                    
+
                                     }}
                                 >
                                     <ButtonGroup
@@ -4207,12 +4207,12 @@ export default function LeagueDetailPage() {
                                                 setSection('matches');
                                                 router.replace(`/league/${leagueId}?tab=matches`);
                                             }}
-                            startIcon={<Image src={FIXTURES} alt="Fixtures" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'matches' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
-                        >
-                            Fixtures
-                        </Button>
+                                            startIcon={<Image src={FIXTURES} alt="Fixtures" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'matches' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
+                                        >
+                                            Fixtures
+                                        </Button>
 
-                        <Button
+                                        <Button
                                             variant="outlined"
                                             size="small"
                                             sx={{
@@ -4233,12 +4233,12 @@ export default function LeagueDetailPage() {
                                                 setSection('leaderboard');
                                                 router.replace(`/league/${leagueId}?tab=leaderboard`);
                                             }}
-                            startIcon={<Image src={LEADERBOARD} alt="Leaderboard" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'leaderboard' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
-                        >
-                            Leaderboard
-                        </Button>
+                                            startIcon={<Image src={LEADERBOARD} alt="Leaderboard" width={24} height={24} style={{ objectFit: 'contain', filter: section === 'leaderboard' ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(64%) sepia(0%)' }} />}
+                                        >
+                                            Leaderboard
+                                        </Button>
 
-                        <Button
+                                        <Button
                                             variant="outlined"
                                             size="small"
                                             sx={{
@@ -4304,175 +4304,255 @@ export default function LeagueDetailPage() {
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
-                                <div className="w-full mx-auto">
-                                    <Card sx={{
-                                        background: '#383838',
-                                        backdropFilter: 'blur(10px)',
-                                        borderRadius: { xs: 2, sm: 3 },
-                                        boxShadow: 'none',
-                                        mt: 1.2,
-                                        mb: { xs: 0, md: 4 },
-                                        overflow: 'auto',
-                                        '&::-webkit-scrollbar': {
-                                            height: '6px',
-                                        },
-                                        '&::-webkit-scrollbar-track': {
-                                            background: '#383838',
-                                        },
-                                        '&::-webkit-scrollbar-thumb': {
-                                            background: '#383838',
-                                            borderRadius: '3px',
-                                        },
-                                    }} className="text-white">
-                                        <Box
-                                            sx={{
-                                                width: '100%',
-                                                overflowX: 'auto',
-                                                overflowY: 'hidden',
-                                                WebkitOverflowScrolling: 'touch',
-                                                scrollbarWidth: 'thin',
-                                                '&::-webkit-scrollbar': {
-                                                    height: '8px',
-                                                },
-                                                '&::-webkit-scrollbar-track': {
-                                                    background: 'rgba(255,255,255,0.12)',
-                                                    borderRadius: '9999px',
-                                                },
-                                                '&::-webkit-scrollbar-thumb': {
-                                                    background: '#F97316',
-                                                    borderRadius: '9999px',
-                                                },
-                                            }}
-                                        >
-                                            <div className="min-w-[760px] rounded-lg overflow-hidden league-table">
+                                <Box sx={{ width: '100%', mx: 'auto', mt: 1.2 }}>
+                                    <Box
+                                        sx={{
+                                            width: '100%',
+                                            overflowX: 'auto',
+                                            WebkitOverflowScrolling: 'touch',
+                                            '&::-webkit-scrollbar': { height: 6 },
+                                            '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: 3 },
+                                            '&::-webkit-scrollbar-thumb': { background: '#F97316', borderRadius: 3 },
+                                        }}
+                                    >
+                                        <Box sx={{ width: 'max-content', minWidth: '100%', borderRadius: '8px', overflow: 'hidden' }}>
                                             {/* Table Header */}
-                                            <div className="grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-6 py-4 bg-[#2b2b2b] border-b border-[#444] text-white">
-                                                <button
-                                                    type="button"
+                                            <Box sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                py: 2,
+                                                px: { xs: 2, sm: 3 },
+                                                backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                                                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                            }}>
+                                                {/* All Positions Dropdown */}
+                                                <Box
                                                     onClick={handleMemberPositionMenuOpen}
-                                                    className="text-left flex items-center gap-2 font-semibold text-sm uppercase tracking-wide cursor-pointer select-none bg-transparent border-0 p-0 m-0"
-                                                >
-                                                    {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
-                                                    <ChevronDown
-                                                        size={14}
-                                                        className={`transition-transform duration-300 ${memberPositionMenuOpen ? 'rotate-180' : ''}`}
+                                                    aria-haspopup="menu"
+                                                    aria-expanded={memberPositionMenuOpen ? 'true' : undefined}
+                                                    sx={{
+                                                        width: { xs: 196, sm: 280, md: 320 },
+                                                        minWidth: { xs: 196, sm: 280, md: 320 },
+                                                        flexShrink: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        pr: { xs: 1.2, sm: 2 },
+                                                        cursor: 'pointer',
+                                                        userSelect: 'none'
+                                                    }}>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                        {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
+                                                    </Typography>
+                                                    <Box
+                                                        sx={{
+                                                            ml: 1,
+                                                            width: 0,
+                                                            height: 0,
+                                                            borderLeft: '6px solid transparent',
+                                                            borderRight: '6px solid transparent',
+                                                            borderTop: '8px solid #fff',
+                                                            transform: memberPositionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                            transformOrigin: 'center',
+                                                            transition: 'transform 0.3s ease',
+                                                        }}
                                                     />
-                                                </button>
-                                                <div className="text-left font-semibold text-sm uppercase tracking-wide pl-8">PLAYING STYLE</div>
-                                                <div></div>
-                                                <div className="text-center font-semibold text-sm uppercase tracking-wide">VIEW STATS</div>
-                                                <div className="text-center font-semibold text-sm uppercase tracking-wide"><span style={{ fontSize: '0.6rem' }}>xp</span> POINTS</div>
-                                            </div>
-                                            <Menu
-                                                anchorEl={memberPositionMenuAnchor}
-                                                open={memberPositionMenuOpen}
-                                                onClose={handleMemberPositionMenuClose}
-                                                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                                                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                                                slotProps={{
-                                                    paper: {
-                                                        sx: {
-                                                            mt: 0.5,
-                                                            minWidth: 140,
-                                                            backgroundColor: '#1f1f1f',
-                                                            border: '1px solid #e56a16',
-                                                            borderRadius: '8px',
-                                                            color: '#fff',
+                                                </Box>
+                                                <Menu
+                                                    anchorEl={memberPositionMenuAnchor}
+                                                    open={memberPositionMenuOpen}
+                                                    onClose={handleMemberPositionMenuClose}
+                                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                                    slotProps={{
+                                                        paper: {
+                                                            sx: {
+                                                                mt: 0.5,
+                                                                minWidth: { xs: 180, sm: 140 },
+                                                                backgroundColor: '#1f1f1f',
+                                                                border: '1px solid #e56a16',
+                                                                borderRadius: '8px',
+                                                                color: '#fff',
+                                                            },
                                                         },
-                                                    },
-                                                }}
-                                            >
-                                                <MenuItem
-                                                    selected={selectedMemberPosition === 'all'}
-                                                    onClick={() => handleMemberPositionChange('all')}
-                                                    sx={{ fontSize: { xs: 13, sm: 15 } }}
+                                                    }}
                                                 >
-                                                    All Positions
-                                                </MenuItem>
-                                                {memberPositionOptions.map((position) => (
                                                     <MenuItem
-                                                        key={position}
-                                                        selected={selectedMemberPosition.toLowerCase() === position.toLowerCase()}
-                                                        onClick={() => handleMemberPositionChange(position)}
-                                                        sx={{ fontSize: { xs: 13, sm: 15 } }}
+                                                        selected={selectedMemberPosition === 'all'}
+                                                        onClick={() => handleMemberPositionChange('all')}
+                                                        sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
                                                     >
-                                                        {position}
+                                                        All Positions
                                                     </MenuItem>
-                                                ))}
-                                            </Menu>
+                                                    {memberPositionOptions.map((position) => (
+                                                        <MenuItem
+                                                            key={position}
+                                                            selected={selectedMemberPosition.toLowerCase() === position.toLowerCase()}
+                                                            onClick={() => handleMemberPositionChange(position)}
+                                                            sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                                                        >
+                                                            {position}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Menu>
 
-                                            {/* Table Rows */}
-                                            <div>
-                                                {filteredMembersForTable
-                                                    .map((member, index, arr) => {
+                                                {/* Playing Style Header */}
+                                                <Box sx={{
+                                                    width: { xs: 108, sm: 150, md: 180 },
+                                                    minWidth: { xs: 108, sm: 150, md: 180 },
+                                                    flexShrink: 0,
+                                                    pr: { xs: 0.5, sm: 2 },
+                                                    display: 'block',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                        PLAYING STYLE
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Spacer */}
+                                                <Box sx={{ flex: 1 }} />
+
+                                                {/* View Stats Header */}
+                                                <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                        VIEW STATS
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* XP Points Header */}
+                                                <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
+                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                        <span style={{ textTransform: 'uppercase' }}>xp</span> POINTS
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Table Rows Content */}
+                                            <Box sx={{
+                                                backgroundColor: '#383838',
+                                                '&::-webkit-scrollbar': { display: 'none' },
+                                                scrollbarWidth: 'none',
+                                                msOverflowStyle: 'none',
+                                            }}>
+                                                <List sx={{ p: 0 }}>
+                                                    {filteredMembersForTable.map((member, idx) => {
                                                         const firstName = member.firstName || '';
                                                         const lastName = member.lastName || '';
-                                                        const memberImageSrc =
-                                                            typeof member?.profilePicture === 'string' && member.profilePicture.trim().length > 0
-                                                                ? member.profilePicture.trim()
-                                                                : '';
                                                         const memberDisplayName = `${firstName} ${lastName}`.trim();
-                                                        const memberInitials = getAvatarInitials({
-                                                            name: memberDisplayName,
-                                                            firstName,
-                                                            lastName,
-                                                        });
-                                                        const isEven = index % 2 === 0;
-                                                        const isLast = index === arr.length - 1;
+                                                        const rowBgColor = idx % 2 === 0 ? '#383838' : '#2b2b2b';
+                                                        const rowBgColorHover = idx % 2 === 0 ? '#464646' : '#3a3a3a';
 
                                                         return (
-                                                            <div
+                                                            <ListItem
                                                                 key={member.id}
                                                                 onClick={() => router.push(`/player/${member.id}`)}
-                                                                className={`grid grid-cols-[200px_200px_1fr_120px_120px] items-center px-2 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset ${isLast ? 'mb-2' : 'mb-0'}`}
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    py: { xs: 0.7, sm: 0.7 },
+                                                                    px: { xs: 2, sm: 3 },
+                                                                    backgroundColor: rowBgColor,
+                                                                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                                    color: '#fff',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'background-color 0.2s',
+                                                                    '&:hover': { backgroundColor: rowBgColorHover }
+                                                                }}
                                                             >
-                                                                {/* Player Info - under ALL POSITIONS */}
-                                                                <div className="flex items-center gap-3 min-w-0">
-                                                                    <div
-                                                                        className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
-                                                                        style={{
-                                                                            backgroundColor: memberImageSrc
-                                                                                ? 'transparent'
-                                                                                : getAvatarBackgroundColor(memberDisplayName || String(member.id || 'player')),
-                                                                        }}
-                                                                    >
-                                                                        {memberImageSrc ? (
-                                                                            <div className="relative w-full h-full">
-                                                                                <Image src={memberImageSrc} alt={firstName || 'Player'} fill style={{ objectFit: 'cover' }} />
-                                                                            </div>
-                                                                        ) : (
-                                                                            memberInitials
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex flex-col min-w-0">
-                                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                                            <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
-                                                                        </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{getMemberPositionLabel(member) === '-' ? '-' : getMemberPositionLabel(member)}</span>
-                                                                    </div>
-                                                                </div>
+                                                                {/* Avatar + Name column */}
+                                                                <Box sx={{
+                                                                    width: { xs: 196, sm: 280, md: 320 },
+                                                                    minWidth: { xs: 196, sm: 280, md: 320 },
+                                                                    flexShrink: 0,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    pr: { xs: 1.2, sm: 2 }
+                                                                }}>
+                                                                    <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
+                                                                        <Box sx={{
+                                                                            position: 'relative',
+                                                                            width: { xs: 38, sm: 42 },
+                                                                            height: { xs: 38, sm: 42 },
+                                                                            borderRadius: '50%',
+                                                                            overflow: 'hidden',
+                                                                            backgroundColor: 'rgba(255,255,255,0.1)'
+                                                                        }}>
+                                                                            {member.profilePicture ? (
+                                                                                <Box
+                                                                                    component="img"
+                                                                                    src={member.profilePicture}
+                                                                                    alt={memberDisplayName}
+                                                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                                                />
+                                                                            ) : (
+                                                                                <Box
+                                                                                    sx={{
+                                                                                        width: '100%',
+                                                                                        height: '100%',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        backgroundColor: getAvatarBackgroundColor(memberDisplayName || String(member.id || 'player')),
+                                                                                        color: '#fff',
+                                                                                        fontWeight: 800,
+                                                                                        fontSize: { xs: 12, sm: 13 },
+                                                                                        textTransform: 'uppercase',
+                                                                                        letterSpacing: 0.4,
+                                                                                    }}
+                                                                                >
+                                                                                    {getAvatarInitials({ name: memberDisplayName, firstName, lastName })}
+                                                                                </Box>
+                                                                            )}
+                                                                        </Box>
+                                                                    </ListItemAvatar>
+                                                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                                        <Typography noWrap sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 }, color: '#fff', fontFamily: '"Woodford Bourne Pro", sans-serif', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                            {formatPlayerCardStyleName(firstName, lastName)}
+                                                                        </Typography>
+                                                                        <Typography sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                            {getMemberPositionLabel(member)}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </Box>
 
-                                                                {/* Playing Style */}
-                                                                <div className="text-center text-foreground truncate px-1">{member.style}</div>
+                                                                {/* Playing Style column */}
+                                                                <Box sx={{
+                                                                    width: { xs: 108, sm: 150, md: 180 },
+                                                                    minWidth: { xs: 108, sm: 150, md: 180 },
+                                                                    flexShrink: 0,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    pr: { xs: 0.5, sm: 2 }
+                                                                }}>
+                                                                    <Typography sx={{ fontSize: { xs: 11, sm: 13 }, color: 'rgba(255,255,255,0.9)', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                        {member.style}
+                                                                    </Typography>
+                                                                </Box>
 
-                                                                {/* Empty spacer */}
-                                                                <div></div>
+                                                                {/* Spacer */}
+                                                                <Box sx={{ flex: 1 }} />
 
-                                                                {/* View Stats */}
-                                                                <div className="text-center flex justify-center items-center">
-                                                                    <Image src={TableGraphIcon} alt="View Stats" width={24} height={24} style={{ objectFit: 'contain' }} />
-                                                                </div>
+                                                                {/* View Stats column */}
+                                                                <Box sx={{ minWidth: { xs: 90, sm: 120 }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                                    <Image src={TableGraphIcon} alt="View Stats" width={isMobile ? 23 : 30} height={isMobile ? 23 : 30} style={{ objectFit: 'contain' }} />
+                                                                </Box>
 
-                                                                {/* XP Points */}
-                                                                <div className="text-center text-foreground font-bold">{getLeagueXpForMember(member.id, member.xp)}</div>
-                                                            </div>
+                                                                {/* XP Points column */}
+                                                                <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 5.5 }, textAlign: 'center' }}>
+                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                        {getLeagueXpForMember(member.id, member.xp)}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </ListItem>
                                                         );
                                                     })}
-                                            </div>
-                                            </div>
+                                                </List>
+                                            </Box>
                                         </Box>
-                                    </Card>
-                                </div>
+                                    </Box>
+                                </Box>
+
                             )}
                             {section === 'matches' && (
                                 // Fixtures Section - Upcoming Matches
@@ -4484,50 +4564,50 @@ export default function LeagueDetailPage() {
                                     pb: { xs: 2, md: 3 },
                                     // p: 2
                                 }}>
-                                {isAdmin && (
-                                    league?.active ? (
-                                        <Link href={`/league/${leagueId}/match`} passHref>
+                                    {isAdmin && (
+                                        league?.active ? (
+                                            <Link href={`/league/${leagueId}/match`} passHref>
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    sx={{
+                                                        background: '#dddddd',
+                                                        color: '#e1671e',
+                                                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
+                                                        fontWeight: 600,
+                                                        py: 0.5,
+                                                        mb: 3,
+                                                        borderRadius: 1,
+                                                        textTransform: 'none',
+                                                        '&:hover': {
+                                                            background: '#cbcaca',
+                                                        },
+                                                    }}
+                                                >
+                                                    <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                                </Button>
+                                            </Link>
+                                        ) : (
                                             <Button
                                                 fullWidth
                                                 variant="contained"
+                                                onClick={() => toast.error(inactiveLeagueMatchMessage)}
                                                 sx={{
-                                                    background: '#dddddd',
-                                                    color: '#e1671e',
+                                                    background: 'rgba(255,255,255,0.12)',
+                                                    color: 'rgba(255,255,255,0.45)',
                                                     fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
                                                     fontWeight: 600,
                                                     py: 0.5,
                                                     mb: 3,
                                                     borderRadius: 1,
                                                     textTransform: 'none',
-                                                    '&:hover': {
-                                                        background: '#cbcaca',
-                                                    },
+                                                    '&:hover': { background: 'rgba(255,255,255,0.18)' },
                                                 }}
                                             >
                                                 <span className="mr-2 text-[#656565]">+ </span>   New Match
                                             </Button>
-                                        </Link>
-                                    ) : (
-                                        <Button
-                                            fullWidth
-                                            variant="contained"
-                                            onClick={() => toast.error(inactiveLeagueMatchMessage)}
-                                            sx={{
-                                                background: 'rgba(255,255,255,0.12)',
-                                                color: 'rgba(255,255,255,0.45)',
-                                                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
-                                                fontWeight: 600,
-                                                py: 0.5,
-                                                mb: 3,
-                                                borderRadius: 1,
-                                                textTransform: 'none',
-                                                '&:hover': { background: 'rgba(255,255,255,0.18)' },
-                                            }}
-                                        >
-                                            <span className="mr-2 text-[#656565]">+ </span>   New Match
-                                        </Button>
-                                    )
-                                )}
+                                        )
+                                    )}
 
                                     <Typography
                                         sx={{
@@ -4853,7 +4933,7 @@ export default function LeagueDetailPage() {
                                                                         {isAdmin ? (
                                                                             <>
                                                                                 <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}>
-                                                                                     Admin Only
+                                                                                    Admin Only
                                                                                 </Typography>
                                                                                 <Button
                                                                                     onClick={(e) => {
@@ -5020,7 +5100,7 @@ export default function LeagueDetailPage() {
                                                             display: 'block',
                                                         },
                                                     } as const;
-                                                    
+
                                                     // Calculate win result
                                                     const homeGoals = match.homeTeamGoals ?? 0;
                                                     const awayGoals = match.awayTeamGoals ?? 0;
@@ -5174,7 +5254,7 @@ export default function LeagueDetailPage() {
                                                                                     Goal Score
                                                                                 </Typography>
                                                                             </Box>
-                                                                            
+
                                                                             {/* V/S */}
                                                                             <Typography sx={{
                                                                                 fontFamily: '"Oswald", sans-serif !important',
@@ -5187,7 +5267,7 @@ export default function LeagueDetailPage() {
                                                                             }}>
                                                                                 V/S
                                                                             </Typography>
-                                                                            
+
                                                                             {/* Away Goals with label below */}
                                                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                                                 <Typography sx={{
@@ -5296,7 +5376,7 @@ export default function LeagueDetailPage() {
                                                                                         <>
                                                                                             <Typography
                                                                                                 sx={{
-                                                                                                    color: motmPlayerName? '#FFD700' : '#ffff',
+                                                                                                    color: motmPlayerName ? '#FFD700' : '#ffff',
                                                                                                     fontSize: '0.6rem',
                                                                                                     fontWeight: 700,
                                                                                                     textAlign: 'center',
@@ -5339,53 +5419,53 @@ export default function LeagueDetailPage() {
                                                                                     match.archived ||
                                                                                     !isSelectedSeasonActive;
                                                                                 return (
-                                                                                <Box
-                                                                                    onClick={() => {
-                                                                                        if (!isAdmin && !isInMatch) {
-                                                                                            toast('You are not added to this match', {
-                                                                                                icon: '⚠️',
-                                                                                                duration: 4000,
-                                                                                                style: {
-                                                                                                    background: '#F97316',
-                                                                                                    color: '#fff',
-                                                                                                    fontWeight: 600,
-                                                                                                    fontSize: '0.95rem',
-                                                                                                    padding: '14px 20px',
-                                                                                                    borderRadius: '12px',
-                                                                                                    boxShadow: '0 4px 20px rgba(249, 115, 22, 0.5)',
-                                                                                                },
-                                                                                            });
-                                                                                            return;
-                                                                                        }
-                                                                                        if (!isDisabled) {
-                                                                                            setSelectedMatchIdForDialog(match.id);
-                                                                                            setShouldShowAdminGoals(false);
-                                                                                            setMatchStatsOpen(true);
-                                                                                        }
-                                                                                    }}
-                                                                                    sx={{
-                                                                                        cursor: 'pointer',
-                                                                                        width: '100%',
-                                                                                        '&:hover .add-stats-btn': {
-                                                                                            backgroundColor: '#444',
-                                                                                        },
-                                                                                    }}
-                                                                                >
-                                                                                <Button
-                                                                                    className="add-stats-btn"
-                                                                                    size="small"
-                                                                                startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
-                                                                                    disabled={isDisabled && (isAdmin || !!isInMatch)}
-                                                                                    sx={{
-                                                                                        ...cardActionButtonSx,
-                                                                                        pointerEvents: 'none',
-                                                                                        border: '1.4px solid #F97316',
-                                                                                        '&.Mui-disabled': { color: 'white' },
-                                                                                    }}
-                                                                                >
-                                                                                   Add Stats
-                                                                                </Button>
-                                                                                </Box>
+                                                                                    <Box
+                                                                                        onClick={() => {
+                                                                                            if (!isAdmin && !isInMatch) {
+                                                                                                toast('You are not added to this match', {
+                                                                                                    icon: '⚠️',
+                                                                                                    duration: 4000,
+                                                                                                    style: {
+                                                                                                        background: '#F97316',
+                                                                                                        color: '#fff',
+                                                                                                        fontWeight: 600,
+                                                                                                        fontSize: '0.95rem',
+                                                                                                        padding: '14px 20px',
+                                                                                                        borderRadius: '12px',
+                                                                                                        boxShadow: '0 4px 20px rgba(249, 115, 22, 0.5)',
+                                                                                                    },
+                                                                                                });
+                                                                                                return;
+                                                                                            }
+                                                                                            if (!isDisabled) {
+                                                                                                setSelectedMatchIdForDialog(match.id);
+                                                                                                setShouldShowAdminGoals(false);
+                                                                                                setMatchStatsOpen(true);
+                                                                                            }
+                                                                                        }}
+                                                                                        sx={{
+                                                                                            cursor: 'pointer',
+                                                                                            width: '100%',
+                                                                                            '&:hover .add-stats-btn': {
+                                                                                                backgroundColor: '#444',
+                                                                                            },
+                                                                                        }}
+                                                                                    >
+                                                                                        <Button
+                                                                                            className="add-stats-btn"
+                                                                                            size="small"
+                                                                                            startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
+                                                                                            disabled={isDisabled && (isAdmin || !!isInMatch)}
+                                                                                            sx={{
+                                                                                                ...cardActionButtonSx,
+                                                                                                pointerEvents: 'none',
+                                                                                                border: '1.4px solid #F97316',
+                                                                                                '&.Mui-disabled': { color: 'white' },
+                                                                                            }}
+                                                                                        >
+                                                                                            Add Stats
+                                                                                        </Button>
+                                                                                    </Box>
                                                                                 );
                                                                             })()}
 
@@ -5413,7 +5493,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border:'1.4px solid #F97316',
+                                                                                    border: '1.4px solid #F97316',
                                                                                     '&.Mui-disabled': { color: 'white' },
                                                                                 }}
                                                                             >
@@ -5435,8 +5515,8 @@ export default function LeagueDetailPage() {
                                                                     }}>
                                                                         {isAdmin ? (
                                                                             <>
-                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' , ml:'5px' }}>
-                                                                                     Admin Only
+                                                                                <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}>
+                                                                                    Admin Only
                                                                                 </Typography>
                                                                                 {/* Add Score Button */}
                                                                                 <Button
@@ -5446,7 +5526,7 @@ export default function LeagueDetailPage() {
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
                                                                                     disabled={match.archived || !league?.active}
-                                                                                    startIcon={<Edit size={14}  color="#00a77f" />}
+                                                                                    startIcon={<Edit size={14} color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
                                                                                         justifyContent: 'flex-start',
@@ -5476,7 +5556,7 @@ export default function LeagueDetailPage() {
                                                                                         textTransform: 'none',
                                                                                         p: 0,
                                                                                         ml: '5px',
-                                                                                       fontSize: '0.7rem',
+                                                                                        fontSize: '0.7rem',
                                                                                         fontWeight: 600,
                                                                                         whiteSpace: 'nowrap',
                                                                                         textDecoration: 'underline',
@@ -5596,7 +5676,7 @@ export default function LeagueDetailPage() {
                                     right: '50%',
                                     marginLeft: '-50vw',
                                     marginRight: '-50vw',
-                                    mt:-4
+                                    mt: -4
                                 }}>
                                     {dreamTeamLoading ? (
                                         <LeagueDetailLoadingSkeleton mode="dream" />
@@ -5615,18 +5695,18 @@ export default function LeagueDetailPage() {
                                                     mt: 0,
                                                 }}
                                             >
-                                                <Image 
-                                                    fill 
-                                                    src={fieldImg} 
-                                                    alt="Football Field" 
-                                                    style={{ 
-                                                        width: '100%', 
+                                                <Image
+                                                    fill
+                                                    src={fieldImg}
+                                                    alt="Football Field"
+                                                    style={{
+                                                        width: '100%',
                                                         height: '100%',
                                                         objectFit: 'cover',
                                                         objectPosition: 'center center'
-                                                    }} 
+                                                    }}
                                                 />
-                                                
+
                                                 {/* Dream Team Title Text Overlay */}
                                                 <Box
                                                     sx={{
@@ -5657,22 +5737,22 @@ export default function LeagueDetailPage() {
                                                 {(() => {
                                                     // Get league members with their XP
                                                     const leagueMembers = filteredLeague?.members || [];
-                                                    
+
                                                     // Map members with their XP and sort by XP (highest first)
                                                     const playersWithXP = leagueMembers.map(member => ({
                                                         ...member,
                                                         xp: getLeagueXpForMember(member.id, member.xp)
                                                     })).sort((a, b) => b.xp - a.xp);
-                                                    
+
                                                     // Take top 5 players based on XP
                                                     const playersToShow = playersWithXP.slice(0, 5);
-                                                    
+
                                                     console.log('✅ Dream Team - Top 5 XP Players:', playersToShow.map(p => ({
                                                         name: `${p?.firstName || ''} ${p?.lastName || ''}`.trim(),
                                                         xp: p?.xp || 0,
                                                         positionType: p?.positionType || 'N/A'
                                                     })));
-                                                    
+
                                                     // Define positions based on number of players (adjusted to stay inside pitch boundaries)
                                                     const getPositions = (count: number) => {
                                                         if (count === 1) {
@@ -5706,74 +5786,74 @@ export default function LeagueDetailPage() {
                                                             ];
                                                         }
                                                     };
-                                                    
+
                                                     const positions = getPositions(playersToShow.length);
-                                                    
+
                                                     return playersToShow.map((player, idx) => {
                                                         const pos = positions[idx];
-                                                        if (!player || !pos) return null; 
-                                                    return (
-                                                        <Box
-                                                            key={`player-${idx}-${player.id}`}
-                                                            sx={{
-                                                                position: 'absolute',
-                                                                left: pos.left,
-                                                                top: pos.top,
-                                                                transform: 'translate(-50%, -50%)',
-                                                                textAlign: 'center',
-                                                                zIndex: 2,
-                                                            }}
-                                                        >
-                                                            {/* Shirt */}
+                                                        if (!player || !pos) return null;
+                                                        return (
                                                             <Box
+                                                                key={`player-${idx}-${player.id}`}
                                                                 sx={{
-                                                                    position: 'relative',
-                                                                    width: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
-                                                                    height: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
-                                                                    mb: -0.5,
+                                                                    position: 'absolute',
+                                                                    left: pos.left,
+                                                                    top: pos.top,
+                                                                    transform: 'translate(-50%, -50%)',
+                                                                    textAlign: 'center',
+                                                                    zIndex: 2,
                                                                 }}
                                                             >
-                                                                <Link href={`/player/${player.id}`} prefetch={false}>
-                                                                    <Image
-                                                                        src={ShirtImg.src}
-                                                                        alt="Player Shirt"
-                                                                        width={70}
-                                                                        height={70}
-                                                                        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
-                                                                    />
-                                                                </Link>
-                                                            </Box>
-                                                            
-                                                            {/* Player Name - Below Shirt */}
-                                                            <Box
-                                                                sx={{
-                                                                    position: 'relative',
-                                                                    width: 'max-content',
-                                                                    mx: 'auto',
-                                                                }}
-                                                            >
-                                                                <Typography
-                                                                    component="div"
+                                                                {/* Shirt */}
+                                                                <Box
                                                                     sx={{
-                                                                        color: '#ffffff',
-                                                                        fontWeight: 700,
-                                                                        fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px', xl: '14px' },
-                                                                        lineHeight: 1.2,
-                                                                        textAlign: 'center',
-                                                                        // textShadow: '3px 3px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8)',
-                                                                        whiteSpace: 'nowrap',
-                                                                        // backgroundColor: 'rgba(0,0,0,0.6)',
-                                                                        padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px', xl: '4px 12px' },
-                                                                        // borderRadius: '6px',
-                                                                        // border: '1px solid rgba(255,255,255,0.2)',
+                                                                        position: 'relative',
+                                                                        width: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
+                                                                        height: { xs: 40, sm: 50, md: 60, lg: 70, xl: 82 },
+                                                                        mb: -0.5,
                                                                     }}
                                                                 >
-                                                                    {formatPlayerCardStyleName(player?.firstName, player?.lastName)}
-                                                                </Typography>
+                                                                    <Link href={`/player/${player.id}`} prefetch={false}>
+                                                                        <Image
+                                                                            src={ShirtImg.src}
+                                                                            alt="Player Shirt"
+                                                                            width={70}
+                                                                            height={70}
+                                                                            style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+                                                                        />
+                                                                    </Link>
+                                                                </Box>
+
+                                                                {/* Player Name - Below Shirt */}
+                                                                <Box
+                                                                    sx={{
+                                                                        position: 'relative',
+                                                                        width: 'max-content',
+                                                                        mx: 'auto',
+                                                                    }}
+                                                                >
+                                                                    <Typography
+                                                                        component="div"
+                                                                        sx={{
+                                                                            color: '#ffffff',
+                                                                            fontWeight: 700,
+                                                                            fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px', xl: '14px' },
+                                                                            lineHeight: 1.2,
+                                                                            textAlign: 'center',
+                                                                            // textShadow: '3px 3px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8)',
+                                                                            whiteSpace: 'nowrap',
+                                                                            // backgroundColor: 'rgba(0,0,0,0.6)',
+                                                                            padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px', xl: '4px 12px' },
+                                                                            // borderRadius: '6px',
+                                                                            // border: '1px solid rgba(255,255,255,0.2)',
+                                                                        }}
+                                                                    >
+                                                                        {formatPlayerCardStyleName(player?.firstName, player?.lastName)}
+                                                                    </Typography>
+                                                                </Box>
                                                             </Box>
-                                                        </Box>
-                                                    );
-                                                });
+                                                        );
+                                                    });
                                                 })()}
                                             </Box>
                                         </>
@@ -5830,51 +5910,51 @@ export default function LeagueDetailPage() {
                                         >
                                             <div className="min-w-[980px] rounded-lg overflow-hidden league-table">
                                                 {/* Header Bar aligned to table grid */}
-                                            <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
-                                                <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
-                                                    <span className="text-muted-foreground">{invitePlayersMessage}</span>
-                                                    <span className="font-bold">{inviteCodeDisplay}</span>
-                                                    <button
-                                                        type="button"
-                                                        className="group p-1.5 rounded border border-transparent cursor-pointer transition-all duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffff]"
-                                                        onClick={handleCopySeasonInviteCode}
-                                                        aria-label="Copy invite code"
-                                                        title="Copy invite code"
-                                                    >
-                                                        <Copy className="w-4 h-4 transition-all duration-150 group-hover:text-[#00000] group-hover:scale-110" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="p-1.5 hover:bg-muted rounded transition-colors"
-                                                        onClick={handleShareSeasonInvite}
-                                                        aria-label="Share invite code"
-                                                    >
-                                                        <Share2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                                {isAdmin && (
-                                                    <div className="col-start-10 col-span-2 justify-self-end">
-                                                        {league?.active ? (
-                                                            <Link href={`/league/${leagueId}/match`} passHref>
-                                                                <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
+                                                    <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
+                                                        <span className="text-muted-foreground">{invitePlayersMessage}</span>
+                                                        <span className="font-bold">{inviteCodeDisplay}</span>
+                                                        <button
+                                                            type="button"
+                                                            className="group p-1.5 rounded border border-transparent cursor-pointer transition-all duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffff]"
+                                                            onClick={handleCopySeasonInviteCode}
+                                                            aria-label="Copy invite code"
+                                                            title="Copy invite code"
+                                                        >
+                                                            <Copy className="w-4 h-4 transition-all duration-150 group-hover:text-[#00000] group-hover:scale-110" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="p-1.5 hover:bg-muted rounded transition-colors"
+                                                            onClick={handleShareSeasonInvite}
+                                                            aria-label="Share invite code"
+                                                        >
+                                                            <Share2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                    {isAdmin && (
+                                                        <div className="col-start-10 col-span-2 justify-self-end">
+                                                            {league?.active ? (
+                                                                <Link href={`/league/${leagueId}/match`} passHref>
+                                                                    <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
+                                                                        + New Match
+                                                                    </button>
+                                                                </Link>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toast.error(inactiveLeagueMatchMessage)}
+                                                                    className="bg-white/15 text-white/55 font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap hover:bg-white/20"
+                                                                >
                                                                     + New Match
                                                                 </button>
-                                                            </Link>
-                                                        ) : (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => toast.error(inactiveLeagueMatchMessage)}
-                                                                className="bg-white/15 text-white/55 font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap hover:bg-white/20"
-                                                            >
-                                                                + New Match
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
 
-                                            {/* Table Header */}
-                                            <div className="grid mt-0 grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header border-b border-border text-muted-foreground league-header-row league-header-inset league-table-heading">
+                                                {/* Table Header */}
+                                                {/* <div className="grid mt-0 grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header border-b border-border text-muted-foreground league-header-row league-header-inset league-table-heading">
                                                 <div className="text-center">#</div>
                                                 <div className="pl-[52px] text-left">NAME</div>
                                                 <div className="text-center">MOTM</div>
@@ -5885,132 +5965,148 @@ export default function LeagueDetailPage() {
                                                 <div className="text-center">GD</div>
                                                 <div className="text-center">W%</div>
                                                 <div className="text-center">{filteredLeague?.showPoints === true ? 'XP' : 'PTS'}</div>
-                                            </div>
+                                            </div> */}
 
-                                            {/* Table Rows */}
-                                            <div>
-                                                {(() => {
-                                                    console.log('📊 Table rendering with:', {
-                                                        filteredLeagueShowPoints: filteredLeague?.showPoints,
-                                                        leagueShowPoints: league?.showPoints,
-                                                        selectedSeasonId: selectedSeasonId,
-                                                        willUseXp: filteredLeague?.showPoints === true
-                                                    });
-                                                    return null;
-                                                })()}
-                                                {[...tableData]
-                                                    .sort((a, b) => {
-                                                        const aPts = (a.wins ?? 0) * 3 + (a.draws ?? 0);
-                                                        const bPts = (b.wins ?? 0) * 3 + (b.draws ?? 0);
-                                                        const aXP = a.xp ?? 0;
-                                                        const bXP = b.xp ?? 0;
-                                                        // showPoints=true means Advanced Scoring, so the final column uses XP.
-                                                        const useXpScoring = filteredLeague?.showPoints === true;
-                                                        const aScore = useXpScoring ? aXP : aPts;
-                                                        const bScore = useXpScoring ? bXP : bPts;
-                                                        if (bScore !== aScore) return bScore - aScore;
-                                                        if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0);
-                                                        if ((a.played ?? 0) !== (b.played ?? 0)) return (a.played ?? 0) - (b.played ?? 0);
-                                                        return (a.name || '').localeCompare(b.name || '');
-                                                    })
-                                                    .map((player, index) => {
-                                                        const points = (player.wins ?? 0) * 3 + (player.draws ?? 0);
-                                                        const firstName = player.name.split(' ')[0] || player.name;
-                                                        const lastName = player.name.split(' ').slice(1).join(' ') || '';
-                                                        // showPoints=true means Advanced Scoring, so the final column uses XP.
-                                                        const useXpScoring = filteredLeague?.showPoints === true;
-                                                        const xpPts = useXpScoring ? (player.xp ?? 0) : points;
-
-                                                        const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || '-';
-                                                        const member = (league?.members || []).find(m => String(m.id) === String(player.id));
-                                                        const playerWithOptionalImage = player as TableData & {
-                                                            imageUrl?: string;
-                                                            profileImage?: string;
-                                                            image?: string;
-                                                        };
-                                                        const playerImageSrcRaw =
-                                                            member?.profilePicture ||
-                                                            playerWithOptionalImage.imageUrl ||
-                                                            playerWithOptionalImage.profileImage ||
-                                                            playerWithOptionalImage.image ||
-                                                            '';
-                                                        const playerImageSrc =
-                                                            typeof playerImageSrcRaw === 'string' && playerImageSrcRaw.trim().length > 0
-                                                                ? playerImageSrcRaw.trim()
-                                                                : '';
-                                                        const tablePlayerName = `${firstName} ${lastName}`.trim() || player.name;
-                                                        const tablePlayerInitials = getAvatarInitials({
-                                                            name: tablePlayerName,
-                                                            firstName,
-                                                            lastName,
+                                                <>
+                                                    <div className="grid mt-0 grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading">
+                                                        <div className="text-center">#</div>
+                                                        <div className="pl-[52px] text-left">NAME</div>
+                                                        <div className="text-center">MOTM</div>
+                                                        <div className="text-center">P</div>
+                                                        <div className="text-center">W</div>
+                                                        <div className="text-center">D</div>
+                                                        <div className="text-center">L</div>
+                                                        <div className="text-center">GD</div>
+                                                        <div className="text-center">W%</div>
+                                                        <div className="text-center">{filteredLeague?.showPoints === true ? 'XP' : 'PTS'}</div>
+                                                    </div>
+                                                    {/* Full width border alag */}
+                                                    <div className="w-full border-b border-border" />
+                                                </>
+                                                {/* Table Rows */}
+                                                <div>
+                                                    {(() => {
+                                                        console.log('📊 Table rendering with:', {
+                                                            filteredLeagueShowPoints: filteredLeague?.showPoints,
+                                                            leagueShowPoints: league?.showPoints,
+                                                            selectedSeasonId: selectedSeasonId,
+                                                            willUseXp: filteredLeague?.showPoints === true
                                                         });
-                                                        const isEven = index % 2 === 0;
+                                                        return null;
+                                                    })()}
+                                                    {[...tableData]
+                                                        .sort((a, b) => {
+                                                            const aPts = (a.wins ?? 0) * 3 + (a.draws ?? 0);
+                                                            const bPts = (b.wins ?? 0) * 3 + (b.draws ?? 0);
+                                                            const aXP = a.xp ?? 0;
+                                                            const bXP = b.xp ?? 0;
+                                                            // showPoints=true means Advanced Scoring, so the final column uses XP.
+                                                            const useXpScoring = filteredLeague?.showPoints === true;
+                                                            const aScore = useXpScoring ? aXP : aPts;
+                                                            const bScore = useXpScoring ? bXP : bPts;
+                                                            if (bScore !== aScore) return bScore - aScore;
+                                                            if ((b.wins ?? 0) !== (a.wins ?? 0)) return (b.wins ?? 0) - (a.wins ?? 0);
+                                                            if ((a.played ?? 0) !== (b.played ?? 0)) return (a.played ?? 0) - (b.played ?? 0);
+                                                            return (a.name || '').localeCompare(b.name || '');
+                                                        })
+                                                        .map((player, index) => {
+                                                            const points = (player.wins ?? 0) * 3 + (player.draws ?? 0);
+                                                            const firstName = player.name.split(' ')[0] || player.name;
+                                                            const lastName = player.name.split(' ').slice(1).join(' ') || '';
+                                                            // showPoints=true means Advanced Scoring, so the final column uses XP.
+                                                            const useXpScoring = filteredLeague?.showPoints === true;
+                                                            const xpPts = useXpScoring ? (player.xp ?? 0) : points;
 
-                                                        return (
-                                                            <div
-                                                                key={player.id}
-                                                                onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                className={`grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
-                                                            >
-                                                                {/* Rank */}
-                                                                <div className="text-center text-foreground font-medium">{index + 1}</div>
+                                                            const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || '-';
+                                                            const member = (league?.members || []).find(m => String(m.id) === String(player.id));
+                                                            const playerWithOptionalImage = player as TableData & {
+                                                                imageUrl?: string;
+                                                                profileImage?: string;
+                                                                image?: string;
+                                                            };
+                                                            const playerImageSrcRaw =
+                                                                member?.profilePicture ||
+                                                                playerWithOptionalImage.imageUrl ||
+                                                                playerWithOptionalImage.profileImage ||
+                                                                playerWithOptionalImage.image ||
+                                                                '';
+                                                            const playerImageSrc =
+                                                                typeof playerImageSrcRaw === 'string' && playerImageSrcRaw.trim().length > 0
+                                                                    ? playerImageSrcRaw.trim()
+                                                                    : '';
+                                                            const tablePlayerName = `${firstName} ${lastName}`.trim() || player.name;
+                                                            const tablePlayerInitials = getAvatarInitials({
+                                                                name: tablePlayerName,
+                                                                firstName,
+                                                                lastName,
+                                                            });
+                                                            const isEven = index % 2 === 0;
 
-                                                                {/* Player Info */}
-                                                                <div className="flex items-center gap-3 min-w-0">
-                                                                    <div
-                                                                        className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
-                                                                        style={{
-                                                                            backgroundColor: playerImageSrc
-                                                                                ? 'transparent'
-                                                                                : getAvatarBackgroundColor(tablePlayerName || String(player.id || 'player')),
-                                                                        }}
-                                                                    >
-                                                                        {playerImageSrc ? (
-                                                                            <div className="relative w-full h-full">
-                                                                                <Image src={playerImageSrc} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                            return (
+                                                                <div
+                                                                    key={player.id}
+                                                                    onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
+                                                                    className={`grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
+                                                                >
+                                                                    {/* Rank */}
+                                                                    <div className="text-center text-foreground font-medium">{index + 1}</div>
+
+                                                                    {/* Player Info */}
+                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                        <div
+                                                                            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
+                                                                            style={{
+                                                                                backgroundColor: playerImageSrc
+                                                                                    ? 'transparent'
+                                                                                    : getAvatarBackgroundColor(tablePlayerName || String(player.id || 'player')),
+                                                                            }}
+                                                                        >
+                                                                            {playerImageSrc ? (
+                                                                                <div className="relative w-full h-full">
+                                                                                    <Image src={playerImageSrc} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                                                </div>
+                                                                            ) : (
+                                                                                tablePlayerInitials
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex flex-col min-w-0">
+                                                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                                                <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
+                                                                                {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
+                                                                            <span className="text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* MOTM */}
+                                                                    <div className="text-center">
+                                                                        {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
+                                                                            <span className="inline-flex items-center gap-1">
+                                                                                <span className="text-foreground font-medium">{player.motmCount}</span>
+                                                                                <span className="inline-flex items-center" style={{ verticalAlign: 'middle' }}>
+                                                                                    {/* Using MUI Star icon already imported */}
+                                                                                    <Star sx={{ fontSize: 18, color: '#F59E0B' }} />
+                                                                                </span>
+                                                                            </span>
                                                                         ) : (
-                                                                            tablePlayerInitials
+                                                                            <span className="text-muted-foreground">-</span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="flex flex-col min-w-0">
-                                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                                            <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
-                                                                            {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
-                                                                        </div>
-                                                                        <span className="text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
+
+                                                                    {/* Stats */}
+                                                                    <div className="text-center text-foreground">{player.played}</div>
+                                                                    <div className="text-center text-foreground">{player.wins}</div>
+                                                                    <div className="text-center text-foreground">{player.draws}</div>
+                                                                    <div className="text-center text-foreground">{player.losses}</div>
+                                                                    <div className="text-center text-foreground">
+                                                                        {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
                                                                     </div>
+                                                                    <div className="text-center text-foreground">{player.winPercentage}</div>
+                                                                    <div className="text-center text-foreground font-bold">{xpPts}</div>
                                                                 </div>
-
-                                                                {/* MOTM */}
-                                                                <div className="text-center">
-                                                                    {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
-                                                                        <span className="inline-flex items-center gap-1">
-                                                                            <span className="text-foreground font-medium">{player.motmCount}</span>
-                                                                            <span className="inline-flex items-center" style={{ verticalAlign: 'middle' }}>
-                                                                                {/* Using MUI Star icon already imported */}
-                                                                                <Star sx={{ fontSize: 18, color: '#F59E0B' }} />
-                                                                            </span>
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground">-</span>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Stats */}
-                                                                <div className="text-center text-foreground">{player.played}</div>
-                                                                <div className="text-center text-foreground">{player.wins}</div>
-                                                                <div className="text-center text-foreground">{player.draws}</div>
-                                                                <div className="text-center text-foreground">{player.losses}</div>
-                                                                <div className="text-center text-foreground">
-                                                                    {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
-                                                                </div>
-                                                                <div className="text-center text-foreground">{player.winPercentage}</div>
-                                                                <div className="text-center text-foreground font-bold">{xpPts}</div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                            </div>
+                                                            );
+                                                        })}
+                                                </div>
                                             </div>
                                         </Box>
                                         {tableHasHorizontalOverflow && (
@@ -6308,7 +6404,7 @@ export default function LeagueDetailPage() {
                                                 </Box>
 
                                                 {/* Players List */}
-                                                <Box sx={{ p: 0 , ml:-1.2 , mt:-0.5}}>
+                                                <Box sx={{ p: 0, ml: -1.2, mt: -0.5 }}>
                                                     {leaderboardLoading ? (
                                                         <LeagueDetailLoadingSkeleton mode="list" />
                                                     ) : (
@@ -6911,7 +7007,7 @@ export default function LeagueDetailPage() {
                                 alignItems: 'start',
                                 justifyContent: 'center',
                                 minHeight: { xs: '308px', sm: '438px' },
-                               
+
 
                             }}
                         >
@@ -6930,95 +7026,95 @@ export default function LeagueDetailPage() {
                                 mt: { xs: 3.4, sm: 6 }
                             }}>
                                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: { xs: 0.06, sm: 0 },
-                                }}
-                            >
-                                {[
-                                    { img: Goals, label: 'Goals', shortLabel: 'Goals', value: quickView.stats?.goals ?? 0 },
-                                    { img: Assist, label: 'Assists', shortLabel: 'Assist', value: quickView.stats?.assists ?? 0 },
-                                    { img: Cleansheet, label: 'Clean Sheets', shortLabel: 'Clean', value: quickView.cleanSheets ?? 0 },
-                                    { img: Momt, label: 'Votes', shortLabel: 'Votes', value: quickView.motmCount ?? 0 },
-                                    { img: DefensiveImpact, label: 'Defensive Impact', shortLabel: 'Def', value: quickView.defensiveImpact ?? 0 },
-                                    { img: Mentality, label: 'Mentality', shortLabel: 'Mental', value: quickView.mentality ?? 0 },
-                                ].map((it, i) => (
-                                    <Box
-                                        key={i}
-                                        sx={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'flex-start',
-                                            gap: 0.5,
-                                            p: { xs: 0.02, sm: 0.3 },
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
-                                            <Image src={it.img} alt={it.label} width={isMobile ? 10 : 20} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.58rem', sm: '0.9rem' }, lineHeight: 1 }}>
-                                                {it.value}
-                                            </Typography>
-                                        </Box>
-                                        <Typography
-                                            variant="caption"
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: { xs: 0.06, sm: 0 },
+                                    }}
+                                >
+                                    {[
+                                        { img: Goals, label: 'Goals', shortLabel: 'Goals', value: quickView.stats?.goals ?? 0 },
+                                        { img: Assist, label: 'Assists', shortLabel: 'Assist', value: quickView.stats?.assists ?? 0 },
+                                        { img: Cleansheet, label: 'Clean Sheets', shortLabel: 'Clean', value: quickView.cleanSheets ?? 0 },
+                                        { img: Momt, label: 'Votes', shortLabel: 'Votes', value: quickView.motmCount ?? 0 },
+                                        { img: DefensiveImpact, label: 'Defensive Impact', shortLabel: 'Def', value: quickView.defensiveImpact ?? 0 },
+                                        { img: Mentality, label: 'Mentality', shortLabel: 'Mental', value: quickView.mentality ?? 0 },
+                                    ].map((it, i) => (
+                                        <Box
+                                            key={i}
                                             sx={{
-                                                color: '#64748b',
-                                                fontSize: { xs: '0.43rem', sm: '0.65rem' },
-                                                textAlign: 'left',
-                                                lineHeight: 1,
-                                                whiteSpace: 'nowrap',
-                                                letterSpacing: 0,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'flex-start',
+                                                gap: 0.5,
+                                                p: { xs: 0.02, sm: 0.3 },
                                             }}
                                         >
-                                            {isMobile ? it.shortLabel : it.label}
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                            <Button
-                                variant="text"
-                                disableRipple
-                                disableFocusRipple
-                                onClick={() => {
-                                    const playerId = quickView.player?.id;
-                                    if (!playerId) return;
-                                    setOpenQuickView(false);
-                                    router.push(`/player/${playerId}`);
-                                }}
-                                sx={{
-                                     
-                                    color: '#1976d2',
-                                    fontSize: { xs: '0.48rem', sm: '0.75rem' },
-                                    fontWeight: 600,
-                                    textTransform: 'none',
-                                    textDecoration: 'underline',
-                                    textUnderlineOffset: '3px',
-                                    WebkitTapHighlightColor: 'transparent',
-                                    padding: { xs: '1px 2px', sm: '4px 8px' },
-                                    minWidth: 'auto',
-                                    '&:hover': {
-                                        backgroundColor: 'transparent',
-                                    },
-                                    '&:active': {
-                                        boxShadow: 'none',
-                                        backgroundColor: 'transparent',
-                                    },
-                                    '&:focus': {
-                                        boxShadow: 'none',
-                                        outline: 'none',
-                                        backgroundColor: 'transparent',
-                                    },
-                                    '&.Mui-focusVisible': {
-                                        boxShadow: 'none',
-                                        outline: 'none',
-                                        backgroundColor: 'transparent',
-                                    },
-                                }}
-                            >
-                                More Stats
-                            </Button>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
+                                                <Image src={it.img} alt={it.label} width={isMobile ? 10 : 20} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
+                                                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.58rem', sm: '0.9rem' }, lineHeight: 1 }}>
+                                                    {it.value}
+                                                </Typography>
+                                            </Box>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: '#64748b',
+                                                    fontSize: { xs: '0.43rem', sm: '0.65rem' },
+                                                    textAlign: 'left',
+                                                    lineHeight: 1,
+                                                    whiteSpace: 'nowrap',
+                                                    letterSpacing: 0,
+                                                }}
+                                            >
+                                                {isMobile ? it.shortLabel : it.label}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                                <Button
+                                    variant="text"
+                                    disableRipple
+                                    disableFocusRipple
+                                    onClick={() => {
+                                        const playerId = quickView.player?.id;
+                                        if (!playerId) return;
+                                        setOpenQuickView(false);
+                                        router.push(`/player/${playerId}`);
+                                    }}
+                                    sx={{
+
+                                        color: '#1976d2',
+                                        fontSize: { xs: '0.48rem', sm: '0.75rem' },
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        textDecoration: 'underline',
+                                        textUnderlineOffset: '3px',
+                                        WebkitTapHighlightColor: 'transparent',
+                                        padding: { xs: '1px 2px', sm: '4px 8px' },
+                                        minWidth: 'auto',
+                                        '&:hover': {
+                                            backgroundColor: 'transparent',
+                                        },
+                                        '&:active': {
+                                            boxShadow: 'none',
+                                            backgroundColor: 'transparent',
+                                        },
+                                        '&:focus': {
+                                            boxShadow: 'none',
+                                            outline: 'none',
+                                            backgroundColor: 'transparent',
+                                        },
+                                        '&.Mui-focusVisible': {
+                                            boxShadow: 'none',
+                                            outline: 'none',
+                                            backgroundColor: 'transparent',
+                                        },
+                                    }}
+                                >
+                                    More Stats
+                                </Button>
                             </Paper>
 
                             {/* Center: Player Card */}
@@ -7161,7 +7257,7 @@ export default function LeagueDetailPage() {
                                         navigator.share({
                                             title: `${playerName} - Champion Footballer`,
                                             text: shareText,
-                                        }).catch(() => {});
+                                        }).catch(() => { });
                                     } else {
                                         navigator.clipboard?.writeText(shareText);
                                         toast.success('Player stats copied!');
