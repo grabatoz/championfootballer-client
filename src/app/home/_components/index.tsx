@@ -163,7 +163,7 @@ const isApiLeague = (val: unknown): val is ApiLeague => {
   return idOk;
 };
 
-const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, onAdminStatusChange }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number; onAdminStatusChange?: (isAdmin: boolean) => void }) => {  
+const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, onAdminStatusChange }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number; onAdminStatusChange?: (isAdmin: boolean) => void }) => {
   const [userLeagues, setUserLeagues] = useState<LeagueWithComputed[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<LeagueWithComputed | null>(null);
   const [, setLoading] = useState(true);
@@ -471,7 +471,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         leagueAPI.invalidateCache();
         localStorage.removeItem('leaguesCache');
         localStorage.removeItem('lastLeaguesFetch');
-      } catch {}
+      } catch { }
 
       const params = new URLSearchParams();
       params.set('tab', 'table');
@@ -567,7 +567,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             .filter((id) => id !== 'undefined')
         );
         const memberSet = new Set<string>(
-          ((data.user.leagues || []) as Array<{ id?: string | number }> )
+          ((data.user.leagues || []) as Array<{ id?: string | number }>)
             .map((l) => String(l?.id))
             .filter((id) => id !== 'undefined')
         );
@@ -596,17 +596,17 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         });
         const optimisticCreatedLeague: LeagueWithComputed | null = createdLeague?.id
           ? {
-              id: String(createdLeague.id),
-              name: createdLeague.name,
-              image: createdLeague.image,
-              updatedAt: createdLeague.updatedAt,
-              createdAt: createdLeague.createdAt,
-              status: createdLeague.status,
-              active: createdLeague.active,
-              archived: (createdLeague as unknown as { archived?: boolean }).archived,
-              userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
-              maxGames: createdLeague.maxGames,
-            }
+            id: String(createdLeague.id),
+            name: createdLeague.name,
+            image: createdLeague.image,
+            updatedAt: createdLeague.updatedAt,
+            createdAt: createdLeague.createdAt,
+            status: createdLeague.status,
+            active: createdLeague.active,
+            archived: (createdLeague as unknown as { archived?: boolean }).archived,
+            userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
+            maxGames: createdLeague.maxGames,
+          }
           : null;
 
         // Keep a freshly created league visible even if backend list is momentarily stale.
@@ -647,10 +647,10 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           try {
             // Add timestamp to bypass any caching
             const timestamp = Date.now();
-            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}?_t=${timestamp}`, { 
-              headers: { 'Authorization': `Bearer ${token}` }, 
-              cache: 'no-store', 
-              signal: aborter.signal 
+            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}?_t=${timestamp}`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+              cache: 'no-store',
+              signal: aborter.signal
             } as RequestInit);
 
             let matchesFromDetails: Match[] | undefined = undefined;
@@ -675,14 +675,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 return Array.isArray(seasonsPayload)
                   ? seasonsPayload
                   : (
-                      Array.isArray(payloadRecord.seasons)
-                        ? payloadRecord.seasons
-                        : (
-                            Array.isArray(payloadRecord.data)
-                              ? payloadRecord.data
-                              : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
-                          )
-                    );
+                    Array.isArray(payloadRecord.seasons)
+                      ? payloadRecord.seasons
+                      : (
+                        Array.isArray(payloadRecord.data)
+                          ? payloadRecord.data
+                          : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
+                      )
+                  );
               };
 
               const parseSeasonNumber = (seasonLike: Record<string, unknown>): number => {
@@ -763,7 +763,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 });
               }
               if (typeof leagueData?.league?.maxGames === 'number') maxGamesFromDetails = leagueData.league.maxGames as number;
-              
+
               // Get active season number (where isActive === true)
               const seasons = leagueData?.league?.seasons as unknown;
               const currentSeason = leagueData?.league?.currentSeason as
@@ -771,7 +771,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 | undefined;
               console.log(`[League ${l.id}] All seasons from backend:`, seasons);
               console.log(`[League ${l.id}] Current season from backend:`, currentSeason);
-              
+
               // Use currentSeason from backend (which is the user's actual season)
               if (currentSeason && typeof currentSeason.seasonNumber === 'number') {
                 seasonNumberFromDetails = currentSeason.seasonNumber;
@@ -860,7 +860,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               });
               return arr;
             });
-            
+
             // CRITICAL: Update selectedLeague if this is the currently selected league
             setSelectedLeague((prev) => {
               if (prev && String(prev.id) === String(l.id)) {
@@ -906,7 +906,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     try {
       // Use ultra-fast instant cache - 0ms retrieval!
       const leagues = leagueAPI.getAllInstant();
-      
+
       if (!Array.isArray(leagues) || leagues.length === 0) return;
 
       const minimal: LeagueWithComputed[] = leagues.map((l) => ({
@@ -934,7 +934,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         }
       }
     } catch { /* ignore cache issues */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When a new league is created in the parent, immediately add/select it without waiting for a refetch
@@ -945,12 +945,12 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       if (typeof window !== 'undefined') {
         localStorage.setItem(PREFERRED_LEAGUE_KEY, String(createdLeague.id));
       }
-    } catch {}
+    } catch { }
     setUserLeagues(prev => {
       const map = new Map(prev.map(l => [String(l.id), l]));
       const entry: LeagueWithComputed = {
         id: String(createdLeague.id),
-        name: createdLeague .name,
+        name: createdLeague.name,
         image: createdLeague.image,
         updatedAt: createdLeague.updatedAt,
         createdAt: createdLeague.createdAt,
@@ -981,7 +981,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
       );
       console.log('[Home] leagues total:', userLeagues.length, 'visible (not completed):', visible.length);
-    } catch {}
+    } catch { }
   }, [userLeagues]);
 
   // Keep selected league at top
@@ -1059,83 +1059,83 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       zIndex: 1000,
     }} ref={dropdownRef}>
       <Box sx={{ width: '100%', position: 'relative' }}>
-      <Button
-        variant="contained"
-        sx={{
-          bgcolor: '#00a77f',
-          color: 'white',
-          '&:hover': { bgcolor: '#00A77F' },
-          minHeight: { xs: '60px', sm: '70px', md: '50px' },
-          width: '100%',
-          minWidth: 0,
-          maxWidth: '100%',
-          boxSizing: 'border-box',
-          fontSize: { xs: '0.95rem', sm: '1.05rem', md: '15px' },
-          fontWeight: 'normal',
-          textTransform: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
-          border: '2px solid #fff',
-          ...(showDropdown && {
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-          })
-        }}
-        // Clicking the main button opens the list
+        <Button
+          variant="contained"
+          sx={{
+            bgcolor: '#00a77f',
+            color: 'white',
+            '&:hover': { bgcolor: '#00A77F' },
+            minHeight: { xs: '60px', sm: '70px', md: '50px' },
+            width: '100%',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            fontSize: { xs: '0.95rem', sm: '1.05rem', md: '15px' },
+            fontWeight: 'normal',
+            textTransform: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
+            border: '2px solid #fff',
+            ...(showDropdown && {
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+            })
+          }}
+          // Clicking the main button opens the list
           onClick={(e) => {
-              e.stopPropagation();
-              if (isFetching) return; // Disable open while loading
-              setShowDropdown(true);
-            }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
-            {isFetching ? (
-              <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
-            ) : (
-              <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
-            )}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: getLeagueLabelFontSize(selectedLeague?.name),
-                  fontWeight: 600,
-                  lineHeight: '100%',
-                  letterSpacing: '0%',
-                  textTransform: 'capitalize',
-                  maxWidth: '100%',
-                  overflow: 'visible',
-                  textOverflow: 'clip',
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
-                }}
-              >
-                {isFetching
-                  ? 'Loading…'
-                  : (selectedLeague?.name ? formatLeagueNameShort(selectedLeague.name) : 'Select a league')}
-              </Typography>
-              {!isFetching && selectedLeague?.name && (
+            e.stopPropagation();
+            if (isFetching) return; // Disable open while loading
+            setShowDropdown(true);
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1, minWidth: 0 }}>
+              {isFetching ? (
+                <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+              ) : (
+                <Image src={selectedLeague?.image || trophy} alt='' height={24} width={24} style={{ height: 24, width: 24 }} />
+              )}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
                 <Typography
                   sx={{
-                    fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
-                    fontWeight: 'normal',
-                    opacity: 0.9,
-                    lineHeight: 1,
-                    marginLeft: 0
+                    fontSize: getLeagueLabelFontSize(selectedLeague?.name),
+                    fontWeight: 600,
+                    lineHeight: '100%',
+                    letterSpacing: '0%',
+                    textTransform: 'capitalize',
+                    maxWidth: '100%',
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    fontFamily: '"Woodford Bourne Pro", sans-serif',
                   }}
                 >
-                  (Season {selectedLeague?.seasonNumber || 1})
+                  {isFetching
+                    ? 'Loading…'
+                    : (selectedLeague?.name ? formatLeagueNameShort(selectedLeague.name) : 'Select a league')}
                 </Typography>
-              )}
+                {!isFetching && selectedLeague?.name && (
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
+                      fontWeight: 'normal',
+                      opacity: 0.9,
+                      lineHeight: 1,
+                      marginLeft: 0
+                    }}
+                  >
+                    (Season {selectedLeague?.seasonNumber || 1})
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          </Box>
 
-          {/* Role pill for the currently selected league */}
-          {/* {selectedLeague?.userRole && (
+            {/* Role pill for the currently selected league */}
+            {/* {selectedLeague?.userRole && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box
                 sx={{
@@ -1156,233 +1156,233 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             </Box>
           )} */}
 
-          <Box 
-            sx={{
-              color: 'white',
-              cursor: 'pointer',
-              borderRadius: '50%',
-              width: { xs: 34, md: 40 },
-              height: { xs: 34, md: 40 },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)'
-              },
-              transition: 'background-color 0.2s'
-            }}
-            role="button"
-            tabIndex={0}
-            aria-haspopup="listbox"
-            aria-expanded={showDropdown}
-            aria-controls="league-dropdown-list"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isFetching) return; // Disable toggle while loading
-              setShowDropdown(prev => !prev);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+            <Box
+              sx={{
+                color: 'white',
+                cursor: 'pointer',
+                borderRadius: '50%',
+                width: { xs: 34, md: 40 },
+                height: { xs: 34, md: 40 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)'
+                },
+                transition: 'background-color 0.2s'
+              }}
+              role="button"
+              tabIndex={0}
+              aria-haspopup="listbox"
+              aria-expanded={showDropdown}
+              aria-controls="league-dropdown-list"
+              onClick={(e) => {
                 e.stopPropagation();
-                if (isFetching) return;
+                if (isFetching) return; // Disable toggle while loading
                 setShowDropdown(prev => !prev);
-              }
-            }}
-          >
-            <ChevronRight size={24} style={{ transform: showDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isFetching) return;
+                  setShowDropdown(prev => !prev);
+                }
+              }}
+            >
+              <ChevronRight size={24} style={{ transform: showDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+            </Box>
           </Box>
-        </Box>
-      </Button>
+        </Button>
 
-      {/* Dropdown menu */}
-      {showDropdown && !isFetching && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            width: '100%',
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            transform: 'none',
-            height: 'auto',
-            maxHeight: { xs: 220, sm: 250, md: 280 },
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            p: 0.5,
-            zIndex: 99999,
-            bgcolor: '#00A77F',
-            color: '#FFFFFF',
-            borderRadius: 2,
-            borderTopLeftRadius: 0,
-            borderTopRightRadius: 0,
-            border: '2px solid #FFFFFF',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(8px)',
-            '&::-webkit-scrollbar': {
-              width: 8,
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'rgba(255,255,255,0.14)',
-              borderRadius: 10,
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'rgba(255,255,255,0.55)',
-              borderRadius: 10,
-              border: '1px solid rgba(0,0,0,0.1)',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: 'rgba(255,255,255,0.75)',
-            },
-            msOverflowStyle: 'auto',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.65) rgba(255,255,255,0.14)',
-          }}
-          id="league-dropdown-list"
-          role="listbox"
-        >
-          {sortedUserLeagues.map((league) => {
-            const isActive = league.id === selectedLeague?.id;
-            return (
-              <Link href={`/league/${league.id}`} key={league.id} passHref>
-                <MenuItem
-                  key={league.id}
-                  onClick={() => {
-                    try {
-                      if (typeof window !== 'undefined') {
-                        localStorage.setItem(PREFERRED_LEAGUE_KEY, String(league.id));
-                      }
-                    } catch {}
-                    setSelectedLeague(league);
-                    setShowDropdown(false);
-                  }}
-                  role="option"
-                  aria-selected={isActive}
-                  sx={{
-                    borderRadius: 1.5,
-                    mx: 0.5,
-                    my: 0.25,
-                    py: 1.25,
-                    px: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#FFFFFF',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      backgroundColor: 'rgba(255,255,255,0.12)',
-                    },
-                    ...(isActive && {
-                      backgroundColor: 'rgba(255,255,255,0.20)',
-                      border: '1px solid rgba(255,255,255,0.65)',
-                    }),
-                  }}
-                >
+        {/* Dropdown menu */}
+        {showDropdown && !isFetching && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              transform: 'none',
+              height: 'auto',
+              maxHeight: { xs: 220, sm: 250, md: 280 },
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              p: 0.5,
+              zIndex: 99999,
+              bgcolor: '#00A77F',
+              color: '#FFFFFF',
+              borderRadius: 2,
+              borderTopLeftRadius: 0,
+              borderTopRightRadius: 0,
+              border: '2px solid #FFFFFF',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              '&::-webkit-scrollbar': {
+                width: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(255,255,255,0.14)',
+                borderRadius: 10,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(255,255,255,0.55)',
+                borderRadius: 10,
+                border: '1px solid rgba(0,0,0,0.1)',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: 'rgba(255,255,255,0.75)',
+              },
+              msOverflowStyle: 'auto',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255,255,255,0.65) rgba(255,255,255,0.14)',
+            }}
+            id="league-dropdown-list"
+            role="listbox"
+          >
+            {sortedUserLeagues.map((league) => {
+              const isActive = league.id === selectedLeague?.id;
+              return (
+                <Link href={`/league/${league.id}`} key={league.id} passHref>
+                  <MenuItem
+                    key={league.id}
+                    onClick={() => {
+                      try {
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem(PREFERRED_LEAGUE_KEY, String(league.id));
+                        }
+                      } catch { }
+                      setSelectedLeague(league);
+                      setShowDropdown(false);
+                    }}
+                    role="option"
+                    aria-selected={isActive}
+                    sx={{
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      color: '#FFFFFF',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        backgroundColor: 'rgba(255,255,255,0.12)',
+                      },
+                      ...(isActive && {
+                        backgroundColor: 'rgba(255,255,255,0.20)',
+                        border: '1px solid rgba(255,255,255,0.65)',
+                      }),
+                    }}
+                  >
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                    <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
-                      <Typography
-                        sx={{
-                          fontSize: '0.95rem',
-                          fontWeight: isActive ? 700 : 500,
-                          letterSpacing: 0.2,
-                          color: '#FFFFFF',
-                          lineHeight: 1.2
-                        }}
-                      >
-                        {formatLeagueName(league.name)}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: '0.7rem',
-                          fontWeight: 400,
-                          letterSpacing: 0.1,
-                          color: '#FFFFFF',
-                          opacity: 0.85,
-                          lineHeight: 1,
-                          marginLeft: 0
-                        }}
-                      >
-                        (Season {league.seasonNumber || 1})
-                      </Typography>
-                    </Box>
-                  </Box>
-                  {/* Role pill on the right */}
-                  {league.userRole && (
-                    <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
-                      <Box
-                        sx={{
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: '9999px',
-                          fontSize: 10,
-                          fontWeight: 800,
-                          letterSpacing: 0.4,
-                          textTransform: 'uppercase',
-                          bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
-                          color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
-                          border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
-                        }}
-                      >
-                        {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                      <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
+                        <Typography
+                          sx={{
+                            fontSize: '0.95rem',
+                            fontWeight: isActive ? 700 : 500,
+                            letterSpacing: 0.2,
+                            color: '#FFFFFF',
+                            lineHeight: 1.2
+                          }}
+                        >
+                          {formatLeagueName(league.name)}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: '0.7rem',
+                            fontWeight: 400,
+                            letterSpacing: 0.1,
+                            color: '#FFFFFF',
+                            opacity: 0.85,
+                            lineHeight: 1,
+                            marginLeft: 0
+                          }}
+                        >
+                          (Season {league.seasonNumber || 1})
+                        </Typography>
                       </Box>
                     </Box>
-                  )}
-                </MenuItem>
-              </Link>
+                    {/* Role pill on the right */}
+                    {league.userRole && (
+                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
+                        <Box
+                          sx={{
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: '9999px',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                            textTransform: 'uppercase',
+                            bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
+                            color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
+                            border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
+                          }}
+                        >
+                          {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                        </Box>
+                      </Box>
+                    )}
+                  </MenuItem>
+                </Link>
 
-            );
-          })}
-        </Box>
-      )}
+              );
+            })}
+          </Box>
+        )}
       </Box>
 
       {/* Add New Season Button */}
       {selectedLeague && selectedLeague.userRole === 'ADMIN' && (
         <Button
-        disabled={isCreatingSeason || isFetching}
-        onClick={openCreateSeasonConfirm}
-           variant="contained"
-                   fullWidth
-                   sx={{
-                     bgcolor: '#7f7f7f',
-                     color: 'white',
-                     fontWeight: 600,
-                     mb: 1,
-                     mt: 1,
-                     
-                     borderRadius: 2,
-                     '&:hover': { bgcolor: '#686868' },
-                     width: '100%',
-                     maxWidth: { xs: '100%', md: 290 },
-                     mx: 'auto',
-                     display: 'flex',
-                     justifyContent: 'center',
-                     position: 'relative',
-                     px: { xs: 2, md: 3 },
-                     fontSize: { xs: '15px', sm: '16px', md: '19px' },
-                     minHeight: { xs: 42, md: 48 },
-                     fontFamily: '"Woodford Bourne Pro", sans-serif',
-                     lineHeight: '100%',
-                     letterSpacing: '0%',
-                     textTransform: 'capitalize',
-                   }}
+          disabled={isCreatingSeason || isFetching}
+          onClick={openCreateSeasonConfirm}
+          variant="contained"
+          fullWidth
+          sx={{
+            bgcolor: '#7f7f7f',
+            color: 'white',
+            fontWeight: 600,
+            mb: 1,
+            mt: 1,
+
+            borderRadius: 2,
+            '&:hover': { bgcolor: '#686868' },
+            width: '100%',
+            maxWidth: { xs: '100%', md: 290 },
+            mx: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            position: 'relative',
+            px: { xs: 2, md: 3 },
+            fontSize: { xs: '15px', sm: '16px', md: '19px' },
+            minHeight: { xs: 42, md: 48 },
+            fontFamily: '"Woodford Bourne Pro", sans-serif',
+            lineHeight: '100%',
+            letterSpacing: '0%',
+            textTransform: 'capitalize',
+          }}
         >
-            <Box
-              component="span"
-              sx={{
-                position: 'absolute',
-                left: { xs: 12, md: 22.5 },
-                fontSize: { xs: '20px', md: '24px' },
-                lineHeight: 1,
-              }}
-            >
-              +
-            </Box>
-            {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
+          <Box
+            component="span"
+            sx={{
+              position: 'absolute',
+              left: { xs: 12, md: 22.5 },
+              fontSize: { xs: '20px', md: '24px' },
+              lineHeight: 1,
+            }}
+          >
+            +
+          </Box>
+          {isCreatingSeason ? 'Creating Season...' : 'Add New Season'}
         </Button>
       )}
 
@@ -1711,17 +1711,17 @@ export default function PlayerDashboard() {
       console.log('🔍 [Stats Fetch] Starting...');
       console.log('🔍 [Stats Fetch] Token:', token ? 'Present' : 'Missing');
       console.log('🔍 [Stats Fetch] User ID:', user?.id);
-      
+
       if (!token || !user?.id) {
         console.log('❌ [Stats Fetch] Skipped - Missing token or user ID');
         return;
       }
-      
+
       setStatsLoading(true);
       try {
         const url = `${process.env.NEXT_PUBLIC_API_URL}/users/me/global-stats`;
         console.log('🔍 [Stats Fetch] URL:', url);
-        
+
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1729,12 +1729,12 @@ export default function PlayerDashboard() {
         });
 
         console.log('🔍 [Stats Fetch] Response status:', response.status);
-        
+
         if (!response.ok) {
           console.error('❌ [Stats Fetch] Response not OK:', response.status);
           return;
         }
-        
+
         const data = await response.json().catch(() => null);
         console.log('🔍 [Stats Fetch] Response data:', data);
 
@@ -1978,7 +1978,7 @@ export default function PlayerDashboard() {
       if (createLeagueFileInputRef.current) {
         createLeagueFileInputRef.current.value = '';
       }
-    } catch {}
+    } catch { }
   };
 
   // const items = [
@@ -2018,10 +2018,10 @@ export default function PlayerDashboard() {
         }}
       >
         {/* User Live Stats Section */}
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           mb: { xs: 2.5, md: 3 },
           px: { xs: 1.5, sm: 2, md: 0 },
           boxSizing: 'border-box',
@@ -2033,11 +2033,11 @@ export default function PlayerDashboard() {
           height: 'auto',
           opacity: 1,
         }}>
-          <Box component="div" sx={{ 
-            fontFamily: '"Oswald", sans-serif', 
-            fontSize: { xs: '20px', sm: '24px', md: '28px' }, 
-            fontWeight: 300, 
-            lineHeight: '100%', 
+          <Box component="div" sx={{
+            fontFamily: '"Oswald", sans-serif',
+            fontSize: { xs: '20px', sm: '24px', md: '28px' },
+            fontWeight: 300,
+            lineHeight: '100%',
             letterSpacing: '0%',
             textAlign: 'center',
             textTransform: 'uppercase',
@@ -2045,18 +2045,18 @@ export default function PlayerDashboard() {
           }}>
             your LIVE stats
           </Box>
-          
-          <Box sx={{ 
-            display: 'flex', 
+
+          <Box sx={{
+            display: 'flex',
             flexDirection: 'column',
             gap: { xs: 0.2, md: 0.4 },
             alignItems: 'center'
           }}>
             {/* Row 1 */}
-            <Box sx={{ 
-              display: 'flex', 
-              flexWrap: { xs: 'wrap', md: 'nowrap' }, 
-              justifyContent: 'center', 
+            <Box sx={{
+              display: 'flex',
+              flexWrap: { xs: 'wrap', md: 'nowrap' },
+              justifyContent: 'center',
               columnGap: { xs: 1.25, sm: 2, md: 3 },
               rowGap: { xs: 0.4, md: 0 },
               fontFamily: '"Oswald", sans-serif',
@@ -2078,12 +2078,12 @@ export default function PlayerDashboard() {
                 {statsLoading ? '...' : userStats.goals} GOAL{userStats.goals !== 1 ? 'S' : ''}
               </Box>
             </Box>
-            
+
             {/* Row 2 */}
-            <Box sx={{ 
-              display: 'flex', 
-              flexWrap: { xs: 'wrap', md: 'nowrap' }, 
-              justifyContent: 'center', 
+            <Box sx={{
+              display: 'flex',
+              flexWrap: { xs: 'wrap', md: 'nowrap' },
+              justifyContent: 'center',
               columnGap: { xs: 1.25, sm: 2, md: 3 },
               rowGap: { xs: 0.4, md: 0 },
               fontFamily: '"Oswald", sans-serif',
@@ -2139,7 +2139,7 @@ export default function PlayerDashboard() {
             alignSelf: { xs: 'center', md: 'stretch' },
             // backgroundColor: 'red',
           }}>
-            <PlayerCard 
+            <PlayerCard
               name={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Player Name'}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
@@ -2174,7 +2174,7 @@ export default function PlayerDashboard() {
               ml: { md: 0 },
               order: { xs: 2, md: 2 },
               alignSelf: { xs: 'center', md: 'auto' },
-          
+
               position: 'relative',
               // backgroundColor: 'green',
               zIndex: 2,
@@ -2337,15 +2337,15 @@ export default function PlayerDashboard() {
                   />
                   <Button
                     variant="contained"
-                    sx={{ 
-                      background: '#00A77F', 
-                      borderRadius: { xs: '12px', sm: '0 12px 12px 0' }, 
-                      '&:hover': { background: '#00A77F' }, 
-                      py: 0, 
+                    sx={{
+                      background: '#00A77F',
+                      borderRadius: { xs: '12px', sm: '0 12px 12px 0' },
+                      '&:hover': { background: '#00A77F' },
+                      py: 0,
                       width: { xs: '100%', sm: 'auto' },
-                      minWidth: { xs: 0, sm: 120 }, 
-                      height: { xs: 40, md: 42 }, 
-                      fontSize: { xs: '11px', sm: '12px', md: '14px' }, 
+                      minWidth: { xs: 0, sm: 120 },
+                      height: { xs: 40, md: 42 },
+                      fontSize: { xs: '16px', sm: '16px', md: '19px' },
                       flexShrink: 0,
                       fontFamily: '"Woodford Bourne Pro", sans-serif',
                       fontWeight: 600,
@@ -2780,314 +2780,314 @@ export default function PlayerDashboard() {
       </Paper>
 
       <GlobalStyles styles={{
-  '::-webkit-scrollbar': { width: 10 },
-  '::-webkit-scrollbar-track': { background: '#0d2f1e' },
-  '::-webkit-scrollbar-thumb': { background: '#1c5c37', borderRadius: 20, border: '2px solid #0d2f1e' },
-  '::-webkit-scrollbar-thumb:hover': { background: '#257647' }
-}} />
+        '::-webkit-scrollbar': { width: 10 },
+        '::-webkit-scrollbar-track': { background: '#0d2f1e' },
+        '::-webkit-scrollbar-thumb': { background: '#1c5c37', borderRadius: 20, border: '2px solid #0d2f1e' },
+        '::-webkit-scrollbar-thumb:hover': { background: '#257647' }
+      }} />
 
-       <Dialog
-          open={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          fullWidth
-          maxWidth="sm"
-          fullScreen={isMobileCreateDialog}
-          scroll="paper"
-          PaperProps={{
-            sx: {
-              borderRadius: isMobileCreateDialog ? 0 : { xs: 2, sm: 3 },
-              background: 'rgba(15,15,15,0.96)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-              backdropFilter: 'blur(10px)',
-              p: { xs: 1.2, sm: 1.6 },
-              color: '#E5E7EB',
-              width: { xs: '100%', sm: '100%' },
-              m: { xs: 0, sm: 2 },
-              maxWidth: 620,
-              maxHeight: { xs: '100dvh', sm: 'calc(100dvh - 64px)' },
-            },
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        fullScreen={isMobileCreateDialog}
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: isMobileCreateDialog ? 0 : { xs: 2, sm: 3 },
+            background: 'rgba(15,15,15,0.96)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+            backdropFilter: 'blur(10px)',
+            p: { xs: 1.2, sm: 1.6 },
+            color: '#E5E7EB',
+            width: { xs: '100%', sm: '100%' },
+            m: { xs: 0, sm: 2 },
+            maxWidth: 620,
+            maxHeight: { xs: '100dvh', sm: 'calc(100dvh - 64px)' },
+          },
+        }}
+      >
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          p={1}
+          sx={{
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: -2,
+              height: '2px',
+              background: 'linear-gradient(90deg, rgba(229,106,22,0.75), rgba(207,35,38,0.75))',
+            }
           }}
         >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            p={1}
+          <DialogTitle sx={{ p: 0, fontWeight: 700, color: '#E5E7EB', fontSize: { xs: 19, sm: 22 }, letterSpacing: 0.5 }}>
+            Create a League
+          </DialogTitle>
+          <IconButton
+            onClick={() => setIsDialogOpen(false)}
             sx={{
-              position: 'relative',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: -2,
-                height: '2px',
-                background: 'linear-gradient(90deg, rgba(229,106,22,0.75), rgba(207,35,38,0.75))',
-              }
+              color: '#E5E7EB',
+              bgcolor: 'rgba(255,255,255,0.08)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.14)' },
             }}
           >
-            <DialogTitle sx={{ p: 0, fontWeight: 700, color: '#E5E7EB', fontSize: { xs: 19, sm: 22 }, letterSpacing: 0.5 }}>
-              Create a League
-            </DialogTitle>
-            <IconButton
-              onClick={() => setIsDialogOpen(false)}
-              sx={{
-                color: '#E5E7EB',
-                bgcolor: 'rgba(255,255,255,0.08)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.14)' },
-              }}
-            >
-              <X />
-            </IconButton>
-          </Box>
-          <DialogContent sx={{ pt: 2.2, px: { xs: 1.2, sm: 3 }, pb: { xs: 1.5, sm: 2 } }}>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="League Name"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={leagueName}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
-                const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 30);
-                setLeagueName(sanitized);
-                setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
-              }}
-              onKeyPress={(e) => {
-                // Block special characters and allow Enter to submit
-                const ch = e.key;
-                if (ch.length === 1 && /[^A-Za-z0-9 ]/.test(ch)) {
-                  e.preventDefault();
-                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
-                  return;
-                }
-                if (e.key === 'Enter') {
-                  if (!leagueNameError && leagueName.trim().length > 0) {
-                    handleCreateLeague();
-                  }
-                }
-              }}
-              onPaste={(e) => {
-                const text = e.clipboardData?.getData('text') ?? '';
-                if (/[^A-Za-z0-9 ]/.test(text)) {
-                  e.preventDefault();
-                  setLeagueNameError('Only letters, numbers, and spaces are allowed.');
-                }
-              }}
-              sx={{
-                mt: 1,
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  background: 'rgba(255,255,255,0.04)',
-                  color: '#E5E7EB',
-                  borderRadius: 2,
-                  border: '1.5px solid rgba(255,255,255,0.16)',
-                  '& fieldset': {
-                    borderColor: 'rgba(255,255,255,0.18)',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'rgba(229,106,22,0.9)',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#E56A16',
-                  },
-                  '& input': {
-                    color: '#E5E7EB',
-                  },
-                },
-                '& label': { color: '#9CA3AF' },
-                '& .MuiInputLabel-root': { color: '#9CA3AF' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
-              }}
-              inputProps={{ maxLength: 30, 'aria-invalid': Boolean(leagueNameError) }}
-              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-              FormHelperTextProps={{ sx: { color: '#9CA3AF', '&.Mui-error': { color: '#f87171' } } }}
-              error={Boolean(leagueNameError)}
-              helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 30).'}
-            />
-
-            {/* Number of Games in Season */}
-            <TextField
-              margin="dense"
-              label="Number of Games"
-              type="number"
-              fullWidth
-              variant="outlined"
-              value={maxGames}
-              onChange={(e) => {
-                const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
-                setMaxGames(v);
-              }}
-              onKeyPress={(e) => {
-                if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
-                  e.preventDefault();
-                }
-                if (e.key === 'Enter' && !leagueNameError && leagueName.trim().length > 0) {
+            <X />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ pt: 2.2, px: { xs: 1.2, sm: 3 }, pb: { xs: 1.5, sm: 2 } }}>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="League Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={leagueName}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const hasInvalid = /[^A-Za-z0-9 ]/.test(raw);
+              const sanitized = raw.replace(/[^A-Za-z0-9 ]+/g, '').slice(0, 30);
+              setLeagueName(sanitized);
+              setLeagueNameError(hasInvalid ? 'Only letters, numbers, and spaces are allowed.' : '');
+            }}
+            onKeyPress={(e) => {
+              // Block special characters and allow Enter to submit
+              const ch = e.key;
+              if (ch.length === 1 && /[^A-Za-z0-9 ]/.test(ch)) {
+                e.preventDefault();
+                setLeagueNameError('Only letters, numbers, and spaces are allowed.');
+                return;
+              }
+              if (e.key === 'Enter') {
+                if (!leagueNameError && leagueName.trim().length > 0) {
                   handleCreateLeague();
                 }
-              }}
-              sx={{
-                mt: 1,
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  background: 'rgba(255,255,255,0.04)',
-                  color: '#E5E7EB',
-                  borderRadius: 2,
-                  border: '1.5px solid rgba(255,255,255,0.16)',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
-                  '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.9)' },
-                  '&.Mui-focused fieldset': { borderColor: '#E56A16' },
-                  '& input': { color: '#E5E7EB' },
-                },
-                '& label': { color: '#9CA3AF' },
-                '& .MuiInputLabel-root': { color: '#9CA3AF' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
-              }}
-              inputProps={{ min: 1, max: 100 }}
-              InputLabelProps={{ sx: { color: '#9CA3AF' } }}
-              FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
-              helperText="Number of games to be played in the current season (1–100)."
-            />
-
-            {/* League Image Upload Section */}
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ color: '#E5E7EB', mb: 1, fontWeight: 700 }}>
-                League Image (Optional)
-              </Typography>
-
-              {/* Image Preview */}
-              <Box sx={{
-                display: 'flex',
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 2,
-                mb: 2,
-                p: 2,
-                border: '1.5px dashed rgba(229,106,22,0.8)',
+              }
+            }}
+            onPaste={(e) => {
+              const text = e.clipboardData?.getData('text') ?? '';
+              if (/[^A-Za-z0-9 ]/.test(text)) {
+                e.preventDefault();
+                setLeagueNameError('Only letters, numbers, and spaces are allowed.');
+              }
+            }}
+            sx={{
+              mt: 1,
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                background: 'rgba(255,255,255,0.04)',
+                color: '#E5E7EB',
                 borderRadius: 2,
-                background: 'rgba(255,255,255,0.03)',
-                minHeight: 80
-              }}>
-                <Avatar
-                  src={imagePreview || '/assets/league.png'}
-                  alt="League Image"
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    border: '2px solid rgba(229,106,22,0.85)',
-                    background: '#1f1f1f'
-                  }}
-                  variant="rounded"
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.5 }}>
-                    {imagePreview ? 'Selected Image' : 'Default Flag Image'}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
-                    {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
-                  </Typography>
-                </Box>
-              </Box>
+                border: '1.5px solid rgba(255,255,255,0.16)',
+                '& fieldset': {
+                  borderColor: 'rgba(255,255,255,0.18)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(229,106,22,0.9)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#E56A16',
+                },
+                '& input': {
+                  color: '#E5E7EB',
+                },
+              },
+              '& label': { color: '#9CA3AF' },
+              '& .MuiInputLabel-root': { color: '#9CA3AF' },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
+            }}
+            inputProps={{ maxLength: 30, 'aria-invalid': Boolean(leagueNameError) }}
+            InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+            FormHelperTextProps={{ sx: { color: '#9CA3AF', '&.Mui-error': { color: '#f87171' } } }}
+            error={Boolean(leagueNameError)}
+            helperText={leagueNameError || 'Use letters, numbers, and spaces only (max 30).'}
+          />
 
-              {/* Upload Buttons */}
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* Number of Games in Season */}
+          <TextField
+            margin="dense"
+            label="Number of Games"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={maxGames}
+            onChange={(e) => {
+              const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+              setMaxGames(v);
+            }}
+            onKeyPress={(e) => {
+              if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
+                e.preventDefault();
+              }
+              if (e.key === 'Enter' && !leagueNameError && leagueName.trim().length > 0) {
+                handleCreateLeague();
+              }
+            }}
+            sx={{
+              mt: 1,
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                background: 'rgba(255,255,255,0.04)',
+                color: '#E5E7EB',
+                borderRadius: 2,
+                border: '1.5px solid rgba(255,255,255,0.16)',
+                '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
+                '&:hover fieldset': { borderColor: 'rgba(229,106,22,0.9)' },
+                '&.Mui-focused fieldset': { borderColor: '#E56A16' },
+                '& input': { color: '#E5E7EB' },
+              },
+              '& label': { color: '#9CA3AF' },
+              '& .MuiInputLabel-root': { color: '#9CA3AF' },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#E5E7EB' },
+            }}
+            inputProps={{ min: 1, max: 100 }}
+            InputLabelProps={{ sx: { color: '#9CA3AF' } }}
+            FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
+            helperText="Number of games to be played in the current season (1–100)."
+          />
+
+          {/* League Image Upload Section */}
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle1" sx={{ color: '#E5E7EB', mb: 1, fontWeight: 700 }}>
+              League Image (Optional)
+            </Typography>
+
+            {/* Image Preview */}
+            <Box sx={{
+              display: 'flex',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+              mb: 2,
+              p: 2,
+              border: '1.5px dashed rgba(229,106,22,0.8)',
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.03)',
+              minHeight: 80
+            }}>
+              <Avatar
+                src={imagePreview || '/assets/league.png'}
+                alt="League Image"
+                sx={{
+                  width: 60,
+                  height: 60,
+                  border: '2px solid rgba(229,106,22,0.85)',
+                  background: '#1f1f1f'
+                }}
+                variant="rounded"
+              />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.5 }}>
+                  {imagePreview ? 'Selected Image' : 'Default Flag Image'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                  {imagePreview ? 'Click to change or remove' : 'Upload a custom image for your league'}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Upload Buttons */}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<CloudUpload />}
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  color: '#E56A16',
+                  borderColor: '#E56A16',
+                  borderRadius: 2,
+                  px: 2,
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    borderColor: '#CF2326',
+                    backgroundColor: 'rgba(229,106,22,0.08)'
+                  },
+                }}
+              >
+                {imagePreview ? 'Change Image' : 'Upload Image'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  ref={createLeagueFileInputRef}
+                  onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch { } }}
+                />
+              </Button>
+
+              {imagePreview && (
                 <Button
-                  component="label"
                   variant="outlined"
-                  startIcon={<CloudUpload />}
+                  onClick={handleRemoveImage}
                   sx={{
                     width: { xs: '100%', sm: 'auto' },
-                    color: '#E56A16',
-                    borderColor: '#E56A16',
+                    color: '#ff6b6b',
+                    borderColor: '#ff6b6b',
                     borderRadius: 2,
                     px: 2,
                     fontWeight: 'bold',
                     '&:hover': {
-                      borderColor: '#CF2326',
-                      backgroundColor: 'rgba(229,106,22,0.08)'
+                      borderColor: '#ff5252',
+                      backgroundColor: 'rgba(255,107,107,0.1)'
                     },
                   }}
                 >
-                  {imagePreview ? 'Change Image' : 'Upload Image'}
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    ref={createLeagueFileInputRef}
-                    onClick={(e) => { try { (e.target as HTMLInputElement).value = ''; } catch {} }}
-                  />
+                  Remove
                 </Button>
-
-                {imagePreview && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleRemoveImage}
-                    sx={{
-                      width: { xs: '100%', sm: 'auto' },
-                      color: '#ff6b6b',
-                      borderColor: '#ff6b6b',
-                      borderRadius: 2,
-                      px: 2,
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        borderColor: '#ff5252',
-                        backgroundColor: 'rgba(255,107,107,0.1)'
-                      },
-                    }}
-                  >
-                    Remove
-                  </Button>
-                )}
-              </Box>
+              )}
             </Box>
-          </DialogContent>
-          <DialogActions
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            pb: 2,
+            pt: 0.5,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 1,
+            '& > *': { m: '0 !important', width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
+          <Button
+            onClick={handleCreateLeague}
+            variant="contained"
+            disabled={isCreating || !leagueName.trim()}
             sx={{
-              px: { xs: 2, sm: 3 },
-              pb: 2,
-              pt: 0.5,
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'stretch', sm: 'center' },
-              gap: 1,
-              '& > *': { m: '0 !important', width: { xs: '100%', sm: 'auto' } },
+              background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
+              color: 'white',
+              fontWeight: 'bold',
+              borderRadius: 2,
+              px: 3,
+              boxShadow: '0 4px 12px rgba(229,106,22,0.25)',
+              '&:hover': { background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' },
             }}
           >
-            <Button
-              onClick={handleCreateLeague}
-              variant="contained"
-              disabled={isCreating || !leagueName.trim()}
-              sx={{
-                background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)',
-                color: 'white',
-                fontWeight: 'bold',
-                borderRadius: 2,
-                px: 3,
-                boxShadow: '0 4px 12px rgba(229,106,22,0.25)',
-                '&:hover': { background: 'linear-gradient(177deg,rgba(229,106,22,1) 26%, rgba(207,35,38,1) 100%)' },
-              }}
-            >
-              {isCreating ? 'Creating...' : 'Create League'}
-            </Button>
-            <Button
-              onClick={() => setIsDialogOpen(false)}
-              variant="outlined"
-              sx={{
-                color: '#E5E7EB',
-                border: '1.5px solid rgba(229,106,22,0.7)',
-                borderRadius: 2,
-                px: 3,
-                fontWeight: 'bold',
-                '&:hover': { bgcolor: 'rgba(229,106,22,0.1)', borderColor: '#E56A16' },
-              }}
-            >
-              Cancel
-            </Button>
-          </DialogActions>
+            {isCreating ? 'Creating...' : 'Create League'}
+          </Button>
+          <Button
+            onClick={() => setIsDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              color: '#E5E7EB',
+              border: '1.5px solid rgba(229,106,22,0.7)',
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 'bold',
+              '&:hover': { bgcolor: 'rgba(229,106,22,0.1)', borderColor: '#E56A16' },
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
