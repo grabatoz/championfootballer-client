@@ -4076,6 +4076,41 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 </ListItem>
                 <ListItem disablePadding>
                   <Button
+                   onClick={() => {
+                      handleProfileMenuClose();
+                      setXpStatusOpen(true);
+                    }}
+                    startIcon={<BarChartOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontWeight: 700,
+                      color: '#F3F4F6',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1,
+                      px: 1.75,
+                      py: 0.95,
+                      fontSize: '14px',
+                      justifyContent: 'flex-start',
+                      minHeight: 44,
+                      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
+                      mb: 0.75,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.10)',
+                        color: '#fff',
+                        borderColor: 'rgba(255,255,255,0.22)',
+                      },
+                      '& .MuiButton-startIcon': { marginRight: 1 },
+                    }}
+                  >
+                    XP Status
+                  </Button>
+                </ListItem>
+                <ListItem disablePadding>
+                  <Button
                     onClick={() => {
                       setDrawerOpen(false);
                       handleSignOutClick();
