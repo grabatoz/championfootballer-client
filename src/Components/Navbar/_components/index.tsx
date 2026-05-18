@@ -37,6 +37,11 @@ import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOu
 import CardGiftcardOutlinedIcon from '@mui/icons-material/CardGiftcardOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import HandshakeOutlinedIcon from '@mui/icons-material/HandshakeOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -4236,41 +4241,191 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Typography>
         </DialogContent>
       </Dialog>
-      <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle sx={{
-          background: '#2b2b2b',
+          background: '#0e0e0e',
           color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
           fontWeight: 600,
-          fontSize: { xs: '24px', md: '32px' }
+          fontSize: { xs: '24px', md: '32px' },
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '3px solid #E56A16'
         }}>
           Game Rules
           <IconButton
             aria-label="close"
             onClick={() => setGameRulesOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}
+            sx={{ color: 'white' }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#ffffff', color: '#222', py: 3 }}>
-          <Typography variant="h6" sx={{ justifyContent: 'center', display: 'flex', textAlign: 'center', mt: 5, mb: 1, color: '#111827', fontWeight: 700 }}>Information Coming Soon </Typography>
-          {/* <Typography variant="h6" sx={{ mb: 1, color: '#111827', fontWeight: 700 }}>Rules</Typography>
-          <ul style={{ marginLeft: 20, marginBottom: 16, color: '#222' }}>
-            <li style={{ listStyleType: 'disc' }}>Play fair</li>
-            <li style={{ listStyleType: 'disc' }}>Pick balance teams</li>
-            <li style={{ listStyleType: 'disc' }}>Rise to the challenge</li>
-            <li style={{ listStyleType: 'disc' }}>Have fun!</li>
-          </ul>
-          <Typography variant="h6" sx={{ mb: 1, color: '#111827', fontWeight: 700 }}>Characteristics of a champion</Typography>
-          <ul style={{ marginLeft: 20, color: '#222', fontSize: '1.1rem' }}>
-            <li><span style={{ fontWeight: 900 }}>C</span>ourageous</li>
-            <li><span style={{ fontWeight: 900 }}>H</span>opeful</li>
-            <li><span style={{ fontWeight: 900 }}>A</span>ppreciative</li>
-            <li><span style={{ fontWeight: 900 }}>M</span>odest</li>
-            <li><span style={{ fontWeight: 900 }}>O</span>ptimistic</li>
-            <li><span style={{ fontWeight: 900 }}>N</span>oble</li>
-          </ul> */}
+        <DialogContent sx={{ bgcolor: '#1a1a1a', p: { xs: 2, md: 4 }, color: '#fff' }}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography sx={{
+              fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+              fontWeight: 800,
+              fontSize: { xs: '20px', md: '28px' },
+              color: '#fff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              mb: 1
+            }}>
+              League Point Scoring Reference
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', maxWidth: '600px', mx: 'auto' }}>
+              Point scoring and XP awards are automatically calculated based on player performances and match outcomes. Use this reference to track how standings are updated.
+            </Typography>
+          </Box>
+
+          {(() => {
+            const getRowIcon = (action: string) => {
+              switch(action) {
+                case 'Winning Team Bonus': return <CheckCircleOutlineIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
+                case 'Draw': return <HandshakeOutlinedIcon sx={{ color: '#e56a16', fontSize: '1.25rem' }} />;
+                case 'Losing Team Consolation': return <HighlightOffIcon sx={{ color: '#f87171', fontSize: '1.25rem' }} />;
+                case 'Man of the Match (MOTM)': return <EmojiEventsOutlinedIcon sx={{ color: '#F1C40F', fontSize: '1.25rem' }} />;
+                case 'Clean Sheets (Goalkeeper)': return <ShieldOutlinedIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
+                case 'Goal Scored': return <SportsSoccerOutlinedIcon sx={{ color: '#fff', fontSize: '1.25rem' }} />;
+                case 'Assist': return <StarOutlineIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
+                case 'Man of the Match Votes': return <ThumbUpOutlinedIcon sx={{ color: '#f87171', fontSize: '1.25rem' }} />;
+                case 'Defensive Impact': return <ShieldOutlinedIcon sx={{ color: '#B0B0B0', fontSize: '1.25rem' }} />;
+                case '+ Mentality': return <PsychologyOutlinedIcon sx={{ color: '#9B59B6', fontSize: '1.25rem' }} />;
+                default: return null;
+              }
+            };
+
+            return (
+              <TableContainer component={Box} sx={{
+                maxHeight: '70vh',
+                overflow: 'auto',
+                borderRadius: 2,
+                border: '1px solid #2a2a2a',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                bgcolor: '#242424'
+              }}>
+                <Table stickyHeader aria-label="point scoring rules table" sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid #333' } }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Action</TableCell>
+                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>for Winning Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>for Losing Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Points Scoring</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[
+                      { action: 'Winning Team Bonus', desc: 'Winning a match', winning: '30 xp', losing: '', isLosingEmpty: true, points: '3 Points' },
+                      { action: 'Draw', desc: 'Drawing a match', winning: '15 xp', losing: '15 xp', isMerged: true, points: '1 Point' },
+                      { action: 'Losing Team Consolation', desc: 'Losing a match', winning: '', isWinningEmpty: true, losing: '10 xp', points: '0 Points' },
+                      { action: 'Man of the Match (MOTM)', desc: 'Player with the most count of Man of the Match votes in a single Match', winning: '10 xp', losing: '5 xp', points: '0 Points' },
+                      { action: 'Clean Sheets (Goalkeeper)', desc: 'Player keeping a clean sheet during their total episodes in goal', winning: '5 xp', losing: '5 xp', isMerged: true, points: '0 Points' },
+                      { action: 'Goal Scored', desc: 'Total number of goals scored by a player', winning: '3 xp', losing: '2 xp', points: '0 Points' },
+                      { action: 'Assist', desc: 'Total number of goal assists made by a player', winning: '2 xp', losing: '1 xp', points: '0 Points' },
+                      { action: 'Man of the Match Votes', desc: 'Player receiving individual count of votes per match', winning: '2 xp', losing: '1 xp', points: '0 Points' },
+                      { action: 'Defensive Impact', desc: 'Decisive defensive or goalkeeping performance in the match', winning: '2 xp', losing: '1 xp', points: '0 Points' },
+                      { action: '+ Mentality', desc: 'Recognise positive mentality and sportsmanship in the match.', winning: '2 xp', losing: '2 xp', points: '0 Points' }
+                    ].map((row, idx) => {
+                      const rowBg = idx % 2 === 0 ? '#242424' : '#1e1e1e';
+                      return (
+                        <TableRow key={idx} sx={{ bgcolor: rowBg, '&:hover': { bgcolor: '#2c2c2c' }, transition: 'background-color 0.15s' }}>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 24 }}>{getRowIcon(row.action)}</Box>
+                              <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'Woodford Bourne Pro, Arial, sans-serif' }}>{row.action}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', py: 1.5 }}>
+                            {row.desc}
+                          </TableCell>
+                          {row.isMerged ? (
+                            <TableCell colSpan={2} align="center" sx={{ color: '#00a896', fontWeight: 800, fontSize: '0.95rem', bgcolor: 'rgba(0,168,150,0.05)', py: 1.5 }}>
+                              {row.winning}
+                            </TableCell>
+                          ) : (
+                            <>
+                              <TableCell align="center" sx={{
+                                color: row.isWinningEmpty ? 'rgba(255,255,255,0.15)' : 'white',
+                                fontWeight: row.isWinningEmpty ? 400 : 700,
+                                fontSize: '0.9rem',
+                                bgcolor: row.isWinningEmpty ? '#151515' : 'transparent',
+                                py: 1.5
+                              }}>
+                                {row.winning || '-'}
+                              </TableCell>
+                              <TableCell align="center" sx={{
+                                color: row.isLosingEmpty ? 'rgba(255,255,255,0.15)' : 'white',
+                                fontWeight: row.isLosingEmpty ? 400 : 700,
+                                fontSize: '0.9rem',
+                                bgcolor: row.isLosingEmpty ? '#151515' : 'transparent',
+                                py: 1.5
+                              }}>
+                                {row.losing || '-'}
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell align="center" sx={{
+                            color: row.points.startsWith('0') ? 'rgba(255,255,255,0.4)' : '#F1C40F',
+                            fontWeight: 800,
+                            fontSize: '0.9rem',
+                            py: 1.5
+                          }}>
+                            {row.points}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+
+                    {/* Streak Bonuses Header Row */}
+                    <TableRow sx={{ bgcolor: '#2b2b2b !important' }}>
+                      <TableCell colSpan={5} sx={{ bgcolor: '#2b2b2b !important', py: 1.8, borderBottom: '2px solid #E56A16' }}>
+                        <Typography sx={{
+                          fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                          fontWeight: 800,
+                          color: '#00a896',
+                          fontSize: '1rem',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Streak Bonuses
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+
+                    {[
+                      { action: 'Streak Bonuses: Played 25% of league matches in a row', desc: 'Player reaching a milestone for participating in 25% of the total league matches.', xp: '15 XP', points: '0 Points' },
+                      { action: 'Streak Bonuses: Played at least 50% of league matches', desc: 'Player reaching a milestone for participating in 50% of the total league matches.', xp: '50 XP', points: '0 Points' },
+                      { action: 'Streak Bonuses: Played at least 75% of league matches', desc: 'Player reaching a milestone for participating in 75% of the total league matches.', xp: '100 XP', points: '0 Points' }
+                    ].map((row, idx) => {
+                      const rowBg = idx % 2 === 0 ? '#242424' : '#1e1e1e';
+                      return (
+                        <TableRow key={`streak-${idx}`} sx={{ bgcolor: rowBg, '&:hover': { bgcolor: '#2c2c2c' }, transition: 'background-color 0.2s' }}>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'Woodford Bourne Pro, Arial, sans-serif' }}>
+                              {row.action}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', py: 1.5 }}>
+                            {row.desc}
+                          </TableCell>
+                          <TableCell colSpan={2} align="center" sx={{ color: '#00a896', fontWeight: 800, fontSize: '0.95rem', bgcolor: 'rgba(0,168,150,0.05)', py: 1.5 }}>
+                            {row.xp}
+                          </TableCell>
+                          <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 800, fontSize: '0.9rem', py: 1.5 }}>
+                            {row.points}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            );
+          })()}
         </DialogContent>
       </Dialog>
       <Dialog open={xpStatusOpen} onClose={() => setXpStatusOpen(false)} maxWidth="lg" fullWidth>
@@ -4313,7 +4468,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   { level: 4, title: 'The Specialist', range: '5,000 - 8,000', desc: 'High mastery and control over the matches, consistently excelling and asserting dominance in your position', color: '#9B59B6', label: 'Purple' },
                   { level: 5, title: 'Elite', range: '8,000 - 11,000', desc: 'Regarded as an elite player by peers, known for unwavering talent and a relentless winning mentality', color: '#3448FF', label: 'Royal Blue' },
                   { level: 6, title: 'Champion Footballer', range: '11,000 - 15,000', desc: 'Attaining coveted status as a benchmark of excellence. A true icon of the game, respected by peers and feared by opponents', color: '#E74C3C', label: 'Crimson' },
-                  { level: 7, title: 'GOAT', range: '15,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold (Separate symbol)' },
+                  { level: 7, title: 'GOAT', range: '15,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold' },
                 ].map((row) => (
                   <TableRow key={row.level} sx={{ '&:hover': { bgcolor: '#252525' } }}>
                     <TableCell sx={{ color: 'white', borderBottom: '1px solid #333', fontWeight: 700 }}>{row.level}</TableCell>

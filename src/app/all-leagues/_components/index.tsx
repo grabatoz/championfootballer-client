@@ -11,6 +11,7 @@ import Image from 'next/image';
 import AllLeaguesLoadingSkeleton from '@/Components/loading/AllLeaguesLoadingSkeleton';
 import leagueIcon from '@/Components/images/league.png';
 import trofy from '@/Components/images/trofy.png';
+import trofyy from '@/Components/images/trofy1.png';
 import faceicon from '@/Components/images/faceicon.png';
 import schedule from '@/Components/images/schedule.png';
 import inviteicon from '@/Components/images/inviteicon.png';
@@ -5341,6 +5342,7 @@ function AllLeagues() {
                                 boxSizing: 'border-box',
                               }}
                             >
+                              {isCompleted ? (
                               <Image
                                 src={league?.image || trofy}
                                 alt={`${league.name} icon`}
@@ -5349,6 +5351,16 @@ function AllLeagues() {
                                 sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
                                 style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
                               />
+                              ) : (
+                                <Image
+                                src={league?.image || trofyy}
+                                alt={`${league.name} icon`}
+                                fill
+                                priority
+                                sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                              />
+                              )}
                             </Box>
                           </Box>
                         </Grid>
