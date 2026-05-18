@@ -9,7 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { SettingsIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import AllLeaguesLoadingSkeleton from '@/Components/loading/AllLeaguesLoadingSkeleton';
-import leagueIcon from '@/Components/images/league.png';
+import leagueIcon from '@/Components/images/league icon.png';
 import trofy from '@/Components/images/trofy.png';
 import trofyy from '@/Components/images/trofy1.png';
 import faceicon from '@/Components/images/faceicon.png';
