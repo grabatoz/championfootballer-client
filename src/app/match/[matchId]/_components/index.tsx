@@ -155,8 +155,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away' | null>(null);
   const [league, setLeague] = useState<League | null>(null);
-      const theme = useTheme();
-   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
   const [playerVotes, setPlayerVotes] = useState<Record<string, number>>({});
   const [, setVotedForId] = useState<string | null>(null);
@@ -187,9 +187,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   const fetchMatchData = useCallback(() => {
     if (!matchId || !token) return;
     setLoading(true);
-    
+
     console.log('🔄 Fetching match data with cache busting...');
-    
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}?_t=${Date.now()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -761,7 +761,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
               sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}
             >
               <Groups sx={{ color: '#fff', fontSize: { xs: 22, sm: 26, md: 50 } }} />
-              <Typography sx={{ color: '#fff',mt: 1,fontWeight: 600, fontSize: { xs: 14, sm: 16, md: 18 } }}>
+              <Typography sx={{ color: '#fff', mt: 1, fontWeight: 600, fontSize: { xs: 14, sm: 16, md: 18 } }}>
                 Teams View
               </Typography>
             </Box>
@@ -792,7 +792,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   transition: 'all 0.2s',
                 }}
               >
-                <Typography sx={{ color: '#fff', mt: 1.5,fontWeight: 500, fontSize: { xs: 12, sm: 14, md: 18 } }}>
+                <Typography sx={{ color: '#fff', mt: 1.5, fontWeight: 500, fontSize: { xs: 12, sm: 14, md: 18 } }}>
                   Admin Only Edits
                 </Typography>
                 <Box
@@ -932,7 +932,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                         borderRadius: { xs: '0 0 8px 8px', md: '0 0 12px 12px' },
                         scrollbarWidth: "thin",
                         scrollbarColor: "rgba(255,255,255,0.3) transparent",
-                        "&::-webkit-scrollbar": { 
+                        "&::-webkit-scrollbar": {
                           height: "6px",
                         },
                         "&::-webkit-scrollbar-thumb": {
@@ -952,7 +952,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             : "auto",
                           scrollbarWidth: "thin",
                           scrollbarColor: "rgba(255,255,255,0.3) transparent",
-                          "&::-webkit-scrollbar": { 
+                          "&::-webkit-scrollbar": {
                             width: "6px"
                           },
                           "&::-webkit-scrollbar-thumb": {
@@ -965,7 +965,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           fontSize: { xs: 10, sm: 12, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: { xs: 700, sm: 800, md: 900 } }}>
+                        <Box sx={{ minWidth: { xs: 800, sm: 800, md: 900 } }}>
                           {/* Header */}
                           <Box
                             sx={{
@@ -981,25 +981,25 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               columnGap: { xs: 2, sm: 2, md: 1.7 },
                             }}
                           >
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: 500, 
-                              fontSize: { xs: 13, sm: 14, md: 17 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: 500,
+                              fontSize: { xs: 13, sm: 14, md: 17 },
                               pl: { xs: 1.5, sm: 2, md: 3 },
                               pr: { xs: 1, sm: 1.5, md: 2 },
                               textTransform: 'uppercase'
                             }}>Player</Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
-                              fontSize: { xs: 12, sm: 13, md: 16 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
+                              fontSize: { xs: 12, sm: 13, md: 16 },
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Goals</Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
-                              fontSize: { xs: 12, sm: 13, md: 16 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
+                              fontSize: { xs: 12, sm: 13, md: 16 },
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Assists</Box>
@@ -1016,33 +1016,33 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             >
                               Clean Sheets
                             </Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
-                              fontSize: { xs: 11, sm: 12, md: 16 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
+                              fontSize: { xs: 11, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>MOTM Votes</Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
-                              fontSize: { xs: 11, sm: 12, md: 16 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
+                              fontSize: { xs: 11, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>Def Imp Votes</Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
-                              fontSize: { xs: 11, sm: 12, md: 16 }, 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
+                              fontSize: { xs: 11, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
                             }}>+ Mentality</Box>
-                            <Box sx={{ 
-                              color: 'white', 
-                              fontWeight: '500', 
+                            <Box sx={{
+                              color: 'white',
+                              fontWeight: '500',
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               fontSize: { xs: 11, sm: 12, md: 16 },
@@ -1093,83 +1093,83 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           }
                                         }}
                                       >
-                                      <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-                                        <Box sx={{ 
-                                          display: 'flex', 
-                                          alignItems: 'center', 
-                                          mr: { xs: 0.5, sm: 1, md: 2 }, 
-                                          minWidth: { xs: 28, sm: 36, md: 44 }
-                                        }}>
-                                          <Box sx={{ 
-                                            position: 'relative', 
-                                            width: { xs: 28, sm: 32, md: 40 }, 
-                                            height: { xs: 28, sm: 32, md: 40 } 
+                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                          <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            mr: { xs: 0.5, sm: 1, md: 2 },
+                                            minWidth: { xs: 28, sm: 36, md: 44 }
                                           }}>
-                                            <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                            <Box sx={{
+                                              position: 'relative',
+                                              width: { xs: 28, sm: 32, md: 40 },
+                                              height: { xs: 28, sm: 32, md: 40 }
+                                            }}>
+                                              <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                                            </Box>
                                           </Box>
+                                          <Typography
+                                            variant="body2"
+                                            sx={{
+                                              fontWeight: 'medium',
+                                              color: 'white',
+                                              fontSize: { xs: 11, sm: 12, md: 14 },
+                                              whiteSpace: 'nowrap',
+                                              overflow: 'hidden',
+                                              textOverflow: 'ellipsis',
+                                            }}
+                                            title={formatPlayerDisplayName(player)}
+                                          >
+                                            {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
+                                            {player.isGuest && !isGuestLastName(player.lastName) && (
+                                              <Chip
+                                                label="G"
+                                                size="small"
+                                                sx={{
+                                                  ml: { xs: 0.3, sm: 0.5, md: 1 },
+                                                  height: { xs: 14, sm: 16, md: 18 },
+                                                  bgcolor: '#e67e22',
+                                                  color: 'white',
+                                                  fontSize: { xs: 8, sm: 9, md: 10 },
+                                                  '& .MuiChip-label': { px: 0.5, fontWeight: 700 }
+                                                }}
+                                              />
+                                            )}
+                                          </Typography>
+
+
                                         </Box>
-                                        <Typography
-                                          variant="body2"
-                                          sx={{
-                                            fontWeight: 'medium',
-                                            color: 'white',
-                                            fontSize: { xs: 11, sm: 12, md: 14 },
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                          }}
-                                          title={formatPlayerDisplayName(player)}
-                                        >
-                                          {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
-                                          {player.isGuest && !isGuestLastName(player.lastName) && (
-                                            <Chip
-                                              label="G"
-                                              size="small"
-                                              sx={{
-                                                ml: { xs: 0.3, sm: 0.5, md: 1 },
-                                                height: { xs: 14, sm: 16, md: 18 },
-                                                bgcolor: '#e67e22',
-                                                color: 'white',
-                                                fontSize: { xs: 8, sm: 9, md: 10 },
-                                                '& .MuiChip-label': { px: 0.5, fontWeight: 700 }
-                                              }}
-                                            />
-                                          )}
-                                        </Typography>
 
-
-                                      </Box>
-
-                                      {/* Stats cells */}
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{stats.goals ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{stats.assists ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{stats.cleanSheets ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{playerVotes[player.id] ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{defImpactVotes[player.id] ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 } 
-                                      }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                      <Box sx={{ 
-                                        textAlign: 'center', 
-                                        fontSize: { xs: 11, sm: 12, md: 14 },
-                                        fontWeight: 700
-                                      }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
+                                        {/* Stats cells */}
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{stats.goals ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{stats.assists ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{stats.cleanSheets ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{playerVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 }
+                                        }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{
+                                          textAlign: 'center',
+                                          fontSize: { xs: 11, sm: 12, md: 14 },
+                                          fontWeight: 700
+                                        }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
                                       </Box>
                                     </Box>
                                   ) : (
@@ -1235,18 +1235,18 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         open={viewTeamOpen}
         onClose={() => setViewTeamOpen(false)}
         maxWidth={false}
-                fullScreen={isMobile}
-                PaperProps={{ sx: { bgcolor: '#2b2b2b', width: { xs: '100%', sm: '90%', md: '65%' }, maxWidth: { xs: '100%', sm: '90%', md: '65%' }, borderRadius: { xs: 0, sm: 2 } } }}
+        fullScreen={isMobile}
+        PaperProps={{ sx: { bgcolor: '#2b2b2b', width: { xs: '100%', sm: '90%', md: '65%' }, maxWidth: { xs: '100%', sm: '90%', md: '65%' }, borderRadius: { xs: 0, sm: 2 } } }}
       >
         <DialogTitle sx={{
-         fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: '#d1d1d1',
-                    position: 'relative',
-                    py: 0.5,
-                    minHeight: 0,
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#d1d1d1',
+          position: 'relative',
+          py: 0.5,
+          minHeight: 0,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
             <span style={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontSize: isMobile ? '1.1rem' : '1.8rem' }}>TEAMS</span>
@@ -1256,7 +1256,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           <IconButton
             onClick={() => setViewTeamOpen(false)}
             size="small"
-             sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
+            sx={{ color: 'inherit', position: 'absolute', right: 0, top: 0, bottom: 0, width: 56, borderRadius: 0, bgcolor: '#e6e6e6', '&:hover': { bgcolor: '#e6e6e6' } }}
           >
             <Close />
           </IconButton>
