@@ -95,8 +95,8 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 18,
-                px: 2,
+                fontSize: { xs: 12, sm: 15, md: 18 },
+                px: { xs: 1, md: 2 },
                 '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
@@ -110,8 +110,8 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 18,
-                px: 2,
+                fontSize: { xs: 12, sm: 15, md: 18 },
+                px: { xs: 1, md: 2 },
                 '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
@@ -125,8 +125,8 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 18,
-                px: 2,
+                fontSize: { xs: 12, sm: 15, md: 18 },
+                px: { xs: 1, md: 2 },
                 '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
@@ -140,8 +140,8 @@ export default function Footer() {
                 textTransform: 'none',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: 18,
-                px: 2,
+                fontSize: { xs: 12, sm: 15, md: 18 },
+                px: { xs: 1, md: 2 },
                 '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
               }}
             >
@@ -154,13 +154,13 @@ export default function Footer() {
                   textTransform: 'none',
                   color: '#fff',
                   fontWeight: 500,
-                  fontSize: 16,
+                  fontSize: { xs: 13, sm: 16 },
                   p: 0,
-                  width: '100px',
-                  height: '35px',
+                  width: { xs: '80px', sm: '100px' },
+                  height: { xs: '30px', sm: '35px' },
                   bgcolor: '#00A77F',
                   borderRadius: 1.5,
-                  ml: 2,
+                  ml: { xs: 1, sm: 2 },
                   '&:hover': { bgcolor: '#008f6d', color: '#fff' },
                 }}
               >
@@ -174,13 +174,13 @@ export default function Footer() {
                   textTransform: 'none',
                   color: '#fff',
                   fontWeight: 500,
-                  fontSize: 16,
+                  fontSize: { xs: 13, sm: 16 },
                   p: 0,
-                  width: '100px',
-                  height: '35px',
+                  width: { xs: '80px', sm: '100px' },
+                  height: { xs: '30px', sm: '35px' },
                   bgcolor: '#00A77F',
                   borderRadius: 1.5,
-                  ml: 2,
+                  ml: { xs: 1, sm: 2 },
                   '&:hover': { background: "#00cc9c", color: '#fff' },
                 }}
               >

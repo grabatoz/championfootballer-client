@@ -3948,10 +3948,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     <Box
                         sx={{
                             display: 'flex',
-                            flexDirection: { xs: 'column', sm: 'row' },
-                            alignItems: { xs: 'center', sm: 'flex-end' },
-                            justifyContent: 'space-between',
-                            gap: { xs: 1.5, sm: 4, md: 10 },
+                            flexDirection: 'row',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            gap: { xs: 2, sm: 4, md: 10 },
                             color: 'white',
                             px: { xs: 1, sm: 3, md: 6 },
                             // mt: 4,
