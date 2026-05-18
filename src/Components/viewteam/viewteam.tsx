@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useMemo, useState } from 'react';
 import {
@@ -1745,9 +1745,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               </Box>
             </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'center', mt: -2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: { xs: 1, sm: 1.5 }, justifyContent: 'center', mt: -2, width: '100%' }}>
             {/* Home Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
               {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = homeCaptainId === pid;
@@ -1768,9 +1768,9 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               })}
             </Box>
             {/* Divider */}
-            <Box sx={{ width: { xs: '100%', sm: '1.5px' }, height: { xs: '1.5px', sm: 'auto' }, bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
+            <Box sx={{ width: '1.5px', height: 'auto', bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
             {/* Away Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: { xs: '100%', sm: 275 } }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
               {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
                 const pid = String(p.id || p.name);
                 const isCap = awayCaptainId === pid;
