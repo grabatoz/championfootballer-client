@@ -4321,7 +4321,8 @@ export default function LeagueDetailPage() {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 py: 2,
-                                                px: { xs: 2, sm: 3 },
+                                                pl: 0,
+                                                pr: { xs: 2, sm: 3 },
                                                 backgroundColor: 'rgba(30, 30, 30, 0.95)',
                                                 borderBottom: '1px solid rgba(255,255,255,0.1)'
                                             }}>
@@ -4336,9 +4337,14 @@ export default function LeagueDetailPage() {
                                                         flexShrink: 0,
                                                         display: 'flex',
                                                         alignItems: 'center',
+                                                        pl: { xs: 2, sm: 3 },
                                                         pr: { xs: 1.2, sm: 2 },
                                                         cursor: 'pointer',
-                                                        userSelect: 'none'
+                                                        userSelect: 'none',
+                                                        position: 'sticky',
+                                                        left: 0,
+                                                        zIndex: 3,
+                                                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
                                                     }}>
                                                     <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
                                                         {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
@@ -4450,7 +4456,8 @@ export default function LeagueDetailPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     py: { xs: 0.7, sm: 0.7 },
-                                                                    px: { xs: 2, sm: 3 },
+                                                                    pl: 0,
+                                                                    pr: { xs: 2, sm: 3 },
                                                                     backgroundColor: rowBgColor,
                                                                     borderBottom: '1px solid rgba(255,255,255,0.08)',
                                                                     color: '#fff',
@@ -4466,7 +4473,16 @@ export default function LeagueDetailPage() {
                                                                     flexShrink: 0,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
-                                                                    pr: { xs: 1.2, sm: 2 }
+                                                                    pl: { xs: 2, sm: 3 },
+                                                                    pr: { xs: 1.2, sm: 2 },
+                                                                    position: 'sticky',
+                                                                    left: 0,
+                                                                    zIndex: 2,
+                                                                    backgroundColor: rowBgColor,
+                                                                    transition: 'background-color 0.2s',
+                                                                    '.MuiListItem-root:hover &': {
+                                                                        backgroundColor: rowBgColorHover,
+                                                                    },
                                                                 }}>
                                                                     <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                                                                         <Box sx={{
@@ -5908,9 +5924,9 @@ export default function LeagueDetailPage() {
                                                 },
                                             }}
                                         >
-                                            <div className="min-w-[980px] rounded-lg overflow-hidden league-table">
+                                            <div className="min-w-[820px] rounded-lg league-table">
                                                 {/* Header Bar aligned to table grid */}
-                                                <div className="grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
+                                                <div className="grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
                                                     <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
                                                         <span className="text-muted-foreground">{invitePlayersMessage}</span>
                                                         <span className="font-bold">{inviteCodeDisplay}</span>
@@ -5935,7 +5951,7 @@ export default function LeagueDetailPage() {
                                                     {isAdmin && (
                                                         <div className="col-start-10 col-span-2 justify-self-end">
                                                             {league?.active ? (
-                                                                <Link href={`/league/${leagueId}/match`} passHref>
+                                                                 <Link href={`/league/${leagueId}/match`} passHref>
                                                                     <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
                                                                         + New Match
                                                                     </button>
@@ -5968,9 +5984,9 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading">
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading">
                                                         <div className="text-center">#</div>
-                                                        <div className="pl-[52px] text-left">NAME</div>
+                                                        <div className="pl-[52px] text-left sticky left-0 z-10 bg-table-header">NAME</div>
                                                         <div className="text-center">MOTM</div>
                                                         <div className="text-center">P</div>
                                                         <div className="text-center">W</div>
@@ -6046,13 +6062,13 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`grid grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
+                                                                    className={`group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-foreground font-medium">{index + 1}</div>
 
                                                                     {/* Player Info */}
-                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className={`flex items-center gap-3 min-w-0 sticky left-0 z-10 ${isEven ? 'bg-table-row-even group-hover:bg-[#424242]' : 'bg-table-row-odd group-hover:bg-[#353535]'} transition-colors duration-150`}>
                                                                         <div
                                                                             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
                                                                             style={{

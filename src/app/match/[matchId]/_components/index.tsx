@@ -987,7 +987,11 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               fontSize: { xs: 13, sm: 14, md: 17 },
                               pl: { xs: 1.5, sm: 2, md: 3 },
                               pr: { xs: 1, sm: 1.5, md: 2 },
-                              textTransform: 'uppercase'
+                              textTransform: 'uppercase',
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 3,
+                              bgcolor: '#2b2b2b',
                             }}>Player</Box>
                             <Box sx={{
                               color: 'white',
@@ -1093,7 +1097,18 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           }
                                         }}
                                       >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                        <Box sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          minWidth: 0,
+                                          position: 'sticky',
+                                          left: 0,
+                                          zIndex: 2,
+                                          background: idx % 2 === 0
+                                            ? 'linear-gradient(90deg, rgba(229,106,22,0.22) 0%, #383838 60%)'
+                                            : 'linear-gradient(90deg, rgba(229,106,22,0.16) 0%, #2b2b2b 60%)',
+                                          pr: 1.5,
+                                        }}>
                                           <Box sx={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1194,7 +1209,16 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         }}
                                       >
                                         {/* Player cell */}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                                        <Box sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          minWidth: 0,
+                                          position: 'sticky',
+                                          left: 0,
+                                          zIndex: 2,
+                                          background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
+                                          pr: 1.5,
+                                        }}>
                                           <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 0.5, sm: 1, md: 2 }, minWidth: { xs: 28, sm: 36, md: 44 } }}>
                                             <Box sx={{ position: 'relative', width: { xs: 28, sm: 32, md: 40 }, height: { xs: 28, sm: 32, md: 40 } }}>
                                               <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
