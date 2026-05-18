@@ -4311,8 +4311,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     <TableRow>
                       <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Action</TableCell>
                       <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>for Winning Team</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>for Losing Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Winning Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Losing Team</TableCell>
                       <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Classic Scoring</TableCell>
                     </TableRow>
                   </TableHead>
