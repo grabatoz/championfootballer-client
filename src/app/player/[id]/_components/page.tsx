@@ -417,6 +417,29 @@ export default function PlayerStatsPage() {
     // Tab navigation state
     const [activeTab, setActiveTab] = useState('current');
     const [refreshNonce, setRefreshNonce] = useState(0);
+    const trophiesCardRef = useRef<HTMLDivElement | null>(null);
+    const rewardsCardRef = useRef<HTMLDivElement | null>(null);
+    const historyCardRef = useRef<HTMLDivElement | null>(null);
+
+    const handleTabClick = useCallback((tab: string) => {
+        setActiveTab(tab);
+
+        if (!isMobile) return;
+
+        const scrollTargets: Partial<Record<string, React.RefObject<HTMLDivElement | null>>> = {
+            trophies: trophiesCardRef,
+            rewards: rewardsCardRef,
+            history: historyCardRef,
+        };
+
+        const targetRef = scrollTargets[tab];
+        if (!targetRef?.current) return;
+
+        targetRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+    }, [isMobile]);
     
     // Stats Over Season Modal state
     const [statsModalOpen, setStatsModalOpen] = useState(false);
@@ -2746,7 +2769,7 @@ export default function PlayerStatsPage() {
                         {['current', 'career', 'trophies', 'rewards', 'history'].map(tab => (
                             <Box
                                 key={tab}
-                                onClick={() => setActiveTab(tab)}
+                                onClick={() => handleTabClick(tab)}
                                 sx={{
                                     flex: 1,
                                     minWidth: 0,
@@ -2820,10 +2843,10 @@ export default function PlayerStatsPage() {
                         </Grid>
                         <Grid item xs={12} sm={4} md>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                                <Typography sx={{ color: '#c8c8c8', fontSize: 19, fontWeight: 500 }}>
+                                <Typography sx={{ color: '#c8c8c8', fontSize: {xs:16 , sm :16 , md:19}, fontWeight: 500 }}>
                                     Total xp
                                 </Typography>
-                                <Typography sx={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>
+                                <Typography sx={{ color: '#ffffff', fontSize:  {xs:15 , sm :15 , md:18}, fontWeight: 700 }}>
                                     {xpLoading ? '...' : `${Math.max(0, xp).toLocaleString()} XP`}
                                 </Typography>
                                 <Box sx={{ 
@@ -2848,7 +2871,13 @@ export default function PlayerStatsPage() {
                     {/* Three Cards Section */}
                     <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
                         {/* Card 1: Trophies & Awards */}
-                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+                        <Grid
+                            item
+                            xs={12}
+                            md={4}
+                            ref={trophiesCardRef}
+                            sx={{ display: 'flex', scrollMarginTop: { xs: '84px', md: 0 } }}
+                        >
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
@@ -2945,7 +2974,13 @@ export default function PlayerStatsPage() {
                         </Grid>
 
                         {/* Card 2: Rewards XP */}
-                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+                        <Grid
+                            item
+                            xs={12}
+                            md={4}
+                            ref={rewardsCardRef}
+                            sx={{ display: 'flex', scrollMarginTop: { xs: '84px', md: 0 } }}
+                        >
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 
@@ -2995,7 +3030,13 @@ export default function PlayerStatsPage() {
                         </Grid>
 
                         {/* Card 3: History & Records */}
-                        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+                        <Grid
+                            item
+                            xs={12}
+                            md={4}
+                            ref={historyCardRef}
+                            sx={{ display: 'flex', scrollMarginTop: { xs: '84px', md: 0 } }}
+                        >
                             <Paper sx={{ 
                                 bgcolor: CARD_BG, 
                                 p: 2.5, 

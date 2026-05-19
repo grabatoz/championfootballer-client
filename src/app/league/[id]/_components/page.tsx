@@ -145,6 +145,32 @@ type PlayerCardProps = {
     position: string;
 };
 
+const resolveImageUrl = (value: any): any => {
+    if (value == null) return null;
+    if (typeof value === 'object' && value.src) {
+        return value;
+    }
+    const raw = String(value).trim();
+    if (!raw || raw === 'null' || raw === 'undefined') return null;
+
+    if (
+        raw.startsWith('http://') ||
+        raw.startsWith('https://') ||
+        raw.startsWith('//') ||
+        raw.startsWith('data:') ||
+        raw.startsWith('blob:')
+    ) {
+        return raw;
+    }
+
+    const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+    if (!apiBase) {
+        return raw.startsWith('/') ? raw : `/${raw}`;
+    }
+
+    return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
+};
+
 // type PlayerStatsMetric = keyof LeaderboardResponse['players'][number];
 
 type LeagueComputedStatus = {
@@ -2960,7 +2986,7 @@ export default function LeagueDetailPage() {
                                 minWidth: 0 // Prevent overflow
                             }}>
                                 <Image
-                                    src={match.homeTeamImage || homeImg}
+                                    src={resolveImageUrl(match.homeTeamImage || homeImg)}
                                     alt={match.homeTeamName}
                                     width={40}
                                     height={40}
@@ -3045,7 +3071,7 @@ export default function LeagueDetailPage() {
                                 minWidth: 0
                             }}>
                                 <Image
-                                    src={match.awayTeamImage || awayImg}
+                                    src={resolveImageUrl(match.awayTeamImage || awayImg)}
                                     alt={match.awayTeamName}
                                     width={40}
                                     height={40}
@@ -4346,7 +4372,7 @@ export default function LeagueDetailPage() {
                                                         zIndex: 3,
                                                         backgroundColor: 'rgba(30, 30, 30, 0.95)',
                                                     }}>
-                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#fff', textAlign: 'left !important' }}>
                                                         {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
                                                     </Typography>
                                                     <Box
@@ -4410,7 +4436,7 @@ export default function LeagueDetailPage() {
                                                     display: 'block',
                                                     textAlign: 'center'
                                                 }}>
-                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
                                                         PLAYING STYLE
                                                     </Typography>
                                                 </Box>
@@ -4420,15 +4446,15 @@ export default function LeagueDetailPage() {
 
                                                 {/* View Stats Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
                                                         VIEW STATS
                                                     </Typography>
                                                 </Box>
 
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                                                    <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
-                                                        <span style={{ textTransform: 'uppercase' }}>xp</span> POINTS
+                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
+                                                        {filteredLeague?.showPoints === true ? 'XP' : 'PTS'}
                                                     </Typography>
                                                 </Box>
                                             </Box>
@@ -4734,7 +4760,7 @@ export default function LeagueDetailPage() {
                                                                         // width: '30%'
                                                                     }}>
                                                                         <Image
-                                                                            src={match.homeTeamImage || HomeTeamImage}
+                                                                            src={resolveImageUrl(match.homeTeamImage || HomeTeamImage)}
                                                                             alt={match.homeTeamName}
                                                                             width={65}
                                                                             height={65}
@@ -4789,7 +4815,7 @@ export default function LeagueDetailPage() {
                                                                         // width: '30%'
                                                                     }}>
                                                                         <Image
-                                                                            src={match.awayTeamImage || AwayTeamImage}
+                                                                            src={resolveImageUrl(match.awayTeamImage || AwayTeamImage)}
                                                                             alt={match.awayTeamName}
                                                                             width={65}
                                                                             height={65}
@@ -5226,7 +5252,7 @@ export default function LeagueDetailPage() {
                                                                         minWidth: 0,
                                                                     }}>
                                                                         <Image
-                                                                            src={match.homeTeamImage || HomeTeamImage}
+                                                                            src={resolveImageUrl(match.homeTeamImage || HomeTeamImage)}
                                                                             alt={match.homeTeamName}
                                                                             width={65}
                                                                             height={65}
@@ -5321,7 +5347,7 @@ export default function LeagueDetailPage() {
                                                                         minWidth: 0,
                                                                     }}>
                                                                         <Image
-                                                                            src={match.awayTeamImage || AwayTeamImage}
+                                                                            src={resolveImageUrl(match.awayTeamImage || AwayTeamImage)}
                                                                             alt={match.awayTeamName}
                                                                             width={65}
                                                                             height={65}
@@ -5984,7 +6010,7 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading">
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading font-bold">
                                                         <div className="text-center">#</div>
                                                         <div className="pl-[52px] text-left sticky left-0 z-10 bg-table-header">NAME</div>
                                                         <div className="text-center">MOTM</div>
@@ -6079,7 +6105,7 @@ export default function LeagueDetailPage() {
                                                                         >
                                                                             {playerImageSrc ? (
                                                                                 <div className="relative w-full h-full">
-                                                                                    <Image src={playerImageSrc} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
+                                                                                    <Image src={resolveImageUrl(playerImageSrc)} alt={player?.name || 'Player'} fill style={{ objectFit: 'cover' }} />
                                                                                 </div>
                                                                             ) : (
                                                                                 tablePlayerInitials
@@ -6490,7 +6516,7 @@ export default function LeagueDetailPage() {
                                                                             }}
                                                                         >
                                                                             {leaderboardAvatarSrc ? (
-                                                                                <Image src={leaderboardAvatarSrc} alt={leaderboardPlayerName || 'Player'} width={33} height={33} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                                                                                <Image src={resolveImageUrl(leaderboardAvatarSrc)} alt={leaderboardPlayerName || 'Player'} width={33} height={33} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                                                                             ) : (
                                                                                 leaderboardInitials
                                                                             )}
