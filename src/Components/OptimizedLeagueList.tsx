@@ -217,7 +217,7 @@ export default function OptimizedLeagueList() {
         </div>
       ) : leagues.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded">
-          <p className="text-gray-600">No leagues found</p>
+          <p className="text-gray-600 empty-state-message">No leagues found</p>
           <button
             onClick={() => {
               const name = prompt('League name:');

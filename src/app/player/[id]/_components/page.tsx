@@ -1923,11 +1923,11 @@ export default function PlayerStatsPage() {
                                             Press Enter to search players you have played with.
                                         </Typography>
                                     ) : teammates.length === 0 ? (
-                                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                        <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
                                             No player data found for this filter.
                                         </Typography>
                                     ) : filteredTeammates.length === 0 ? (
-                                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                                        <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
                                             This player name is not found in selected league filters.
                                         </Typography>
                                     ) : (
@@ -2914,7 +2914,7 @@ export default function PlayerStatsPage() {
                                         <CircularProgress size={24} sx={{ color: TEAL_PRIMARY }} />
                                     </Box>
                                 ) : earnedTrophies.length === 0 ? (
-                                    <Typography sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
+                                    <Typography className="empty-state-message" sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
                                         No trophies yet
                                     </Typography>
                                 ) : (
@@ -3009,7 +3009,7 @@ export default function PlayerStatsPage() {
                                         <CircularProgress size={24} sx={{ color: TEAL_PRIMARY }} />
                                     </Box>
                                 ) : playerBadges.length === 0 ? (
-                                    <Typography sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
+                                    <Typography className="empty-state-message" sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
                                         No rewards earned yet
                                     </Typography>
                                 ) : (
@@ -3230,7 +3230,7 @@ export default function PlayerStatsPage() {
                                 </Box>
                             ) : seasonWiseStats.length === 0 ? (
                                 <Box sx={{ textAlign: 'center', py: 6 }}>
-                                    <Typography sx={{ color: '#555', fontSize: 16, mb: 1 }}>
+                                    <Typography className="empty-state-message" sx={{ color: '#555', fontSize: 16, mb: 1 }}>
                                         No season to compare.
                                     </Typography>
                                 </Box>

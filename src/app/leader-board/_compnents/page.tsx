@@ -515,11 +515,11 @@ export default function LeaderBoardPage() {
         <LeaderBoardLoadingSkeleton compact />
       ) : !selectedLeague ? (
         <Paper sx={{ p: 2, background: 'rgba(255,255,255,0.06)', color: 'white' }}>
-          <Typography variant="body1">No active leagues available for leaderboard.</Typography>
+          <Typography className="empty-state-message" variant="body1">No active leagues available for leaderboard.</Typography>
         </Paper>
       ) : topPlayers.length === 0 ? (
         <Paper sx={{ p: 2, background: 'rgba(255,255,255,0.06)', color: 'white' }}>
-          <Typography variant="body1">No stats have been recorded for this league yet.</Typography>
+          <Typography className="empty-state-message" variant="body1">No stats have been recorded for this league yet.</Typography>
         </Paper>
       ) : (
         topPlayers.map((player, idx) => {

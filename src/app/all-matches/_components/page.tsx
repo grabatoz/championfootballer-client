@@ -2403,7 +2403,9 @@ export default function AllMatches() {
                                             opacity: 0.8,
                                         }}
                                     >
-                                        No seasons found
+                                        <Typography className="empty-state-message" variant="body2">
+                                            No seasons found
+                                        </Typography>
                                     </MenuItem>
                                 ) : (
                                     sortedSeasons.map((season) => (
@@ -2586,7 +2588,7 @@ export default function AllMatches() {
                                     color: '#fff',
                                 }}
                             >
-                                <Typography variant="h6">No leagues found</Typography>
+                                <Typography className="empty-state-message" variant="h6">No leagues found</Typography>
                                 <Typography variant="body2">
                                   Create a new league or join an existing one to get started.
                                 </Typography>
@@ -2604,8 +2606,8 @@ export default function AllMatches() {
                                     color: '#b0bec5',
                                 }}
                             >
-                                <Typography variant="h6">No matches found</Typography>
-                                <Typography variant="body2">
+                                <Typography className="empty-state-message" variant="h6">No matches found</Typography>
+                                <Typography className="empty-state-message" variant="body2">
                                     No matches found in {selectedLeagueName}{selectedSeason !== 'all' ? ` (${selectedSeasonName})` : ''}
                                 </Typography>
                             </Paper>
@@ -2622,7 +2624,7 @@ export default function AllMatches() {
                                     color: '#b0bec5',
                                 }}
                             >
-                                <Typography variant="h6">
+                                <Typography className="empty-state-message" variant="h6">
                                     {matchFilter === 'fixtures'
                                         ? 'No fixtures found'
                                         : matchFilter === 'results'
@@ -2631,7 +2633,7 @@ export default function AllMatches() {
                                                 ? 'No archived matches found'
                                                 : 'No matches found'}
                                 </Typography>
-                                <Typography variant="body2">
+                                <Typography className="empty-state-message" variant="body2">
                                     {matchFilter === 'fixtures'
                                         ? 'There are no upcoming fixtures for this league.'
                                         : matchFilter === 'results'

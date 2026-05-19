@@ -1383,7 +1383,7 @@ const AllPlayersPage = () => {
               {/* Player List Content */}
               {activeSearchTerm && filteredPlayers.length === 0 && (
                 <Box sx={{ backgroundColor: 'rgba(40, 40, 40, 0.9)', py: 4, textAlign: 'center' }}>
-                  <Typography sx={{ color: 'white', fontWeight: 500 }}>
+                  <Typography className="empty-state-message" sx={{ color: 'white', fontWeight: 500 }}>
                     User not found
                   </Typography>
                 </Box>
@@ -1395,8 +1395,8 @@ const AllPlayersPage = () => {
               ) : noLeagues ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, backgroundColor: 'rgba(40, 40, 40, 0.9)' }}>
                   <Box sx={{ p: 3, textAlign: 'center', color: '#fff' }}>
-                    <Typography variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Create a new league or join an existing one to see players here.</Typography>
+                    <Typography className="empty-state-message" variant="h6" sx={{ mb: 0.5 }}>No leagues found</Typography>
+                    <Typography className="empty-state-message" variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Create a new league or join an existing one to see players here.</Typography>
                   </Box>
                 </Box>
               ) : error ? (

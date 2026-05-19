@@ -685,7 +685,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
       {loading ? (
         <MatchResultLoadingSkeleton mode={isEmbeddedInDialog ? 'dialog' : 'page'} />
       ) : !match ? (
-        <Typography color="error">Match not found.</Typography>
+        <Typography className="empty-state-message" color="error">Match not found.</Typography>
       ) : (
         <>
           {/* Match Result Label */}

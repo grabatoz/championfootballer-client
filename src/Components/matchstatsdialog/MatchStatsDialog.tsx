@@ -3446,7 +3446,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Button>
                         ))}
                         {captainPickCandidates.length === 0 && (
-                            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                            <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
                                 No players available.
                             </Typography>
                         )}
@@ -3596,7 +3596,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         <Alert severity="error" sx={{ mb: 1, bgcolor: 'rgba(244,67,54,0.1)', color: '#ffcdd2', border: '1px solid rgba(244,67,54,0.3)' }}>{matchesError}</Alert>
                     )}
                     {!matchesLoading && !matchesError && selectedLeagueMatches.length === 0 && (
-                        <Typography sx={{ opacity: 0.9, color: '#9CA3AF' }}>No matches found.</Typography>
+                        <Typography className="empty-state-message" sx={{ opacity: 0.9, color: '#9CA3AF' }}>No matches found.</Typography>
                     )}
                     {!matchesLoading && !matchesError && selectedLeagueMatches.length > 0 && (
                         <Box sx={{ display: 'grid', gap: 1 }}>

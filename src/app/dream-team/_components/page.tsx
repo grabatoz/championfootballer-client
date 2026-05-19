@@ -518,7 +518,9 @@ const DreamTeamPage = () => {
       >
         {noLeagues ? (
           <MenuItem disabled sx={{ opacity: 0.7 }}>
-            No leagues found
+            <Typography className="empty-state-message" variant="body2">
+              No leagues found
+            </Typography>
           </MenuItem>
         ) : sortedLeagues.map((leagueItem) => {
           const isActive = leagueItem.id === selectedLeague;
@@ -655,11 +657,11 @@ const DreamTeamPage = () => {
               mb: 4,
             }}
           >
-            <Typography variant="h6" sx={{ mb: 2, color: '#E5E7EB' }}>
+            <Typography className="empty-state-message" variant="h6" sx={{ mb: 2, color: '#E5E7EB' }}>
               {noLeagues ? 'No leagues found' : 'Player stats'}
             </Typography>
             {noLeagues ? (
-              <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+              <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
                 You are not a member of any league yet. Join or create a league to view your Dream Team.
               </Typography>
             ) : dreamTeamPlayers.length ? (
@@ -740,7 +742,7 @@ const DreamTeamPage = () => {
                 ))}
               </Box>
             ) : (
-              <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+              <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
                 No players in this Dream Team yet.
               </Typography>
             )}

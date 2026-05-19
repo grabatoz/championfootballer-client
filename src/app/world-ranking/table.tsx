@@ -725,7 +725,7 @@ export default function WorldRankingTable() {
                 {!loading && !error && filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} sx={{ bgcolor: 'transparent' }}>
-                      <Typography sx={{ textAlign: 'center', py: 5, fontSize: 14, color: '#888' }}>
+                      <Typography className="empty-state-message" sx={{ textAlign: 'center', py: 5, fontSize: 14, color: '#888' }}>
                         No players found.
                       </Typography>
                     </TableCell>

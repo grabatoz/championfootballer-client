@@ -2726,7 +2726,11 @@ export default function GlobalTrophyRoom() {
             }}
           >
             {filteredLeagues.length === 0 ? (
-              <MenuItem disabled sx={{ opacity: 0.7 }}>No leagues found</MenuItem>
+              <MenuItem disabled sx={{ opacity: 0.7 }}>
+                <Typography className="empty-state-message" variant="body2">
+                  No leagues found
+                </Typography>
+              </MenuItem>
             ) : (
               filteredLeagues.map((leagueItem) => (
                 <MenuItem
@@ -3280,9 +3284,36 @@ export default function GlobalTrophyRoom() {
                 </Paper>
               </>
             ) : (
-              <Typography sx={{ mt: 4, textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem' }}>
-                No achievements yet. Play more matches to unlock trophies!
-              </Typography>
+              <Paper sx={{
+                background: '#1d1d22',
+                borderRadius: { xs: '0 0 26px 26px', sm: '0 0 38px 38px' },
+                p: 0,
+                mb: 3,
+                border: '1.5px solid rgba(255,255,255,0.75)',
+                overflow: 'hidden',
+                maxWidth: 900,
+                mx: 'auto',
+              }}>
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  py: { xs: 6, sm: 8 },
+                  px: { xs: 2, sm: 4 },
+                  gap: 2,
+                }}>
+                  <Trophy size={48} color="rgba(255,255,255,0.25)" />
+                  <Typography sx={{
+                    textAlign: 'center',
+                    color: 'rgba(255,255,255,0.55)',
+                    fontSize: { xs: '1rem', sm: '1.2rem' },
+                    fontWeight: 600,
+                  }}>
+                    No achievements yet. Play more matches to unlock trophies!
+                  </Typography>
+                </Box>
+              </Paper>
             );
           })()}
 

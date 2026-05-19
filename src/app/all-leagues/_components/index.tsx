@@ -697,7 +697,9 @@ function LeagueMembersDialog({
                     ))
                   ) : (
                     <MenuItem value="" disabled>
-                      No season membership found
+                      <Typography className="empty-state-message" variant="body2">
+                        No season membership found
+                      </Typography>
                     </MenuItem>
                   )}
                 </Select>
@@ -1733,7 +1735,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 </FormControl>
               )}
               {seasons.length === 0 && (
-                <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
                   No active season available. Open Archived Seasons to review archived ones.
                 </Typography>
               )}
@@ -1766,7 +1768,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   }}
                 >
                   <MenuItem value="" disabled>
-                    {sortedSeasonMembers.length > 0 ? 'Select active season player' : 'No active players in this season'}
+                    <Typography className="empty-state-message" variant="body2">
+                      {sortedSeasonMembers.length > 0 ? 'Select active season player' : 'No active players in this season'}
+                    </Typography>
                   </MenuItem>
                   {sortedSeasonMembers.map((member: User) => (
                     <MenuItem key={member.id} value={member.id}>
@@ -2092,7 +2096,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   )
                 })}
                 {sortedSeasonMembers.length === 0 && (
-                  <Typography variant="body2" sx={{ color: '#9CA3AF', px: 2, py: 1 }}>
+                  <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF', px: 2, py: 1 }}>
                     No active members found in this selected season.
                   </Typography>
                 )}
@@ -2400,7 +2404,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           </Typography>
 
           {archivedSeasons.length === 0 ? (
-            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+            <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
               No archived seasons found for this league.
             </Typography>
           ) : (
@@ -2587,7 +2591,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               <CircularProgress size={24} />
             </Box>
           ) : archivedMatches.length === 0 ? (
-            <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+            <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF' }}>
               No archived matches found.
             </Typography>
           ) : (
@@ -5094,14 +5098,14 @@ function AllLeagues() {
             <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
+              <Typography className="empty-state-message" variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
                 Create a new league or join an existing one to get started.
               </Typography>
             </Box>
           ) : leaguesToDisplay.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>
+              <Typography className="empty-state-message" variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>
                 No leagues found for selected filters
               </Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
@@ -5819,7 +5823,7 @@ function AllLeagues() {
                       opacity: 0.8,
                     }}
                   >
-                    <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
                       No archived leagues found yet.
                     </Typography>
                   </Box>
@@ -6141,7 +6145,7 @@ function AllLeagues() {
                       opacity: 0.8,
                     }}
                   >
-                    <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
                       No archived seasons found yet.
                     </Typography>
                   </Box>

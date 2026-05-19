@@ -412,7 +412,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
             />
           </Box>
         )) : (
-          <Typography sx={{ gridColumn: '1 / -1', textAlign: 'center', mt: 2 }}>
+          <Typography className="empty-state-message" sx={{ gridColumn: '1 / -1', textAlign: 'center', mt: 2 }}>
             No trophies to display.
           </Typography>
         )}

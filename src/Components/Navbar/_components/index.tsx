@@ -3356,7 +3356,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           ) : notifications.length === 0 ? (
             <Box sx={{ p: 4, textAlign: 'center', color: '#666' }}>
               <NotificationsIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
-              <Typography>No notifications yet</Typography>
+              <Typography className="empty-state-message">No notifications yet</Typography>
               <Typography variant="caption" sx={{ color: '#999', mt: 1, display: 'block' }}>
                 Create a match to test notifications
               </Typography>
