@@ -595,6 +595,7 @@ export default function WorldRankingTable() {
           <TableContainer
             sx={{
               maxHeight: 620,
+              overflowX: 'auto',
               '&::-webkit-scrollbar': { display: 'none' },
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
@@ -605,6 +606,7 @@ export default function WorldRankingTable() {
               stickyHeader
               size="small"
               sx={{
+                minWidth: { xs: 760, sm: 860 },
                 '& .MuiTableCell-root': { border: 'none' },
                 '& .MuiTableCell-head': {
                   bgcolor: '#dddddd !important',
@@ -638,8 +640,16 @@ export default function WorldRankingTable() {
                           fontSize: 13,
                           letterSpacing: 0.5,
                           py: 1.5,
+                          minWidth: i === 0 ? 90 : i === 1 ? 210 : 120,
                           // borderBottom: '2px solid #e56a16 !important',
                           pl: i === 0 ? 3 : 1.5,
+                          ...(i === 1 ? {
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 5,
+                            backgroundColor: '#dddddd !important',
+                            boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
+                          } : {}),
                         }}
                       >
                         {col.label}
@@ -667,10 +677,27 @@ export default function WorldRankingTable() {
                         transition: 'background 0.15s',
                       }}
                     >
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8 }}>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8, minWidth: 90 }}>
                         {p.rank}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#fff', fontSize: 14, py: 1.8 }}>
+                      <TableCell
+                        sx={{
+                          fontWeight: 600,
+                          color: '#fff',
+                          fontSize: 14,
+                          py: 1.8,
+                          minWidth: 210,
+                          position: 'sticky',
+                          left: 0,
+                          zIndex: 3,
+                          backgroundColor: rowBg,
+                          boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                          transition: 'background-color 0.15s',
+                          '.MuiTableRow-root:hover &': {
+                            backgroundColor: '#2c2c2c',
+                          },
+                        }}
+                      >
                         <Link href={`/player/${p.id}`} style={{ textDecoration: 'none', color: '#fff' }}>
                           {p.name}
                         </Link>

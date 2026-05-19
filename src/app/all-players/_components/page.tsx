@@ -1266,7 +1266,8 @@ const AllPlayersPage = () => {
                 display: 'flex',
                 alignItems: 'center',
                 py: 2,
-                px: { xs: 2, sm: 3 },
+                pl: 0,
+                pr: { xs: 2, sm: 3 },
                 backgroundColor: 'rgba(30, 30, 30, 0.95)',
                 // borderRadius: '8px 8px 0 0',
                 borderBottom: '1px solid rgba(255,255,255,0.1)'
@@ -1282,9 +1283,15 @@ const AllPlayersPage = () => {
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    pl: { xs: 2, sm: 3 },
                     pr: { xs: 1.2, sm: 2 },
                     cursor: 'pointer',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 3,
+                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                    boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                   }}>
                   <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
                     {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
@@ -1397,8 +1404,7 @@ const AllPlayersPage = () => {
               ) : (
                 <Box sx={{
                   flex: 1,
-                  overflowY: 'auto',
-                  overflowX: 'visible',
+                  overflow: 'visible',
                   backgroundColor: '#383838',
                   borderRadius: '0 0 8px 8px',
                   '&::-webkit-scrollbar': { display: 'none' },
@@ -1430,10 +1436,12 @@ const AllPlayersPage = () => {
                               router.push(`/player/${player.id}`);
                             }}
                             sx={{
+                              position: 'static',
                               display: 'flex',
                               alignItems: 'center',
                               py: { xs: 0.7, sm: 0.7 },
-                              px: { xs: 2, sm: 3 },
+                              pl: 0,
+                              pr: { xs: 2, sm: 3 },
                               backgroundColor: rowBgColor,
                               borderBottom: '1px solid rgba(255,255,255,0.08)',
                               color: textColor,
@@ -1452,7 +1460,23 @@ const AllPlayersPage = () => {
                               flexShrink: 0,
                               display: 'flex',
                               alignItems: 'center',
-                              pr: { xs: 1.2, sm: 2 }
+                              pl: { xs: 2, sm: 3 },
+                              pr: { xs: 1.2, sm: 2 },
+                              // position: 'sticky',
+                              // left: 0,
+                              // zIndex: 2,
+                              backgroundColor: rowBgColor,
+                              // boxShadow: '8px 0 12px -12px rgba(0,0,0,0.68)',
+                              transition: 'background-color 0.2s, box-shadow 0.2s',
+                              '.MuiListItem-root:hover &': {
+                                backgroundColor: rowBgColorHover,
+                                boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
+                              },
+                               position: 'sticky',
+                    left: 0,
+                    zIndex: 3,
+                    // backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                    boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                             }}>
                               <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                                 <Box sx={{

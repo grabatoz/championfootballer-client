@@ -2716,7 +2716,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           {/* LOGO SECTION */}
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ 
-              width: { xs: 220, sm: 240, md: 340, lg: 400 },
+              width: { xs: 250, sm: 240, md: 340, lg: 400 },
               height: { xs: 34, sm: 48, md: 75 },
               display: 'flex',
               alignItems: 'center',

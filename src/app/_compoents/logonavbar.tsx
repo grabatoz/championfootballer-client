@@ -18,7 +18,7 @@ function LogoNavbar() {
           px: { xs: 2, md: 7 }
         }}
       >
-        <Box sx={{ width: { xs: 300, sm: 340, md: 700 }, mx: { xs: 'auto', md: 0 } }}>
+        <Box sx={{ width: { xs: 250, sm: 340, md: 700 }, mx: { xs: 'auto', md: 0 } }}>
           <Image
             src={Layer}
             alt="Champion Footballer Logo"
