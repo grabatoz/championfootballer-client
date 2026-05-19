@@ -424,22 +424,22 @@ export default function PlayerStatsPage() {
     const handleTabClick = useCallback((tab: string) => {
         setActiveTab(tab);
 
-        if (!isMobile) return;
+        if (isDesktop) return;
 
-        const scrollTargets: Partial<Record<string, React.RefObject<HTMLDivElement | null>>> = {
-            trophies: trophiesCardRef,
-            rewards: rewardsCardRef,
-            history: historyCardRef,
+        const scrollTargets: Partial<Record<string, HTMLDivElement | null>> = {
+            trophies: trophiesCardRef.current,
+            rewards: rewardsCardRef.current,
+            history: historyCardRef.current,
         };
 
-        const targetRef = scrollTargets[tab];
-        if (!targetRef?.current) return;
+        const targetElement = scrollTargets[tab];
+        if (!targetElement) return;
 
-        targetRef.current.scrollIntoView({
+        targetElement.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
         });
-    }, [isMobile]);
+    }, [isDesktop]);
     
     // Stats Over Season Modal state
     const [statsModalOpen, setStatsModalOpen] = useState(false);
