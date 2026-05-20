@@ -5834,24 +5834,24 @@ export default function LeagueDetailPage() {
                                                     // Define positions based on number of players (adjusted to stay inside pitch boundaries)
                                                     const getPositions = (count: number) => {
                                                         if (count === 1) {
-                                                            return [{ left: '60%', top: '55%' }];
+                                                            return [{ left: '55%', top: '68%' }];
                                                         } else if (count === 2) {
                                                             return [
-                                                                { left: '55%', top: '52%' },
-                                                                { left: '70%', top: '52%' },
+                                                                { left: '45%', top: '72%' },
+                                                                { left: '65%', top: '66%' },
                                                             ];
                                                         } else if (count === 3) {
                                                             return [
-                                                                { left: '50%', top: '52%' },
-                                                                { left: '62%', top: '48%' },
-                                                                { left: '74%', top: '52%' },
+                                                                { left: '42%', top: '73%' },
+                                                                { left: '56%', top: '67%' },
+                                                                { left: '70%', top: '61%' },
                                                             ];
                                                         } else if (count === 4) {
                                                             return [
-                                                                { left: '52%', top: '48%' },
-                                                                { left: '72%', top: '48%' },
-                                                                { left: '55%', top: '62%' },
-                                                                { left: '70%', top: '62%' },
+                                                                { left: '40%', top: '75%' },
+                                                                { left: '48%', top: '66%' },
+                                                                { left: '62%', top: '70%' },
+                                                                { left: '70%', top: '61%' },
                                                             ];
                                                         } else {
                                                             // 5 players - 3-1-1 formation (inside pitch boundaries)
