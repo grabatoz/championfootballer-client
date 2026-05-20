@@ -199,15 +199,48 @@ const nextConfig: NextConfig = {
           ...(isProd
             ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
             : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS',
+          },
         ],
       },
-      // Public assets (images/icons) can also be cached in production.
+      // Public assets (images/icons/fonts) can also be cached in production.
       {
         source: '/assets/:path*',
         headers: [
           ...(isProd
             ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
             : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS',
+          },
+        ],
+      },
+      // Fonts folder support for CORS
+      {
+        source: '/fonts/:path*',
+        headers: [
+          ...(isProd
+            ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+            : [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' }]),
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS',
+          },
         ],
       },
       // Keep API routes non-cached by default.
