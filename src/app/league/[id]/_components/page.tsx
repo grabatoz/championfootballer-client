@@ -5856,11 +5856,11 @@ export default function LeagueDetailPage() {
                                                         } else {
                                                             // 5 players - 2-2-1 formation (inside pitch boundaries: 2 defenders, 2 midfielders, 1 attacker)
                                                             return [
-                                                                { left: '35%', top: '70%' }, // Defender 1 (left)
-                                                                { left: '52%', top: '80%' }, // Defender 2 (right)
-                                                                { left: '44%', top: '62%' }, // Midfielder 1 (left)
-                                                                { left: '63%', top: '70%' }, // Midfielder 2 (right)
-                                                                { left: '55%', top: '61%' }, // Attacker (center)
+                                                                { left: { xs: '17%', sm: '17%', md: '35%' }, top: { xs: '70%', sm: '70%', md: '70%' } }, // Defender 1 (left)
+                                                                { left: { xs: '52%', sm: '52%', md: '52%' }, top: { xs: '79.5%', sm: '79.5%', md: '80%' } }, // Defender 2 (right)
+                                                                { left: { xs: '34%', sm: '34%', md: '44%' }, top: { xs: '65%', sm: '65%', md: '62%' } }, // Midfielder 1 (left)
+                                                                { left: { xs: '69%', sm: '69%', md: '63%' }, top: { xs: '73%', sm: '73%', md: '70%' } }, // Midfielder 2 (right)
+                                                                { left: { xs: '60%', sm: '60%', md: '55%' }, top: { xs: '63%', sm: '63%', md: '61%' } }, // Attacker (center)
                                                             ];
                                                         }
                                                     };
