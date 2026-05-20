@@ -2642,7 +2642,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             disableRipple
             sx={{
               textTransform: 'none',
-              fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+              fontFamily: 'var(--font-woodford-bourne-pro)',
               fontWeight: 700,
               color: '#fff',
               fontSize: { xs: '12px', sm: '9px', md: '10px', lg: '12px' },
@@ -2799,7 +2799,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   sx={{
                     display: { xs: 'none', lg: 'flex' },
                     textTransform: 'none',
-                    fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro)',
                     fontWeight: 'semibold',
                     color: '#fff',
                     bgcolor: '#00a77f',
@@ -4014,7 +4014,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     fullWidth
                     sx={{
                       textTransform: 'none',
-                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontFamily: 'var(--font-woodford-bourne-pro)',
                       fontWeight: 700,
                       color: '#F3F4F6',
                       bgcolor: 'rgba(255,255,255,0.04)',
@@ -4049,7 +4049,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     fullWidth
                     sx={{
                       textTransform: 'none',
-                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontFamily: 'var(--font-woodford-bourne-pro)',
                       fontWeight: 700,
                       color: '#F3F4F6',
                       bgcolor: 'rgba(255,255,255,0.04)',
@@ -4084,7 +4084,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     fullWidth
                     sx={{
                       textTransform: 'none',
-                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontFamily: 'var(--font-woodford-bourne-pro)',
                       fontWeight: 700,
                       color: '#F3F4F6',
                       bgcolor: 'rgba(255,255,255,0.04)',
@@ -4119,7 +4119,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     fullWidth
                     sx={{
                       textTransform: 'none',
-                      fontFamily: 'Woodford Bourne Pro, Arial, Helvetica, sans-serif',
+                      fontFamily: 'var(--font-woodford-bourne-pro)',
                       fontWeight: 700,
                       color: '#F87171',
                       bgcolor: 'rgba(248,113,113,0.06)',
@@ -4300,7 +4300,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         <DialogContent sx={{ bgcolor: '#1a1a1a', p: { xs: 2, md: 4 }, color: '#fff' }}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography sx={{
-              fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+              fontFamily: 'var(--font-woodford-bourne-pro)',
               fontWeight: 800,
               fontSize: { xs: '20px', md: '28px' },
               color: '#fff',
@@ -4344,11 +4344,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 <Table stickyHeader aria-label="point scoring rules table" sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid #333' } }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Action</TableCell>
-                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Winning Team</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Losing Team</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'Woodford Bourne Pro, sans-serif', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Classic Scoring</TableCell>
+                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Action</TableCell>
+                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Winning Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Losing Team</TableCell>
+                      <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Classic Scoring</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -4370,7 +4370,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                           <TableCell sx={{ py: 1.5 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 24 }}>{getRowIcon(row.action)}</Box>
-                              <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'Woodford Bourne Pro, Arial, sans-serif' }}>{row.action}</Typography>
+                              <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'var(--font-woodford-bourne-pro)' }}>{row.action}</Typography>
                             </Box>
                           </TableCell>
                           <TableCell sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', py: 1.5 }}>
@@ -4418,7 +4418,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     <TableRow sx={{ bgcolor: '#2b2b2b !important' }}>
                       <TableCell colSpan={5} sx={{ bgcolor: '#2b2b2b !important', py: 1.8, borderBottom: '2px solid #E56A16' }}>
                         <Typography sx={{
-                          fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                          fontFamily: 'var(--font-woodford-bourne-pro)',
                           fontWeight: 800,
                           color: '#00a896',
                           fontSize: '1rem',
@@ -4440,7 +4440,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       return (
                         <TableRow key={`streak-${idx}`} sx={{ bgcolor: rowBg, '&:hover': { bgcolor: '#2c2c2c' }, transition: 'background-color 0.2s' }}>
                           <TableCell sx={{ py: 1.5 }}>
-                            <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'Woodford Bourne Pro, Arial, sans-serif' }}>
+                            <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'var(--font-woodford-bourne-pro)' }}>
                               {row.action}
                             </Typography>
                           </TableCell>

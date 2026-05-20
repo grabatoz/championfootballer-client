@@ -884,7 +884,7 @@ const PlayerProfileCard = () => {
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' },
                 '& .MuiStepLabel-label': { display: { xs: 'none', sm: 'block' } }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
               <Box sx={{ width: '100%', height: 3, background: '#fff', mx: 0, mb: 3, opacity: 0.4 }} />
 
@@ -1061,7 +1061,7 @@ const PlayerProfileCard = () => {
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' },
                 '& .MuiStepLabel-label': { display: { xs: 'none', sm: 'block' } }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
               <Box sx={{ width: '100%', height: 2, background: '#fff', mx: 0, mb: 3, opacity: 0.80 }} />
 
@@ -1069,7 +1069,7 @@ const PlayerProfileCard = () => {
                 mb: 2,
                 color: '#fff',
                 letterSpacing: .5,
-                fontFamily: 'Woodford Bourne Pro',
+                fontFamily: 'var(--font-woodford-bourne-pro)',
                 fontSize: { xs: '1.2rem', sm: '1.75rem' },
                 textShadow: '0 2px 8px rgba(0,0,0,0.6)'
               }}>
@@ -1117,7 +1117,7 @@ const PlayerProfileCard = () => {
                     {/* Hidden file input for gallery */}
                     <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />
                   </Box>
-                  <Typography sx={{ mt: 1.5, fontWeight: 400, fontSize: { xs: 16, sm: 20 }, color: '#fff', fontFamily: 'Woodford Bourne Pro', textAlign: 'center' }}>
+                  <Typography sx={{ mt: 1.5, fontWeight: 400, fontSize: { xs: 16, sm: 20 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro)', textAlign: 'center' }}>
                     {userDisplayName}
                   </Typography>
                   {/* Removed bottom Upload button per request */}
@@ -1685,7 +1685,7 @@ const PlayerProfileCard = () => {
                 '& .MuiStepConnector-line': { borderTopWidth: '1px' },
                 '& .MuiStepLabel-label': { display: { xs: 'none', sm: 'block' } }
               }}>
-                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'Woodford Bourne Pro', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
+                {steps.map(label => <Step key={label}><StepLabel sx={{ '& .MuiStepLabel-label': { color: '#fff !important', fontWeight: 600, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: '1rem', letterSpacing: .5, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }, '& .MuiStepLabel-label.Mui-active': { color: '#fff !important' }, '& .MuiStepLabel-label.Mui-completed': { color: '#fff !important' } }}>{label}</StepLabel></Step>)}
               </Stepper>
               <Box sx={{ width: '100%', height: 2, background: '#fff', mx: 0, mb: 3, opacity: 0.80 }} />
 
@@ -1693,7 +1693,7 @@ const PlayerProfileCard = () => {
                 mb: 2,
                 color: '#fff',
                 letterSpacing: .5,
-                fontFamily: 'Woodford Bourne Pro',
+                fontFamily: 'var(--font-woodford-bourne-pro)',
                 fontSize: { xs: '1.2rem', sm: '1.75rem' },
                 textShadow: '0 2px 8px rgba(0,0,0,0.6)'
               }}>

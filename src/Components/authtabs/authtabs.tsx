@@ -1824,13 +1824,13 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             ))}
           </Box>
 
-          <Typography sx={{ color: forgotPopupTheme.text, fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+          <Typography sx={{ color: forgotPopupTheme.text, fontWeight: 700, fontSize: '1.4rem', fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.5 }}>
             {forgotStep === 1 && 'Reset Password'}
             {forgotStep === 2 && 'Enter Verification Code'}
             {forgotStep === 3 && 'Create New Password'}
             {forgotStep === 4 && 'All Done!'}
           </Typography>
-          <Typography sx={{ color: forgotPopupTheme.textDim, fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+          <Typography sx={{ color: forgotPopupTheme.textDim, fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
             {forgotStep === 1 && 'Enter your email to get a verification code'}
             {forgotStep === 2 && 'Check your email for the 5-digit code'}
             {forgotStep === 3 && 'Choose a strong new password'}
@@ -1857,7 +1857,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           {/* Step 1: Email */}
           {forgotStep === 1 && (
             <Box>
-              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 Email Address
               </Typography>
               <TextField
@@ -1895,7 +1895,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   borderRadius: '7px',
                   textTransform: 'none',
                   fontSize: '0.95rem',
-                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                   '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
@@ -1909,7 +1909,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           {/* Step 2: OTP */}
           {forgotStep === 2 && (
             <Box>
-              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 We sent a 5-digit code to <span style={{ color: forgotPopupTheme.primary, fontWeight: 600 }}>{forgotEmail}</span>
               </Typography>
 
@@ -1931,7 +1931,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                         fontWeight: 700,
                         padding: '12px 0',
                         color: forgotPopupTheme.primary,
-                        fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif',
+                        fontFamily: 'var(--font-woodford-bourne-pro)',
                       },
                     }}
                     sx={{
@@ -1961,7 +1961,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   borderRadius: '7px',
                   textTransform: 'none',
                   fontSize: '0.95rem',
-                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                   '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
@@ -1975,7 +1975,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 variant="text"
                 onClick={handleSendOtp}
                 disabled={forgotLoading || forgotResendTimer > 0}
-                sx={{ mt: 1.5, color: forgotPopupTheme.primary, textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: forgotPopupTheme.outlineHover }, '&:disabled': { color: forgotPopupTheme.buttonDisabled } }}
+                sx={{ mt: 1.5, color: forgotPopupTheme.primary, textTransform: 'none', fontSize: '0.8rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif', '&:hover': { bgcolor: forgotPopupTheme.outlineHover }, '&:disabled': { color: forgotPopupTheme.buttonDisabled } }}
               >
                 {forgotResendTimer > 0 ? `Resend code in ${forgotResendTimer}s` : "Didn't receive code? Resend"}
               </Button>
@@ -1985,7 +1985,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
           {/* Step 3: New Password */}
           {forgotStep === 3 && (
             <Box>
-              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 New Password
               </Typography>
               <TextField
@@ -2029,7 +2029,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 }}
               />
 
-              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 1, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 Confirm Password
               </Typography>
               <TextField
@@ -2082,7 +2082,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   borderRadius: '7px',
                   textTransform: 'none',
                   fontSize: '0.95rem',
-                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                   '&:disabled': { background: forgotPopupTheme.buttonDisabled, color: 'rgba(255,255,255,0.5)' },
@@ -2105,10 +2105,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               }}>
                 <CheckCircleOutline sx={{ color: '#fff', fontSize: '2rem' }} />
               </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#fff', mb: 1, fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#fff', mb: 1, fontFamily: 'var(--font-woodford-bourne-pro)' }}>
                 Password Reset Successful
               </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', mb: 3, fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', mb: 3, fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 You can now log in with your new password.
               </Typography>
               <Button
@@ -2123,7 +2123,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   borderRadius: '7px',
                   textTransform: 'none',
                   fontSize: '0.95rem',
-                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   boxShadow: forgotPopupTheme.buttonShadow,
                   '&:hover': { opacity: 0.92, background: forgotPopupTheme.primaryGradient },
                 }}
@@ -2177,22 +2177,22 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               }}>
                 <CheckCircleOutline sx={{ color: '#fff', fontSize: '2rem' }} />
               </Box>
-              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.5 }}>
                 Welcome to CF!
               </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 Your account has been verified. Redirecting...
               </Typography>
             </>
           ) : (
             <>
-              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 0.5 }}>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.4rem', fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.5 }}>
                 Registration Successful! 
               </Typography>
-              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif', mb: 1 }}>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', fontFamily: 'var(--font-woodford-bourne-pro)', mb: 1 }}>
                 Welcome to CF.
               </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', lineHeight: 1.5 }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif', lineHeight: 1.5 }}>
                 Head over to your email and enter the 6-digit verification key to complete your sign-up and start playing
               </Typography>
             </>
@@ -2217,10 +2217,10 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
 
           {!verifySuccess && (
             <Box>
-              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 We sent a 6-digit code to <span style={{ color: '#E56A16', fontWeight: 600 }}>{verifyEmail}</span>
               </Typography>
-              <Typography sx={{ mb: 2, color: 'rgba(255,255,255,0.52)', fontSize: '0.72rem', textAlign: 'center', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif' }}>
+              <Typography sx={{ mb: 2, color: 'rgba(255,255,255,0.52)', fontSize: '0.72rem', textAlign: 'center', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif' }}>
                 If you cannot find the email, please check your Spam/Junk folder.
               </Typography>
 
@@ -2242,7 +2242,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                         fontWeight: 700,
                         padding: '12px 0',
                         color: '#E56A16',
-                        fontFamily: 'Woodford Bourne Pro, Arial Black, sans-serif',
+                        fontFamily: 'var(--font-woodford-bourne-pro)',
                       },
                     }}
                     sx={{
@@ -2272,7 +2272,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                   borderRadius: '7px',
                   textTransform: 'none',
                   fontSize: '0.95rem',
-                  fontFamily: 'Woodford Bourne Pro, Arial, sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   boxShadow: '0 4px 14px rgba(229,106,22,0.3)',
                   '&:hover': { background: 'linear-gradient(177deg, rgba(210,96,18,1) 26%, rgba(187,30,33,1) 100%)' },
                   '&:disabled': { background: 'linear-gradient(177deg, rgba(229,106,22,0.5) 26%, rgba(207,35,38,0.5) 100%)', color: 'rgba(255,255,255,0.5)' },
@@ -2286,7 +2286,7 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                 variant="text"
                 onClick={handleResendVerification}
                 disabled={verifyLoading || verifyResendTimer > 0}
-                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'Inter, Woodford Bourne Pro, sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' }, '&:disabled': { color: 'rgba(229,106,22,0.4)' } }}
+                sx={{ mt: 1.5, color: '#E56A16', textTransform: 'none', fontSize: '0.8rem', fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), sans-serif', '&:hover': { bgcolor: 'rgba(229,106,22,0.08)' }, '&:disabled': { color: 'rgba(229,106,22,0.4)' } }}
               >
                 {verifyResendTimer > 0 ? `Resend code in ${verifyResendTimer}s` : "Didn't receive code? Resend"}
               </Button>

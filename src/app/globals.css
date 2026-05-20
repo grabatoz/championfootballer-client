@@ -76,14 +76,14 @@
 
 /* Body Text - Woodford Bourne Pro, Regular, 16-18px */
 .body-text {
-  font-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif;
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif;
   font-weight: 400;
   font-size: clamp(16px, 1.2vw, 18px);
   line-height: 1.5;
 }
 
 body {
-  font-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif;
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif;
 }
 
 html,
@@ -241,7 +241,7 @@ input:-webkit-autofill:active {
 
 /* Header text spec for invite/code line */
 .league-header-text {
-  font-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif !important;
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif !important;
   font-weight: 400 !important;
   font-style: normal !important; /* Regular */
   font-size: 23px !important;
@@ -253,7 +253,7 @@ input:-webkit-autofill:active {
 
 /* Table header typography */
 .league-table-heading {
-  font-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif !important;
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif !important;
   font-weight: 600 !important; /* SemiBold */
   font-style: normal !important;
   font-size: 18px !important;

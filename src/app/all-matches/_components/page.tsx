@@ -2624,7 +2624,7 @@ export default function AllMatches() {
                                     color: '#b0bec5',
                                 }}
                             >
-                                <Typography className="empty-state-message" variant="h6">
+                                {/* <Typography className="empty-state-message" variant="h6">
                                     {matchFilter === 'fixtures'
                                         ? 'No fixtures found'
                                         : matchFilter === 'results'
@@ -2632,7 +2632,7 @@ export default function AllMatches() {
                                             : matchFilter === 'archived'
                                                 ? 'No archived matches found'
                                                 : 'No matches found'}
-                                </Typography>
+                                </Typography> */}
                                 <Typography className="empty-state-message" variant="body2">
                                     {matchFilter === 'fixtures'
                                         ? 'There are no upcoming fixtures for this league.'
@@ -2687,7 +2687,7 @@ export default function AllMatches() {
                                         {/* Match Title Header */}
                                         <Box sx={{ background: 'white', py: 0.7, px: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid #e0e0e0' }}>
                                             <Image src={FootBallIcon} alt="Football" width={24} height={24} />
-                                            <Typography sx={{ color: 'black', fontFamily: "Woodford Bourne Pro", fontWeight: 700, fontSize: '18px', lineHeight: 1, textTransform: 'capitalize', textDecoration: 'underline', textAlign: 'center' }}>
+                                            <Typography sx={{ color: 'black', fontFamily: 'var(--font-woodford-bourne-pro)', fontWeight: 700, fontSize: '18px', lineHeight: 1, textTransform: 'capitalize', textDecoration: 'underline', textAlign: 'center' }}>
                                                 Match {matchNumber}
                                             </Typography>
                                         </Box>
@@ -3054,7 +3054,7 @@ export default function AllMatches() {
                                     {/* Match Title Header */}
                                     <Box sx={{ background: 'white', py: 0.7, px: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid #e0e0e0' }}>
                                         <Image src={FootBallIcon} alt="Football" width={24} height={24} />
-                                        <Typography sx={{ color: 'black', fontFamily: "Woodford Bourne Pro", fontWeight: 700, fontSize: '18px', lineHeight: 1, textTransform: 'capitalize', textDecoration: 'underline', textAlign: 'center' }}>
+                                        <Typography sx={{ color: 'black', fontFamily: 'var(--font-woodford-bourne-pro)', fontWeight: 700, fontSize: '18px', lineHeight: 1, textTransform: 'capitalize', textDecoration: 'underline', textAlign: 'center' }}>
                                             Match {matchNumber}
                                         </Typography>
                                     </Box>

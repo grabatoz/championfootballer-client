@@ -413,7 +413,7 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
           fontWeight: 'bold',
           fontSize: { xs: '0.95rem', sm: '1.05rem' , md : '1.10rem' },
           textAlign: 'center',
-          fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+          fontFamily: 'var(--font-woodford-bourne-pro)',
           fontStyle: 'semibold',
           fontWidth: 600, 
           // mb: 1,
@@ -524,7 +524,7 @@ const BadgeCard = ({ id, title, description, image, color, count, unlocked, prog
           // backgroundColor: unlocked ? '#0f766e' : '#6b7280',
           borderTop: '1px solid #fff',
           color: unlocked ? '#fbbf24' : '#d1d5db',
-          fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+          fontFamily: 'var(--font-woodford-bourne-pro)',
           fontWeight: 700,
           fontStyle: 'normal',
           fontSize: { xs: '0.9rem', sm: '1.1rem' },
@@ -768,7 +768,7 @@ export default function RewardsPage() {
           display: 'flex', 
           alignItems: 'center',
           color: '#fff',
-          fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+          fontFamily: 'var(--font-woodford-bourne-pro)',
           fontSize: { xs: '1.25rem', sm: '1.5rem' },
           borderBottom: '1px solid #444',
           pb: 2,
@@ -799,7 +799,7 @@ export default function RewardsPage() {
                   fontWeight: 700, 
                   mb: 1.5, 
                   color: '#fff',
-                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   fontSize: '1.1rem',
                 }}>
                   How to earn this reward:
@@ -809,7 +809,7 @@ export default function RewardsPage() {
                   color: '#bbb', 
                   fontSize: '0.95rem', 
                   lineHeight: 1.6,
-                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                 }}>
                   {selectedBadge.description}
                 </Typography>
@@ -819,7 +819,7 @@ export default function RewardsPage() {
                   mb: 1, 
                   fontWeight: 600,
                   fontSize: '0.95rem',
-                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                 }}>
                   {selectedBadge.unlocked
                     ? `✅ Earned x${selectedBadge.count} • Total XP: ${formatNumber(selectedBadge.count * selectedBadge.xp)}`
@@ -830,7 +830,7 @@ export default function RewardsPage() {
                   display: 'block', 
                   mt: 1.5,
                   fontSize: '0.85rem',
-                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                 }}>
                   💡 Each reward earns you <span style={{ color: '#fbbf24', fontWeight: 700 }}>{selectedBadge.xp} XP</span> and can be achieved multiple times.
                 </Typography>

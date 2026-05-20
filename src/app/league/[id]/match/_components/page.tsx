@@ -986,7 +986,7 @@ export default function ScheduleMatchPage() {
           minHeight: '100vh',
           p: { xs: 1.25, sm: 2.5, md: 5 },
           color: THEME.TEXT,
-          fontFamily: '"Woodford Bourne Pro", sans-serif',
+          fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
           display: 'flex',
           flexDirection: 'column',
           gap: { xs: 2.5, md: 4 },

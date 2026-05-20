@@ -1845,7 +1845,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
                       <Grid container spacing={1}>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Players</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Select Home Players</Typography>
                           <Autocomplete
                             key={`home-${availabilityVersion}`}
                             multiple
@@ -2025,7 +2025,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Players</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Select Away Players</Typography>
                           <Autocomplete
                             key={`away-${availabilityVersion}`}
                             multiple
@@ -2206,7 +2206,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
                         {/* Manual captain selectors */}
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Home Captain</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Select Home Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={homeTeamUsers}
                             value={homeCaptain}
@@ -2288,7 +2288,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Select Away Captain</Typography>
+                          <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Select Away Captain</Typography>
                           <Autocomplete<PlayerOption, false, false>
                             options={awayTeamUsers}
                             value={awayCaptain}
@@ -2375,7 +2375,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                   {/* Team Names (Optional) */}
                   <Grid container spacing={1} sx={{ mt: 0.5 }}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Home Team Name (Optional)</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Home Team Name (Optional)</Typography>
                       <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
                         <TextField
                           placeholder='Enter team name'
@@ -2401,7 +2401,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       )}
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1 }}>Away Team Name (Optional)</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1 }}>Away Team Name (Optional)</Typography>
                       <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
                         <TextField
                           placeholder='Enter team name'
@@ -2473,7 +2473,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                   <Typography variant='h6' sx={{ mb: 0.1, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' }, color: 'white' }}>Match Detail</Typography>
                   <Grid container spacing={1}>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1, textTransform: 'capitalize' }}>Match Date</Typography>
                       <DatePicker
                         format="DD-MMM-YYYY"
                         value={matchDate}
@@ -2494,7 +2494,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Start Time</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1, textTransform: 'capitalize' }}>Start Time</Typography>
                       <TimePicker
                         value={startTime}
                         onChange={(nv: Dayjs | null) => setStartTime(nv)}
@@ -2514,7 +2514,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Duration (Min)</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1, textTransform: 'capitalize' }}>Duration (Min)</Typography>
                       <TextField
                         type='number'
                         value={duration}
@@ -2532,7 +2532,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
                       />
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'Woodford Bourne Pro', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
+                      <Typography sx={{ color: 'white', fontSize: { xs: '0.9rem', sm: '1.3rem' }, fontWeight: 500, fontFamily: 'var(--font-woodford-bourne-pro)', mb: 0.1, textTransform: 'capitalize' }}>Location</Typography>
                       <TextField
                         value={location}
                         onChange={(e) => {

@@ -263,7 +263,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               width: "100%",
               mt: { xs: embeddedInDialog ? 2.6 : 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
               // mb: { xs: 1, md: 2 },
-              fontFamily: 'Woodford Bourne Pro'
+              fontFamily: 'var(--font-woodford-bourne-pro)'
             }}
           >
             <span className="">{leagueName}</span>

@@ -1023,7 +1023,7 @@ const AllPlayersPage = () => {
                   color: 'white',
                   fontSize: { xs: 14, sm: 16.5 },
                   py: 0.5,
-                  fontFamily: '"Woodford Bourne Pro", sans-serif !important',
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
                   '&::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 }
                 }
               }}
@@ -1078,7 +1078,7 @@ const AllPlayersPage = () => {
                     WebkitAppearance: 'none',
                     MozAppearance: 'none',
                     fontWeight: isMobile ? 400 : 400,
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                   }}
                 >
                   <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
@@ -1121,7 +1121,7 @@ const AllPlayersPage = () => {
                     WebkitAppearance: 'none',
                     MozAppearance: 'none',
                     fontWeight: isMobile ? 400 : 400,
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                     textOverflow: 'ellipsis',
                   }}
                 >
@@ -1167,7 +1167,7 @@ const AllPlayersPage = () => {
                     WebkitAppearance: 'none',
                     MozAppearance: 'none',
                     fontWeight: isMobile ? 400 : 400,
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                   }}
                 >
                   <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
@@ -1201,7 +1201,7 @@ const AllPlayersPage = () => {
                   py: 1,
                   width: { xs: '100%', sm: 'auto' },
                   fontSize: { xs: '13px', md: '17px' },
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                   fontWeight: 'bold',
                   textTransform: 'none',
                   '&:hover': {
@@ -1275,7 +1275,7 @@ const AllPlayersPage = () => {
                     backgroundColor: 'rgba(30, 30, 30, 0.95)',
                     boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                   }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
                   </Typography>
                   <Box
@@ -1314,7 +1314,7 @@ const AllPlayersPage = () => {
                   <MenuItem
                     selected={selectedPosition === 'all'}
                     onClick={() => handlePositionChange('all')}
-                    sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                    sx={{ fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', fontSize: { xs: 13, sm: 15 } }}
                   >
                     All Positions
                   </MenuItem>
@@ -1323,7 +1323,7 @@ const AllPlayersPage = () => {
                       key={position}
                       selected={selectedPosition === position}
                       onClick={() => handlePositionChange(position)}
-                      sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                      sx={{ fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', fontSize: { xs: 13, sm: 15 } }}
                     >
                       {position}
                     </MenuItem>
@@ -1339,7 +1339,7 @@ const AllPlayersPage = () => {
                   display: 'block',
                   textAlign: 'center'
                 }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     PLAYING STYLE
                   </Typography>
                 </Box>
@@ -1349,14 +1349,14 @@ const AllPlayersPage = () => {
 
                 {/* View Stats */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     VIEW STATS
                   </Typography>
                 </Box>
 
                 {/* XP Points */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
                   </Typography>
                 </Box>
@@ -1515,7 +1515,7 @@ const AllPlayersPage = () => {
                                     fontSize: { xs: 12, sm: 15 },
                                     color: '#fff',
                                     lineHeight: 1.4,
-                                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                                     textTransform: 'uppercase',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -1528,7 +1528,7 @@ const AllPlayersPage = () => {
                                   fontSize: { xs: 10, sm: 12 },
                                   color: 'rgba(255,255,255,0.6)',
                                   mt: 0.25,
-                                  fontFamily: '"Woodford Bourne Pro", sans-serif'
+                                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
                                 }}>
                                   {getPositionLabel(player)}
                                 </Typography>
@@ -1548,7 +1548,7 @@ const AllPlayersPage = () => {
                               <Typography sx={{
                                 fontSize: { xs: 11, sm: 13, md: 18 },
                                 color: 'rgba(255,255,255,0.9)',
-                                fontFamily: '"Woodford Bourne Pro", sans-serif',
+                                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                                 fontWeight: 'bold',
                               }}>
                                 {getPlayingStyle(player)}
@@ -1584,7 +1584,7 @@ const AllPlayersPage = () => {
                                 fontWeight: 'bold',
                                 fontSize: { xs: 13, sm: 16 },
                                 color: '#fff',
-                                fontFamily: '"Woodford Bourne Pro", sans-serif'
+                                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
                               }}>
                                 {getCpPoints(player)}
                               </Typography>

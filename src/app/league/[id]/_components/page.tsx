@@ -3575,7 +3575,7 @@ export default function LeagueDetailPage() {
         <Box
             sx={{
                 minHeight: '100vh',
-                fontFamily: '"Woodford Bourne Pro", sans-serif',
+                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                 fontWeight: 700,
                 // py: { xs: 2, md: 4 },
                 // px: { xs: 1, md: 0 },
@@ -4413,7 +4413,7 @@ export default function LeagueDetailPage() {
                                                     <MenuItem
                                                         selected={selectedMemberPosition === 'all'}
                                                         onClick={() => handleMemberPositionChange('all')}
-                                                        sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                                                        sx={{ fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', fontSize: { xs: 13, sm: 15 } }}
                                                     >
                                                         All Positions
                                                     </MenuItem>
@@ -4422,7 +4422,7 @@ export default function LeagueDetailPage() {
                                                             key={position}
                                                             selected={selectedMemberPosition.toLowerCase() === position.toLowerCase()}
                                                             onClick={() => handleMemberPositionChange(position)}
-                                                            sx={{ fontFamily: '"Woodford Bourne Pro", sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                                                            sx={{ fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', fontSize: { xs: 13, sm: 15 } }}
                                                         >
                                                             {position}
                                                         </MenuItem>
@@ -4550,10 +4550,10 @@ export default function LeagueDetailPage() {
                                                                         </Box>
                                                                     </ListItemAvatar>
                                                                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                                                                        <Typography noWrap sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 }, color: '#fff', fontFamily: '"Woodford Bourne Pro", sans-serif', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                        <Typography noWrap sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                                             {formatPlayerCardStyleName(firstName, lastName)}
                                                                         </Typography>
-                                                                        <Typography sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                        <Typography sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                             {getMemberPositionLabel(member)}
                                                                         </Typography>
                                                                     </Box>
@@ -4569,7 +4569,7 @@ export default function LeagueDetailPage() {
                                                                     justifyContent: 'center',
                                                                     pr: { xs: 0.5, sm: 2 },
                                                                 }}>
-                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                         {member.style}
                                                                     </Typography>
                                                                 </Box>
@@ -4584,7 +4584,7 @@ export default function LeagueDetailPage() {
 
                                                                 {/* XP Points column */}
                                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 5.5 }, textAlign: 'center' }}>
-                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                         {getLeagueXpForMember(member.id, member.xp)}
                                                                     </Typography>
                                                                 </Box>
@@ -4742,7 +4742,7 @@ export default function LeagueDetailPage() {
                                                                 <Image src={FootBallIcon} alt="Football" width={24} height={24} />
                                                                 <Typography sx={{
                                                                     color: 'black',
-                                                                    fontFamily: "Woodford Bourne Pro",
+                                                                    fontFamily: 'var(--font-woodford-bourne-pro)',
                                                                     fontWeight: 700,
                                                                     fontSize: '18px',
                                                                     lineHeight: 1,
@@ -5236,7 +5236,7 @@ export default function LeagueDetailPage() {
                                                                 <Image src={FootBallIcon} alt="Football" width={24} height={24} />
                                                                 <Typography sx={{
                                                                     color: 'black',
-                                                                    fontFamily: "Woodford Bourne Pro",
+                                                                    fontFamily: 'var(--font-woodford-bourne-pro)',
                                                                     fontWeight: 700,
                                                                     fontSize: '18px',
                                                                     lineHeight: 1,

@@ -1111,7 +1111,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                     textOverflow: 'clip',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                   }}
                 >
                   {isFetching
@@ -1365,7 +1365,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             px: { xs: 2, md: 3 },
             fontSize: { xs: '15px', sm: '16px', md: '19px' },
             minHeight: { xs: 42, md: 48 },
-            fontFamily: '"Woodford Bourne Pro", sans-serif',
+            fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
             lineHeight: '100%',
             letterSpacing: '0%',
             textTransform: 'capitalize',
@@ -2196,9 +2196,9 @@ export default function PlayerDashboard() {
                   fontWeight: '550',
                   fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' },
                   color: 'black',
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                 }}>Welcome,</Typography>
-                <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 550, fontFamily: '"Woodford Bourne Pro", sans-serif' }}>
+                <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 550, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                   {user?.firstName}
                 </Typography>
               </Box>
@@ -2210,7 +2210,7 @@ export default function PlayerDashboard() {
                   color: 'black',
                   mb: 0.5,
                   fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                  fontFamily: '"Woodford Bourne Pro", sans-serif',
+                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                   fontWeight: 400,
                   whiteSpace: { xs: 'normal', md: 'nowrap' },
                 }}>
@@ -2248,7 +2248,7 @@ export default function PlayerDashboard() {
                     pr: 10,
                     fontSize: '19px',
                     minHeight: 48,
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                     lineHeight: '100%',
                     letterSpacing: '0%',
                     textTransform: 'capitalize',
@@ -2279,7 +2279,7 @@ export default function PlayerDashboard() {
                     fontSize: { xs: '15px', md: '19px' },
                     minHeight: { xs: 42, md: 48 },
                     position: 'relative',
-                    fontFamily: '"Woodford Bourne Pro", sans-serif',
+                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                     lineHeight: '100%',
                     letterSpacing: '0%',
                     textTransform: 'capitalize',
@@ -2347,7 +2347,7 @@ export default function PlayerDashboard() {
                       height: { xs: 40, md: 42 },
                       fontSize: { xs: '16px', sm: '16px', md: '19px' },
                       flexShrink: 0,
-                      fontFamily: '"Woodford Bourne Pro", sans-serif',
+                      fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                       fontWeight: 600,
                       lineHeight: '100%',
                       letterSpacing: '0%',
@@ -2395,7 +2395,7 @@ export default function PlayerDashboard() {
                 maxWidth: { xs: '100%', md: 310 },
                 height: { xs: 42, md: 45 },
                 mx: 'auto',
-                fontFamily: '"Woodford Bourne Pro", sans-serif',
+                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                 '&:before': {
                   content: '""',
                   position: 'absolute',
@@ -2761,7 +2761,7 @@ export default function PlayerDashboard() {
               minWidth: '120px',
               fontSize: '0.875rem',
               flexShrink: 0,
-              fontFamily: '"Woodford Bourne Pro", sans-serif',
+              fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
               fontWeight: 600,
               lineHeight: '100%',
               letterSpacing: '0%',
