@@ -177,8 +177,9 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
   };
   const arr = (k: string): unknown[] => (Array.isArray(raw![k]) ? (raw![k] as unknown[]) : []);
 
-  const createdAt = str('createdAt', nowISO);
-  const updatedAtCandidate = str('updatedAt', createdAt || nowISO);
+  // Use empty fallback so undated leagues don't land in the wrong year bucket
+  const createdAt = str('createdAt', '') || str('updatedAt', '') || str('created_at', '');
+  const updatedAtCandidate = str('updatedAt', '') || createdAt || nowISO;
   const computedStatus = normalizeLeagueComputedStatus(raw['computedStatus']);
   const isCompleteRaw = raw['isComplete'];
   const isCompletedRaw = raw['isCompleted'];
@@ -2819,14 +2820,19 @@ function AllLeagues() {
     }
   }, [adminSettingsLeague, leagues, selectedLeague]);
 
-  // Dynamic years: keep previous years that exist in leagues, and always keep current/latest year on top.
+  // Dynamic years: extract from createdAt or updatedAt, show all years that have leagues.
   const yearOptions = useMemo(() => {
-    const years = new Set<number>([new Date().getFullYear()]);
+    const years = new Set<number>();
     leagues.forEach((league) => {
-      const t = Date.parse(league.createdAt || '');
+      // Try createdAt first, then updatedAt as fallback
+      const dateStr = (league.createdAt || league.updatedAt || '').trim();
+      if (!dateStr) return;
+      const t = Date.parse(dateStr);
       if (!Number.isFinite(t)) return;
       years.add(new Date(t).getFullYear());
     });
+    // Always include the current year so admins can always find leagues
+    years.add(new Date().getFullYear());
     return Array.from(years)
       .sort((a, b) => b - a)
       .map(String);
@@ -3097,8 +3103,11 @@ function AllLeagues() {
     const byYear = selectedYear === 'all'
       ? byCompletion
       : byCompletion.filter(l => {
-        const t = Date.parse(l.createdAt || '');
-        if (!Number.isFinite(t)) return false;
+        // Try createdAt first, then updatedAt as fallback
+        const dateStr = (l.createdAt || l.updatedAt || '').trim();
+        if (!dateStr) return true; // Show undated leagues in all year views
+        const t = Date.parse(dateStr);
+        if (!Number.isFinite(t)) return true; // Show unparseable dates in all views
         const y = new Date(t).getFullYear();
         return String(y) === selectedYear;
       });
@@ -5432,7 +5441,11 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                {(() => {
+                                  const d = league.createdAt ? new Date(league.createdAt) : null;
+                                  if (!d || isNaN(d.getTime())) return 'Date not available';
+                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                })()}
                               </Typography>
                             </Box>
                           </Box>
@@ -5478,7 +5491,11 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                {(() => {
+                                  const d = league.createdAt ? new Date(league.createdAt) : null;
+                                  if (!d || isNaN(d.getTime())) return 'Date not available';
+                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                })()}
                               </Typography>
                             </Box>
                           </Box>
@@ -6010,7 +6027,11 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    {(() => {
+                                  const d = league.createdAt ? new Date(league.createdAt) : null;
+                                  if (!d || isNaN(d.getTime())) return 'Date not available';
+                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                })()}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -6038,7 +6059,11 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Created At {new Date(league.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(league.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    {(() => {
+                                  const d = league.createdAt ? new Date(league.createdAt) : null;
+                                  if (!d || isNaN(d.getTime())) return 'Date not available';
+                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                })()}
                                   </Typography>
                                 </Box>
                               </Box>
