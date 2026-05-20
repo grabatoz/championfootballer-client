@@ -1784,7 +1784,7 @@ export default function PlayerStatsPage() {
                                 textTransform: 'uppercase',
                                 letterSpacing: 0,
                                 textAlign: 'center',
-                                fontFamily: '"Oswald", sans-serif !important',
+                                fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                                 lineHeight: '100%',
                             }}
                         >

@@ -1,7 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap');
-
-/* Bebas Neue - now loaded via next/font/google in layout.tsx */
+/* Fonts are bundled via next/font in layout.tsx */
 
 @tailwind base;
 @tailwind components;
@@ -55,7 +52,7 @@
 /* Sailec font removed - file not present on server */
 
 .font-sailec {
-  font-family: 'Sailec', sans-serif;
+  font-family: var(--font-woodford-family), Arial, Helvetica, sans-serif;
 }
 
 /* Main Title Styles - Arial Black, Bold, 36-48px */
@@ -111,7 +108,7 @@ body {
 
 
 .all-leagues-heading {
-  font-family: "Oswald", sans-serif !important;
+  font-family: var(--font-oswald), "Oswald", sans-serif !important;
   font-size: clamp(32px, 6vw, 55px);
   line-height: 1.1;
   text-transform: uppercase;

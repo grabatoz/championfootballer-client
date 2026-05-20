@@ -271,7 +271,7 @@ function PrivacyPolicies() {
             <Typography
                 variant="h3"
                 sx={{
-                    fontFamily: '"Oswald", sans-serif !important',
+                    fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                     fontWeight: 700,
                     fontSize: { xs: '32px', sm: '42px', md: '55px' },
                     textAlign: 'center',

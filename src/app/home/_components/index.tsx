@@ -2034,7 +2034,7 @@ export default function PlayerDashboard() {
           opacity: 1,
         }}>
           <Box component="div" sx={{
-            fontFamily: '"Oswald", sans-serif',
+            fontFamily: 'var(--font-oswald), "Oswald", sans-serif',
             fontSize: { xs: '20px', sm: '24px', md: '28px' },
             fontWeight: 300,
             lineHeight: '100%',
@@ -2059,7 +2059,7 @@ export default function PlayerDashboard() {
               justifyContent: 'center',
               columnGap: { xs: 1.25, sm: 2, md: 3 },
               rowGap: { xs: 0.4, md: 0 },
-              fontFamily: '"Oswald", sans-serif',
+              fontFamily: 'var(--font-oswald), "Oswald", sans-serif',
               fontSize: { xs: '12px', sm: '16px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',
@@ -2086,7 +2086,7 @@ export default function PlayerDashboard() {
               justifyContent: 'center',
               columnGap: { xs: 1.25, sm: 2, md: 3 },
               rowGap: { xs: 0.4, md: 0 },
-              fontFamily: '"Oswald", sans-serif',
+              fontFamily: 'var(--font-oswald), "Oswald", sans-serif',
               fontSize: { xs: '12px', sm: '16px', md: '28px' },
               fontWeight: 300,
               textTransform: 'uppercase',

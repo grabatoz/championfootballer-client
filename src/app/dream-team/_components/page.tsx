@@ -1053,7 +1053,7 @@ export default DreamTeamPage;
 //               whiteSpace: "nowrap",
 //               letterSpacing: '2px',
 //               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-//               fontFamily: '"Anton", sans-serif',
+//               fontFamily: 'var(--font-geist-anton), "Anton", sans-serif',
 
 //             }}
 //           >

@@ -1797,7 +1797,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
             <Box sx={{ width: { xs: '100%', md: '55%' }, display: 'flex', flexDirection: 'column' }}>
               {/* EDIT MATCH Tab Header */}
               <Box sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 3 }, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: 'var(--font-geist-anton), "Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
                   Edit Match
                 </Typography>
                 <IconButton
@@ -2583,7 +2583,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
             <Box sx={{ width: { xs: '100%', md: '45%' }, display: 'flex', flexDirection: 'column' }}>
               {/* MATCH PREVIEW Tab Header */}
               <Box sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 3 }, background: '#00a77f', textAlign: 'center', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: '"Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
+                <Typography sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.4rem', md: '1.6rem' }, fontFamily: 'var(--font-geist-anton), "Anton", sans-serif', textTransform: 'uppercase', letterSpacing: { xs: 1, sm: 2 } }}>
                   Match Preview
                 </Typography>
                 <IconButton onClick={() => { if (isDialog && onClose) onClose(); else router.push(`/league/${leagueId}`); }} sx={{ display: { xs: 'none', md: 'inline-flex' }, bgcolor: '#e6e6e6', color: '#000', position: 'absolute', right: 0, top: 0, bottom: 0, transform: 'none', borderRadius: 0, width: { md: 58, lg: 64 }, '&:hover': { bgcolor: '#d0d0d0' } }}>
@@ -2663,7 +2663,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
                   
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <Typography sx={{  fontWeight: '500 !important', fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' }, color: '#fff', letterSpacing: 2, fontFamily: '"Anton", sans-serif !important', textTransform: 'uppercase' }}>
+                    <Typography sx={{  fontWeight: '500 !important', fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' }, color: '#fff', letterSpacing: 2, fontFamily: 'var(--font-geist-anton), "Anton", sans-serif !important', textTransform: 'uppercase' }}>
                       V/S
                     </Typography>
                     <Typography sx={{ color: '#9CA3AF', fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.75rem', } }}>

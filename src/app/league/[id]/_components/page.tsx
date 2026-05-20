@@ -2890,7 +2890,7 @@ export default function LeagueDetailPage() {
             <Box
                 sx={{
                     minHeight: '100vh',
-                    fontFamily: 'Sailec, Geist, Roboto, Arial, sans-serif',
+                    fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), Arial, sans-serif',
                     py: { xs: 2, md: 4 },
                     px: { xs: 1, md: 0 },
                     background: 'transparent',
@@ -3684,7 +3684,7 @@ export default function LeagueDetailPage() {
                                                     onClick={handleLeaguesDropdownOpen}
                                                     sx={{
                                                         textTransform: 'uppercase',
-                                                        fontFamily: '"Oswald", sans-serif !important',
+                                                        fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                                                         fontSize: { xs: getLeagueTitleFontSize(league?.name), sm: '42px', md: '55px' },
                                                         fontWeight: 700,
                                                         lineHeight: { xs: 1, sm: 1.1 },
@@ -3745,7 +3745,7 @@ export default function LeagueDetailPage() {
                                                 <Typography
                                                     sx={{
                                                         textTransform: 'uppercase',
-                                                        fontFamily: '"Oswald", sans-serif !important',
+                                                        fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                                                         fontSize: { xs: '32px', sm: '42px', md: '55px' },
                                                         fontWeight: 700,
                                                         color: 'white',
@@ -4804,7 +4804,7 @@ export default function LeagueDetailPage() {
                                                                         minWidth: 0
                                                                     }}>
                                                                         <Typography sx={{
-                                                                            fontFamily: '"Oswald", sans-serif !important',
+                                                                            fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                                                                             fontWeight: 600,
                                                                             fontSize: '2rem',
                                                                             lineHeight: 0.5,
@@ -5334,7 +5334,7 @@ export default function LeagueDetailPage() {
 
                                                                             {/* V/S */}
                                                                             <Typography sx={{
-                                                                                fontFamily: '"Oswald", sans-serif !important',
+                                                                                fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                                                                                 fontWeight: 600,
                                                                                 fontSize: '1.5rem',
                                                                                 lineHeight: 0.5,

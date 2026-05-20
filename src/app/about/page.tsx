@@ -16,7 +16,7 @@ export default function AboutCF() {
         <header className="px-6 sm:px-8 pt-8 pb-4 bg-[#2b2b2b]">
           <h1
             className="text-[32px] sm:text-[42px] md:text-[55px] font-bold text-white text-center uppercase tracking-normal"
-            style={{ fontFamily: '"Oswald", sans-serif' }}
+            style={{ fontFamily: 'var(--font-oswald), "Oswald", sans-serif' }}
           >
             About CF
           </h1>

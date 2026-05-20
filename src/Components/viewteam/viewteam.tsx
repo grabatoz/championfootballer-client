@@ -1737,7 +1737,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                       }}
                     /> */}
                   </Box>
-                  <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.2rem', sm: '1.7rem' }, color: '#fff', letterSpacing: '1px', fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: { xs: '1.2rem', sm: '1.7rem' }, color: '#fff', letterSpacing: '1px', fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important', textTransform: 'uppercase', textAlign: 'center', mt: 0 }}>V/S</Typography>
                   <Typography sx={{ color: '#fff', fontSize: { xs: '0.72rem', sm: '0.82rem' }, textAlign: 'center', fontWeight: 600, mt: { xs: -0.4, sm: -1 } }}>{matchDurationLabel}</Typography>
                 </Box>
                 {/* Away shirt */}

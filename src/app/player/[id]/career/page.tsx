@@ -1918,7 +1918,7 @@ export default function CareerPage() {
                   variant="h2" 
                   component="h1" 
                   sx={{ 
-                    fontFamily: '"Oswald", sans-serif !important',
+                    fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                     fontWeight: 700, 
                     fontStyle: 'normal',
                     color: '#fff', 

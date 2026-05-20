@@ -1979,7 +1979,7 @@ export default function AllMatches() {
                         mt:{xs: 1.25, md: 3},
                         color: 'white',
                         // fontFamily: 'Arial Black, Arial, sans-serif',
-                        fontFamily: '"Oswald", sans-serif !important',
+                        fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
                         fontWeight: '600',
                         fontSize: { xs: '32px', sm: '42px', md: '56px' },
                         textAlign: 'center',
@@ -2715,7 +2715,7 @@ export default function AllMatches() {
                                                             <Typography sx={{ fontWeight: 700, fontSize: '2.5rem', lineHeight: 1, color: 'white' }}>{homeGoals}</Typography>
                                                             <Typography sx={{ fontSize: '0.5rem', color: '#aaa' }}>Goal Score</Typography>
                                                         </Box>
-                                                        <Typography sx={{ fontFamily: '"Oswald", sans-serif !important', fontWeight: 600, fontSize: '1.5rem', lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
+                                                        <Typography sx={{ fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important', fontWeight: 600, fontSize: '1.5rem', lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
                                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                             <Typography sx={{ fontWeight: 700, fontSize: '2.5rem', lineHeight: 1, color: 'white' }}>{awayGoals}</Typography>
                                                             <Typography sx={{ fontSize: '0.5rem', color: '#aaa' }}>Goal Score</Typography>
@@ -3070,7 +3070,7 @@ export default function AllMatches() {
 
                                             {/* VS Center */}
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
-                                                <Typography sx={{ fontFamily: '"Oswald", sans-serif !important', fontWeight: 600, fontSize: { xs: '1.4rem', sm: '2rem' }, lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
+                                                <Typography sx={{ fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important', fontWeight: 600, fontSize: { xs: '1.4rem', sm: '2rem' }, lineHeight: 0.5, letterSpacing: '-2px', textTransform: 'uppercase', color: 'white' }}>V/S</Typography>
                                                 <Typography sx={{ color: '#ddd', fontSize: { xs: '0.8rem', sm: '0.85rem' }, textAlign: 'center', mt: 1 }}>{durationMinutes} Minutes Match</Typography>
                                             </Box>
 
@@ -5012,7 +5012,7 @@ export default function AllMatches() {
 //                         // mb: { xs: 3, md: 4 },
 //                         color: 'black',
 //                         // fontFamily: 'Arial Black, Arial, sans-serif',
-//                         fontFamily: '"Anton", sans-serif',
+//                         fontFamily: 'var(--font-geist-anton), "Anton", sans-serif',
 //                         fontWeight: 'semibold',
 //                         fontSize: { xs: '32px', sm: '42px', md: '56px' },
 //                         textAlign: { xs: 'center', md: 'left' },

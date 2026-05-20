@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Inter, Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
+import { Anton, Inter, Geist, Geist_Mono, Bebas_Neue, Oswald, League_Spartan } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import "./bones/registry";
@@ -58,6 +58,18 @@ const anton = Anton({
   variable: '--font-geist-anton'
 });
 
+const oswald = Oswald({
+  weight: ['200', '300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-oswald',
+});
+
+const leagueSpartan = League_Spartan({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-league-spartan',
+});
+
 const inter = Inter({
   weight: ['400', '600'],
   style: ['normal', 'italic'],
@@ -103,7 +115,7 @@ export default function RootLayout({
         )}
       </head>
       <body 
-        className={`${woodfordBournePro.variable} ${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} ${bebasNeue.variable} antialiased`}
+        className={`${woodfordBournePro.variable} ${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} ${bebasNeue.variable} ${oswald.variable} ${leagueSpartan.variable} antialiased`}
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}

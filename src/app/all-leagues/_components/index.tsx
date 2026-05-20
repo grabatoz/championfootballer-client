@@ -2513,7 +2513,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           <Box sx={{ minWidth: 0 }}>
                             <Typography sx={{
                               color: '#ffffff',
-                              fontFamily: '"Anton", sans-serif !important',
+                              fontFamily: 'var(--font-geist-anton), "Anton", sans-serif !important',
                               fontSize: { xs: '26px', sm: '30px', md: '34px' },
                               textTransform: 'uppercase',
                               lineHeight: 1.2,
@@ -2526,13 +2526,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.8 }}>
                               <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
-                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
+                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
                                 Players {league.members?.length || 0}
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                               <Image src={schedule} alt="Season Date" width={16} height={16} style={{ flexShrink: 0 }} />
-                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '11px', md: '15px' } }}>
+                              <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '11px', md: '15px' } }}>
                                 {seasonDateValid
                                   ? `Created At ${seasonDate!.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
                                   : 'Date not available'}
@@ -2546,11 +2546,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
-                            <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
+                            <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
                               Matches: {seasonMatchesCount}
                             </Typography>
                           </Box>
-                          <Typography sx={{ color: '#ffffff', fontFamily: '"League Spartan", sans-serif', fontWeight: 600, fontSize: { xs: '20px', md: '22px' } }}>
+                          <Typography sx={{ color: '#ffffff', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 600, fontSize: { xs: '20px', md: '22px' } }}>
                             Archived
                           </Typography>
                         </Box>
@@ -4775,7 +4775,7 @@ function AllLeagues() {
       sx={{
         minHeight: '100vh',
         // background: 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
-        fontFamily: '"League Spartan", sans-serif',
+        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
         overflow: 'hidden',
       }}
     >
@@ -4809,7 +4809,7 @@ function AllLeagues() {
           {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
           <Typography variant="h3" sx={{
             color: 'white',
-            fontFamily: '"Oswald", sans-serif !important',
+            fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
             fontWeight: 700,
             fontSize: { xs: '32px', sm: '42px', md: '55px' },
             textAlign: 'center',
@@ -5384,7 +5384,7 @@ function AllLeagues() {
                             {/* League Title */}
                             <Typography sx={{
                               color: isCompleted ? '#111827' : 'white',
-                              fontFamily: '"Anton", sans-serif !important',
+                              fontFamily: 'var(--font-geist-anton), "Anton", sans-serif !important',
                               fontSize: { xs: '28px', sm: '32px', md: '36px' },
 
                               textOverflow: 'ellipsis',
@@ -5405,7 +5405,7 @@ function AllLeagues() {
                               <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5424,7 +5424,7 @@ function AllLeagues() {
                               />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5437,7 +5437,7 @@ function AllLeagues() {
                               <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5457,7 +5457,7 @@ function AllLeagues() {
                               <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5475,7 +5475,7 @@ function AllLeagues() {
                               />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5487,7 +5487,7 @@ function AllLeagues() {
                               <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5522,7 +5522,7 @@ function AllLeagues() {
                                 <Image src={inviteicon} alt="Invite Code" width={18} height={18} style={{ flexShrink: 0 }} />
                                 <Typography sx={{
                                   color: 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                   fontWeight: 300,
                                   fontSize: { xs: '10px', sm: '16px' }
                                 }}>
@@ -5587,7 +5587,7 @@ function AllLeagues() {
                               <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{
                                 color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                fontFamily: '"League Spartan", sans-serif',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
@@ -5613,7 +5613,7 @@ function AllLeagues() {
                                   borderRadius: 1,
                                   textTransform: 'none',
                                   color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
-                                  fontFamily: '"League Spartan", sans-serif',
+                                  fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                   fontWeight: 600,
                                   fontSize: { xs: '10px', sm: '16px' },
                                   textDecoration: 'underline',
@@ -5713,7 +5713,7 @@ function AllLeagues() {
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                   <Typography className="view-label" sx={{
                                     color: isCompleted ? '#111827' : 'white',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 'semi-bold',
                                     fontSize: { xs: '22px', md: '22px' }
                                   }}>
@@ -5772,7 +5772,7 @@ function AllLeagues() {
               >
                 <Typography sx={{
                   color: 'white',
-                  fontFamily: '"League Spartan", sans-serif',
+                  fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                   fontWeight: 600,
                   fontSize: { xs: '15px', md: '18px' },
                   letterSpacing: '0.5px',
@@ -5812,7 +5812,7 @@ function AllLeagues() {
               >
                 <Typography sx={{
                   color: 'white',
-                  fontFamily: '"League Spartan", sans-serif',
+                  fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                   fontWeight: 600,
                   fontSize: { xs: '15px', md: '18px' },
                   letterSpacing: '0.5px',
@@ -5840,7 +5840,7 @@ function AllLeagues() {
                       opacity: 0.8,
                     }}
                   >
-                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
                       No archived leagues found yet.
                     </Typography>
                   </Box>
@@ -5990,7 +5990,7 @@ function AllLeagues() {
                                 {/* League Title */}
                                 <Typography sx={{
                                   color: 'white',
-                                  fontFamily: '"Anton", sans-serif !important',
+                                  fontFamily: 'var(--font-geist-anton), "Anton", sans-serif !important',
                                   fontSize: { xs: '28px', sm: '32px', md: '36px' },
                                   textOverflow: 'ellipsis',
                                   overflow: 'hidden',
@@ -6010,7 +6010,7 @@ function AllLeagues() {
                                   <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                                   <Typography sx={{
                                     color: 'rgba(255,255,255,0.9)',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
@@ -6023,7 +6023,7 @@ function AllLeagues() {
                                   <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
                                   <Typography sx={{
                                     color: 'rgba(255,255,255,0.9)',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
@@ -6043,7 +6043,7 @@ function AllLeagues() {
                                   <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                                   <Typography sx={{
                                     color: 'rgba(255,255,255,0.9)',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
@@ -6055,7 +6055,7 @@ function AllLeagues() {
                                   <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
                                   <Typography sx={{
                                     color: 'rgba(255,255,255,0.9)',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
@@ -6089,7 +6089,7 @@ function AllLeagues() {
                                   <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
                                   <Typography sx={{
                                     color: 'rgba(255,255,255,0.9)',
-                                    fontFamily: '"League Spartan", sans-serif',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
@@ -6138,7 +6138,7 @@ function AllLeagues() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                       <Typography sx={{
                                         color: 'white',
-                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                         fontWeight: 'semi-bold',
                                         fontSize: { xs: '22px', md: '22px' }
                                       }}>
@@ -6170,7 +6170,7 @@ function AllLeagues() {
                       opacity: 0.8,
                     }}
                   >
-                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: '"League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
+                    <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontSize: { xs: '14px', md: '16px' } }}>
                       No archived seasons found yet.
                     </Typography>
                   </Box>
@@ -6182,7 +6182,7 @@ function AllLeagues() {
                       <Typography
                         sx={{
                           color: '#E5E7EB',
-                          fontFamily: '"League Spartan", sans-serif',
+                          fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                           fontWeight: 700,
                           fontSize: { xs: '16px', md: '20px' },
                           letterSpacing: '0.4px',
@@ -6311,7 +6311,7 @@ function AllLeagues() {
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center', alignItems: { xs: 'center', md: 'flex-start' }, height: '100%' }}>
                                     <Typography sx={{
                                       color: 'white',
-                                      fontFamily: '"Anton", sans-serif !important',
+                                      fontFamily: 'var(--font-geist-anton), "Anton", sans-serif !important',
                                       fontSize: { xs: '28px', sm: '32px', md: '36px' },
                                       textOverflow: 'ellipsis',
                                       overflow: 'hidden',
@@ -6330,7 +6330,7 @@ function AllLeagues() {
                                       <Image src={faceicon} alt="Players" width={16} height={16} style={{ flexShrink: 0 }} />
                                       <Typography sx={{
                                         color: 'rgba(255,255,255,0.9)',
-                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                         fontWeight: 300,
                                         fontSize: { xs: '10px', sm: '16px' }
                                       }}>
@@ -6342,7 +6342,7 @@ function AllLeagues() {
                                       <Image src={schedule} alt="Created" width={16} height={16} style={{ flexShrink: 0 }} />
                                       <Typography sx={{
                                         color: 'rgba(255,255,255,0.9)',
-                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                         fontWeight: 300,
                                         fontSize: { xs: '10px', sm: '16px' }
                                       }}>
@@ -6362,7 +6362,7 @@ function AllLeagues() {
                                       <Image src={fotbal} alt="Matches" width={18} height={18} style={{ flexShrink: 0 }} />
                                       <Typography sx={{
                                         color: 'rgba(255,255,255,0.9)',
-                                        fontFamily: '"League Spartan", sans-serif',
+                                        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
                                         fontWeight: 300,
                                         fontSize: { xs: '10px', sm: '16px' }
                                       }}>
@@ -6389,7 +6389,7 @@ function AllLeagues() {
                                     <Grid item xs={6} md={6}>
                                       <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '100%', mt: { xs: 1, md: 0 } }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                          <Typography sx={{ color: 'white', fontFamily: '"League Spartan", sans-serif', fontWeight: 'semi-bold', fontSize: { xs: '22px', md: '22px' } }}>
+                                          <Typography sx={{ color: 'white', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 'semi-bold', fontSize: { xs: '22px', md: '22px' } }}>
                                             Archived
                                           </Typography>
                                         </Box>

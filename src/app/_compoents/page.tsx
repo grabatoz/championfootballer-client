@@ -238,7 +238,7 @@ export default function LandingPage() {
               <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, mb: 1 }}>
                 <Typography
                   sx={{
-                    fontFamily: 'Inter !important',
+                    fontFamily: 'var(--font-inter), Inter, sans-serif !important',
                     fontWeight: '600 !important',
                     fontSize: { xs: '1rem', md: '23px' },
                     lineHeight: { xs: '1.3', md: '35px' },

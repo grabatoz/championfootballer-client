@@ -352,7 +352,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ fontSize: { xs: embeddedInDialog ? 28 : 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: embeddedInDialog ? -2 : -3, sm: 0, md: 0 }, fontFamily: '"Oswald", sans-serif !important', textTransform: 'uppercase' }}
+              sx={{ fontSize: { xs: embeddedInDialog ? 28 : 32, sm: 40, md: 50, lg: 58, xl: 64 }, color: "white", letterSpacing: '1px', mb: 0.5, mt: { xs: embeddedInDialog ? -2 : -3, sm: 0, md: 0 }, fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important', textTransform: 'uppercase' }}
             >
               V/S
             </Typography>
