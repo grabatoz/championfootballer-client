@@ -4652,17 +4652,33 @@ export default function LeagueDetailPage() {
                                             </Button>
                                         )
                                     )}
+                                    <Paper sx={{
+                                        background: '#1a1a1a',
+                                        border: '2px solid rgba(255,255,255,0.2)',
+                                        borderRadius: 2,
+                                        // py: { xs: 5, sm: 7 },
+                                        // px: { xs: 2, sm: 4 },
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 1.5,
+                                        mt: 1,
+                                    }}>
 
-                                    <Typography
-                                        sx={{
-                                            color: 'rgba(255,255,255,0.78)',
-                                            fontSize: { xs: '0.78rem', sm: '0.86rem' },
-                                            mb: 2,
-                                            lineHeight: 1.5,
-                                        }}
-                                    >
-                                        Match fixtures will move to Match Results once the match has finished. Please check the fixture duration time to know when to view completed matches.
-                                    </Typography>
+
+                                        <Typography
+                                            sx={{
+                                                color: 'rgba(255,255,255,0.78)',
+                                                fontSize: { xs: '0.78rem', sm: '0.86rem' },
+                                                mb: 2,
+                                                lineHeight: 1.5,
+                                                mt:2
+                                            }}
+                                        >
+                                            Match fixtures will move to Match Results once the match has finished. Please check the fixture duration time to know when to view completed matches.
+                                        </Typography>
+                                    </Paper>
 
                                     {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
@@ -5047,7 +5063,7 @@ export default function LeagueDetailPage() {
                                             mt: 1,
                                         }}>
                                             <Box sx={{ opacity: 0.3 }}>
-                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                                             </Box>
                                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)', fontWeight: 600, textAlign: 'center', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                                 No upcoming matches scheduled yet
@@ -5731,7 +5747,7 @@ export default function LeagueDetailPage() {
                                             mt: 1,
                                         }}>
                                             <Box sx={{ opacity: 0.3 }}>
-                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></svg>
                                             </Box>
                                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)', fontWeight: 600, textAlign: 'center', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                                                 No completed matches yet
@@ -6013,7 +6029,7 @@ export default function LeagueDetailPage() {
                                                     {isAdmin && (
                                                         <div className="col-start-10 col-span-2 justify-self-end">
                                                             {league?.active ? (
-                                                                 <Link href={`/league/${leagueId}/match`} passHref>
+                                                                <Link href={`/league/${leagueId}/match`} passHref>
                                                                     <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
                                                                         + New Match
                                                                     </button>

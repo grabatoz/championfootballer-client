@@ -2606,7 +2606,7 @@ export default function AllMatches() {
                                     color: '#b0bec5',
                                 }}
                             >
-                                <Typography className="empty-state-message" variant="h6">No matches found</Typography>
+                                {/* <Typography className="empty-state-message" variant="h6">No matches found</Typography> */}
                                 <Typography className="empty-state-message" variant="body2">
                                     No matches found in {selectedLeagueName}{selectedSeason !== 'all' ? ` (${selectedSeasonName})` : ''}
                                 </Typography>
