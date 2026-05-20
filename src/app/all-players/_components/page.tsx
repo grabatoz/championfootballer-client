@@ -157,9 +157,16 @@ const AllPlayersPage = () => {
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
   const getYearFromDateLike = useCallback((value: unknown): string | null => {
-    if (typeof value !== 'string') return null;
-    const t = Date.parse(value);
-    if (!Number.isFinite(t)) return null;
+    if (!value) return null;
+    if (value instanceof Date) {
+      return String(value.getFullYear());
+    }
+    const str = String(value).trim();
+    const t = Date.parse(str);
+    if (!Number.isFinite(t)) {
+      const match = str.match(/\b(19|20)\d{2}\b/);
+      return match ? match[0] : null;
+    }
     return String(new Date(t).getFullYear());
   }, []);
 
@@ -215,39 +222,11 @@ const AllPlayersPage = () => {
 
   const getLeagueYears = useCallback((league: LeagueOption): string[] => {
     const years = new Set<string>();
-    const addYear = (v: unknown) => {
-      const y = getYearFromDateLike(v);
+    const dateStr = (league.createdAt || league.updatedAt || '').trim();
+    if (dateStr) {
+      const y = getYearFromDateLike(dateStr);
       if (y) years.add(y);
-    };
-
-    addYear(league.createdAt);
-    addYear(league.updatedAt);
-
-    if (Array.isArray(league.matches)) {
-      league.matches.forEach((m) => {
-        const rec = m as Record<string, unknown>;
-        addYear(rec.date);
-        addYear(rec.startDate);
-        addYear(rec.scheduledAt);
-        addYear(rec.createdAt);
-        addYear(rec.updatedAt);
-        addYear(rec.end);
-      });
     }
-
-    if (Array.isArray(league.seasons)) {
-      league.seasons.forEach((s) => {
-        if (typeof s?.seasonNumber === 'number' && s.seasonNumber >= 1900 && s.seasonNumber <= 2100) {
-          years.add(String(s.seasonNumber));
-        }
-        const seasonName = String(s?.name || '');
-        const yearHits = seasonName.match(/\b(19|20)\d{2}\b/g);
-        if (yearHits) {
-          yearHits.forEach((y) => years.add(y));
-        }
-      });
-    }
-
     return Array.from(years);
   }, [getYearFromDateLike]);
 
@@ -512,7 +491,7 @@ const AllPlayersPage = () => {
                   isLocked: computed?.locked === true,
                   maxGames: maxGames ?? maxGamesFromDetails,
                   matches: matchesFromDetails,
-                  createdAt,
+                  createdAt: createdAt || (league as any).createdAt,
                   isAdmin,
                   seasons: seasonsFromLeague,
                   members: membersFromDetails ?? [],
@@ -523,9 +502,10 @@ const AllPlayersPage = () => {
               const seasonsFromLeague = seasonsFromDetails ?? normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
 
               return {
+                ...league,
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
-                createdAt,
+                createdAt: createdAt || (league as any).createdAt,
                 isAdmin,
                 seasons: seasonsFromLeague,
                 members: membersFromDetails ?? [],
@@ -538,8 +518,10 @@ const AllPlayersPage = () => {
               const seasonsFromLeague = normalizeAndSortSeasons((league as { seasons?: unknown }).seasons);
 
               return {
+                ...league,
                 id: String(leagueId),
                 name: (league as { name?: string }).name || '',
+                createdAt: (league as any).createdAt,
                 isAdmin: adminIds.has(leagueId),
                 seasons: seasonsFromLeague,
                 members: [],
