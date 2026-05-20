@@ -1,14 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap');
 
-/* Bebas Neue */
-@font-face {
-  font-family: 'Bebas Neue';
-  src: url('/assets/fonts/BebasNeue-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Bebas Neue - now loaded via next/font/google in layout.tsx */
 
 @tailwind base;
 @tailwind components;
@@ -17,191 +10,49 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-woodford-family: 'Woodford Bourne Pro', Arial, Helvetica, sans-serif;
+  --font-woodford-family: var(--font-woodford-bourne-pro, Arial, Helvetica, sans-serif);
   --header-divider-height: 3px;
   --header-divider-color: #e16419;
   --header-mobile-min-height: 120px;
 }
 
-/* Woodford Bourne Pro - Thin (100) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Thin.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Thin.woff') format('woff');
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-ThinItalic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-ThinItalic.woff') format('woff');
-  font-weight: 100;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - ExtraLight (200) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-ExtraLight.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-ExtraLight.woff') format('woff');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-ExtLtIta.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-ExtLtIta.woff') format('woff');
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Light (300) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Light.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Light.woff') format('woff');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-LightItalic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-LightItalic.woff') format('woff');
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Regular (400) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Regular.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Italic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Italic.woff') format('woff');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Medium (500) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Medium.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-MedIta.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-MedIta.woff') format('woff');
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - SemiBold (600) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-SemiBold.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-SemiBold.woff') format('woff');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-SemBdIta.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-SemBdIta.woff') format('woff');
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Bold (700) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Bold.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Bold.woff') format('woff');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-BoldItalic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-BoldItalic.woff') format('woff');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Black (900) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Black.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Black.woff') format('woff');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-BlackItalic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-BlackItalic.woff') format('woff');
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Woodford Bourne Pro - Ultra (950) */
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-Ultra.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-Ultra.woff') format('woff');
-  font-weight: 950;
-  font-style: normal;
-  font-display: swap;
-}
 
-@font-face {
-  font-family: 'Woodford Bourne Pro';
-  src: url('/assets/fonts/WoodfordBournePro-UltraItalic.woff2') format('woff2'),
-       url('/assets/fonts/WoodfordBournePro-UltraItalic.woff') format('woff');
-  font-weight: 950;
-  font-style: italic;
-  font-display: swap;
-}
 
-/* Font Guidelines Implementation */
-@font-face {
-  font-family: 'Sailec';
-  src: url('/fonts/Sailec-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Sailec font removed - file not present on server */
 
 .font-sailec {
   font-family: 'Sailec', sans-serif;
