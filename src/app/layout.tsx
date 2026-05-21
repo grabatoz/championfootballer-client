@@ -16,6 +16,7 @@ import FetchAuthMonitor from '@/Components/FetchAuthMonitor';
 import RealtimeClient from '@/Components/RealtimeClient';
 import RealtimeLatency from '@/Components/RealtimeLatency';
 import GlobalCacheSync from '@/Components/GlobalCacheSync';
+import FontDebugMonitor from "@/Components/FontDebugMonitor";
 
 // Woodford Bourne Pro loaded via next/font/local so it is bundled into
 // /_next/static/ and works correctly in standalone/production deployments
@@ -130,6 +131,7 @@ export default function RootLayout({
           </LayoutContent>
           <ToasterProvider /> {/* mount once */}
           <PerformanceMonitor /> {/* Performance monitoring in dev mode */}
+          <FontDebugMonitor /> {/* Production console diagnostics for font loading */}
           {process.env.NODE_ENV !== 'production' && <RealtimeLatency />}
         </Providers>
       </body>
