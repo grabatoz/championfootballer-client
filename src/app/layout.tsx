@@ -117,6 +117,7 @@ export default function RootLayout({
       </head>
       <body 
         className={`${woodfordBournePro.variable} ${geistSans.variable} ${geistMono.variable} ${anton.variable} ${inter.variable} ${bebasNeue.variable} ${oswald.variable} ${leagueSpartan.variable} antialiased`}
+        style={{ fontFamily: "var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif" }}
       >
         <Providers>
           <ProductionOptimizer /> {/* Initialize production optimizations */}
