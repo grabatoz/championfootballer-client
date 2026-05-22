@@ -4343,7 +4343,7 @@ export default function LeagueDetailPage() {
                                             '&::-webkit-scrollbar-thumb': { background: '#F97316', borderRadius: 3 },
                                         }}
                                     >
-                                        <Box sx={{ width: 'max-content', minWidth: '100%', borderRadius: '8px', overflow: 'hidden' }}>
+                                        <Box sx={{ width: 'max-content', minWidth: '100%', borderRadius: '8px', overflow: 'visible' }}>
                                             {/* Table Header */}
                                             <Box sx={{
                                                 display: 'flex',
@@ -4352,7 +4352,9 @@ export default function LeagueDetailPage() {
                                                 pl: 0,
                                                 pr: { xs: 2, sm: 3 },
                                                 backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                                                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                borderTopLeftRadius: '8px',
+                                                borderTopRightRadius: '8px',
                                             }}>
                                                 {/* All Positions Dropdown */}
                                                 <Box
@@ -4373,6 +4375,7 @@ export default function LeagueDetailPage() {
                                                         left: 0,
                                                         zIndex: 3,
                                                         backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                                                        borderTopLeftRadius: '8px',
                                                     }}>
                                                     <Typography className="league-table-heading" sx={{ color: '#fff', textAlign: 'left !important' }}>
                                                         {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
@@ -4467,6 +4470,8 @@ export default function LeagueDetailPage() {
                                                 '&::-webkit-scrollbar': { display: 'none' },
                                                 scrollbarWidth: 'none',
                                                 msOverflowStyle: 'none',
+                                                borderBottomLeftRadius: '8px',
+                                                borderBottomRightRadius: '8px',
                                             }}>
                                                 <List sx={{ p: 0 }}>
                                                     {filteredMembersForTable.map((member, idx) => {
@@ -4475,6 +4480,7 @@ export default function LeagueDetailPage() {
                                                         const memberDisplayName = `${firstName} ${lastName}`.trim();
                                                         const rowBgColor = idx % 2 === 0 ? '#383838' : '#2b2b2b';
                                                         const rowBgColorHover = idx % 2 === 0 ? '#464646' : '#3a3a3a';
+                                                        const isLast = idx === filteredMembersForTable.length - 1;
 
                                                         return (
                                                             <ListItem
@@ -4488,11 +4494,13 @@ export default function LeagueDetailPage() {
                                                                     pl: 0,
                                                                     pr: { xs: 2, sm: 3 },
                                                                     backgroundColor: rowBgColor,
-                                                                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                                    borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.08)',
                                                                     color: '#fff',
                                                                     cursor: 'pointer',
                                                                     transition: 'background-color 0.2s',
-                                                                    '&:hover': { backgroundColor: rowBgColorHover }
+                                                                    '&:hover': { backgroundColor: rowBgColorHover },
+                                                                    borderBottomLeftRadius: isLast ? '8px' : 0,
+                                                                    borderBottomRightRadius: isLast ? '8px' : 0,
                                                                 }}
                                                             >
                                                                 {/* Avatar + Name column */}
@@ -4512,6 +4520,7 @@ export default function LeagueDetailPage() {
                                                                     '.MuiListItem-root:hover &': {
                                                                         backgroundColor: rowBgColorHover,
                                                                     },
+                                                                    borderBottomLeftRadius: isLast ? '8px' : 0,
                                                                 }}>
                                                                     <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                                                                         <Box sx={{
