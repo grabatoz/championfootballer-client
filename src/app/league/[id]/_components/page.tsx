@@ -6148,7 +6148,7 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-foreground font-medium">{index + 1}</div>
@@ -6171,12 +6171,12 @@ export default function LeagueDetailPage() {
                                                                                 tablePlayerInitials
                                                                             )}
                                                                         </div>
-                                                                        <div className="flex flex-col min-w-0">
+                                                                        <div className="flex flex-col min-w-0 justify-center">
                                                                             <div className="flex items-center gap-1.5 min-w-0">
-                                                                                <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
+                                                                                <span className="text-foreground font-semibold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <span className="league-table-row-text text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
+                                                                            <span className="league-table-row-text text-muted-foreground font-normal text-xs truncate block whitespace-nowrap">{posLabel}</span>
                                                                         </div>
                                                                     </div>
 
