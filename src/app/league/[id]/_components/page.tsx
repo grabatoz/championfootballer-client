@@ -4345,10 +4345,9 @@ export default function LeagueDetailPage() {
                                     >
                                         <Box sx={{ width: 'max-content', minWidth: '100%', borderRadius: '8px', overflow: 'visible' }}>
                                             {/* Table Header */}
-                                            <Box sx={{
+                                            <Box className="league-header-row" sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                py: 2,
                                                 pl: 0,
                                                 pr: { xs: 2, sm: 3 },
                                                 backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -4485,12 +4484,11 @@ export default function LeagueDetailPage() {
                                                         return (
                                                             <ListItem
                                                                 key={member.id}
-                                                                className="league-table-row-text"
+                                                                className="league-table-row-text league-row"
                                                                 onClick={() => router.push(`/player/${member.id}`)}
                                                                 sx={{
                                                                     display: 'flex',
                                                                     alignItems: 'center',
-                                                                    py: { xs: 0.7, sm: 0.7 },
                                                                     pl: 0,
                                                                     pr: { xs: 2, sm: 3 },
                                                                     backgroundColor: rowBgColor,
@@ -6037,7 +6035,7 @@ export default function LeagueDetailPage() {
                                                         </button>
                                                     </div>
                                                     {isAdmin && (
-                                                        <div className="col-start-10 col-span-2 justify-self-end">
+                                                        <div className="col-start-9 col-span-2 justify-self-end pr-1 sm:pr-2">
                                                             {league?.active ? (
                                                                 <Link href={`/league/${leagueId}/match`} passHref>
                                                                     <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
@@ -6082,7 +6080,7 @@ export default function LeagueDetailPage() {
                                                         <div className="text-center league-table-heading">L</div>
                                                         <div className="text-center league-table-heading">GD</div>
                                                         <div className="text-center league-table-heading">W%</div>
-                                                        <div className="text-center league-table-heading">xpPTS</div>
+                                                        <div className="text-center league-table-heading">{filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}</div>
                                                     </div>
                                                     {/* Full width border alag */}
                                                     <div className="w-full border-b border-border" />
