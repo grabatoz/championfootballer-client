@@ -5106,8 +5106,8 @@ function AllLeagues() {
           {loading ? (
             <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography className="empty-state-message" variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
+            <Box sx={{ textAlign: 'center', py: 4 , background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', }}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
                 Create a new league or join an existing one to get started.
               </Typography>

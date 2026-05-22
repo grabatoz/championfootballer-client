@@ -2581,14 +2581,14 @@ export default function AllMatches() {
                             <Paper
                                 elevation={0}
                                 sx={{
-                                    background: 'rgba(255,255,255,0.06)',
+                                    background: 'linear-gradient(90deg, #767676 0%, #000000 100%)',
                                     borderRadius: 3,
                                     p: 4,
                                     textAlign: 'center',
                                     color: '#fff',
                                 }}
                             >
-                                <Typography className="empty-state-message" variant="h6">No leagues found</Typography>
+                                <Typography  variant="h6">No leagues found</Typography>
                                 <Typography variant="body2">
                                   Create a new league or join an existing one to get started.
                                 </Typography>
@@ -2633,7 +2633,7 @@ export default function AllMatches() {
                                                 ? 'No archived matches found'
                                                 : 'No matches found'}
                                 </Typography> */}
-                                <Typography className="empty-state-message" variant="body2">
+                                <Typography className="" variant="body2">
                                     {matchFilter === 'fixtures'
                                         ? 'There are no upcoming fixtures for this league.'
                                         : matchFilter === 'results'
