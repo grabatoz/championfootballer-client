@@ -4489,8 +4489,24 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             <Table stickyHeader aria-label="xp milestones table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Level</TableCell>
-                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Milestone Title</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>
+                    Level
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: '#2b2b2b',
+                      color: '#00a896',
+                      fontWeight: 800,
+                      borderBottom: '1px solid #333',
+                      whiteSpace: 'nowrap',
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 4,
+                      boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
+                    }}
+                  >
+                    Milestone Title
+                  </TableCell>
                   <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>XP Range</TableCell>
                   <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Description</TableCell>
                   <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Card Color</TableCell>
@@ -4507,8 +4523,33 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   { level: 7, title: 'GOAT', range: '15,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold' },
                 ].map((row) => (
                   <TableRow key={row.level} sx={{ '&:hover': { bgcolor: '#252525' } }}>
-                    <TableCell sx={{ color: 'white', borderBottom: '1px solid #333', fontWeight: 700 }}>{row.level}</TableCell>
-                    <TableCell sx={{ color: 'white', borderBottom: '1px solid #333', fontWeight: 600 }}>{row.title}</TableCell>
+                    <TableCell
+                      sx={{
+                        color: 'white',
+                        borderBottom: '1px solid #333',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {row.level}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: 'white',
+                        borderBottom: '1px solid #333',
+                        fontWeight: 600,
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 2,
+                        bgcolor: '#1a1a1a',
+                        boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                        '.MuiTableRow-root:hover &': {
+                          bgcolor: '#252525',
+                          boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
+                        },
+                      }}
+                    >
+                      {row.title}
+                    </TableCell>
                     <TableCell sx={{ color: 'white', borderBottom: '1px solid #333' }}>{row.range}</TableCell>
                     <TableCell sx={{ color: 'rgba(255,255,255,0.7)', borderBottom: '1px solid #333', fontSize: '0.9rem' }}>{row.desc}</TableCell>
                     <TableCell sx={{ borderBottom: '1px solid #333' }}>
