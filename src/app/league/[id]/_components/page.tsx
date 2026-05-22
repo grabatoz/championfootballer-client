@@ -6064,7 +6064,7 @@ export default function LeagueDetailPage() {
                                                 <>
                                                     <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset font-bold">
                                                         <div className="text-center league-table-heading">#</div>
-                                                        <div className="pl-[52px] text-left sticky left-0 z-10 bg-table-header league-table-heading">NAME</div>
+                                                        <div className="pl-[52px] sticky left-0 z-10 bg-table-header league-table-heading league-table-heading-left">NAME</div>
                                                         <div className="text-center league-table-heading">MOTM</div>
                                                         <div className="text-center league-table-heading">P</div>
                                                         <div className="text-center league-table-heading">W</div>
