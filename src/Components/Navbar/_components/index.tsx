@@ -39,6 +39,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import HandshakeOutlinedIcon from '@mui/icons-material/HandshakeOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import Star from '@mui/icons-material/Star';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
@@ -4321,7 +4322,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 case 'Winning Team Bonus': return <CheckCircleOutlineIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
                 case 'Draw': return <HandshakeOutlinedIcon sx={{ color: '#e56a16', fontSize: '1.25rem' }} />;
                 case 'Losing Team Consolation': return <HighlightOffIcon sx={{ color: '#f87171', fontSize: '1.25rem' }} />;
-                case 'Man of the Match (MOTM)': return <EmojiEventsOutlinedIcon sx={{ color: '#F1C40F', fontSize: '1.25rem' }} />;
+                case 'Man of the Match (MOTM)': return <Star sx={{ color: '#F59E0B', fontSize: 18 }} />;
                 case 'Clean Sheets (Goalkeeper)': return <ShieldOutlinedIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
                 case 'Goal Scored': return <SportsSoccerOutlinedIcon sx={{ color: '#fff', fontSize: '1.25rem' }} />;
                 case 'Assist': return <StarOutlineIcon sx={{ color: '#00a896', fontSize: '1.25rem' }} />;
