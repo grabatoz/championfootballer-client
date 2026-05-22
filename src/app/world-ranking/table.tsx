@@ -20,7 +20,7 @@ const isSortableKey = (k: ColumnKey): k is SortKey => (SORTABLE_KEYS as readonly
 const renderTwoLineHeader = (top: string, bottom: string) => (
   <Box
     sx={{
-      width: '100%',
+      width: 'auto',
       display: 'flex',
       flexDirection: { xs: 'column', sm: 'row' },
       alignItems: 'center',
@@ -646,44 +646,61 @@ export default function WorldRankingTable() {
                       { label: 'XP STATUS', key: 'position' },
                       ...(showAvg ? [{ label: 'AVG XP', key: 'avgXP' } as Column] : [{ label: 'TOTAL XP', key: 'totalXP' } as Column]),
                     ];
-                    return cols.map((col, i) => (
-                      <TableCell
-                        key={col.label}
-                        onClick={() => isSortableKey(col.key) && toggleSort(col.key)}
-                        sx={{
-                          cursor: isSortableKey(col.key) ? 'pointer' : 'default',
-                          userSelect: 'none',
-                          bgcolor: '#dddddd !important',
-                          color: '#000000 !important',
-                          fontWeight: 700,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
-                          py: 1.5,
-                          minWidth: i === 0 ? 90 : i === 1 ? 210 : 120,
-                          textAlign: 'center',
-                          // borderBottom: '2px solid #e56a16 !important',
-                          pl: i === 0 ? 3 : 1.5,
-                          ...(i === 1 ? {
-                            position: 'sticky',
-                            left: 0,
-                            zIndex: 5,
-                            backgroundColor: '#dddddd !important',
-                            boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
-                          } : {}),
-                        }}
-                      >
-                        {col.label === 'XP STATUS'
-                          ? renderTwoLineHeader('XP', 'STATUS')
-                          : col.label === 'TOTAL XP'
-                            ? renderTwoLineHeader('TOTAL', 'XP')
-                            : col.label}
-                        {isSortableKey(col.key) && sort.key === col.key && (
-                          <Box component="span" sx={{ ml: 0.6, fontSize: 11 }}>
-                            {sort.direction === 'asc' ? '▲' : '▼'}
+                    return cols.map((col, i) => {
+                      const isActiveSort = isSortableKey(col.key) && sort.key === col.key;
+                      const isPrimaryInfoCol = i <= 3;
+                      const headerLabel = col.label === 'XP STATUS'
+                        ? renderTwoLineHeader('XP', 'STATUS')
+                        : col.label === 'TOTAL XP'
+                          ? renderTwoLineHeader('TOTAL', 'XP')
+                          : col.label;
+
+                      return (
+                        <TableCell
+                          key={col.label}
+                          onClick={() => isSortableKey(col.key) && toggleSort(col.key)}
+                          sx={{
+                            cursor: isSortableKey(col.key) ? 'pointer' : 'default',
+                            userSelect: 'none',
+                            bgcolor: '#dddddd !important',
+                            color: '#000000 !important',
+                            fontWeight: 700,
+                            fontSize: 13,
+                            letterSpacing: 0.5,
+                            py: 1.5,
+                            minWidth: i === 0 ? 90 : i === 1 ? 210 : 120,
+                            textAlign: isPrimaryInfoCol ? 'left' : 'center',
+                            // borderBottom: '2px solid #e56a16 !important',
+                            pl: i === 0 ? 3 : 1.5,
+                            ...(i === 1 ? {
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 5,
+                              backgroundColor: '#dddddd !important',
+                              boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
+                            } : {}),
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: isPrimaryInfoCol ? 'flex-start' : 'center',
+                            }}
+                          >
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 0.6 }}>
+                              {headerLabel}
+                              {isActiveSort && (
+                                <Box component="span" sx={{ fontSize: 11, lineHeight: 1 }}>
+                                  {sort.direction === 'asc' ? '\u25B2' : '\u25BC'}
+                                </Box>
+                              )}
+                            </Box>
                           </Box>
-                        )}
-                      </TableCell>
-                    ));
+                        </TableCell>
+                      );
+                    });
                   })()}
                 </TableRow>
               </TableHead>
@@ -789,3 +806,4 @@ function SummaryPill({ label, value, highlight, compact }: { label: string; valu
     </Box>
   );
 }
+
