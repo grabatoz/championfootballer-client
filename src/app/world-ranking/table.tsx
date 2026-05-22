@@ -17,6 +17,25 @@ interface Column { label: string; key: ColumnKey }
 const SORTABLE_KEYS: readonly SortKey[] = ['rank', 'name', 'matches', 'avgXP', 'totalXP'] as const;
 const isSortableKey = (k: ColumnKey): k is SortKey => (SORTABLE_KEYS as readonly string[]).includes(k);
 
+const renderTwoLineHeader = (top: string, bottom: string) => (
+  <Box
+    sx={{
+      width: '100%',
+      display: 'flex',
+      flexDirection: { xs: 'column', sm: 'row' },
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      gap: { xs: 0, sm: 0.45 },
+      lineHeight: 1.05,
+      whiteSpace: 'nowrap',
+    }}
+  >
+    <Box component="span">{top}</Box>
+    <Box component="span">{bottom}</Box>
+  </Box>
+);
+
 // Helper to get a comparable value for sorting without using any
 function getSortValue(player: WorldRankingPlayer, key: SortKey): string | number {
   switch (key) {
@@ -624,8 +643,8 @@ export default function WorldRankingTable() {
                       { label: 'PLAYERS', key: 'name' },
                       { label: 'POSITION', key: 'position' },
                       { label: 'COUNTRY', key: 'position' },
-                      { label: 'xp STATUS', key: 'position' },
-                      ...(showAvg ? [{ label: 'AVG xp', key: 'avgXP' } as Column] : [{ label: 'TOTAL xp', key: 'totalXP' } as Column]),
+                      { label: 'XP STATUS', key: 'position' },
+                      ...(showAvg ? [{ label: 'AVG XP', key: 'avgXP' } as Column] : [{ label: 'TOTAL XP', key: 'totalXP' } as Column]),
                     ];
                     return cols.map((col, i) => (
                       <TableCell
@@ -641,6 +660,7 @@ export default function WorldRankingTable() {
                           letterSpacing: 0.5,
                           py: 1.5,
                           minWidth: i === 0 ? 90 : i === 1 ? 210 : 120,
+                          textAlign: 'center',
                           // borderBottom: '2px solid #e56a16 !important',
                           pl: i === 0 ? 3 : 1.5,
                           ...(i === 1 ? {
@@ -652,7 +672,11 @@ export default function WorldRankingTable() {
                           } : {}),
                         }}
                       >
-                        {col.label}
+                        {col.label === 'XP STATUS'
+                          ? renderTwoLineHeader('XP', 'STATUS')
+                          : col.label === 'TOTAL XP'
+                            ? renderTwoLineHeader('TOTAL', 'XP')
+                            : col.label}
                         {isSortableKey(col.key) && sort.key === col.key && (
                           <Box component="span" sx={{ ml: 0.6, fontSize: 11 }}>
                             {sort.direction === 'asc' ? '▲' : '▼'}
@@ -704,8 +728,8 @@ export default function WorldRankingTable() {
                       </TableCell>
                       <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.position || '-'}</TableCell>
                       <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.country || '-'}</TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8 }}>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, textAlign: 'center' }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8, textAlign: 'center' }}>
                         {filters.mode === 'avg'
                           ? formatNum(p.avgXP, { decimals: 2 })
                           : formatNum(p.totalXP)}
