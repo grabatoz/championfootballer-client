@@ -2819,7 +2819,7 @@ export default function CareerPage() {
 
                       <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {actualWinLossData.every(d => d.value === 0) ? (
-                          <Typography className="empty-state-message" sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
+                          <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
                         ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>

@@ -2914,7 +2914,7 @@ export default function PlayerStatsPage() {
                                         <CircularProgress size={24} sx={{ color: TEAL_PRIMARY }} />
                                     </Box>
                                 ) : earnedTrophies.length === 0 ? (
-                                    <Typography className="empty-state-message" sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
+                                    <Typography sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
                                         No trophies yet
                                     </Typography>
                                 ) : (
@@ -3009,7 +3009,7 @@ export default function PlayerStatsPage() {
                                         <CircularProgress size={24} sx={{ color: TEAL_PRIMARY }} />
                                     </Box>
                                 ) : playerBadges.length === 0 ? (
-                                    <Typography className="empty-state-message" sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
+                                    <Typography sx={{ color: '#999', textAlign: 'center', py: 3, fontSize: 13 }}>
                                         No rewards earned yet
                                     </Typography>
                                 ) : (
