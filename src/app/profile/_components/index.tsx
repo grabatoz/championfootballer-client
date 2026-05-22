@@ -535,68 +535,107 @@ const PlayerProfileCard = () => {
       // Helper to treat undefined/null/empty-string as blank
       const isBlank = (v: unknown) => v == null || (typeof v === 'string' && v.trim() === '')
 
-      // Build payload by including only non-blank fields
+      // Build payload by including only modified/changed fields compared to current user
       const updateData: Record<string, unknown> = {}
 
-      if (!isBlank(firstName)) updateData.firstName = firstName.trim()
-      if (!isBlank(lastName)) updateData.lastName = lastName.trim()
-      if (!isBlank(email)) updateData.email = email.trim()
+      if (!isBlank(firstName) && firstName.trim() !== (user?.firstName || "").trim()) {
+        updateData.firstName = firstName.trim()
+      }
+      if (!isBlank(lastName) && lastName.trim() !== (user?.lastName || "").trim()) {
+        updateData.lastName = lastName.trim()
+      }
+      if (!isBlank(email) && email.trim() !== (user?.email || "").trim()) {
+        updateData.email = email.trim()
+      }
 
       if (!isBlank(age)) {
         const parsedAge = Number(String(age).trim())
-        if (!Number.isNaN(parsedAge)) updateData.age = parsedAge
+        if (!Number.isNaN(parsedAge) && parsedAge !== Number(user?.age)) {
+          updateData.age = parsedAge
+        }
       }
 
-      if (!isBlank(gender)) updateData.gender = gender
+      if (!isBlank(gender) && gender !== (user?.gender || "")) {
+        updateData.gender = gender
+      }
 
       // Core football fields (radio groups are never blank in UI, but keep guard anyway)
-      if (!isBlank(position)) updateData.position = position
-      if (!isBlank(positionType)) updateData.positionType = positionType
-      if (!isBlank(style)) updateData.style = style
-      if (!isBlank(preferredFoot)) updateData.preferredFoot = preferredFoot
+      if (!isBlank(position) && position !== (user?.position || "")) {
+        updateData.position = position
+      }
+      if (!isBlank(positionType) && positionType !== (user?.positionType || "")) {
+        updateData.positionType = positionType
+      }
+      if (!isBlank(style) && style !== (user?.style || "")) {
+        updateData.style = style
+      }
+      if (!isBlank(preferredFoot) && preferredFoot !== (user?.preferredFoot || "")) {
+        updateData.preferredFoot = preferredFoot
+      }
 
       // Shirt number is hidden in UI; do not update it to avoid accidental overwrites
       // if (!isBlank(shirtNumber)) updateData.shirtNumber = String(shirtNumber).trim()
 
       // Location: only include if selected (avoid writing empty to DB)
-      if (!isBlank(country)) updateData.country = country
-      if (!isBlank(stateProvince)) updateData.state = stateProvince
-      if (!isBlank(city)) updateData.city = city
+      if (!isBlank(country) && country !== (user?.country || "")) {
+        updateData.country = country
+      }
+      if (!isBlank(stateProvince) && stateProvince !== (user?.state || "")) {
+        updateData.state = stateProvince
+      }
+      if (!isBlank(city) && city !== (user?.city || "")) {
+        updateData.city = city
+      }
       if (!isBlank(phone)) {
         const phoneDigits = sanitizePhoneDigits(phone).slice(0, selectedPhoneRule.max)
-        if (phoneDigits.startsWith("0")) {
-          const msg = `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
-          setPhoneError(msg)
-          toast.error(msg)
-          setIsUpdating(false)
-          return
+        const currentPhoneDigits = sanitizePhoneDigits(user?.phone || "")
+        if (phoneDigits !== currentPhoneDigits) {
+          if (phoneDigits.startsWith("0")) {
+            const msg = `Please Insert The Phone Number Without 0 for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+            setPhoneError(msg)
+            toast.error(msg)
+            setIsUpdating(false)
+            return
+          }
+          if (!isPhoneDigitsValidForRule(phoneDigits, selectedPhoneRule)) {
+            const msg = `Phone number must be ${selectedPhoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
+            setPhoneError(msg)
+            toast.error(msg)
+            setIsUpdating(false)
+            return
+          }
+          updateData.phone = phoneDigits
         }
-        if (!isPhoneDigitsValidForRule(phoneDigits, selectedPhoneRule)) {
-          const msg = `Phone number must be ${selectedPhoneDigitsLabel} digits for ${phoneCountryCode}${selectedPhoneRule.dialCode ? ` (${selectedPhoneRule.dialCode})` : ""}`
-          setPhoneError(msg)
-          toast.error(msg)
-          setIsUpdating(false)
-          return
-        }
-        updateData.phone = phoneDigits
       }
       const normalizedPhoneCountryCode = String(phoneCountryCode || "").trim().toUpperCase()
-      if (/^[A-Z]{2}$/.test(normalizedPhoneCountryCode)) {
+      const userPhoneCountryCode = String(user?.phoneCountryCode || "").trim().toUpperCase()
+      if (/^[A-Z]{2}$/.test(normalizedPhoneCountryCode) && normalizedPhoneCountryCode !== userPhoneCountryCode) {
         updateData.phoneCountryCode = normalizedPhoneCountryCode
       }
 
-      // Skills: include only the ones that have numeric values; skip otherwise
+      // Skills: include only changed skills
       const skillsUpdate: Record<string, number> = {}
-      if (typeof dribbling === 'number') skillsUpdate.dribbling = dribbling
-      if (typeof shooting === 'number') skillsUpdate.shooting = shooting
-      if (typeof passing === 'number') skillsUpdate.passing = passing
-      if (typeof pace === 'number') skillsUpdate.pace = pace
-      if (typeof defending === 'number') skillsUpdate.defending = defending
-      if (typeof physical === 'number') skillsUpdate.physical = physical
-      if (Object.keys(skillsUpdate).length > 0) updateData.skills = skillsUpdate
+      if (typeof dribbling === 'number' && dribbling !== user?.skills?.dribbling) skillsUpdate.dribbling = dribbling
+      if (typeof shooting === 'number' && shooting !== user?.skills?.shooting) skillsUpdate.shooting = shooting
+      if (typeof passing === 'number' && passing !== user?.skills?.passing) skillsUpdate.passing = passing
+      if (typeof pace === 'number' && pace !== user?.skills?.pace) skillsUpdate.pace = pace
+      if (typeof defending === 'number' && defending !== user?.skills?.defending) skillsUpdate.defending = defending
+      if (typeof physical === 'number' && physical !== user?.skills?.physical) skillsUpdate.physical = physical
+      if (Object.keys(skillsUpdate).length > 0) {
+        updateData.skills = skillsUpdate
+      }
 
       // Password: only if user actually entered something non-blank
-      if (!isBlank(password)) updateData.password = password
+      if (!isBlank(password)) {
+        updateData.password = password
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast.success("Profile is already up to date!")
+        router.push("/home")
+        setIsUpdating(false)
+        return
+      }
 
       const { ok, data } = await updateProfile(token, updateData)
       if (!ok) throw new Error(data.message || "Failed to update profile")
@@ -630,8 +669,13 @@ const PlayerProfileCard = () => {
         cacheManager.updatePlayersCache(data.user)
       }
 
-      toast.success("Profile updated successfully!")
-      if (password) {
+      const hasPasswordChange = !isBlank(password);
+      const hasProfileChange = Object.keys(updateData).some(key => key !== 'password');
+
+      if (hasProfileChange) {
+        toast.success("Profile updated successfully!")
+      }
+      if (hasPasswordChange) {
         setPassword("")
         setPasswordError("")
         toast.success("Password changed successfully!", { duration: 4000 })
@@ -1167,7 +1211,8 @@ const PlayerProfileCard = () => {
                         fullWidth
                         error={Boolean(passwordError)}
                         helperText={passwordError}
-                        inputProps={{ minLength: 6, maxLength: 16 }}
+                        inputProps={{ minLength: 6, maxLength: 16, autoComplete: "new-password" }}
+                        autoComplete="new-password"
                         sx={{ mb: 1 }}
                         InputProps={{
                           endAdornment: (
