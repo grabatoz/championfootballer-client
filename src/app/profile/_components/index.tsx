@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useAuth } from "@/lib/hooks"
 import type React from "react"
 import { useState, useEffect, useRef, useMemo } from "react"
@@ -1010,34 +1010,38 @@ const PlayerProfileCard = () => {
               <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'space-between', mt: 2.8 }}>
                 <Button
                   variant="contained"
-                  size="small"
                   onClick={() => router.push('/home')}
                   startIcon={<ArrowBack />}
                   sx={{
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
-                    px: 2.4,
-                    width: { xs: '48%', sm: 'auto' },
+                    px: 3,
+                    width: { xs: '48%', sm: 220 },
+                    height: 44,
                     borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
                   }}
-                >Home</Button>
+                >
+                  Home
+                </Button>
                 <Button
                   variant="contained"
-                  size="small"
                   onClick={handleNext}
                   endIcon={<ArrowForward />}
                   sx={{
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
-                    px: 2.4,
-                    width: { xs: '48%', sm: 'auto' },
+                    px: 3,
+                    width: { xs: '48%', sm: 220 },
+                    height: 44,
                     borderRadius: 1,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)",
                     '&:hover': { opacity: .9 }
                   }}
-                >Edit Profile</Button>
+                >
+                  Edit Profile
+                </Button>
               </Box>
             </StyledPaper>
           </Box>
@@ -1569,7 +1573,7 @@ const PlayerProfileCard = () => {
                     borderRadius: 1,
                     px: 4,
                     width: { xs: '100%', sm: 220 },
-                    minHeight: { xs: 42, md: 'auto' },
+                    height: 44,
                     fontWeight: 600,
                   }}
                 >
@@ -1590,6 +1594,7 @@ const PlayerProfileCard = () => {
                       borderRadius: 1,
                       px: 3,
                       width: { xs: '48%', sm: 220 },
+                      height: 44,
                       borderColor: themeColors.primary,
                       color: themeColors.text,
                       fontWeight: 600,
@@ -1607,6 +1612,7 @@ const PlayerProfileCard = () => {
                       borderRadius: 1,
                       px: 3,
                       width: { xs: '48%', sm: 220 },
+                      height: 44,
                       background: themeColors.primaryGradient,
                       fontWeight: 700,
                       '&:hover': { opacity: .9 }
@@ -1857,7 +1863,8 @@ const PlayerProfileCard = () => {
                   sx={{
                     borderRadius: 1,
                     px: 3,
-                    width: { xs: '48%', sm: 'auto' },
+                    width: { xs: '48%', sm: 220 },
+                    height: 44,
                     borderColor: themeColors.primary,
                     color: themeColors.text,
                     fontWeight: 600,
@@ -1873,7 +1880,8 @@ const PlayerProfileCard = () => {
                   sx={{
                     borderRadius: 1,
                     px: 3,
-                    width: { xs: '48%', sm: 'auto' },
+                    width: { xs: '48%', sm: 220 },
+                    height: 44,
                     background: themeColors.primaryGradient,
                     fontWeight: 700,
                     '&:hover': { opacity: .9 }
