@@ -6062,17 +6062,17 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset league-table-heading font-bold">
-                                                        <div className="text-center">#</div>
-                                                        <div className="pl-[52px] text-left sticky left-0 z-10 bg-table-header">NAME</div>
-                                                        <div className="text-center">MOTM</div>
-                                                        <div className="text-center">P</div>
-                                                        <div className="text-center">W</div>
-                                                        <div className="text-center">D</div>
-                                                        <div className="text-center">L</div>
-                                                        <div className="text-center">GD</div>
-                                                        <div className="text-center">W%</div>
-                                                        <div className="text-center">{filteredLeague?.showPoints === true ? 'XP' : 'PTS'}</div>
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset font-bold">
+                                                        <div className="text-center league-table-heading">#</div>
+                                                        <div className="pl-[52px] text-left sticky left-0 z-10 bg-table-header league-table-heading">NAME</div>
+                                                        <div className="text-center league-table-heading">MOTM</div>
+                                                        <div className="text-center league-table-heading">P</div>
+                                                        <div className="text-center league-table-heading">W</div>
+                                                        <div className="text-center league-table-heading">D</div>
+                                                        <div className="text-center league-table-heading">L</div>
+                                                        <div className="text-center league-table-heading">GD</div>
+                                                        <div className="text-center league-table-heading">W%</div>
+                                                        <div className="text-center league-table-heading">XP</div>
                                                     </div>
                                                     {/* Full width border alag */}
                                                     <div className="w-full border-b border-border" />
@@ -6196,7 +6196,7 @@ export default function LeagueDetailPage() {
                                                                         {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
                                                                     </div>
                                                                     <div className="text-center text-foreground">{player.winPercentage}</div>
-                                                                    <div className="text-center text-foreground font-bold">{xpPts}</div>
+                                                                    <div className="text-center text-foreground font-extrabold uppercase">{xpPts}</div>
                                                                 </div>
                                                             );
                                                         })}
