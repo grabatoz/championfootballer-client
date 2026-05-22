@@ -2825,13 +2825,13 @@ export default function PlayerStatsPage() {
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
-                                label="MOTM"
+                                label="MOTM Votes"
                                 value={activeTab === 'career' ? careerMotmVotesCount : (leagueId === 'all' ? careerMotmVotesCount : motmVotesCount)}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
-                                label="Defensive"
+                                label="Defensive Imp."
                                 value={activeTab === 'career' ? careerDefensiveImpactCount : (leagueId === 'all' ? careerDefensiveImpactCount : defensiveImpactCount)}
                             />
                         </Grid>
