@@ -356,7 +356,8 @@ const PlayerProfileCard = () => {
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const router = useRouter()
-  const steps = ["Profile Overview", "Basic Info", "Skills & Stats"]
+  const steps = ["Profile Overview", "Skills & Attributes", "Brief Details"]
+  const activeWizardStep = step === 1 ? 0 : step === 3 ? 1 : 2
   const userDisplayName = buildPlayerDisplayName(user?.firstName, user?.lastName)
   const avatarInitials = getAvatarInitials({ name: userDisplayName, firstName, lastName })
   const avatarFallbackBg = getAvatarBackgroundColor(userDisplayName || `${firstName} ${lastName}`)
@@ -476,16 +477,30 @@ const PlayerProfileCard = () => {
   // We keep whatever is in DB/user selection; RadioGroup will show none selected
   // if the current style isn't in the options for the chosen position type.
 
-  const handleNext = () => setStep(s => s + 1)
-  const handlePrevious = () => setStep(s => s > 1 ? s - 1 : s)
+  // Required UX order: Profile Overview -> Skills & Attributes -> Brief Details
+  const handleNext = () => {
+    setStep((s) => {
+      if (s === 1) return 3
+      if (s === 3) return 2
+      return 2
+    })
+  }
+
+  const handlePrevious = () => {
+    setStep((s) => {
+      if (s === 2) return 3
+      if (s === 3) return 1
+      return 1
+    })
+  }
 
   const handlePasswordChange = (value: string) => {
     setPassword(value)
     setPasswordError(getPasswordError(value))
   }
 
-  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleUpdateProfile = async (e?: React.SyntheticEvent) => {
+    e?.preventDefault()
     try {
       setIsUpdating(true)
       setError("")
@@ -875,7 +890,7 @@ const PlayerProfileCard = () => {
               background: "#1f1f1f",
               border: `1px solid ${themeColors.border}`,
             }}>
-              <Stepper activeStep={step - 1} sx={{
+              <Stepper activeStep={activeWizardStep} sx={{
                 mb: 3,
                 maxWidth: 900,
                 mx: 'auto',
@@ -1052,7 +1067,7 @@ const PlayerProfileCard = () => {
               background: "#1f1f1f",
               borderRadius: 2
             }}>
-              <Stepper activeStep={step - 1} sx={{
+              <Stepper activeStep={activeWizardStep} sx={{
                 mb: 1.5,
                 maxWidth: 700,
                 mx: 'auto',
@@ -1073,7 +1088,7 @@ const PlayerProfileCard = () => {
                 fontSize: { xs: '1.2rem', sm: '1.75rem' },
                 textShadow: '0 2px 8px rgba(0,0,0,0.6)'
               }}>
-                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle', color: themeColors.primary, fontSize: 36, position: 'relative', top: -6 }} /> BASIC INFORMATION
+                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle', color: themeColors.primary, fontSize: 36, position: 'relative', top: -6 }} /> BRIEF DETAILS
               </Typography>
 
               <Box sx={{
@@ -1540,34 +1555,66 @@ const PlayerProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Stack direction="row" spacing={1} justifyContent="space-between" sx={{ mt: 4, px: { xs: 1.25, sm: 3, md: 6 } }}>
-                <Button
-                  variant="outlined"
-                  onClick={handlePrevious}
-                  startIcon={<ArrowBack />}
-                  sx={{
-                    borderRadius: 1,
-                    px: 3,
-                    width: { xs: '48%', sm: 'auto' },
-                    borderColor: themeColors.primary,
-                    color: themeColors.text,
-                    fontWeight: 600,
-                    '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
-                  }}
-                >Previous</Button>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                spacing={{ xs: 1.25, sm: 1 }}
+                sx={{ mt: 4, px: { xs: 1.25, sm: 3, md: 6 } }}
+              >
                 <Button
                   variant="contained"
-                  onClick={handleNext}
-                  endIcon={<ArrowForward />}
+                  color="error"
+                  onClick={handleDeleteProfile}
                   sx={{
                     borderRadius: 1,
-                    px: 3,
-                    width: { xs: '48%', sm: 'auto' },
-                    background: themeColors.primaryGradient,
-                    fontWeight: 700,
-                    '&:hover': { opacity: .9 }
+                    px: 4,
+                    width: { xs: '100%', sm: 220 },
+                    minHeight: { xs: 42, md: 'auto' },
+                    fontWeight: 600,
                   }}
-                >Next</Button>
+                >
+                  Delete Account
+                </Button>
+
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={handlePrevious}
+                    startIcon={<ArrowBack />}
+                    sx={{
+                      borderRadius: 1,
+                      px: 3,
+                      width: { xs: '48%', sm: 220 },
+                      borderColor: themeColors.primary,
+                      color: themeColors.text,
+                      fontWeight: 600,
+                      '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
+                    }}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => void handleUpdateProfile()}
+                    disabled={isUpdating}
+                    startIcon={isUpdating ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : null}
+                    sx={{
+                      borderRadius: 1,
+                      px: 3,
+                      width: { xs: '48%', sm: 220 },
+                      background: themeColors.primaryGradient,
+                      fontWeight: 700,
+                      '&:hover': { opacity: .9 }
+                    }}
+                  >
+                    {isUpdating ? "Updating..." : "Update Profile"}
+                  </Button>
+                </Stack>
               </Stack>
             </StyledPaper>
             {/* Avatar Options Modal */}
@@ -1676,7 +1723,7 @@ const PlayerProfileCard = () => {
               background: "#1f1f1f",
               borderRadius: 2
             }}>
-              <Stepper activeStep={step - 1} sx={{
+              <Stepper activeStep={activeWizardStep} sx={{
                 mb: 1.5,
                 maxWidth: 700,
                 mx: 'auto',
@@ -1797,70 +1844,44 @@ const PlayerProfileCard = () => {
                 })}
               </Grid>
 
-              <form onSubmit={handleUpdateProfile} style={{ width: '100%' }}>
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  justifyContent="space-between"
-                  spacing={{ xs: 1.25, sm: 1 }}
-                  sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}
+              <Stack
+                direction="row"
+                spacing={1}
+                justifyContent="space-between"
+                sx={{ mt: 5, px: { xs: 1, sm: 3, md: 6 } }}
+              >
+                <Button
+                  variant="outlined"
+                  onClick={handlePrevious}
+                  startIcon={<ArrowBack />}
+                  sx={{
+                    borderRadius: 1,
+                    px: 3,
+                    width: { xs: '48%', sm: 'auto' },
+                    borderColor: themeColors.primary,
+                    color: themeColors.text,
+                    fontWeight: 600,
+                    '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
+                  }}
                 >
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={handleDeleteProfile}
-                    sx={{
-                      borderRadius: 1,
-                      px: 4,
-                      width: { xs: '100%', sm: 220 },
-                      minHeight: { xs: 42, md: 'auto' },
-                      fontWeight: 600,
-                    }}
-                  >
-                    Delete Account
-                  </Button>
-
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
-                    sx={{ width: { xs: '100%', sm: 'auto' } }}
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={handlePrevious}
-                      startIcon={<ArrowBack />}
-                      sx={{
-                        borderRadius: 1,
-                        px: 3,
-                        width: { xs: '48%', sm: 220 },
-                        borderColor: themeColors.primary,
-                        color: themeColors.text,
-                        fontWeight: 600,
-                        '&:hover': { background: themeColors.primarySoft, borderColor: themeColors.primaryAlt }
-                      }}
-                    >
-                      Previous
-                    </Button>
-
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isUpdating}
-                      startIcon={isUpdating ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : null}
-                      sx={{
-                        borderRadius: 1,
-                        px: 5,
-                        width: { xs: '48%', sm: 220 },
-                        fontWeight: 700,
-                        background: themeColors.primaryGradient,
-                        '&:hover': { opacity: .9 }
-                      }}
-                    >
-                      {isUpdating ? "Updating..." : "Update Profile"}
-                    </Button>
-                  </Stack>
-                </Stack>
-              </form>
+                  Previous
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  endIcon={<ArrowForward />}
+                  sx={{
+                    borderRadius: 1,
+                    px: 3,
+                    width: { xs: '48%', sm: 'auto' },
+                    background: themeColors.primaryGradient,
+                    fontWeight: 700,
+                    '&:hover': { opacity: .9 }
+                  }}
+                >
+                  Next
+                </Button>
+              </Stack>
             </StyledPaper>
           </Box>
         </Fade>
