@@ -4456,7 +4456,7 @@ export default function LeagueDetailPage() {
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
                                                     <Typography className="league-table-heading" sx={{ color: '#fff' }}>
-                                                        {filteredLeague?.showPoints === true ? 'XP' : 'PTS'}
+                                                        {filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}
                                                     </Typography>
                                                 </Box>
                                             </Box>
@@ -4479,6 +4479,7 @@ export default function LeagueDetailPage() {
                                                         return (
                                                             <ListItem
                                                                 key={member.id}
+                                                                className="league-table-row-text"
                                                                 onClick={() => router.push(`/player/${member.id}`)}
                                                                 sx={{
                                                                     display: 'flex',
@@ -4550,10 +4551,10 @@ export default function LeagueDetailPage() {
                                                                         </Box>
                                                                     </ListItemAvatar>
                                                                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                                                                        <Typography noWrap sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                        <Typography className="league-table-row-text" noWrap sx={{ fontWeight: 600, fontSize: { xs: 12, sm: 15 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                                             {formatPlayerCardStyleName(firstName, lastName)}
                                                                         </Typography>
-                                                                        <Typography sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                                                                        <Typography className="league-table-row-text" sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                             {getMemberPositionLabel(member)}
                                                                         </Typography>
                                                                     </Box>
@@ -4569,7 +4570,7 @@ export default function LeagueDetailPage() {
                                                                     justifyContent: 'center',
                                                                     pr: { xs: 0.5, sm: 2 },
                                                                 }}>
-                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                                                                    <Typography className="league-table-row-text" sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                         {member.style}
                                                                     </Typography>
                                                                 </Box>
@@ -4584,7 +4585,7 @@ export default function LeagueDetailPage() {
 
                                                                 {/* XP Points column */}
                                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 5.5 }, textAlign: 'center' }}>
-                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                                                                    <Typography className="league-table-row-text" sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                         {getLeagueXpForMember(member.id, member.xp)}
                                                                     </Typography>
                                                                 </Box>
@@ -6072,7 +6073,7 @@ export default function LeagueDetailPage() {
                                                         <div className="text-center league-table-heading">L</div>
                                                         <div className="text-center league-table-heading">GD</div>
                                                         <div className="text-center league-table-heading">W%</div>
-                                                        <div className="text-center league-table-heading">XP</div>
+                                                        <div className="text-center league-table-heading">xpPTS</div>
                                                     </div>
                                                     {/* Full width border alag */}
                                                     <div className="w-full border-b border-border" />
@@ -6140,7 +6141,7 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-foreground font-medium">{index + 1}</div>
@@ -6168,7 +6169,7 @@ export default function LeagueDetailPage() {
                                                                                 <span className="text-foreground font-semibold truncate uppercase">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <span className="text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
+                                                                            <span className="league-table-row-text text-muted-foreground font-normal text-xs truncate">{posLabel}</span>
                                                                         </div>
                                                                     </div>
 

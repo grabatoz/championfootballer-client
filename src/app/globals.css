@@ -267,6 +267,12 @@ input:-webkit-autofill:active {
   text-align: left !important;
 }
 
+/* Body row typography should match table heading typography */
+.league-table-row-text {
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif !important;
+  font-size: 18px !important;
+}
+
 /* Standings table: sticky columns + responsive behavior */
 .league-standings-table {
   min-width: 980px;
@@ -311,6 +317,9 @@ input:-webkit-autofill:active {
   }
   .league-table {
     font-size: 14px;
+  }
+  .league-table-row-text {
+    font-size: 15px !important;
   }
   .league-standings-table {
     min-width: 820px !important;
@@ -360,6 +369,9 @@ input:-webkit-autofill:active {
   }
   .league-table {
     font-size: 12px;
+  }
+  .league-table-row-text {
+    font-size: 12px !important;
   }
   .league-standings-table {
     min-width: 100% !important;
@@ -420,6 +432,9 @@ input:-webkit-autofill:active {
   }
   .league-table {
     font-size: 11px;
+  }
+  .league-table-row-text {
+    font-size: 11px !important;
   }
   .league-standings-table {
     min-width: 100% !important;
