@@ -4332,7 +4332,7 @@ export default function LeagueDetailPage() {
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
-                                <Box sx={{ width: '100%', mx: 'auto', mt: 1.2 }}>
+                                <Box sx={{ width: '100%', mx: 'auto', mt: 1.2 , mb: 4, }}>
                                     <Box
                                         sx={{
                                             width: '100%',
