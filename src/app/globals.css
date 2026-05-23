@@ -373,6 +373,27 @@ input:-webkit-autofill:active {
   .league-table-row-text {
     font-size: 12px !important;
   }
+  /* Match Result table jaisi mobile typography for league standings table only */
+  .league-mobile-result-font .league-table-heading {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+  }
+  .league-mobile-result-font .league-table-heading-left {
+    font-size: 13px !important;
+  }
+  .league-mobile-result-font .league-table-row-text {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+  }
+  .league-mobile-result-font .league-row {
+    font-weight: 700 !important;
+  }
+  .league-mobile-result-font .league-row .text-foreground,
+  .league-mobile-result-font .league-row .text-muted-foreground {
+    color: #fff !important;
+  }
   .league-standings-table {
     min-width: 100% !important;
   }
@@ -435,6 +456,14 @@ input:-webkit-autofill:active {
   }
   .league-table-row-text {
     font-size: 11px !important;
+  }
+  .league-mobile-result-font .league-table-heading {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+  }
+  .league-mobile-result-font .league-table-heading-left {
+    font-size: 13px !important;
   }
   .league-standings-table {
     min-width: 100% !important;

@@ -6010,7 +6010,7 @@ export default function LeagueDetailPage() {
                                                 },
                                             }}
                                         >
-                                            <div className="min-w-[820px] rounded-lg league-table">
+                                            <div className="min-w-[820px] rounded-lg league-table league-mobile-result-font">
                                                 {/* Header Bar aligned to table grid */}
                                                 <div className="grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
                                                     <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
@@ -6070,7 +6070,7 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-muted-foreground league-header-row league-header-inset font-bold">
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-white league-header-row league-header-inset font-bold">
                                                         <div className="text-center league-table-heading">#</div>
                                                         <div className="pl-[52px] sticky left-0 z-10 bg-table-header league-table-heading league-table-heading-left">NAME</div>
                                                         <div className="text-center league-table-heading">MOTM</div>
@@ -6148,10 +6148,10 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
-                                                                    <div className="text-center text-foreground font-medium">{index + 1}</div>
+                                                                    <div className="text-center text-white font-bold">{index + 1}</div>
 
                                                                     {/* Player Info */}
                                                                     <div className={`flex items-center gap-3 min-w-0 sticky left-0 z-10 ${isEven ? 'bg-table-row-even group-hover:bg-[#424242]' : 'bg-table-row-odd group-hover:bg-[#353535]'} transition-colors duration-150`}>
@@ -6173,10 +6173,10 @@ export default function LeagueDetailPage() {
                                                                         </div>
                                                                         <div className="flex flex-col min-w-0 justify-center">
                                                                             <div className="flex items-center gap-1.5 min-w-0">
-                                                                                <span className="text-foreground font-semibold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
+                                                                                <span className="text-white font-bold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <span className="league-table-row-text text-muted-foreground font-normal text-xs truncate block whitespace-nowrap">{posLabel}</span>
+                                                                            <span className="league-table-row-text text-white/90 font-semibold text-xs truncate block whitespace-nowrap">{posLabel}</span>
                                                                         </div>
                                                                     </div>
 
@@ -6184,27 +6184,27 @@ export default function LeagueDetailPage() {
                                                                     <div className="text-center">
                                                                         {typeof player.motmCount === 'number' && player.motmCount > 0 ? (
                                                                             <span className="inline-flex items-center gap-1">
-                                                                                <span className="text-foreground font-medium">{player.motmCount}</span>
+                                                                                <span className="text-white font-bold">{player.motmCount}</span>
                                                                                 <span className="inline-flex items-center" style={{ verticalAlign: 'middle' }}>
                                                                                     {/* Using MUI Star icon already imported */}
                                                                                     <Star sx={{ fontSize: 18, color: '#F59E0B' }} />
                                                                                 </span>
                                                                             </span>
                                                                         ) : (
-                                                                            <span className="text-muted-foreground">-</span>
+                                                                            <span className="text-white/80">-</span>
                                                                         )}
                                                                     </div>
 
                                                                     {/* Stats */}
-                                                                    <div className="text-center text-foreground">{player.played}</div>
-                                                                    <div className="text-center text-foreground">{player.wins}</div>
-                                                                    <div className="text-center text-foreground">{player.draws}</div>
-                                                                    <div className="text-center text-foreground">{player.losses}</div>
-                                                                    <div className="text-center text-foreground">
+                                                                    <div className="text-center text-white font-bold">{player.played}</div>
+                                                                    <div className="text-center text-white font-bold">{player.wins}</div>
+                                                                    <div className="text-center text-white font-bold">{player.draws}</div>
+                                                                    <div className="text-center text-white font-bold">{player.losses}</div>
+                                                                    <div className="text-center text-white font-bold">
                                                                         {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
                                                                     </div>
-                                                                    <div className="text-center text-foreground">{player.winPercentage}</div>
-                                                                    <div className="text-center text-foreground font-extrabold uppercase">{xpPts}</div>
+                                                                    <div className="text-center text-white font-bold">{player.winPercentage}</div>
+                                                                    <div className="text-center text-white font-extrabold uppercase">{xpPts}</div>
                                                                 </div>
                                                             );
                                                         })}
