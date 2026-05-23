@@ -262,6 +262,10 @@ input:-webkit-autofill:active {
   leading-trim: cap-height; /* may be ignored by browsers */
 }
 
+.league-table-heading-no-transform {
+  text-transform: none !important;
+}
+
 /* Use on specific header cells that must align left with player-name text start */
 .league-table-heading.league-table-heading-left {
   text-align: left !important;

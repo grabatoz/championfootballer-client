@@ -4457,7 +4457,7 @@ export default function LeagueDetailPage() {
 
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
+                                                    <Typography className="league-table-heading league-table-heading-no-transform" sx={{ color: '#fff' }}>
                                                         {filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}
                                                     </Typography>
                                                 </Box>
@@ -6080,7 +6080,7 @@ export default function LeagueDetailPage() {
                                                         <div className="text-center league-table-heading">L</div>
                                                         <div className="text-center league-table-heading">GD</div>
                                                         <div className="text-center league-table-heading">W%</div>
-                                                        <div className="text-center league-table-heading">{filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}</div>
+                                                        <div className="text-center league-table-heading league-table-heading-no-transform">{filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}</div>
                                                     </div>
                                                     {/* Full width border alag */}
                                                     <div className="w-full border-b border-border" />
