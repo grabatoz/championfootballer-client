@@ -251,6 +251,30 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           </Box>
         </Box>
 
+        {/* Start/End Time - Top Right */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: { xs: embeddedInDialog ? 8 : 13, sm: 13 },
+            right: { xs: embeddedInDialog ? 12 : 16, sm: 16 },
+            zIndex: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            textAlign: 'right',
+            maxWidth: { xs: '62%', sm: 'unset' },
+          }}
+        >
+          <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" }, color: '#fff', lineHeight: 1.2 }}>
+            Start: {new Date(matchStartTime).toLocaleString()}
+          </Typography>
+          {isCompleted && matchEndTime && (
+            <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" }, color: '#fff', lineHeight: 1.2 }}>
+              End: {new Date(matchEndTime).toLocaleString()}
+            </Typography>
+          )}
+        </Box>
+
         {/* League Name - Centered */}
         <Link href={`/league/${leagueId}`} passHref>
           <Typography
@@ -261,7 +285,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               fontWeight: 400,
               textAlign: "center",
               width: "100%",
-              mt: { xs: embeddedInDialog ? 2.6 : 3, sm: 2, md: 1 }, // Add top margin to avoid overlap with status
+              mt: { xs: embeddedInDialog ? 4.3 : 4.8, sm: 2.6, md: 1.2 }, // Add top margin to avoid overlap with top badges
               // mb: { xs: 1, md: 2 },
               fontFamily: 'var(--font-woodford-bourne-pro)'
             }}
@@ -431,9 +455,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           sx={{
             width: "100%",
             pt: { xs: 1, md: 2 }, // Reduced padding top for xs
-            display: "flex",
+            display: { xs: "flex", md: "grid" },
             flexDirection: { xs: "column", md: "row" },
-            justifyContent: "space-between",
+            gridTemplateColumns: { md: "1fr auto 1fr" },
             alignItems: { xs: "stretch", md: "center" },
             color: "#fff",
             fontSize: 15,
@@ -444,10 +468,13 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           <Box
             sx={{
               display: "flex",
-              flex: 1,
-              justifyContent: { xs: "center", md: "flex-end" },
+              flex: { xs: 1, md: "unset" },
+              justifyContent: "center",
               gap: { xs: 1, sm: 2 },
               order: { xs: 1, md: 2 },
+              width: { xs: "100%", md: "auto" },
+              gridColumn: { md: 2 },
+              justifySelf: { md: "center" },
             }}
           >
           
@@ -588,24 +615,6 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                   Add Your Stats
                 </Button>
               </>
-            )}
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: { xs: "center", md: "flex-start" },
-              order: { xs: 2, md: 1 },
-              width: { xs: "100%", md: "auto" },
-            }}
-          >
-            <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" } }}>
-              Start: {new Date(matchStartTime).toLocaleString()}
-            </Typography>
-            {isCompleted && matchEndTime && (
-              <Typography sx={{ fontSize: { xs: "0.45rem", sm: "0.5rem", md: "0.6rem", lg: "0.7rem" } }}>
-                End: {new Date(matchEndTime).toLocaleString()}
-              </Typography>
             )}
           </Box>
         </Box>
