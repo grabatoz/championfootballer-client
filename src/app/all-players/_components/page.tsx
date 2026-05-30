@@ -803,7 +803,8 @@ const AllPlayersPage = () => {
 
     if (
       value.includes('goalkeeper') ||
-      value.includes('(gk)')
+      value.includes('(gk)') ||
+      value === 'gk'
     ) {
       return 'Goalkeeper';
     }
@@ -812,22 +813,22 @@ const AllPlayersPage = () => {
       value.includes('defender') ||
       value.includes('back') ||
       value.includes('wing-back') ||
-      value.includes('(cb)') ||
-      value.includes('(rb)') ||
-      value.includes('(lb)') ||
-      value.includes('(rwb)') ||
-      value.includes('(lwb)')
+      value === 'cb' || value.includes('(cb)') ||
+      value === 'rb' || value.includes('(rb)') ||
+      value === 'lb' || value.includes('(lb)') ||
+      value === 'rwb' || value.includes('(rwb)') ||
+      value === 'lwb' || value.includes('(lwb)')
     ) {
       return 'Defender';
     }
 
     if (
       value.includes('midfielder') ||
-      value.includes('(cm)') ||
-      value.includes('(cdm)') ||
-      value.includes('(cam)') ||
-      value.includes('(rm)') ||
-      value.includes('(lm)')
+      value === 'cm' || value.includes('(cm)') ||
+      value === 'cdm' || value.includes('(cdm)') ||
+      value === 'cam' || value.includes('(cam)') ||
+      value === 'rm' || value.includes('(rm)') ||
+      value === 'lm' || value.includes('(lm)')
     ) {
       return 'Midfielder';
     }
@@ -836,12 +837,12 @@ const AllPlayersPage = () => {
       value.includes('forward') ||
       value.includes('striker') ||
       value.includes('winger') ||
-      value.includes('(st)') ||
-      value.includes('(cf)') ||
-      value.includes('(rf)') ||
-      value.includes('(lf)') ||
-      value.includes('(rw)') ||
-      value.includes('(lw)')
+      value === 'st' || value.includes('(st)') ||
+      value === 'cf' || value.includes('(cf)') ||
+      value === 'rf' || value.includes('(rf)') ||
+      value === 'lf' || value.includes('(lf)') ||
+      value === 'rw' || value.includes('(rw)') ||
+      value === 'lw' || value.includes('(lw)')
     ) {
       return 'Forward';
     }
