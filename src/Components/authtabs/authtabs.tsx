@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import type React from "react"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -38,7 +38,7 @@ import Link from "next/link"
 import { authStorage, type UserDataShape, type UserProfile } from "@/lib/authStorage"
 import { buildSocialAuthUrl, getClientApiBaseUrl } from "@/lib/clientApiBase"
 import type { User } from "@/types/user"
-import { Country, State } from 'country-state-city'
+import { Country, State, City } from 'country-state-city'
 import {
   formatPhoneDigitRule,
   getPhoneDigitRuleByIsoCode,
@@ -607,14 +607,33 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
       .trim()
   }
 
-  const sortedStates = useMemo(() => {
-    if (states.length <= 1) return states
-    return [...states].sort((a, b) => {
-      const first = (normalizeLocationName(a.name) || a.name).toLowerCase()
-      const second = (normalizeLocationName(b.name) || b.name).toLowerCase()
-      return first.localeCompare(second, "en", { sensitivity: "base" })
-    })
-  }, [states])
+  const registerCitiesAndStates = useMemo(() => {
+    if (!selectedCountryCode) return []
+    try {
+      const sts = State.getStatesOfCountry(selectedCountryCode) || []
+      const cts = City.getCitiesOfCountry(selectedCountryCode) || []
+      const uniqueNames = new Set<string>()
+      
+      sts.forEach(s => {
+        if (s && s.name) {
+          const name = normalizeLocationName(s.name) || s.name
+          if (name) uniqueNames.add(name)
+        }
+      })
+      
+      cts.forEach(c => {
+        if (c && c.name) {
+          const name = normalizeLocationName(c.name) || c.name
+          if (name) uniqueNames.add(name)
+        }
+      })
+      
+      return Array.from(uniqueNames).sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+    } catch (e) {
+      console.error(e)
+      return []
+    }
+  }, [selectedCountryCode])
 
   // Handlers for Select components; store name in registerData, code in local state
   const handleCountrySelect = (code: string) => {
@@ -625,13 +644,17 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
     setRegisterData(prev => ({ ...prev, country: c?.name || "", state: "", city: "" }))
   }
 
-  const handleStateSelect = (code: string) => {
-    setSelectedStateCode(code)
-    const s = sortedStates.find(s => s.isoCode === code)
-    const rawName = s?.name || ""
-    const name = normalizeLocationName(rawName) || rawName
-    // Store same value for city/state to align with existing backend compatibility.
+  const handleStateSelect = (name: string) => {
     setRegisterData(prev => ({ ...prev, state: name, city: name }))
+    
+    // Set selectedStateCode for backwards compatibility with legacy draft logic
+    if (selectedCountryCode) {
+      const allSts = State.getStatesOfCountry(selectedCountryCode) || []
+      const matched = allSts.find(s => (normalizeLocationName(s.name) || s.name) === name)
+      setSelectedStateCode(matched?.isoCode || "")
+    } else {
+      setSelectedStateCode("")
+    }
   }
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -1611,32 +1634,27 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
               <FormControl fullWidth>
                 <Select
                   id="state-select"
-                  value={selectedStateCode}
+                  value={registerData.city || registerData.state || ""}
                   onChange={(e) => handleStateSelect(e.target.value as string)}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (!selected) return <span style={{ color: '#757575' }}>City/State</span>
-                    const code = selected as string
-                    const s = sortedStates.find(s => s.isoCode === code)
-                    const rawName = s?.name || ''
-                    return normalizeLocationName(rawName) || rawName
-                  }}
+                  native
                   input={<OutlinedInput notched={false} />}
-                  sx={registerSelectSx}
-                  MenuProps={{
-                    ...dropdownMenuBaseProps,
-                    PaperProps: { sx: dropdownPaperBaseSx },
+                  sx={{
+                    ...registerSelectSx,
+                    "& select": {
+                      color: "#000",
+                      background: "transparent",
+                    }
                   }}
                   required
-                  disabled={!selectedCountryCode || sortedStates.length === 0}
+                  disabled={!selectedCountryCode || registerCitiesAndStates.length === 0}
                 >
-                  <MenuItem value="" disabled>
-                    <em>City/State</em>
-                  </MenuItem>
-                  {sortedStates.map((s) => (
-                    <MenuItem key={s.isoCode} value={s.isoCode}>
-                      {normalizeLocationName(s.name) || s.name}
-                    </MenuItem>
+                  <option value="" disabled style={{ color: '#757575' }}>
+                    City/State
+                  </option>
+                  {registerCitiesAndStates.map((loc) => (
+                    <option key={loc} value={loc} style={{ color: '#000' }}>
+                      {loc}
+                    </option>
                   ))}
                 </Select>
               </FormControl>

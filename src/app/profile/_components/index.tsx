@@ -35,12 +35,12 @@ import {
   Select,
   InputAdornment,
 } from "@mui/material"
-import { Country, State } from "country-state-city"
+import { Country, State, City } from "country-state-city"
 import { styled } from "@mui/material/styles"
 import { updateProfile, deleteProfile, deleteProfilePicture } from "@/lib/api"
 import { cacheManager } from "@/lib/cacheManager"
 import { useRouter } from "next/navigation"
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import {
   formatPhoneDigitRule,
   getPhoneDigitRuleByIsoCode,
@@ -204,7 +204,8 @@ const StyledFormLabel = styled(FormLabel)(() => ({
 
 // Utility coloring from skill value -> gradient stop
 const getSkillLabel = (value: number) => {
-  if (value >= 90) return { text: `${value} Elite`, color: "linear-gradient(90deg,#b85214,#b85214)" }
+  // if (value >= 90) return { text: `${value} Elite`, color: "linear-gradient(90deg,#b85214,#b85214)" }
+  if (value >= 90) return { text: `${value} Elite`, color: "linear-gradient(90deg,rgba(166, 65, 2, 1) 80%, rgba(112, 43, 0, 0.72) 100%);" }
   if (value >= 80) return { text: `${value} Pro`, color: "linear-gradient(90deg,#e16419,#e16419)" }
   if (value >= 70) return { text: `${value} Advanced`, color: "linear-gradient(90deg,#ff9861,#ff9861)" }
   return { text: `${value} Developing`, color: "linear-gradient(90deg,#00a77f,#00a77f)" }
@@ -292,10 +293,33 @@ const PlayerProfileCard = () => {
     )
     return matched?.isoCode || ""
   }, [country, profileCountries])
-  const profileStates = useMemo(
-    () => (selectedProfileCountryCode ? State.getStatesOfCountry(selectedProfileCountryCode) : []),
-    [selectedProfileCountryCode]
-  )
+  const profileCitiesAndStates = useMemo(() => {
+    if (!selectedProfileCountryCode) return []
+    try {
+      const sts = State.getStatesOfCountry(selectedProfileCountryCode) || []
+      const cts = City.getCitiesOfCountry(selectedProfileCountryCode) || []
+      const uniqueNames = new Set<string>()
+      
+      sts.forEach(s => {
+        if (s && s.name) {
+          const name = normalizeLocationName(s.name) || s.name
+          if (name) uniqueNames.add(name)
+        }
+      })
+      
+      cts.forEach(c => {
+        if (c && c.name) {
+          const name = normalizeLocationName(c.name) || c.name
+          if (name) uniqueNames.add(name)
+        }
+      })
+      
+      return Array.from(uniqueNames).sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+    } catch (e) {
+      console.error(e)
+      return []
+    }
+  }, [selectedProfileCountryCode])
   const phoneCountryStorageKey = useMemo(
     () => `profilePhoneCountryCode:${String(user?.id || "me")}`,
     [user?.id]
@@ -364,10 +388,10 @@ const PlayerProfileCard = () => {
 
   // Playing styles per position type (3 options each; you can edit/rename later)
   const playingStylesMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
-    Goalkeeper: ["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Spider" ,"Sweeper Keeper"],
-    Defender: ["Hacker", "No-Bull", "Shield" , "Terminator" , "Wall" , "Warrior"],
-    Midfielder: ["Gladiator", "Maestro", "Magician" , "Powerhouse" , "Roadrunner" , "Scientist"],
-    Forward: ["Finisher", "Poacher", "Predator" , "Rocket" ,"Ruthless" , "Sniper"],
+    Goalkeeper: ["Axe", "Eagle", "Iron Fist", "Shot Stopper", "Spider", "Sweeper Keeper"],
+    Defender: ["Hacker", "No-Bull", "Shield", "Terminator", "Wall", "Warrior"],
+    Midfielder: ["Gladiator", "Maestro", "Magician", "Powerhouse", "Roadrunner", "Scientist"],
+    Forward: ["Finisher", "Poacher", "Predator", "Rocket", "Ruthless", "Sniper"],
   }
   const positionOptionsMap: Record<"Goalkeeper" | "Defender" | "Midfielder" | "Forward", string[]> = {
     Goalkeeper: ["Goalkeeper (GK)"],
@@ -700,19 +724,19 @@ const PlayerProfileCard = () => {
       const ok = await deleteProfile(token)
       if (ok) {
         // Clear application caches managed by CacheManager
-        try { cacheManager.clearAllCaches() } catch {}
+        try { cacheManager.clearAllCaches() } catch { }
 
         // Clear any remaining local/session storage
         try {
           localStorage.clear()
           sessionStorage.clear()
-        } catch {}
+        } catch { }
 
         // Proactively clear auth cookies
         try {
           document.cookie = "token=; Max-Age=0; path=/; SameSite=Lax"
           document.cookie = "auth_token=; Max-Age=0; path=/; SameSite=Lax"
-        } catch {}
+        } catch { }
 
         toast.success("Account deleted successfully")
         // Hard redirect to main page to ensure a fully clean state
@@ -735,11 +759,15 @@ const PlayerProfileCard = () => {
       // Client-side validation
       const maxSize = 5 * 1024 * 1024 // 5MB
       if (file.size > maxSize) {
-        toast.error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`)
+        toast.error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please select a smaller file under 5MB.`)
         return
       }
-      if (!file.type.startsWith('image/')) {
-        toast.error(`Invalid file type "${file.type}". Please upload an image file (JPEG, PNG, etc.).`)
+
+      const extension = file.name.split('.').pop()?.toLowerCase() || ''
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp']
+      const isImage = file.type.startsWith('image/') || allowedExtensions.includes(extension)
+      if (!isImage) {
+        toast.error(`Invalid file format. Please upload a valid image file (JPEG, PNG, WEBP, etc.).`)
         return
       }
 
@@ -786,7 +814,14 @@ const PlayerProfileCard = () => {
       }
     } catch (err) {
       console.error(err)
-      const msg = err instanceof Error ? err.message : 'Upload failed'
+      let msg = err instanceof Error ? err.message : 'Upload failed'
+      if (msg === 'Failed to fetch') {
+        if (file.size > 2 * 1024 * 1024) {
+          msg = `Upload failed: The file size (${(file.size / 1024 / 1024).toFixed(1)}MB) is too large for the network/server limits. Please try uploading a smaller image file under 2MB.`
+        } else {
+          msg = 'Upload failed: Server connection lost. Please try again with a smaller image or check your internet connection.'
+        }
+      }
       toast.error(msg)
       setImagePreview(null)
     } finally {
@@ -839,7 +874,7 @@ const PlayerProfileCard = () => {
       requestAnimationFrame(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          videoRef.current.play().catch(() => {})
+          videoRef.current.play().catch(() => { })
         }
       })
     } catch (e) {
@@ -848,7 +883,7 @@ const PlayerProfileCard = () => {
     }
   }
   const stopStream = () => {
-    try { streamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop()) } catch {}
+    try { streamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop()) } catch { }
     streamRef.current = null
   }
   const handleCloseCamera = () => { stopStream(); setCameraOpen(false) }
@@ -1271,25 +1306,21 @@ const PlayerProfileCard = () => {
                                 setCity(v)
                                 setStateProvince(v)
                               }}
-                              placeholder="Select city/state"
                               fullWidth
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
                               SelectProps={{
-                                MenuProps: selectMenuProps,
+                                native: true,
                               }}
-                              disabled={!selectedProfileCountryCode || profileStates.length === 0}
+                              disabled={!selectedProfileCountryCode || profileCitiesAndStates.length === 0}
                             >
-                              <MenuItem value="" disabled>
+                              <option value="" disabled style={{ backgroundColor: themeColors.surfaceAlt, color: themeColors.text }}>
                                 {selectedProfileCountryCode ? "Select city/state" : "Select country first"}
-                              </MenuItem>
-                              {profileStates.map((s) => {
-                                const stateName = normalizeLocationName(s.name) || s.name
-                                return (
-                                  <MenuItem key={s.isoCode} value={stateName}>
-                                    {stateName}
-                                  </MenuItem>
-                                )
-                              })}
+                              </option>
+                              {profileCitiesAndStates.map((name) => (
+                                <option key={name} value={name} style={{ backgroundColor: themeColors.surfaceAlt, color: themeColors.text }}>
+                                  {name}
+                                </option>
+                              ))}
                             </StyledTextField>
                           </Grid>
                           <Grid item xs={6} sm={6}>
@@ -1864,10 +1895,10 @@ const PlayerProfileCard = () => {
                                 },
                                 '& .MuiSlider-thumb': {
                                   border: `3px solid ${solidColor}`,
-                                  '&:hover': { 
+                                  '&:hover': {
                                     boxShadow: `0 0 0 6px ${solidColor}40`
                                   },
-                                  '&:focus-visible': { 
+                                  '&:focus-visible': {
                                     boxShadow: `0 0 0 8px ${solidColor}4D`
                                   }
                                 }
@@ -1938,7 +1969,6 @@ const PlayerProfileCard = () => {
             </StyledPaper>
           </Box>
         </Fade>
-        <Toaster position="top-center" reverseOrder={false} />
       </Container>
     )
   }
