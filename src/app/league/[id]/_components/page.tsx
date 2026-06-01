@@ -4701,6 +4701,8 @@ export default function LeagueDetailPage() {
                                             sx={{
                                                 color: 'rgba(255,255,255,0.78)',
                                                 fontSize: { xs: '0.78rem', sm: '0.86rem' },
+                                                textAlign: 'center',
+                                                px: { xs: 1.5, sm: 2.5 },
                                                 mb: 2,
                                                 lineHeight: 1.5,
                                                 mt:2

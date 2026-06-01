@@ -2706,6 +2706,7 @@ input:-webkit-autofill:active {
 .empty-state-message {
   display: inline-block;
   max-width: 100%;
+  text-align: center;
   padding: 10px 16px;
   border-radius: 14px;
   background: linear-gradient(135deg, rgba(121, 121, 121, 0.34) 0%, rgba(22, 22, 22, 0.78) 100%);
