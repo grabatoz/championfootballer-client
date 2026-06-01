@@ -2712,32 +2712,45 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           minWidth: 0,
           minHeight: { xs: '60px', md: '70px' },
           gap: { xs: 1, md: 2.4 },
-          overflowX: 'hidden'
+          overflowX: 'hidden',
+          position: 'relative',
         }}>
           {/* LOGO SECTION */}
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <Box sx={{ 
-              width: { xs: 250, sm: 240, md: 340, lg: 400 },
-              height: { xs: 34, sm: 48, md: 75 },
+          <Box
+            sx={{
               display: 'flex',
               alignItems: 'center',
-              mt: { xs: 0, md: -2 },
-            }}>
-              <Image
-                src={cflogo}
-                alt="Champion Footballer Logo"
-                width={430}
-                height={64}
-                priority
-                sizes="(max-width:600px) 200px, (max-width:900px) 240px, (max-width:1200px) 340px, 400px"
-                style={{
-                  height: '100%',
-                  width: '100%',
-                  objectFit: 'contain'
-                }}
-              />
-            </Box>
-          </Link>
+              flexShrink: 0,
+              position: { xs: 'absolute', md: 'static' },
+              left: { xs: '50%', md: 'auto' },
+              transform: { xs: 'translateX(-50%)', md: 'none' },
+              zIndex: 1,
+            }}
+          >
+            <Link href="/home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <Box sx={{ 
+                width: { xs: 260, sm: 260, md: 340, lg: 400 },
+                height: { xs: 34, sm: 48, md: 75 },
+                display: 'flex',
+                alignItems: 'center',
+                mt: { xs: 0, md: -2 },
+              }}>
+                <Image
+                  src={cflogo}
+                  alt="Champion Footballer Logo"
+                  width={430}
+                  height={64}
+                  priority
+                  sizes="(max-width:600px) 200px, (max-width:900px) 240px, (max-width:1200px) 340px, 400px"
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    objectFit: 'contain'
+                  }}
+                />
+              </Box>
+            </Link>
+          </Box>
 
           {/* DESKTOP NAVIGATION (moved to right) */}
           <Box sx={{
@@ -2760,6 +2773,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             alignItems: 'center',
             // gap: { xs: 0.5, md: 1 },
             flexShrink: 0,
+            ml: { xs: 'auto', md: 0 },
           }}>
             {isAuthenticated && (
               <>
