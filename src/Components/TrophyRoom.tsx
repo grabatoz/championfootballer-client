@@ -498,7 +498,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                     { img: Goals, label: 'Goals', value: quickView.stats?.goals ?? 0 },
                     { img: Assist, label: 'Assists', value: quickView.stats?.assists ?? 0 },
                     { img: Cleansheet, label: 'Clean Sheets', value: quickView.cleanSheets ?? 0 },
-                    { img: Momt, label: 'Votes', value: quickView.motmCount ?? 0 },
+                    { img: Momt, label: 'MOTM', value: quickView.motmCount ?? 0 },
                   ].map((it, i) => (
                     <Box
                       key={i}

@@ -2541,9 +2541,26 @@ export default function LeagueDetailPage() {
             const votes: ManOfTheMatchVotes = hasMotmVotes(match) && match.manOfTheMatchVotes
                 ? match.manOfTheMatchVotes
                 : {};
-            // votes is record voterId -> votedForId; we count by votedForId
+            
+            const matchVoteCounts: Record<string, number> = {};
             Object.values(votes).forEach((votedForId) => {
                 const pid = String(votedForId);
+                matchVoteCounts[pid] = (matchVoteCounts[pid] || 0) + 1;
+            });
+
+            let maxVotes = 0;
+            const winners = new Set<string>();
+            Object.entries(matchVoteCounts).forEach(([pid, count]) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    winners.clear();
+                    winners.add(pid);
+                } else if (count === maxVotes && maxVotes > 0) {
+                    winners.add(pid);
+                }
+            });
+
+            winners.forEach((pid) => {
                 if (pid in counts) counts[pid] += 1;
             });
         });
@@ -7139,7 +7156,7 @@ export default function LeagueDetailPage() {
                                         { img: Goals, label: 'Goals', shortLabel: 'Goals', value: quickView.stats?.goals ?? 0 },
                                         { img: Assist, label: 'Assists', shortLabel: 'Assist', value: quickView.stats?.assists ?? 0 },
                                         { img: Cleansheet, label: 'Clean Sheets', shortLabel: 'Clean', value: quickView.cleanSheets ?? 0 },
-                                        { img: Momt, label: 'Votes', shortLabel: 'Votes', value: quickView.motmCount ?? 0 },
+                                        { img: Momt, label: 'MOTM', shortLabel: 'MOTM', value: quickView.motmCount ?? 0 },
                                         { img: DefensiveImpact, label: 'Defensive Impact', shortLabel: 'Def', value: quickView.defensiveImpact ?? 0 },
                                         { img: Mentality, label: 'Mentality', shortLabel: 'Mental', value: quickView.mentality ?? 0 },
                                     ].map((it, i) => (
