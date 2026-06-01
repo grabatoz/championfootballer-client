@@ -59,6 +59,7 @@ import AwayTeamImage from '@/Components/images/awayteamshirt.png'
 import FootBallIcon from '@/Components/images/cardfootball.png'
 import CardStar from '@/Components/images/cardstar.png'
 import DREATEAM from '@/Components/images/dreamteamicon.png'
+import DefenciveImpact from '@/Components/images/defenciveimpactvotes.png'
 
 // Lazy load heavy components
 const PlayMatchPagee = dynamic(() => import('@/Components/matchstatsdialog/MatchStatsDialog'), {
@@ -408,7 +409,7 @@ const LEADERBOARD_METRIC_CONFIG = [
     {
         key: 'impact',
         label: 'DEFENSIVE IMPACT VOTES',
-        icon: Imapct,
+        icon: DefenciveImpact,
         infoSummary: 'Ranks players by defensive Impact Votes selections.',
         infoFormula: 'Counts captain defensive picks from both teams in RESULT_PUBLISHED matches.',
     },
@@ -422,7 +423,7 @@ const LEADERBOARD_METRIC_CONFIG = [
     {
         key: 'contribution',
         label: 'CONTRIBUTION INDEX %',
-        icon: Goals,
+        icon: Imapct,
         infoSummary: 'Shows overall contribution as a percentage.',
         infoFormula: 'Averages each player’s match impact percentage from RESULT_PUBLISHED matches for the selected league/season.',
     },

@@ -233,12 +233,12 @@ interface ServerAchievementsResponse {
 const topTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
   { title: 'League Champion', description: 'First Place Player In The League Table', image: TrophyImg, color: '#ffd700', imageSize: { xs: 80, sm: 100, md: 170 } },
   { title: "Ballon D'or", description: 'Player With The Most MOTM Votes', image: BaloonDImg, color: '#ff8c00', imageSize: { xs: 80, sm: 100, md: 170 } },
-  { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#cccccc', imageSize: { xs: 80, sm: 100, md: 170 } },
+  { title: 'Runner-Up', description: 'Second Place Player In The League Table', image: RunnerUpImg, color: '#CCCCCC', imageSize: { xs: 80, sm: 100, md: 170 } },
 ];
 
 // Bottom row trophies (displayed smaller)
 const bottomTrophies: Omit<TrophyType, 'winner' | 'winnerId' | 'leagueId' | 'leagueName'>[] = [
-  { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#cccccc' },
+  { title: 'Golden Boot', description: 'Player With The Highest Number Of Goals Scored', image: GoldenBootImg, color: '#00FF85' },
   { title: 'King Playmaker', description: 'Player With The Highest Number Of Goals Assisted', image: KingPlayMakerImg, color: '#7b3fe4' },
   { title: 'Legendary Shield', description: 'Player With The Lowest Average Number Of Team Goals Conceded', image: ShieldImg, color: '#00b3ff' },
   { title: 'Dark Horse', description: 'Player Outside Of The Top 3 League Position With The Highest Frequency Of MOTM Votes', image: DarkHorseImg, color: '#e10600' },
