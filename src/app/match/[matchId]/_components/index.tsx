@@ -945,11 +945,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                         sx={{
                           width: "100%",
                           maxHeight: isEmbeddedInDialog
-                            ? { xs: 400, sm: 'none', md: 'none' }
+                            ? { xs: 400, sm: '58vh', md: '60vh' }
                             : { xs: 400, sm: 480, md: 520 },
-                          overflowY: isEmbeddedInDialog
-                            ? { xs: "auto", sm: "visible", md: "visible" }
-                            : "auto",
+                          overflowY: "auto",
                           scrollbarWidth: "thin",
                           scrollbarColor: "rgba(255,255,255,0.3) transparent",
                           "&::-webkit-scrollbar": {
@@ -970,6 +968,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           <Box
                             sx={{
                               background: '#2b2b2b',
+                              position: 'sticky',
+                              top: 0,
+                              zIndex: 8,
                               borderRadius: { xs: '8px 8px 0 0', md: '12px 12px 0 0' },
                               px: { xs: 1, sm: 1.5, md: 2 },
                               py: { xs: 0.3, sm: 0.5, md: 0.75 },

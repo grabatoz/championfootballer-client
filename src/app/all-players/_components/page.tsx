@@ -1233,8 +1233,10 @@ const AllPlayersPage = () => {
             sx={{
               width: '100%',
               overflowX: 'auto',
+              overflowY: 'auto',
+              maxHeight: { xs: '68vh', sm: '70vh', md: '72vh' },
               WebkitOverflowScrolling: 'touch',
-              '&::-webkit-scrollbar': { height: 4 },
+              '&::-webkit-scrollbar': { height: 4, width: 6 },
               '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.25)', borderRadius: 3 },
             }}
           >
@@ -1248,6 +1250,9 @@ const AllPlayersPage = () => {
               <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
+                position: 'sticky',
+                top: 0,
+                zIndex: 12,
                 py: 2,
                 pl: 0,
                 pr: { xs: 2, sm: 3 },

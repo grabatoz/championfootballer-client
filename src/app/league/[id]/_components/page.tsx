@@ -4354,8 +4354,10 @@ export default function LeagueDetailPage() {
                                         sx={{
                                             width: '100%',
                                             overflowX: 'auto',
+                                            overflowY: 'auto',
+                                            maxHeight: { xs: '68vh', sm: '70vh', md: '72vh' },
                                             WebkitOverflowScrolling: 'touch',
-                                            '&::-webkit-scrollbar': { height: 6 },
+                                            '&::-webkit-scrollbar': { height: 6, width: 6 },
                                             '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: 3 },
                                             '&::-webkit-scrollbar-thumb': { background: '#F97316', borderRadius: 3 },
                                         }}
@@ -4365,6 +4367,9 @@ export default function LeagueDetailPage() {
                                             <Box className="league-header-row" sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
+                                                position: 'sticky',
+                                                top: 0,
+                                                zIndex: 12,
                                                 pl: 0,
                                                 pr: { xs: 2, sm: 3 },
                                                 backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -6011,11 +6016,13 @@ export default function LeagueDetailPage() {
                                             sx={{
                                                 width: '100%',
                                                 overflowX: 'auto',
-                                                overflowY: 'hidden',
+                                                overflowY: 'auto',
+                                                maxHeight: { xs: '68vh', sm: '70vh', md: '72vh' },
                                                 WebkitOverflowScrolling: 'touch',
                                                 scrollbarWidth: 'thin',
                                                 '&::-webkit-scrollbar': {
                                                     height: '8px',
+                                                    width: '8px',
                                                 },
                                                 '&::-webkit-scrollbar-track': {
                                                     background: 'rgba(255,255,255,0.12)',
@@ -6087,7 +6094,7 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-white league-header-row league-header-inset font-bold">
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-white league-header-row league-header-inset font-bold sticky top-0 z-20">
                                                         <div className="text-center league-table-heading">#</div>
                                                         <div className="pl-[52px] sticky left-0 z-10 bg-table-header league-table-heading league-table-heading-left">NAME</div>
                                                         <div className="text-center league-table-heading">MOTM</div>
