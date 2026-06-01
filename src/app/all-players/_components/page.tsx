@@ -155,6 +155,22 @@ const AllPlayersPage = () => {
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
+  const completedStatusTokens = React.useMemo(
+    () => new Set([
+      'completed',
+      'complete',
+      'finished',
+      'ended',
+      'result_published',
+      'result_uploaded',
+      'result_complete',
+      'result_finished',
+      'result_ended',
+      'result_done',
+      'closed',
+    ]),
+    []
+  );
 
   const getYearFromDateLike = useCallback((value: unknown): string | null => {
     if (!value) return null;
@@ -326,61 +342,59 @@ const AllPlayersPage = () => {
 
   // Helper: determine if a league is completed (season-aware)
   const leagueIsCompleted = useCallback((l: LeagueOption): boolean => {
-    // Prefer backend-computed season-based completion status
-    if ((l as any)?.computedStatus?.isCompleted === true) return true;
-    if (l?.archived === true) return true;
+    const status = String(l?.status || '').toLowerCase().trim();
+    if (completedStatusTokens.has(status)) return true;
 
-    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-    if (missingArr.length > 0) return false;
-
-    const toNum = (v: unknown): number | undefined => {
-      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-      return Number.isFinite(n) ? n : undefined;
-    };
-    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-    const played = playedFromComputed;
-    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
-
-    if (Array.isArray(l.matches)) {
-      const matches = l.matches ?? [];
-      const completedCount = matches.reduce((acc, m) => {
-        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-        const endedByFlag = m.active === false;
-        const endedByEnd = Boolean(m.end);
-        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-      }, 0);
-      if (typeof maxG === 'number' && maxG > 0) {
-        if (completedCount < maxG) return false;
-        return true;
-      }
-    }
-
-    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-      if (played < maxG) return false;
+    if (
+      l?.computedStatus?.isComplete === true ||
+      (l?.computedStatus as LeagueComputedStatus & { isCompleted?: boolean })?.isCompleted === true ||
+      l?.computedStatus?.locked === true ||
+      l?.isComplete === true ||
+      l?.isCompleted === true ||
+      l?.isLocked === true
+    ) {
       return true;
     }
 
-    if (l?.computedStatus?.isComplete === true) return true;
-    if (l?.computedStatus?.locked === true) return true;
-    if (l?.isComplete === true) return true;
-    if (l?.isCompleted === true) return true;
-    if (l?.isLocked === true) return true;
+    // Season-level fallback kept in sync with league detail page
+    const seasons = Array.isArray(l?.seasons) ? l.seasons : [];
+    if (seasons.length > 0) {
+      const seasonDoneTokens = new Set([
+        'completed',
+        'complete',
+        'finished',
+        'ended',
+        'locked',
+        'archived',
+        'result_published',
+        'result_uploaded',
+        'result_complete',
+        'result_finished',
+        'result_ended',
+        'result_done',
+      ]);
 
-    const sRaw = (l?.status ?? '').toString();
-    const s = sRaw.trim().toUpperCase();
-    const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
-    if (completionStatuses.has(s)) return true;
-    if (typeof l?.active === 'boolean' && l.active === false) return true;
+      const hasActiveSeason = seasons.some((season) => (season?.isActive === true));
+      const hasArchivedOrCompletedSeason = seasons.some((season) => {
+        const statusRaw = (season as SeasonOption & { status?: unknown; archived?: boolean })?.status;
+        const statusText = typeof statusRaw === 'string' ? statusRaw.toLowerCase().trim() : '';
+        const isArchived = (season as SeasonOption & { archived?: boolean })?.archived === true;
+        return isArchived || seasonDoneTokens.has(statusText);
+      });
+
+      if (!hasActiveSeason && hasArchivedOrCompletedSeason) return true;
+    }
+
     return false;
-  }, []);
+  }, [completedStatusTokens]);
 
   const fetchLeagues = useCallback(async () => {
     if (!token) return;
     setLeaguesLoading(true);
     try {
-      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store',
       });
       const data = await resp.json();
       if (data?.success && data?.user) {
@@ -530,9 +544,10 @@ const AllPlayersPage = () => {
           })
         );
 
-        // Show only visible leagues (active + non-archived + not completed)
+        // Keep leagues visible for switching, including inactive ones.
+        // Only hide archived/completed leagues (same as league detail page).
         const activeLeagues = enrichedLeagues.filter(
-          (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+          (l) => l.archived !== true && !leagueIsCompleted(l)
         );
 
         // Sort alphabetically
