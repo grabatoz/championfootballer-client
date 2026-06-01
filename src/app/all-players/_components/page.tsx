@@ -151,7 +151,7 @@ const AllPlayersPage = () => {
   const [allPositionsMenuAnchor, setAllPositionsMenuAnchor] = useState<null | HTMLElement>(null);
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
-  const [leagueDropdownOpen, setLeagueDropdownOpen] = useState(false);
+  const [leagueMenuAnchor, setLeagueMenuAnchor] = useState<null | HTMLElement>(null);
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const router = useRouter();
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -939,6 +939,31 @@ const AllPlayersPage = () => {
   console.log('Sorted Players:', sortedPlayers);
 
   const noLeagues = !leaguesLoading && leagues.length === 0;
+  const leagueMenuOpen = Boolean(leagueMenuAnchor);
+  const selectedLeagueLabel = selectedLeague === 'all'
+    ? 'All Leagues'
+    : (filteredLeagues.find((l) => l.id === selectedLeague)?.name
+      || leagues.find((l) => l.id === selectedLeague)?.name
+      || 'Select League');
+
+  const handleLeagueMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    if (noLeagues || filteredLeagues.length === 0) return;
+    setLeagueMenuAnchor(event.currentTarget);
+  };
+
+  const handleLeagueMenuClose = () => {
+    setLeagueMenuAnchor(null);
+  };
+
+  const handleLeagueMenuSelect = (leagueId: string) => {
+    setSelectedLeague(leagueId);
+    handleLeagueMenuClose();
+    try {
+      if (typeof window !== 'undefined' && leagueId !== 'all') {
+        localStorage.setItem(PREFERRED_LEAGUE_KEY, leagueId);
+      }
+    } catch { }
+  };
 
   return (
     <>
@@ -1106,47 +1131,77 @@ const AllPlayersPage = () => {
               </div>
 
               {/* League Filter */}
-              <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                <select
-                  className="filter-select"
-                  value={selectedLeague}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setSelectedLeague(newValue);
-                    setLeagueDropdownOpen(false);
-                    try { if (typeof window !== 'undefined' && newValue !== 'all') localStorage.setItem(PREFERRED_LEAGUE_KEY, newValue); } catch { }
-                  }}
-                  onMouseDown={() => setLeagueDropdownOpen(true)}
-                  onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
-                  disabled={noLeagues || filteredLeagues.length === 0}
-                  style={{
+              <div className={`filter-select-wrapper${leagueMenuOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
+                <Box
+                  onClick={handleLeagueMenuOpen}
+                  role="button"
+                  aria-haspopup="menu"
+                  aria-expanded={leagueMenuOpen ? 'true' : undefined}
+                  sx={{
                     height: isMobile ? '34px' : '39px',
-                    padding: isMobile ? '0 30px 0 10px' : '0 29px 0 12px',
-                    marginLeft: 0,
+                    pl: isMobile ? '10px' : '12px',
+                    pr: isMobile ? '30px' : '29px',
                     backgroundColor: 'transparent',
                     color: '#fff',
                     border: '1.5px solid #e56a16',
                     borderRadius: '24px',
                     fontSize: isMobile ? '13px' : '17px',
                     cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
-                    outline: 'none',
                     width: '100%',
-                    display: 'block',
+                    display: 'flex',
+                    alignItems: 'center',
                     boxSizing: 'border-box',
                     opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    fontWeight: isMobile ? 400 : 400,
+                    fontWeight: 400,
                     fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
                     textOverflow: 'ellipsis',
+                    userSelect: 'none',
                   }}
                 >
-                  <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Leagues</option>
-                  {filteredLeagues.map((l) => (
-                    <option key={l.id} value={l.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>{l.name}</option>
+                  {selectedLeagueLabel}
+                </Box>
+                <Menu
+                  anchorEl={leagueMenuAnchor}
+                  open={leagueMenuOpen}
+                  onClose={handleLeagueMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  PaperProps={{
+                    sx: {
+                      mt: 0.6,
+                      width: isDesktop ? 150 : 'min(92vw, 340px)',
+                      maxHeight: 260,
+                      overflowY: 'auto',
+                      overflowX: 'hidden',
+                      bgcolor: 'rgba(15,15,15,0.94)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1.5,
+                      '&::-webkit-scrollbar': { width: 6 },
+                      '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.35)', borderRadius: 999 },
+                    },
+                  }}
+                >
+                  <MenuItem
+                    selected={selectedLeague === 'all'}
+                    onClick={() => handleLeagueMenuSelect('all')}
+                    sx={{ fontSize: isMobile ? '13px' : '15px' }}
+                  >
+                    All Leagues
+                  </MenuItem>
+                  {filteredLeagues.map((leagueOption) => (
+                    <MenuItem
+                      key={leagueOption.id}
+                      selected={selectedLeague === leagueOption.id}
+                      onClick={() => handleLeagueMenuSelect(leagueOption.id)}
+                      sx={{ fontSize: isMobile ? '13px' : '15px' }}
+                    >
+                      {leagueOption.name}
+                    </MenuItem>
                   ))}
-                </select>
+                </Menu>
               </div>
 
               {/* Season Filter */}
