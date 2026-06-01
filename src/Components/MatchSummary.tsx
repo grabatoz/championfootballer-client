@@ -499,8 +499,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                         px: { xs: 1, sm: 1.5, md: 2 },
                         py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
-                        width: { xs: 120, sm: 140, md: 160 },
+                        width: { xs: 120, sm: 140, md: 180 },
                         minWidth: 0,
+                        whiteSpace: { xs: "normal", md: "nowrap" },
                       }}
                     >
                       Add Score
@@ -524,8 +525,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                         px: { xs: 1, sm: 1.5, md: 2 },
                         py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
-                        width: { xs: 120, sm: 140, md: 160 },
+                        width: { xs: 120, sm: 140, md: 180 },
                         minWidth: 0,
+                        whiteSpace: { xs: "normal", md: "nowrap" },
                       }}
                     >
                       Add Your Stats
@@ -582,8 +584,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                       px: { xs: 1, sm: 1.5, md: 2 },
                       py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
-                      width: { xs: 120, sm: 140, md: 160 },
+                      width: { xs: 120, sm: 140, md: 180 },
                       minWidth: 0,
+                      whiteSpace: { xs: "normal", md: "nowrap" },
                     }}
                   >
                     ADD Score
@@ -608,8 +611,9 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
                     px: { xs: 1, sm: 1.5, md: 2 },
                     py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
-                    width: { xs: 120, sm: 140, md: 160 },
+                    width: { xs: 120, sm: 140, md: 180 },
                     minWidth: 0,
+                    whiteSpace: { xs: "normal", md: "nowrap" },
                   }}
                 >
                   Add Your Stats

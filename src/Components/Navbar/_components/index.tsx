@@ -4509,7 +4509,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   </TableCell>
                   <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>XP Range</TableCell>
                   <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Description</TableCell>
-                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Card Color</TableCell>
+                  <TableCell sx={{ bgcolor: '#2b2b2b', color: '#00a896', fontWeight: 800, borderBottom: '1px solid #333', whiteSpace: 'nowrap' }}>Star Color</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

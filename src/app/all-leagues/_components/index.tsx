@@ -5057,26 +5057,7 @@ function AllLeagues() {
               p: 0.5,
               width: { xs: '90%', sm: 400, md: 500 }
             }}>
-              <Button
-                onClick={() => setCompletionTab('live')}
-                sx={{
-                  flex: 1,
-                  textTransform: 'uppercase',
-                  borderRadius: '10px',
-                  py: { xs: 1, md: 1.5 },
-                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                  fontFamily: 'var(--font-woodford-bourne-pro)',
-                  fontWeight: 700,
-                  bgcolor: completionTab === 'live' ? '#00a896' : 'transparent',
-                  color: completionTab === 'live' ? '#ffffff' : '#FFFFFF',
-                  '&:hover': {
-                    bgcolor: completionTab === 'live' ? '#00a896' : '#3f4652',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                Live Leagues
-              </Button>
+            
               <Button
                 onClick={() => setCompletionTab('completed')}
                 sx={{
@@ -5096,6 +5077,26 @@ function AllLeagues() {
                 }}
               >
                 Completed Leagues
+              </Button>
+                <Button
+                onClick={() => setCompletionTab('live')}
+                sx={{
+                  flex: 1,
+                  textTransform: 'uppercase',
+                  borderRadius: '10px',
+                  py: { xs: 1, md: 1.5 },
+                  fontSize: { xs: '14px', sm: '16px', md: '18px' },
+                  fontFamily: 'var(--font-woodford-bourne-pro)',
+                  fontWeight: 700,
+                  bgcolor: completionTab === 'live' ? '#00a896' : 'transparent',
+                  color: completionTab === 'live' ? '#ffffff' : '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: completionTab === 'live' ? '#00a896' : '#3f4652',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Live Leagues
               </Button>
             </Box>
           </Box>
