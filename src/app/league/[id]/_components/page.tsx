@@ -4646,8 +4646,8 @@ export default function LeagueDetailPage() {
                                                     fullWidth
                                                     variant="contained"
                                                     sx={{
-                                                        background: '#dddddd',
-                                                        color: '#e1671e',
+                                                        background: '#0388E3',
+                                                        color: '#ffffff',
                                                         fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
                                                         fontWeight: 600,
                                                         py: 0.5,
@@ -4655,11 +4655,11 @@ export default function LeagueDetailPage() {
                                                         borderRadius: 1,
                                                         textTransform: 'none',
                                                         '&:hover': {
-                                                            background: '#cbcaca',
+                                                            background: '#0277C8',
                                                         },
                                                     }}
                                                 >
-                                                    <span className="mr-2 text-[#656565]">+ </span>   New Match
+                                                    <span className="mr-2 text-[#ffffff]">+ </span>   New Match
                                                 </Button>
                                             </Link>
                                         ) : (
@@ -5116,51 +5116,6 @@ export default function LeagueDetailPage() {
                                     pb: { xs: 2, md: 3 },
                                     // p: 2
                                 }}>
-                                    {isAdmin && (
-                                        league?.active ? (
-                                            <Link href={`/league/${leagueId}/match`} passHref>
-                                                <Button
-                                                    fullWidth
-                                                    variant="contained"
-                                                    sx={{
-                                                        background: '#dddddd',
-                                                        color: '#e1671e',
-                                                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
-                                                        fontWeight: 600,
-                                                        py: 0.5,
-                                                        mb: 3,
-                                                        borderRadius: 1,
-                                                        textTransform: 'none',
-                                                        '&:hover': {
-                                                            background: '#cbcaca',
-                                                        },
-                                                    }}
-                                                >
-                                                    <span className="mr-2 text-[#656565]">+ </span>   New Match
-                                                </Button>
-                                            </Link>
-                                        ) : (
-                                            <Button
-                                                fullWidth
-                                                variant="contained"
-                                                onClick={() => toast.error(inactiveLeagueMatchMessage)}
-                                                sx={{
-                                                    background: 'rgba(255,255,255,0.12)',
-                                                    color: 'rgba(255,255,255,0.45)',
-                                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.5rem' },
-                                                    fontWeight: 600,
-                                                    py: 0.5,
-                                                    mb: 3,
-                                                    borderRadius: 1,
-                                                    textTransform: 'none',
-                                                    '&:hover': { background: 'rgba(255,255,255,0.18)' },
-                                                }}
-                                            >
-                                                <span className="mr-2 text-[#656565]">+ </span>   New Match
-                                            </Button>
-                                        )
-                                    )}
-
                                     {filteredLeague?.matches && filteredLeague.matches.length > 0 ? (
                                         <Box sx={{
                                             display: 'grid',
