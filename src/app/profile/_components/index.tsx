@@ -637,16 +637,27 @@ const PlayerProfileCard = () => {
         updateData.phoneCountryCode = normalizedPhoneCountryCode
       }
 
-      // Skills: include only changed skills
-      const skillsUpdate: Record<string, number> = {}
-      if (typeof dribbling === 'number' && dribbling !== user?.skills?.dribbling) skillsUpdate.dribbling = dribbling
-      if (typeof shooting === 'number' && shooting !== user?.skills?.shooting) skillsUpdate.shooting = shooting
-      if (typeof passing === 'number' && passing !== user?.skills?.passing) skillsUpdate.passing = passing
-      if (typeof pace === 'number' && pace !== user?.skills?.pace) skillsUpdate.pace = pace
-      if (typeof defending === 'number' && defending !== user?.skills?.defending) skillsUpdate.defending = defending
-      if (typeof physical === 'number' && physical !== user?.skills?.physical) skillsUpdate.physical = physical
-      if (Object.keys(skillsUpdate).length > 0) {
-        updateData.skills = skillsUpdate
+      // Skills: if any slider changed, send a full merged skills object.
+      const currentSkills = {
+        dribbling: Number(user?.skills?.dribbling ?? 50),
+        shooting: Number(user?.skills?.shooting ?? 50),
+        passing: Number(user?.skills?.passing ?? 50),
+        pace: Number(user?.skills?.pace ?? 50),
+        defending: Number(user?.skills?.defending ?? 50),
+        physical: Number(user?.skills?.physical ?? 50),
+      }
+      const mergedSkills = { ...currentSkills }
+      let hasSkillChange = false
+
+      if (typeof dribbling === 'number' && dribbling !== currentSkills.dribbling) { mergedSkills.dribbling = dribbling; hasSkillChange = true }
+      if (typeof shooting === 'number' && shooting !== currentSkills.shooting) { mergedSkills.shooting = shooting; hasSkillChange = true }
+      if (typeof passing === 'number' && passing !== currentSkills.passing) { mergedSkills.passing = passing; hasSkillChange = true }
+      if (typeof pace === 'number' && pace !== currentSkills.pace) { mergedSkills.pace = pace; hasSkillChange = true }
+      if (typeof defending === 'number' && defending !== currentSkills.defending) { mergedSkills.defending = defending; hasSkillChange = true }
+      if (typeof physical === 'number' && physical !== currentSkills.physical) { mergedSkills.physical = physical; hasSkillChange = true }
+
+      if (hasSkillChange) {
+        updateData.skills = mergedSkills
       }
 
       // Password: only if user actually entered something non-blank
