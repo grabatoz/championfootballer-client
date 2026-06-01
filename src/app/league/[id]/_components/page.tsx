@@ -974,7 +974,14 @@ export default function LeagueDetailPage() {
     // Add this useEffect to sync tab param with section
     useEffect(() => {
         const tab = searchParams?.get('tab');
-        if (tab === 'table' || tab === 'leaderboard' || tab === 'members' || tab === 'matches' || tab === 'results') {
+        if (
+            tab === 'table' ||
+            tab === 'leaderboard' ||
+            tab === 'members' ||
+            tab === 'matches' ||
+            tab === 'results' ||
+            tab === 'dream-team'
+        ) {
             setSection(tab);
         }
     }, [searchParams]);
@@ -1884,8 +1891,9 @@ export default function LeagueDetailPage() {
                             // ignore localStorage errors
                         }
 
-                        // Update URL after data is set
-                        router.replace(`/league/${selectedLeagueId}`, { scroll: false });
+                        // Keep user on the same tab when switching leagues
+                        const tabToKeep = encodeURIComponent(section);
+                        router.replace(`/league/${selectedLeagueId}?tab=${tabToKeep}`, { scroll: false });
                     } else {
                         setError('Failed to load league data');
                     }
