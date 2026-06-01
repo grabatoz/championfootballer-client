@@ -6038,50 +6038,6 @@ export default function LeagueDetailPage() {
                                             }}
                                         >
                                             <div className="min-w-[820px] rounded-lg league-table league-mobile-result-font">
-                                                {/* Header Bar aligned to table grid */}
-                                                <div className="grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 border-b border-border league-header-white">
-                                                    <div className="col-start-1 col-span-8 pl-[32px] flex items-center gap-2 text-foreground league-header-text">
-                                                        <span className="text-muted-foreground">{invitePlayersMessage}</span>
-                                                        <span className="font-bold">{inviteCodeDisplay}</span>
-                                                        <button
-                                                            type="button"
-                                                            className="group p-1.5 rounded border border-transparent cursor-pointer transition-all duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffff]"
-                                                            onClick={handleCopySeasonInviteCode}
-                                                            aria-label="Copy invite code"
-                                                            title="Copy invite code"
-                                                        >
-                                                            <Copy className="w-4 h-4 transition-all duration-150 group-hover:text-[#00000] group-hover:scale-110" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="p-1.5 hover:bg-muted rounded transition-colors"
-                                                            onClick={handleShareSeasonInvite}
-                                                            aria-label="Share invite code"
-                                                        >
-                                                            <Share2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                    {isAdmin && (
-                                                        <div className="col-start-9 col-span-2 justify-self-end pr-1 sm:pr-2">
-                                                            {league?.active ? (
-                                                                <Link href={`/league/${leagueId}/match`} passHref>
-                                                                    <button className="bg-[#e16419] text-primary-foreground font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap">
-                                                                        + New Match
-                                                                    </button>
-                                                                </Link>
-                                                            ) : (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => toast.error(inactiveLeagueMatchMessage)}
-                                                                    className="bg-white/15 text-white/55 font-semibold px-6 py-2 rounded inline-flex items-center whitespace-nowrap hover:bg-white/20"
-                                                                >
-                                                                    + New Match
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-
                                                 {/* Table Header */}
                                                 {/* <div className="grid mt-0 grid-cols-[50px_1fr_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header border-b border-border text-muted-foreground league-header-row league-header-inset league-table-heading">
                                                 <div className="text-center">#</div>
@@ -6266,6 +6222,71 @@ export default function LeagueDetailPage() {
                                             </Box>
                                         )}
                                     </Card>
+                                    <Paper
+                                        sx={{
+                                            mt: 2,
+                                            mb: 4,
+                                            background: '#f2f2f2',
+                                            borderRadius: 2,
+                                            border: '1px solid rgba(0,0,0,0.15)',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                px: { xs: 1.25, sm: 2 },
+                                                py: { xs: 1, sm: 1.25 },
+                                                display: 'flex',
+                                                flexDirection: { xs: 'column', sm: 'row' },
+                                                alignItems: { xs: 'stretch', sm: 'center' },
+                                                justifyContent: 'space-between',
+                                                gap: { xs: 1, sm: 1.5 },
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                                                <Typography sx={{ color: '#232323', fontSize: { xs: '0.74rem', sm: '0.82rem' }, fontWeight: 500 }}>
+                                                    {invitePlayersMessage}
+                                                </Typography>
+                                                <Typography sx={{ color: '#111', fontSize: { xs: '0.74rem', sm: '0.82rem' }, fontWeight: 700 }}>
+                                                    {inviteCodeDisplay}
+                                                </Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleCopySeasonInviteCode}
+                                                    aria-label="Copy invite code"
+                                                    title="Copy invite code"
+                                                    sx={{ color: '#1f2937', p: 0.5 }}
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleShareSeasonInvite}
+                                                    aria-label="Share invite code"
+                                                    sx={{ color: '#1f2937', p: 0.5 }}
+                                                >
+                                                    <Share2 className="w-4 h-4" />
+                                                </IconButton>
+                                            </Box>
+                                            {isAdmin && (
+                                                league?.active ? (
+                                                    <Link href={`/league/${leagueId}/match`} passHref>
+                                                        <button className="bg-[#e16419] text-white font-semibold px-5 py-2 rounded inline-flex items-center whitespace-nowrap justify-center">
+                                                            + New Match
+                                                        </button>
+                                                    </Link>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toast.error(inactiveLeagueMatchMessage)}
+                                                        className="bg-white/60 text-black/40 font-semibold px-5 py-2 rounded inline-flex items-center whitespace-nowrap justify-center"
+                                                    >
+                                                        + New Match
+                                                    </button>
+                                                )
+                                            )}
+                                        </Box>
+                                    </Paper>
                                     {/* // ...existing code... */}
                                     {/* {league && (
                                         <Box sx={{ mt: 2 }}>
