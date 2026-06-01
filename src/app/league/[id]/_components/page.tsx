@@ -6467,12 +6467,20 @@ export default function LeagueDetailPage() {
 
                             {section === 'leaderboard' && (
                                 // Leaderboard Section - Grid Layout
-                                <Box sx={{ p: { xs: 1, sm: 0 } }}>
+                                <Box
+                                    sx={{
+                                        px: { xs: 1, sm: 0 },
+                                        pb: { xs: 1, sm: 0 },
+                                        pt: { xs: 0, sm: 0 },
+                                        mt: { xs: -2, sm: 2 },
+                                    }}
+                                >
                                     <Box
                                         sx={{
                                             display: 'grid',
                                             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
                                             gap: 2,
+                                            
                                         }}
                                     >
                                         {LEADERBOARD_METRIC_CONFIG.map((metric) => (
@@ -6491,7 +6499,7 @@ export default function LeagueDetailPage() {
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 1.5,
-                                                        p: 1.3,
+                                                        p: { xs: 1, sm: 1.3 },
                                                         // borderBottom: '1px solid rgba(255,255,255,0.1)',
                                                     }}
                                                 >
