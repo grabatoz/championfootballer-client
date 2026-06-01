@@ -24,7 +24,6 @@ import IronWallBadge from '@/Components/images/brown.png';
 import UnbeatenBadge from '@/Components/images/brown.png';
 import CaptainsTriumphsBadge from '@/Components/images/brown.png';
 import TripleImpactBadge from '@/Components/images/brown.png';
-import ChartTopperBadge from '@/Components/images/brown.png';
 
 // Decorative images
 import LeftStar from '@/Components/images/leftstart.png';
@@ -46,11 +45,21 @@ interface Match {
   awayTeamGoals: number;
   homeTeamUsers: User[];
   awayTeamUsers: User[];
-  manOfTheMatchVotes: Record<string, string>;
-  playerStats: Record<string, { goals: number; assists: number }>;
+  manOfTheMatchVotes: Record<string, string | number>;
+  playerStats: Record<string, { goals?: number; assists?: number }>;
   status: 'RESULT_PUBLISHED' | 'SCHEDULED' | 'ONGOING';
+  date?: string | Date;
+  start?: string | Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
   active?: boolean;
   end?: string | Date;
+  homeCaptainId?: string | null;
+  awayCaptainId?: string | null;
+  homeDefensiveImpactId?: string | null;
+  awayDefensiveImpactId?: string | null;
+  homeMentalityId?: string | null;
+  awayMentalityId?: string | null;
 }
 
 interface League {
@@ -111,6 +120,10 @@ type UserMatchSummary = {
   conceded: number;
   result: 'W' | 'D' | 'L';
   motmVotes: number;
+  isCaptainWin: boolean;
+  hasXFactorPick: boolean;
+  wonMotmAward: boolean;
+  cleanSheetTeam: boolean;
 };
 
 // --- Constants ---
@@ -133,14 +146,111 @@ const toNum = (v: number | string | undefined): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
+const normalizeId = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+};
+
+const comparableId = (value: unknown): string => {
+  const id = normalizeId(value);
+  return id.startsWith('guest-') ? id.slice(6) : id;
+};
+
+const sameComparableId = (a: unknown, b: unknown): boolean => {
+  const left = comparableId(a);
+  const right = comparableId(b);
+  return left !== '' && right !== '' && left === right;
+};
+
+const isResultPublished = (match: Match): boolean =>
+  String(match.status || '').toUpperCase() === 'RESULT_PUBLISHED';
+
+const toTimeMs = (value: unknown): number => {
+  if (!value) return NaN;
+  const ms = new Date(value as string | number | Date).getTime();
+  return Number.isFinite(ms) ? ms : NaN;
+};
+
+const getMatchTimeMs = (match: Match): number => {
+  const candidates = [match.end, match.date, match.start, match.updatedAt, match.createdAt];
+  for (const candidate of candidates) {
+    const ms = toTimeMs(candidate);
+    if (Number.isFinite(ms)) return ms;
+  }
+  return 0;
+};
+
+const sortMatchesChronologically = (matches: Match[]): Match[] =>
+  [...matches].sort((a, b) => getMatchTimeMs(a) - getMatchTimeMs(b));
+
+const isUserInMatch = (userId: string, match: Match): { isHome: boolean; isAway: boolean } => {
+  const isHome = (match.homeTeamUsers ?? []).some((u) => sameComparableId(u.id, userId));
+  const isAway = (match.awayTeamUsers ?? []).some((u) => sameComparableId(u.id, userId));
+  return { isHome, isAway };
+};
+
+const getUserPlayerStatLine = (userId: string, playerStats: Match['playerStats']): { goals: number; assists: number } => {
+  const entry = Object.entries(playerStats ?? {}).find(([playerId]) => sameComparableId(playerId, userId));
+  const stat = entry?.[1] ?? {};
+  return {
+    goals: Number(stat.goals ?? 0) || 0,
+    assists: Number(stat.assists ?? 0) || 0,
+  };
+};
+
+const getMotmVoteCounts = (votes: Match['manOfTheMatchVotes']): Record<string, number> => {
+  if (!votes || typeof votes !== 'object') return {};
+  const entries = Object.entries(votes);
+  if (entries.length === 0) return {};
+
+  const counts: Record<string, number> = {};
+  const valuesAreCounts = entries.every(([, value]) => typeof value === 'number');
+
+  if (valuesAreCounts) {
+    entries.forEach(([playerId, count]) => {
+      const key = comparableId(playerId);
+      const value = Number(count) || 0;
+      if (!key || value <= 0) return;
+      counts[key] = (counts[key] || 0) + value;
+    });
+    return counts;
+  }
+
+  entries.forEach(([, votedFor]) => {
+    const key = comparableId(votedFor);
+    if (!key) return;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return counts;
+};
+
+const getMotmVotesForUser = (votes: Match['manOfTheMatchVotes'], userId: string): number => {
+  const counts = getMotmVoteCounts(votes);
+  const key = comparableId(userId);
+  return key ? counts[key] || 0 : 0;
+};
+
+const getTopMotmWinnerId = (votes: Match['manOfTheMatchVotes']): string => {
+  const counts = getMotmVoteCounts(votes);
+  let topPlayerId = '';
+  let maxVotes = 0;
+  Object.entries(counts).forEach(([playerId, count]) => {
+    if (count > maxVotes) {
+      maxVotes = count;
+      topPlayerId = playerId;
+    }
+  });
+  return maxVotes > 0 ? topPlayerId : '';
+};
+
 // --- Player stats calculation ---
 const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
   const stats: Record<string, PlayerStats> = {};
-  (league.matches ?? []).forEach(match => {
-    if (match.status !== 'RESULT_PUBLISHED') return;
+  sortMatchesChronologically(league.matches ?? []).forEach(match => {
+    if (!isResultPublished(match)) return;
 
-    const homePlayers = match.homeTeamUsers.map(u => u.id);
-    const awayPlayers = match.awayTeamUsers.map(u => u.id);
+    const homePlayers = (match.homeTeamUsers ?? []).map(u => u.id);
+    const awayPlayers = (match.awayTeamUsers ?? []).map(u => u.id);
     [...homePlayers, ...awayPlayers].forEach(pId => {
       if (!stats[pId]) {
         stats[pId] = { played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, motmVotes: 0, teamGoalsConceded: 0 };
@@ -151,7 +261,7 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
         stats[pId].goals += ps.goals || 0;
         stats[pId].assists += ps.assists || 0;
       }
-      const votes = Object.values(match.manOfTheMatchVotes ?? {}).filter(v => v === pId).length;
+      const votes = getMotmVotesForUser(match.manOfTheMatchVotes, pId);
       stats[pId].motmVotes += votes;
     });
 
@@ -175,47 +285,41 @@ const calculatePlayerStats = (league: League): Record<string, PlayerStats> => {
   return stats;
 };
 
-// --- User match summaries ---
-const summarizeUserMatches = (userId: string, leagues: League[]): UserMatchSummary[] => {
-  const matches: UserMatchSummary[] = [];
+const summarizeUserMatchesByLeague = (userId: string, leagues: League[]): Record<string, UserMatchSummary[]> => {
+  const map: Record<string, UserMatchSummary[]> = {};
   leagues.forEach(league => {
-    (league.matches ?? []).forEach(m => {
-      if (m.status !== 'RESULT_PUBLISHED') return;
-      const isHome = m.homeTeamUsers.some(u => u.id === userId);
-      const isAway = m.awayTeamUsers.some(u => u.id === userId);
+    const arr: UserMatchSummary[] = [];
+    sortMatchesChronologically(league.matches ?? []).forEach(m => {
+      if (!isResultPublished(m)) return;
+      const { isHome, isAway } = isUserInMatch(userId, m);
       if (!isHome && !isAway) return;
-      const ps = m.playerStats?.[userId] ?? { goals: 0, assists: 0 };
+      const ps = getUserPlayerStatLine(userId, m.playerStats);
       const teamGoals = isHome ? m.homeTeamGoals : m.awayTeamGoals;
       const oppGoals = isHome ? m.awayTeamGoals : m.homeTeamGoals;
       const result: 'W' | 'D' | 'L' = teamGoals > oppGoals ? 'W' : teamGoals === oppGoals ? 'D' : 'L';
-      const motmVotes = Object.values(m.manOfTheMatchVotes ?? {}).filter(v => v === userId).length;
-      matches.push({
+      const motmVotes = getMotmVotesForUser(m.manOfTheMatchVotes, userId);
+      const isHomeCaptain = sameComparableId(m.homeCaptainId, userId);
+      const isAwayCaptain = sameComparableId(m.awayCaptainId, userId);
+      const isCaptainWin = (isHomeCaptain && result === 'W') || (isAwayCaptain && result === 'W');
+      const hasDefensiveImpactPick =
+        sameComparableId(m.homeDefensiveImpactId, userId) || sameComparableId(m.awayDefensiveImpactId, userId);
+      const hasMentalityPick =
+        sameComparableId(m.homeMentalityId, userId) || sameComparableId(m.awayMentalityId, userId);
+      const motmWinnerId = getTopMotmWinnerId(m.manOfTheMatchVotes);
+      const wonMotmAward = sameComparableId(motmWinnerId, userId);
+      const cleanSheetTeam = oppGoals === 0;
+
+      arr.push({
         goals: ps.goals || 0,
         assists: ps.assists || 0,
         conceded: oppGoals,
         result,
         motmVotes,
+        isCaptainWin,
+        hasXFactorPick: hasDefensiveImpactPick || hasMentalityPick,
+        wonMotmAward,
+        cleanSheetTeam,
       });
-    });
-  });
-  return matches;
-};
-
-const summarizeUserMatchesByLeague = (userId: string, leagues: League[]): Record<string, UserMatchSummary[]> => {
-  const map: Record<string, UserMatchSummary[]> = {};
-  leagues.forEach(league => {
-    const arr: UserMatchSummary[] = [];
-    (league.matches ?? []).forEach(m => {
-      if (m.status !== 'RESULT_PUBLISHED') return;
-      const isHome = m.homeTeamUsers.some(u => u.id === userId);
-      const isAway = m.awayTeamUsers.some(u => u.id === userId);
-      if (!isHome && !isAway) return;
-      const ps = m.playerStats?.[userId] ?? { goals: 0, assists: 0 };
-      const teamGoals = isHome ? m.homeTeamGoals : m.awayTeamGoals;
-      const oppGoals = isHome ? m.awayTeamGoals : m.homeTeamGoals;
-      const result: 'W' | 'D' | 'L' = teamGoals > oppGoals ? 'W' : teamGoals === oppGoals ? 'D' : 'L';
-      const motmVotes = Object.values(m.manOfTheMatchVotes ?? {}).filter(v => v === userId).length;
-      arr.push({ goals: ps.goals || 0, assists: ps.assists || 0, conceded: oppGoals, result, motmVotes });
     });
     if (arr.length) map[league.id] = arr;
   });
@@ -235,6 +339,28 @@ const longestStreak = (arr: UserMatchSummary[], predicate: (m: UserMatchSummary)
   return best;
 };
 
+const countStreakCompletions = (
+  arr: UserMatchSummary[],
+  predicate: (m: UserMatchSummary) => boolean,
+  target: number
+): number => {
+  if (target <= 0) return 0;
+  let streak = 0;
+  let awards = 0;
+  for (const m of arr) {
+    if (predicate(m)) {
+      streak += 1;
+      if (streak === target) {
+        awards += 1;
+        streak = 0;
+      }
+    } else {
+      streak = 0;
+    }
+  }
+  return awards;
+};
+
 // --- XP computation ---
 const computeXPFromStats = (s?: PlayerStats): number => {
   if (!s) return 0;
@@ -246,33 +372,182 @@ const computeXPFromStats = (s?: PlayerStats): number => {
 
 // --- Badge computation ---
 const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): Badge[] => {
-  const summaries = summarizeUserMatches(user.id, leagues);
   const byLeague = summarizeUserMatchesByLeague(user.id, leagues);
-  const acrossAll = Object.values(byLeague).flat();
+  let goalRushCount = 0;
+  let goalRushBest = 0;
+  let pureMagicCount = 0;
+  let pureMagicBest = 0;
+  let tripleTreatCount = 0;
+  let tripleTreatBest = 0;
+  let leaderOfLegendsCount = 0;
+  let leaderOfLegendsBest = 0;
+  let xFactorCount = 0;
+  let xFactorBest = 0;
+  let spotlightStarCount = 0;
+  let spotlightStarBest = 0;
+  let findersKeepersCount = 0;
+  let findersKeepersBest = 0;
+  let winStreakXCount = 0;
+  let winStreakXBest = 0;
 
-  const hatTricks = summaries.filter(m => m.goals >= 3).length;
-  const maxAssistStreakSingle = Math.max(0, ...Object.values(byLeague).map(arr => longestStreak(arr, m => m.assists > 0)));
-  const maxScoringStreakSingle = Math.max(0, ...Object.values(byLeague).map(arr => longestStreak(arr, m => m.goals > 0)));
-  const maxMotmStreakAll = longestStreak(acrossAll, m => m.motmVotes > 0);
-  const maxCleanSheetWinStreakAll = longestStreak(acrossAll, m => m.result === 'W' && m.conceded === 0);
-  const maxWinStreakSingle = Math.max(0, ...Object.values(byLeague).map(arr => longestStreak(arr, m => m.result === 'W')));
-  const maxCaptainPickCountSingle = Math.max(0, ...Object.values(byLeague).map(arr => arr.filter(m => m.motmVotes > 0).length));
+  Object.values(byLeague).forEach((arr) => {
+    goalRushBest = Math.max(goalRushBest, longestStreak(arr, (m) => m.goals > 0));
+    goalRushCount += countStreakCompletions(arr, (m) => m.goals > 0, 5);
 
-  const captainWins = 0;
-  const topSpotMatches = 0;
+    pureMagicBest = Math.max(pureMagicBest, longestStreak(arr, (m) => m.assists > 0));
+    pureMagicCount += countStreakCompletions(arr, (m) => m.assists > 0, 5);
 
-  const toNext = (best: number, target: number) => (target - (best % target || target));
+    tripleTreatBest = Math.max(tripleTreatBest, longestStreak(arr, (m) => m.goals >= 3));
+    tripleTreatCount += countStreakCompletions(arr, (m) => m.goals >= 3, 3);
+
+    const captainWinsInLeague = arr.filter((m) => m.isCaptainWin).length;
+    leaderOfLegendsBest = Math.max(leaderOfLegendsBest, captainWinsInLeague);
+    leaderOfLegendsCount += Math.floor(captainWinsInLeague / 3);
+
+    const xFactorMatchesInLeague = arr.filter((m) => m.hasXFactorPick).length;
+    xFactorBest = Math.max(xFactorBest, xFactorMatchesInLeague);
+    xFactorCount += Math.floor(xFactorMatchesInLeague / 5);
+
+    const motmAwardsInLeague = arr.filter((m) => m.wonMotmAward).length;
+    spotlightStarBest = Math.max(spotlightStarBest, motmAwardsInLeague);
+    spotlightStarCount += Math.floor(motmAwardsInLeague / 3);
+
+    const cleanSheetsInLeague = arr.filter((m) => m.cleanSheetTeam).length;
+    findersKeepersBest = Math.max(findersKeepersBest, cleanSheetsInLeague);
+    findersKeepersCount += Math.floor(cleanSheetsInLeague / 3);
+
+    winStreakXBest = Math.max(winStreakXBest, longestStreak(arr, (m) => m.result === 'W'));
+    winStreakXCount += countStreakCompletions(arr, (m) => m.result === 'W', 10);
+  });
+
+  let ironWillCount = 0;
+  let ironWillBestPlayed = 0;
+  let ironWillBestTotal = 0;
+  let ironWillBestPercent = 0;
+  leagues.forEach((league) => {
+    const completedMatches = sortMatchesChronologically((league.matches ?? []).filter(isResultPublished));
+    const totalMatches = completedMatches.length;
+    if (!totalMatches) return;
+    const playedMatches = completedMatches.filter((m) => {
+      const { isHome, isAway } = isUserInMatch(user.id, m);
+      return isHome || isAway;
+    }).length;
+    const playedPercent = playedMatches / totalMatches;
+    if (playedPercent >= 0.9) {
+      ironWillCount += 1;
+    }
+    if (
+      playedPercent > ironWillBestPercent ||
+      (playedPercent === ironWillBestPercent && totalMatches > ironWillBestTotal)
+    ) {
+      ironWillBestPercent = playedPercent;
+      ironWillBestPlayed = playedMatches;
+      ironWillBestTotal = totalMatches;
+    }
+  });
 
   const badges: Badge[] = [
-    { id: 'hat_trick_3_matches', title: 'Goal Rush', description: 'Scoring 3+ goals in 3 separate matches (Within a single league)', image: HatTrickBadge, color: medalGold, count: Math.floor(hatTricks / 3), xp: 200, unlocked: hatTricks >= 3, progressText: hatTricks < 3 ? `You are ${3 - hatTricks} hat-trick${3 - hatTricks > 1 ? 's' : ''} away from achieving this reward` : `Hat-tricks earned: ${hatTricks}` },
-    { id: 'captain_5_wins', title: 'Pure Magic', description: '5 wins as captain, leading the team to victory (Within a single league)', image: CaptainsTriumphsBadge, color: medalGold, count: Math.floor(captainWins / 5), xp: 300, unlocked: captainWins >= 5, progressText: captainWins < 5 ? `You are ${5 - captainWins} captain win${5 - captainWins > 1 ? 's' : ''} away from achieving this reward` : `Captain wins: ${captainWins}` },
-    { id: 'assist_10_consecutive', title: 'Triple Treat', description: 'Assist in 10 consecutive matches (Within a single league)', image: AssistMaestroBadge, color: medalGold, count: Math.floor(maxAssistStreakSingle / 10), xp: 400, unlocked: maxAssistStreakSingle >= 10, progressText: maxAssistStreakSingle < 10 ? `You need a ${10 - maxAssistStreakSingle} match assist streak to achieve this reward` : `Best streak: ${maxAssistStreakSingle}` },
-    { id: 'scoring_10_consecutive', title: 'Leader Of Legends', description: 'Scoring in 10 consecutive matches (Within a single league)', image: GoalMachineBadge, color: medalGold, count: Math.floor(maxScoringStreakSingle / 10), xp: 250, unlocked: maxScoringStreakSingle >= 10, progressText: maxScoringStreakSingle < 10 ? `You need a ${10 - maxScoringStreakSingle} match scoring streak to achieve this reward` : `Best streak: ${maxScoringStreakSingle}` },
-    { id: 'captain_performance_3', title: 'Spotlight Star', description: "Gets 3 captain's performance pick (Within a single league)", image: TripleImpactBadge, color: medalGold, count: Math.floor(maxCaptainPickCountSingle / 3), xp: 150, unlocked: maxCaptainPickCountSingle >= 3, progressText: maxCaptainPickCountSingle < 3 ? `You are ${3 - maxCaptainPickCountSingle} captain's pick${3 - maxCaptainPickCountSingle > 1 ? 's' : ''} away from achieving this reward` : `Picks: ${maxCaptainPickCountSingle}` },
-    { id: 'motm_4_consecutive', title: 'Finders Keepers', description: "4 consecutive 'Man of the Match' performance (Within a single league)", image: StarPerformerBadge, color: medalGold, count: Math.floor(maxMotmStreakAll / 4), xp: 400, unlocked: maxMotmStreakAll >= 4, progressText: maxMotmStreakAll < 4 ? `You need a ${4 - maxMotmStreakAll} match MOTM streak to achieve this reward` : `Best streak: ${maxMotmStreakAll}` },
-    { id: 'clean_sheet_5_wins', title: 'Iron Will', description: '5 consecutive wins with clean sheets (Within a single league)', image: IronWallBadge, color: medalGold, count: Math.floor(maxCleanSheetWinStreakAll / 5), xp: 350, unlocked: maxCleanSheetWinStreakAll >= 5, progressText: maxCleanSheetWinStreakAll < 5 ? `You need a ${5 - maxCleanSheetWinStreakAll} match clean sheet win streak to achieve this reward` : `Best streak: ${maxCleanSheetWinStreakAll}` },
-    { id: 'top_spot_10_matches', title: 'Chart Topper', description: 'Holding top spot in the league for more than 10 matches (Within a single league)', image: ChartTopperBadge, color: medalGold, count: Math.floor(topSpotMatches / 10), xp: 500, unlocked: topSpotMatches >= 10, progressText: topSpotMatches < 10 ? `You need ${10 - topSpotMatches} more match${10 - topSpotMatches > 1 ? 'es' : ''} at top spot to achieve this reward` : `Top spot: ${topSpotMatches}` },
-    { id: 'consecutive_10_victories', title: 'Win Streak X', description: 'Securing 10 consecutive victories in a single league', image: UnbeatenBadge, color: medalGold, count: Math.floor(maxWinStreakSingle / 10), xp: 600, unlocked: maxWinStreakSingle >= 10, progressText: maxWinStreakSingle < 10 ? `You need a ${10 - maxWinStreakSingle} match win streak to achieve this reward` : `Best streak: ${maxWinStreakSingle}` },
+    {
+      id: 'scoring_10_consecutive',
+      title: 'Goal Rush',
+      description: 'Scoring in 5 consecutive matches in a league',
+      image: GoalMachineBadge,
+      color: medalGold,
+      count: goalRushCount,
+      xp: 100,
+      unlocked: goalRushCount > 0,
+      progressText: `Best scoring streak in a league: ${goalRushBest}/5`,
+    },
+    {
+      id: 'assist_10_consecutive',
+      title: 'Pure Magic',
+      description: 'Assist in 5 consecutive matches in a league',
+      image: AssistMaestroBadge,
+      color: medalGold,
+      count: pureMagicCount,
+      xp: 100,
+      unlocked: pureMagicCount > 0,
+      progressText: `Best assist streak in a league: ${pureMagicBest}/5`,
+    },
+    {
+      id: 'hat_trick_3_matches',
+      title: 'Triple Treat',
+      description: 'Score a hat-trick in 3 consecutive matches in a league',
+      image: HatTrickBadge,
+      color: medalGold,
+      count: tripleTreatCount,
+      xp: 150,
+      unlocked: tripleTreatCount > 0,
+      progressText: `Best hat-trick streak in a league: ${tripleTreatBest}/3`,
+    },
+    {
+      id: 'captain_5_wins',
+      title: 'Leader of Legends',
+      description: 'Winning as a captain in 3 matches in a league',
+      image: CaptainsTriumphsBadge,
+      color: medalGold,
+      count: leaderOfLegendsCount,
+      xp: 200,
+      unlocked: leaderOfLegendsCount > 0,
+      progressText: `Most captain wins in one league: ${leaderOfLegendsBest}/3`,
+    },
+    {
+      id: 'captain_performance_3',
+      title: 'The X-Factor',
+      description: 'Being voted +Mentality player and/or Defensive Impact 5 matches in a league',
+      image: TripleImpactBadge,
+      color: medalGold,
+      count: xFactorCount,
+      xp: 200,
+      unlocked: xFactorCount > 0,
+      progressText: `Most qualifying matches in one league: ${xFactorBest}/5`,
+    },
+    {
+      id: 'motm_4_consecutive',
+      title: 'Spotlight Star',
+      description: 'Winning Man of the Match award 3 times (not votes) in a league',
+      image: StarPerformerBadge,
+      color: medalGold,
+      count: spotlightStarCount,
+      xp: 250,
+      unlocked: spotlightStarCount > 0,
+      progressText: `Most MOTM awards in one league: ${spotlightStarBest}/3`,
+    },
+    {
+      id: 'clean_sheet_5_wins',
+      title: 'Finders Keepers',
+      description: 'Keeping 3 clean sheets as a team in a league',
+      image: IronWallBadge,
+      color: medalGold,
+      count: findersKeepersCount,
+      xp: 300,
+      unlocked: findersKeepersCount > 0,
+      progressText: `Most clean sheets in one league: ${findersKeepersBest}/3`,
+    },
+    {
+      id: 'top_spot_10_matches',
+      title: 'Iron Will',
+      description: 'Playing 90% of matches in a league',
+      image: IronWallBadge,
+      color: medalGold,
+      count: ironWillCount,
+      xp: 400,
+      unlocked: ironWillCount > 0,
+      progressText: ironWillBestTotal > 0
+        ? `Best participation in a league: ${ironWillBestPlayed}/${ironWillBestTotal} (${Math.round(ironWillBestPercent * 100)}%)`
+        : 'No completed league matches yet',
+    },
+    {
+      id: 'consecutive_10_victories',
+      title: 'Win Streak X',
+      description: 'Winning in 10 consecutive matches in a league',
+      image: UnbeatenBadge,
+      color: medalGold,
+      count: winStreakXCount,
+      xp: 500,
+      unlocked: winStreakXCount > 0,
+      progressText: `Best win streak in a league: ${winStreakXBest}/10`,
+    },
   ];
 
   return badges;
@@ -281,56 +556,56 @@ const computeBadges = (user: User, leagues: League[], backendTotalXP?: number): 
 // Badge metadata mapping
 const BADGE_META: Record<string, { title: string; description: string; image: StaticImageData; color: string }> = {
   hat_trick_3_matches: {
-    title: 'Goal Rush',
-    description: 'Scoring 3+ goals in 3 separate matches (Within a single league)',
+    title: 'Triple Treat',
+    description: 'Score a hat-trick in 3 consecutive matches in a league',
     image: HatTrickBadge,
     color: medalGold,
   },
   captain_5_wins: {
-    title: 'Pure Magic',
-    description: '5 wins as captain, leading the team to victory (Within a single league)',
+    title: 'Leader of Legends',
+    description: 'Winning as a captain in 3 matches in a league',
     image: CaptainsTriumphsBadge,
     color: medalGold,
   },
   assist_10_consecutive: {
-    title: 'Triple Treat',
-    description: 'Assist in 10 consecutive matches (Within a single league)',
+    title: 'Pure Magic',
+    description: 'Assist in 5 consecutive matches in a league',
     image: AssistMaestroBadge,
     color: medalGold,
   },
   scoring_10_consecutive: {
-    title: 'Leader Of Legends',
-    description: 'Scoring in 10 consecutive matches (Within a single league)',
+    title: 'Goal Rush',
+    description: 'Scoring in 5 consecutive matches in a league',
     image: GoalMachineBadge,
     color: medalGold,
   },
   captain_performance_3: {
-    title: 'Spotlight Star',
-    description: "Gets 3 captain's performance pick (Within a single league)",
+    title: 'The X-Factor',
+    description: 'Being voted +Mentality player and/or Defensive Impact 5 matches in a league',
     image: TripleImpactBadge,
     color: medalGold,
   },
   motm_4_consecutive: {
-    title: 'Finders Keepers',
-    description: "4 consecutive 'Man of the Match' performance (Within a single league)",
+    title: 'Spotlight Star',
+    description: 'Winning Man of the Match award 3 times (not votes) in a league',
     image: StarPerformerBadge,
     color: medalGold,
   },
   clean_sheet_5_wins: {
-    title: 'Iron Will',
-    description: '5 consecutive wins with clean sheets (Within a single league)',
+    title: 'Finders Keepers',
+    description: 'Keeping 3 clean sheets as a team in a league',
     image: IronWallBadge,
     color: medalGold,
   },
   top_spot_10_matches: {
-    title: 'Chart Topper',
-    description: 'Holding top spot in the league for more than 10 matches (Within a single league)',
-    image: ChartTopperBadge,
+    title: 'Iron Will',
+    description: 'Playing 90% of matches in a league',
+    image: IronWallBadge,
     color: medalGold,
   },
   consecutive_10_victories: {
     title: 'Win Streak X',
-    description: 'Securing 10 consecutive victories in a single league',
+    description: 'Winning in 10 consecutive matches in a league',
     image: UnbeatenBadge,
     color: medalGold,
   },
@@ -358,16 +633,13 @@ const mapServerBadgeToUI = (b: ServerBadge): Badge => {
 
 const mergeBadges = (client: Badge[], server: Badge[] | null | undefined): Badge[] => {
   if (!Array.isArray(server) || server.length === 0) return client;
-  const serverById = new Map(server.map(b => [b.id, b] as const));
+  const serverById = new Map(server.map((b) => [b.id, b] as const));
   return client.map(cb => {
     const sb = serverById.get(cb.id);
     if (!sb) return cb;
     return {
       ...cb,
-      count: Number.isFinite(Number(sb.count)) ? Number(sb.count) : cb.count,
-      xp: Number.isFinite(Number(sb.xp)) ? Number(sb.xp) : cb.xp,
-      unlocked: typeof sb.unlocked === 'boolean' ? sb.unlocked : cb.unlocked,
-      progressText: sb.progressText ?? cb.progressText,
+      progressText: cb.progressText ?? sb.progressText,
     };
   });
 };
@@ -737,6 +1009,17 @@ export default function RewardsPage() {
       </Box>
 
       <Box sx={{ px: { xs: 2, sm: 3, md: 5, lg: 11.2 }, pb: 4, mt: -0.5 }}>
+        {/* <Typography
+          sx={{
+            mb: 2,
+            color: '#d1d5db',
+            textAlign: 'center',
+            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+            fontFamily: 'var(--font-woodford-bourne-pro)',
+          }}
+        >
+          Reward points are added to your XP profile and XP status only. They do not count toward league table points.
+        </Typography> */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: { xs: 1, sm: 1.5, md: 1.2 }, rowGap: { xs: 2, sm: 3, md: 3 }, justifyContent: 'center', alignItems: 'stretch' }}>
         {myBadges.length > 0 ? myBadges.map(b => (
           <Box key={b.id} sx={{ height: '100%', width: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 12px)', md: 'calc(20% - 8px)', lg: 'calc(20% - 8px)' } }}>
@@ -822,8 +1105,8 @@ export default function RewardsPage() {
                   fontFamily: 'var(--font-woodford-bourne-pro)',
                 }}>
                   {selectedBadge.unlocked
-                    ? `✅ Earned x${selectedBadge.count} • Total XP: ${formatNumber(selectedBadge.count * selectedBadge.xp)}`
-                    : `📊 ${selectedBadge.progressText || 'Progress unavailable'}`}
+                    ? `Earned x${selectedBadge.count} | Total XP: ${formatNumber(selectedBadge.count * selectedBadge.xp)}`
+                    : `Progress: ${selectedBadge.progressText || 'Progress unavailable'}`}
                 </Typography>
                 <Typography sx={{ 
                   color: '#888', 
@@ -832,7 +1115,7 @@ export default function RewardsPage() {
                   fontSize: '0.85rem',
                   fontFamily: 'var(--font-woodford-bourne-pro)',
                 }}>
-                  💡 Each reward earns you <span style={{ color: '#fbbf24', fontWeight: 700 }}>{selectedBadge.xp} XP</span> and can be achieved multiple times.
+                  Each reward earns you <span style={{ color: '#fbbf24', fontWeight: 700 }}>{selectedBadge.xp} XP</span> and can be achieved multiple times.
                 </Typography>
               </Box>
             </Box>
