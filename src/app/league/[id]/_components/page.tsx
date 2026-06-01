@@ -407,9 +407,9 @@ const LEADERBOARD_METRIC_CONFIG = [
     },
     {
         key: 'impact',
-        label: 'DEFENSIVE HERO VOTES',
+        label: 'DEFENSIVE IMPACT VOTES',
         icon: Imapct,
-        infoSummary: 'Ranks players by defensive hero selections.',
+        infoSummary: 'Ranks players by defensive Impact Votes selections.',
         infoFormula: 'Counts captain defensive picks from both teams in RESULT_PUBLISHED matches.',
     },
     {

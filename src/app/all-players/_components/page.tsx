@@ -1011,6 +1011,7 @@ const AllPlayersPage = () => {
               sx={{
                 width: { xs: '100%', md: '440px' },
                 ml: { xs: 0, md: 0.8 },
+                color:'white',
                 '& .MuiOutlinedInput-root': {
                   height: { xs: 38, sm: 42 },
                   color: 'white',
@@ -1025,7 +1026,7 @@ const AllPlayersPage = () => {
                   fontSize: { xs: 14, sm: 16.5 },
                   py: 0.5,
                   fontFamily: 'var(--font-woodford-bourne-pro)',
-                  '&::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 }
+                  '&::placeholder': { color: '#fff', opacity: 1 }
                 }
               }}
               InputProps={{

@@ -2308,7 +2308,7 @@ export default function PlayerDashboard() {
                   gap: { xs: 1, sm: 0 },
                   justifyContent: 'center',
                   width: '100%',
-                  maxWidth: { xs: '100%', md: 290 },
+                  maxWidth: { xs: '100%', md: 350 },
                   overflow: 'hidden'
                 }}>
                   <TextField
@@ -2332,6 +2332,10 @@ export default function PlayerDashboard() {
                         height: { xs: 38, md: 42 },
                         padding: { xs: '0 10px', md: '0 12px' },
                         fontSize: { xs: '12px', md: '14px' }
+                      },
+                      '& .MuiInputBase-input::placeholder': {
+                        fontSize: { xs: '12px', md: '13px' },
+                        opacity: 1
                       }
                     }}
                   />
@@ -2345,7 +2349,7 @@ export default function PlayerDashboard() {
                       width: { xs: '100%', sm: 'auto' },
                       minWidth: { xs: 0, sm: 120 },
                       height: { xs: 40, md: 42 },
-                      fontSize: { xs: '16px', sm: '16px', md: '19px' },
+                      fontSize: { xs: '16px', sm: '16px', md: '17px' },
                       flexShrink: 0,
                       fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                       fontWeight: 600,

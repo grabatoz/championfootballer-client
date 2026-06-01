@@ -1760,7 +1760,7 @@ export default function PlayerStatsPage() {
                 <Paper sx={{
                     px: 0,
                     py: { xs: 2, md: 3.5 },
-                    background: '#0e0e0e',
+                    background: '#000000',
                     color: 'white',
                     boxShadow: 'none',
                     minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
