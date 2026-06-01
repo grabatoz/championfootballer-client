@@ -639,7 +639,10 @@ const mergeBadges = (client: Badge[], server: Badge[] | null | undefined): Badge
     if (!sb) return cb;
     return {
       ...cb,
-      progressText: cb.progressText ?? sb.progressText,
+      count: Number.isFinite(Number(sb.count)) ? Number(sb.count) : cb.count,
+      xp: Number.isFinite(Number(sb.xp)) && Number(sb.xp) > 0 ? Number(sb.xp) : cb.xp,
+      unlocked: typeof sb.unlocked === 'boolean' ? sb.unlocked : cb.unlocked,
+      progressText: sb.progressText ?? cb.progressText,
     };
   });
 };
