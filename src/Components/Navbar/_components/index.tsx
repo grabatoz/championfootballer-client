@@ -2722,7 +2722,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               alignItems: 'center',
               flexShrink: 0,
               position: { xs: 'absolute', md: 'static' },
-              left: { xs: '50%', md: 'auto' },
+              left: { xs: '40%', md: 'auto' },
               transform: { xs: 'translateX(-50%)', md: 'none' },
               zIndex: 1,
             }}
