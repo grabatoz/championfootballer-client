@@ -1574,89 +1574,6 @@ export default function CareerPage() {
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
 
-  // One consistent comparison model used by IMPACT + Top Strengths
-  const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
-    const formatShare = (value: number) => {
-      const rounded = Number((Number(value || 0)).toFixed(2));
-      return `${rounded}%`;
-    };
-    const leagueShare = {
-      goals: impactLeagueShare?.goals ?? 0,
-      assists: impactLeagueShare?.assists ?? 0,
-      cleanSheets: impactLeagueShare?.cleanSheets ?? 0,
-      motmVotes: impactLeagueShare?.motmVotes ?? 0,
-      defensiveImpactVotes: impactLeagueShare?.defensiveImpactVotes ?? 0,
-      impact: impactLeagueShare?.impact ?? 0,
-    };
-
-    const rows = [
-      {
-        metric: 'Goals',
-        yourTotal: toRoundedInt(yourStats.goals),
-        yourDisplay: String(toRoundedInt(yourStats.goals)),
-        leagueShare: leagueShare.goals,
-        leagueDisplay: formatShare(leagueShare.goals),
-      },
-      {
-        metric: 'Assists',
-        yourTotal: toRoundedInt(yourStats.assists),
-        yourDisplay: String(toRoundedInt(yourStats.assists)),
-        leagueShare: leagueShare.assists,
-        leagueDisplay: formatShare(leagueShare.assists),
-      },
-      {
-        metric: 'Clean Sheets',
-        yourTotal: toRoundedInt(yourStats.cleanSheets),
-        yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
-        leagueShare: leagueShare.cleanSheets,
-        leagueDisplay: formatShare(leagueShare.cleanSheets),
-      },
-      {
-        metric: 'MOTM Votes',
-        yourTotal: toRoundedInt(yourStats.motmVotes),
-        yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
-        leagueShare: leagueShare.motmVotes,
-        leagueDisplay: formatShare(leagueShare.motmVotes),
-      },
-      {
-        metric: 'Defensive Impact Votes',
-        yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
-        yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
-        leagueShare: leagueShare.defensiveImpactVotes,
-        leagueDisplay: formatShare(leagueShare.defensiveImpactVotes),
-      },
-      {
-        metric: 'Game Contribution Index',
-        yourTotal: toRoundedInt(yourStats.impactAvg),
-        yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
-        leagueShare: leagueShare.impact,
-        leagueDisplay: formatShare(leagueShare.impact),
-      },
-    ];
-
-    return rows.map((r) => ({
-      metric: r.metric,
-      yourTotal: r.yourTotal,
-      yourDisplay: r.yourDisplay,
-      leagueAverage: Number((r.leagueShare || 0).toFixed(2)),
-      leagueDisplay: r.leagueDisplay,
-    }));
-  }, [yourStats, impactLeagueShare]);
-
-  const topStrengthRows = useMemo(
-    () => [...leagueComparisonRows]
-      .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0)
-      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage)
-      .slice(0, 3),
-    [leagueComparisonRows]
-  );
-
-  const topStrengthNote = useMemo(() => {
-    if (!topStrengthRows.length) return '';
-    const best = topStrengthRows[0];
-    return `${best.metric}: ${best.yourDisplay} from filtered league total = ${best.leagueDisplay}.`;
-  }, [topStrengthRows]);
-
   const impactCalculationTotals = useMemo(() => {
     const currentPlayerId = String(playerId || '').trim().toLowerCase();
     const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
@@ -1729,6 +1646,99 @@ export default function CareerPage() {
   ]);
 
   console.log("testing", impactCalculationTotals)
+
+  // One consistent comparison model used by IMPACT + Top Strengths
+  const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
+    const formatShare = (value: number) => {
+      const rounded = Number((Number(value || 0)).toFixed(2));
+      return `${rounded}%`;
+    };
+
+    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+    const playerTotals = impactCalculationTotals?.playerTotals || empty;
+    const leagueTotals = impactCalculationTotals?.leagueTotals || empty;
+
+    const percentShare = (playerVal: number, leagueVal: number): number => {
+      if (!Number.isFinite(playerVal) || !Number.isFinite(leagueVal) || leagueVal <= 0 || playerVal <= 0) return 0;
+      return Math.round((playerVal / leagueVal) * 100);
+    };
+
+    const leagueShare = {
+      goals: percentShare(playerTotals.goals, leagueTotals.goals),
+      assists: percentShare(playerTotals.assists, leagueTotals.assists),
+      cleanSheets: percentShare(playerTotals.cleanSheets, leagueTotals.cleanSheets),
+      motmVotes: percentShare(playerTotals.motmVotes, leagueTotals.motmVotes),
+      defensiveImpactVotes: percentShare(playerTotals.defensiveImpactVotes, leagueTotals.defensiveImpactVotes),
+      impact: percentShare(playerTotals.impact, leagueTotals.impact),
+    };
+
+    const rows = [
+      {
+        metric: 'Goals',
+        yourTotal: toRoundedInt(yourStats.goals),
+        yourDisplay: String(toRoundedInt(yourStats.goals)),
+        leagueShare: leagueShare.goals,
+        leagueDisplay: formatShare(leagueShare.goals),
+      },
+      {
+        metric: 'Assists',
+        yourTotal: toRoundedInt(yourStats.assists),
+        yourDisplay: String(toRoundedInt(yourStats.assists)),
+        leagueShare: leagueShare.assists,
+        leagueDisplay: formatShare(leagueShare.assists),
+      },
+      {
+        metric: 'Clean Sheets',
+        yourTotal: toRoundedInt(yourStats.cleanSheets),
+        yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
+        leagueShare: leagueShare.cleanSheets,
+        leagueDisplay: formatShare(leagueShare.cleanSheets),
+      },
+      {
+        metric: 'MOTM Votes',
+        yourTotal: toRoundedInt(yourStats.motmVotes),
+        yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
+        leagueShare: leagueShare.motmVotes,
+        leagueDisplay: formatShare(leagueShare.motmVotes),
+      },
+      {
+        metric: 'Defensive Impact Votes',
+        yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
+        yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
+        leagueShare: leagueShare.defensiveImpactVotes,
+        leagueDisplay: formatShare(leagueShare.defensiveImpactVotes),
+      },
+      {
+        metric: 'Game Contribution Index',
+        yourTotal: toRoundedInt(yourStats.impactAvg),
+        yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
+        leagueShare: leagueShare.impact,
+        leagueDisplay: formatShare(leagueShare.impact),
+      },
+    ];
+
+    return rows.map((r) => ({
+      metric: r.metric,
+      yourTotal: r.yourTotal,
+      yourDisplay: r.yourDisplay,
+      leagueAverage: Number((r.leagueShare || 0).toFixed(2)),
+      leagueDisplay: r.leagueDisplay,
+    }));
+  }, [yourStats, impactCalculationTotals]);
+
+  const topStrengthRows = useMemo(
+    () => [...leagueComparisonRows]
+      .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0)
+      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage)
+      .slice(0, 3),
+    [leagueComparisonRows]
+  );
+
+  const topStrengthNote = useMemo(() => {
+    if (!topStrengthRows.length) return '';
+    const best = topStrengthRows[0];
+    return `${best.metric}: ${best.yourDisplay} from filtered league total = ${best.leagueDisplay}.`;
+  }, [topStrengthRows]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
