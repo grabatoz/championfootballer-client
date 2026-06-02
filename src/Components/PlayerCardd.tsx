@@ -441,6 +441,44 @@ const PlayerCard = ({
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!token) return;
+    setUploading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/picture`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        toast.error(data?.message || 'Failed to delete image');
+        return;
+      }
+
+      if (data.user) cacheManager.updatePlayersCache(data.user);
+      setImgUrl(null);
+      setImageFile(null);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+      const bump = Date.now();
+      setImgVersion(bump);
+      if (typeof window !== 'undefined') {
+        if (avatarUrlStorageKey) localStorage.removeItem(avatarUrlStorageKey);
+        if (avatarVersionStorageKey) localStorage.setItem(avatarVersionStorageKey, String(bump));
+        localStorage.removeItem('avatar_url');
+        localStorage.removeItem('avatar_v');
+      }
+      toast.success('Profile picture deleted!');
+      setImgModalOpen(false);
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      toast.error('Failed to delete image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Build a safe src for <Image /> that is never undefined
   const displaySrc: string | null = imgUrl
     ? `${imgUrl}${imgUrl.includes('?') ? '&' : '?'}v=${imgVersion}`
@@ -802,6 +840,24 @@ const PlayerCard = ({
             >
               Upload a new photo
             </Button>
+            {displaySrc && (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleDeleteImage}
+                disabled={uploading}
+                sx={{
+                  mt: { xs: 1, sm: 0 },
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  color: '#ff6b6b',
+                  borderColor: '#d32f2f',
+                  '&:hover': { backgroundColor: 'rgba(211,47,47,0.12)', borderColor: '#d32f2f' }
+                }}
+              >
+                Delete image
+              </Button>
+            )}
           </Box>
 
           {/* Hidden inputs: camera (fallback) and gallery */}
