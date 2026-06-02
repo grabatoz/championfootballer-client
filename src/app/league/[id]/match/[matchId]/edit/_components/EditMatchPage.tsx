@@ -279,15 +279,12 @@ const clampLocation = (value: string) => value.slice(0, 120);
       <Paper
         {...props}
         elevation={0}
-        sx={[
-          {
-            bgcolor: '#000',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          },
-          ...(Array.isArray(props.sx) ? props.sx : props.sx ? [props.sx] : []),
-        ] as any}
+        sx={{
+          bgcolor: '#000',
+          color: '#fff',
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+        }}
       />
     );
 
@@ -956,12 +953,12 @@ const clampLocation = (value: string) => value.slice(0, 120);
     const getAvgRating = (p?: PlayerOption | null): number => {
       if (!p) return 0;
       if (p.isGuest) {
-        // Guests get league average XP; fallback to skill if league has no XP yet
-        return leagueAvgXPValue > 0 ? leagueAvgXPValue : calcSkill(p);
+        // Guests get league average XP; if league has no XP yet, count as 0.
+        return leagueAvgXPValue > 0 ? leagueAvgXPValue : 0;
       }
       const v = userLeagueAvgXP[p.id];
-      // If player has XP avg, use it; otherwise fallback to skill
-      return typeof v === 'number' && v > 0 ? v : calcSkill(p);
+      // Balance must use the same Avg XP value shown on player cards.
+      return typeof v === 'number' && Number.isFinite(v) ? v : 0;
     };
 
     // XP-based team percentage calculation
@@ -970,27 +967,33 @@ const clampLocation = (value: string) => value.slice(0, 120);
       const awaySum = awayTeamUsers.reduce((s, p) => s + getAvgRating(p), 0);
       const total = homeSum + awaySum;
       if (total <= 0) {
-        return { homeSum, awaySum, total, homePct: 0, awayPct: 0 };
+        const homeCount = homeTeamUsers.length;
+        const awayCount = awayTeamUsers.length;
+        const countTotal = homeCount + awayCount;
+        if (countTotal <= 0) return { homeSum, awaySum, total, homePct: 0, awayPct: 0, hasPlayers: false };
+        const homePct = (homeCount / countTotal) * 100;
+        const awayPct = 100 - homePct;
+        return { homeSum, awaySum, total, homePct, awayPct, hasPlayers: true };
       }
       const factor = total / 100; // as requested: divide by 100, then multiply with team sum
       const awayPct = (awaySum / factor);
       const homePct = 100 - awayPct;
-      return { homeSum, awaySum, total, homePct, awayPct };
+      return { homeSum, awaySum, total, homePct, awayPct, hasPlayers: true };
     }, [homeTeamUsers, awayTeamUsers, userLeagueAvgXP, leagueAvgXPValue]);
 
     const teamBalance = React.useMemo(() => {
       const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+      if (xpBased.hasPlayers) {
+        return {
+          homePct: clamp(xpBased.homePct),
+          awayPct: clamp(xpBased.awayPct),
+          hasData: true,
+        };
+      }
       if (homeWinChance !== null && awayWinChance !== null) {
         return {
           homePct: clamp(homeWinChance),
           awayPct: clamp(awayWinChance),
-          hasData: true,
-        };
-      }
-      if (xpBased.total > 0) {
-        return {
-          homePct: clamp(xpBased.homePct),
-          awayPct: clamp(xpBased.awayPct),
           hasData: true,
         };
       }
@@ -1000,6 +1003,23 @@ const clampLocation = (value: string) => value.slice(0, 120);
         hasData: false,
       };
     }, [homeWinChance, awayWinChance, xpBased]);
+
+    const getBalancedRegisteredSplit = (
+      registeredCount: number,
+      homeGuestCount: number,
+      awayGuestCount: number
+    ) => {
+      const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+      const targetHomeRegistered = clamp(
+        Math.round((registeredCount + awayGuestCount - homeGuestCount) / 2),
+        0,
+        registeredCount
+      );
+      return {
+        targetHomeReg: targetHomeRegistered,
+        targetAwayReg: registeredCount - targetHomeRegistered,
+      };
+    };
 
     // Shuffle: randomly repartition registered players (guests stay on current sides)
     const shuffleTeams = () => {
@@ -1015,8 +1035,11 @@ const clampLocation = (value: string) => value.slice(0, 120);
       const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest).map(p => ({ ...p, team: 'home' as const }));
       const awayGuestsOnly = awayTeamUsers.filter(p => p.isGuest).map(p => ({ ...p, team: 'away' as const }));
 
-      const targetHomeTotal = Math.ceil((uniqueRegistered.length + homeGuestsOnly.length + awayGuestsOnly.length) / 2);
-      const targetHomeReg = Math.max(0, targetHomeTotal - homeGuestsOnly.length);
+      const { targetHomeReg } = getBalancedRegisteredSplit(
+        uniqueRegistered.length,
+        homeGuestsOnly.length,
+        awayGuestsOnly.length
+      );
       const shuffled = [...uniqueRegistered];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -1054,11 +1077,11 @@ const clampLocation = (value: string) => value.slice(0, 120);
         const homeGuestsOnly = homeTeamUsers.filter(p => p.isGuest);
         const awayGuestsOnly = awayTeamUsers.filter(p => p.isGuest);
 
-        const totalPlayers = combinedReg.length + homeGuestsOnly.length + awayGuestsOnly.length;
-        const targetHomeTotal = Math.ceil(totalPlayers / 2);
-        const targetAwayTotal = totalPlayers - targetHomeTotal;
-        const targetHomeReg = Math.max(0, targetHomeTotal - homeGuestsOnly.length);
-        const targetAwayReg = Math.max(0, targetAwayTotal - awayGuestsOnly.length);
+        const { targetHomeReg, targetAwayReg } = getBalancedRegisteredSplit(
+          combinedReg.length,
+          homeGuestsOnly.length,
+          awayGuestsOnly.length
+        );
 
         // Build lookup for player objects
         const byId = new Map<string, PlayerOption>();
@@ -1069,7 +1092,7 @@ const clampLocation = (value: string) => value.slice(0, 120);
         const idToRating = new Map<string, number>();
         ratingsArr.forEach(r => idToRating.set(r.id, r.rating));
 
-        // Guest contribution: use median of non-zero ratings to avoid skew; fallback to average if needed
+        // Guest contribution uses the league Avg XP only; if no league Avg XP exists, count as 0.
         const values = Array.from(idToRating.values());
         const nonZero = values.filter(v => v > 0).sort((a, b) => a - b);
         const avgVal = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
@@ -1078,9 +1101,9 @@ const clampLocation = (value: string) => value.slice(0, 120);
           const mid = Math.floor(arr.length / 2);
           return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
         };
-        // Prefer the league-wide average XP for guests to align with UI preview; fallback to median/avg of ratings or 50
+        // Keep fallback calculations available for legacy data, but do not inject hidden 50-point strength.
         const fallbackGuest = nonZero.length > 0 ? medianVal(nonZero) : avgVal(values);
-        const guestValue = leagueAvgXPValue > 0 ? leagueAvgXPValue : (fallbackGuest > 0 ? fallbackGuest : 50);
+        const guestValue = leagueAvgXPValue > 0 ? leagueAvgXPValue : (fallbackGuest > 0 ? fallbackGuest : 0);
 
         // Start sums with guest contributions (kept fixed)
         const homeGuestSum = guestValue * homeGuestsOnly.length;
