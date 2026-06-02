@@ -862,13 +862,14 @@ const PlayerCard = ({
             >
               Upload a new photo
             </Button>
-            {hasUserImage && (
+          </Stack>
+          {hasUserImage && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5, mb: 2.2 }}>
               <Button
                 variant="outlined"
                 onClick={handleDeleteImage}
                 disabled={uploading}
                 sx={{
-                  mt: { xs: 1, sm: 0 },
                   textTransform: 'none',
                   fontWeight: 700,
                   borderColor: '#d32f2f',
@@ -878,8 +879,8 @@ const PlayerCard = ({
               >
                 Delete image
               </Button>
-            )}
-          </Stack>
+            </Box>
+          )}
 
           {/* Hidden inputs: camera (fallback) and gallery */}
           <input
