@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -107,7 +107,7 @@ interface LeagueMatch {
   team2Score?: number;
   team1Id?: string;
   team1Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>;
-  team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <— added
+  team2Players?: Array<{ id: string; name?: string; profile?: { name?: string } }>; // <â€” added
   // Defensive impact vote IDs (captain picks per match)
   homeDefensiveImpactId?: string;
   awayDefensiveImpactId?: string;
@@ -216,9 +216,6 @@ const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
 
 const sameId = (a: unknown, b: unknown): boolean =>
   String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isUuid = (value: unknown): boolean => UUID_REGEX.test(String(value || '').trim());
 
 const isSeasonExplicitlyDeclined = (season: SeasonInfo): boolean => {
   const statusTokens = [
@@ -859,9 +856,6 @@ export default function CareerPage() {
   const [leagueShareCache, setLeagueShareCache] = useState<Record<string, Record<string, LeagueMetricValues>>>({});
   const [leagueTotalsCache, setLeagueTotalsCache] = useState<Record<string, LeagueMetricValues>>({});
   const [leaguePlayerTotalsCache, setLeaguePlayerTotalsCache] = useState<Record<string, Record<string, LeagueMetricTotals>>>({});
-  const [leaderboardShareCache, setLeaderboardShareCache] = useState<Record<string, LeagueMetricValues>>({});
-  const [leaderboardTotalsCache, setLeaderboardTotalsCache] = useState<Record<string, LeagueMetricValues>>({});
-  const [leaderboardPlayerTotalsCache, setLeaderboardPlayerTotalsCache] = useState<Record<string, LeagueMetricTotals>>({});
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
@@ -879,39 +873,27 @@ export default function CareerPage() {
         const params = new URLSearchParams();
         if (filters.year && filters.year !== 'all') params.set('year', String(filters.year));
         if (seasonFilter && seasonFilter !== 'all') params.set('seasonId', String(seasonFilter));
-        params.set('_t', String(Date.now()));
         const endpoints = [
           `${apiUrl}/leagues/${leagueId}/player-averages?${params.toString()}`,
           `${apiUrl}/api/leagues/${leagueId}/player-averages?${params.toString()}`,
         ];
-        console.log(`[fetchAvg] Starting averages fetch for league: ${leagueId}. Endpoints:`, endpoints);
         let res: Response | null = null;
-        let lastError: any = null;
         for (const endpoint of endpoints) {
           try {
             const attempt = await fetch(endpoint, {
               headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-              cache: 'no-store'
+              cache: 'no-store',
             });
             if (attempt.ok) {
               res = attempt;
               break;
-            } else {
-              const errBody = await attempt.json().catch(() => ({}));
-              console.warn(`[fetchAvg] non-ok response from ${endpoint}: status=${attempt.status}`, errBody);
-              lastError = { status: attempt.status, body: errBody };
             }
-          } catch (err) {
-            console.error(`[fetchAvg] failed to fetch from ${endpoint}:`, err);
-            lastError = err;
+          } catch {
+            // Try next compatible prefix.
           }
         }
-        if (!res) {
-          console.error(`[fetchAvg] all endpoints failed for league ${leagueId}. Last error:`, lastError);
-          return null;
-        }
+        if (!res) return null;
         const data = await res.json();
-        console.log(`[fetchAvg] successfully retrieved averages for league ${leagueId}:`, data);
         if (data.success) {
           return {
             leagueId,
@@ -920,11 +902,9 @@ export default function CareerPage() {
             leagueTotals: data.leagueTotals,
             playerTotals: data.playerTotals,
           };
-        } else {
-          console.error(`[fetchAvg] API returned success=false for league ${leagueId}:`, data);
         }
-      } catch (err) {
-        console.error(`[fetchAvg] crashed for league ${leagueId}:`, err);
+      } catch {
+        // Keep page responsive if averages are unavailable.
       }
       return null;
     };
@@ -937,10 +917,10 @@ export default function CareerPage() {
       const totalsCache: typeof leagueTotalsCache = {};
       const playerTotalsCache: typeof leaguePlayerTotalsCache = {};
 
-      const normalizeKeys = (obj: Record<string, any>) => {
-        const next: Record<string, any> = {};
+      const normalizeKeys = <T,>(obj?: Record<string, T> | null): Record<string, T> => {
+        const next: Record<string, T> = {};
         Object.entries(obj || {}).forEach(([k, v]) => {
-          next[k.trim().toLowerCase()] = v;
+          next[k.trim().toLowerCase()] = v as T;
         });
         return next;
       };
@@ -962,130 +942,6 @@ export default function CareerPage() {
 
     return () => { cancelled = true; };
   }, [token, averageLeagues, filters.leagueId, filters.year, seasonFilter]);
-
-  useEffect(() => {
-    const currentPlayerId = String(playerId || '').trim();
-    const targetLeagueIds = Array.from(new Set([
-      ...averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean),
-      ...((filters.leagueId && filters.leagueId !== 'all') ? [String(filters.leagueId).trim()] : []),
-    ]));
-    const authToken = token || getAuthToken() || Cookies.get('token') || '';
-    if (!authToken || !currentPlayerId || targetLeagueIds.length === 0) return;
-
-    const apiUrl = API_BASE_URL;
-    let cancelled = false;
-
-    const metricMap = [
-      ['goals', 'goals'],
-      ['assists', 'assists'],
-      ['cleanSheets', 'cleanSheet'],
-      ['motmVotes', 'motm'],
-      ['defensiveImpactVotes', 'impact'],
-      ['impact', 'contribution'],
-    ] as const;
-
-    const calculateShareSummary = (players: Array<{ id?: unknown; value?: unknown }>) => {
-      const rows = Array.isArray(players) ? players : [];
-      const total = rows.reduce((sum, player) => sum + Math.max(0, Number(player.value) || 0), 0);
-      const playerTotal = rows
-        .filter((player) => sameId(player.id, currentPlayerId))
-        .reduce((sum, player) => sum + Math.max(0, Number(player.value) || 0), 0);
-      return {
-        share: total > 0 && playerTotal > 0 ? Math.round((playerTotal / total) * 100) : 0,
-        total,
-        playerTotal,
-      };
-    };
-
-    const fetchLeagueShareFallback = async (leagueId: string): Promise<[string, LeagueMetricValues, LeagueMetricValues, LeagueMetricTotals] | null> => {
-      const shares: LeagueMetricValues = {
-        goals: 0,
-        assists: 0,
-        cleanSheets: 0,
-        defence: 0,
-        motmVotes: 0,
-        defensiveImpactVotes: 0,
-        impact: 0,
-      };
-      const totals: LeagueMetricValues = { ...shares };
-      const playerTotals: LeagueMetricTotals = { ...shares };
-
-      await Promise.all(metricMap.map(async ([targetKey, leaderboardMetric]) => {
-        const params = new URLSearchParams({
-          metric: leaderboardMetric,
-          leagueId,
-          limit: '50',
-          _t: String(Date.now()),
-        });
-        if (seasonFilter && seasonFilter !== 'all' && isUuid(seasonFilter)) {
-          params.set('seasonId', String(seasonFilter));
-        }
-        try {
-          const leaderboardEndpoints = [
-            `${apiUrl}/leaderboard?${params.toString()}`,
-            `${apiUrl}/api/leaderboard?${params.toString()}`,
-            `${apiUrl}/v1/leaderboard?${params.toString()}`,
-            `${apiUrl}/api/v1/leaderboard?${params.toString()}`,
-          ];
-          let data: { players?: Array<{ id?: unknown; value?: unknown }> } | null = null;
-          let lastError: any = null;
-          for (const endpoint of leaderboardEndpoints) {
-            try {
-              const res = await fetch(endpoint, {
-                headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-                cache: 'no-store',
-              });
-              if (res.ok) {
-                const parsed = await res.json().catch(() => ({}));
-                if (Array.isArray(parsed?.players)) {
-                  data = parsed;
-                  break;
-                }
-              } else {
-                const errBody = await res.json().catch(() => ({}));
-                lastError = { status: res.status, body: errBody };
-              }
-            } catch (err) {
-              lastError = err;
-            }
-          }
-          if (!data) {
-            console.warn(`[fetchLeagueShareFallback] failed for metric ${targetKey} / ${leaderboardMetric}. Last error:`, lastError);
-            return;
-          }
-          const summary = calculateShareSummary(data?.players || []);
-          shares[targetKey] = summary.share;
-          totals[targetKey] = summary.total;
-          playerTotals[targetKey] = summary.playerTotal;
-        } catch (err) {
-          console.error(`[fetchLeagueShareFallback] crashed for metric ${targetKey}:`, err);
-        }
-      }));
-
-      return [leagueId, shares, totals, playerTotals];
-    };
-
-    (async () => {
-      const entries = await Promise.all(targetLeagueIds.map((leagueId) => fetchLeagueShareFallback(leagueId)));
-      if (cancelled) return;
-      const nextShareCache: Record<string, LeagueMetricValues> = {};
-      const nextTotalsCache: Record<string, LeagueMetricValues> = {};
-      const nextPlayerTotalsCache: Record<string, LeagueMetricTotals> = {};
-      entries.forEach((entry) => {
-        if (entry) {
-          const lid = entry[0].toLowerCase();
-          nextShareCache[lid] = entry[1];
-          nextTotalsCache[lid] = entry[2];
-          nextPlayerTotalsCache[lid] = entry[3];
-        }
-      });
-      setLeaderboardShareCache(nextShareCache);
-      setLeaderboardTotalsCache(nextTotalsCache);
-      setLeaderboardPlayerTotalsCache(nextPlayerTotalsCache);
-    })();
-
-    return () => { cancelled = true; };
-  }, [token, playerId, averageLeagues, filters.leagueId, seasonFilter]);
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
@@ -1135,7 +991,6 @@ export default function CareerPage() {
       const leagueId = leagueIdRaw.toLowerCase();
       return fromTotals(leagueId)
         || (currentPlayerId ? leagueShareCache[leagueId]?.[currentPlayerId] : null)
-        || leaderboardShareCache[leagueId]
         || null;
     };
 
@@ -1146,9 +1001,7 @@ export default function CareerPage() {
 
     const leagueIds = Array.from(new Set([
       ...Object.keys(leagueTotalsCache),
-      ...Object.keys(leaderboardTotalsCache),
       ...Object.keys(leagueShareCache),
-      ...Object.keys(leaderboardShareCache)
     ])).map(id => id.toLowerCase());
 
     const playerSum: LeagueMetricValues = { ...empty };
@@ -1156,10 +1009,8 @@ export default function CareerPage() {
     let hasTotals = false;
 
     for (const leagueId of leagueIds) {
-      const backendPlayerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
-      const fallbackPlayerTotals = leaderboardPlayerTotalsCache[leagueId];
-      const playerTotals = backendPlayerTotals || fallbackPlayerTotals;
-      const leagueTotals = leagueTotalsCache[leagueId] || leaderboardTotalsCache[leagueId];
+      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
+      const leagueTotals = leagueTotalsCache[leagueId];
       if (!playerTotals || !leagueTotals) continue;
       hasTotals = true;
       metricKeys.forEach((key) => {
@@ -1192,9 +1043,6 @@ export default function CareerPage() {
     leaguePlayerTotalsCache,
     leagueTotalsCache,
     leagueShareCache,
-    leaderboardPlayerTotalsCache,
-    leaderboardTotalsCache,
-    leaderboardShareCache,
     playerId,
   ]);
 
@@ -1465,14 +1313,9 @@ export default function CareerPage() {
 
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
-    console.log('Debug - All matches for impact:', matches);
-
     const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
     const last10 = played.slice(-10);
     const prev10 = played.slice(-20, -10);
-
-    console.log('Debug - Last 10 matches:', last10);
-    console.log('Debug - Previous 10 matches:', prev10);
 
     const sum = (arr: LeagueMatch[], pick: (ps: PlayerMatchStats) => number) =>
       arr.reduce((s, m) => s + pick(m.playerStats || {}), 0);
@@ -1482,11 +1325,6 @@ export default function CareerPage() {
 
     const agg = (arr: LeagueMatch[]) => {
       const n = arr.length || 0;
-
-      // Debug: Log first match playerStats to see available fields
-      if (arr.length > 0) {
-        console.log('Sample playerStats fields:', arr[0].playerStats);
-      }
 
       let wins = 0;
       let draws = 0;
@@ -1513,8 +1351,6 @@ export default function CareerPage() {
       const matchesWithAssists = count(arr, ps => (ps.assists || 0) > 0);
       const matchesWithCleanSheets = count(arr, ps => (ps.cleanSheets || 0) > 0);
 
-      console.log('Debug - Aggregated stats:', { n, wins, losses, draws, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets });
-
       return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
     };
 
@@ -1536,7 +1372,6 @@ export default function CareerPage() {
       else if (result === 'L') losses += 1;
     });
 
-    console.log('🏆 Win Rate Debug:', { total: n, wins, draws, losses, winRate: n ? (wins / n) * 100 : 0 });
 
     const winRate = n ? (wins / n) * 100 : 0;
     const motmVotes = sum(arr, ps => ps.motmVotes || 0);
@@ -1558,15 +1393,6 @@ export default function CareerPage() {
     const matchesWithAssists = count(arr, ps => (ps.assists || 0) > 0);
     const matchesWithCleanSheets = count(arr, ps => (ps.cleanSheets || 0) > 0);
 
-    console.log('📊 xG/xA/xCS Debug:', {
-      totalMatches: n,
-      matchesWithGoals,
-      matchesWithAssists,
-      matchesWithCleanSheets,
-      xG: (matchesWithGoals / Math.max(n, 1) * 100).toFixed(1) + '%',
-      xA: (matchesWithAssists / Math.max(n, 1) * 100).toFixed(1) + '%',
-      xCS: (matchesWithCleanSheets / Math.max(n, 1) * 100).toFixed(1) + '%'
-    });
 
     // Match Contribution Index from backend impact (already a 0-100 percentage per match).
     const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
@@ -1580,10 +1406,8 @@ export default function CareerPage() {
     const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
     const addLeague = (leagueIdRaw: string, playerSum: LeagueMetricValues, totalSum: LeagueMetricValues): boolean => {
       const leagueId = leagueIdRaw.toLowerCase();
-      const backendPlayerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
-      const fallbackPlayerTotals = leaderboardPlayerTotalsCache[leagueId];
-      const playerTotals = backendPlayerTotals || fallbackPlayerTotals;
-      const leagueTotals = leagueTotalsCache[leagueId] || leaderboardTotalsCache[leagueId];
+      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
+      const leagueTotals = leagueTotalsCache[leagueId];
       if (!playerTotals || !leagueTotals) return false;
       metricKeys.forEach((key) => {
         playerSum[key] += Number(playerTotals[key]) || 0;
@@ -1602,7 +1426,6 @@ export default function CareerPage() {
     } else {
       const leagueIds = Array.from(new Set([
         ...Object.keys(leagueTotalsCache),
-        ...Object.keys(leaderboardTotalsCache)
       ])).map(id => id.toLowerCase());
 
       leagueIds.forEach((leagueId) => {
@@ -1639,13 +1462,9 @@ export default function CareerPage() {
     impactLeagueShare,
     leaguePlayerTotalsCache,
     leagueTotalsCache,
-    leaderboardPlayerTotalsCache,
-    leaderboardTotalsCache,
     playerId,
     yourStats,
   ]);
-
-  console.log("testing", impactCalculationTotals)
 
   // One consistent comparison model used by IMPACT + Top Strengths
   const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
@@ -1873,32 +1692,6 @@ export default function CareerPage() {
     ];
   }, [winLossMatches, playerId]);
 
-  // Alternative: Direct API call to get match results
-  useEffect(() => {
-    const fetchMatchResults = async () => {
-      try {
-        const authToken = token || getAuthToken() || Cookies.get('token') || '';
-        // Call your matches API endpoint
-        const response = await fetch(`${API_BASE_URL}/players/${playerId}/matches`, {
-          headers: {
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
-          }
-        });
-        if (response.ok) {
-          const matchData = await response.json();
-          console.log('Match results from API:', matchData);
-          // Process this data to get win/loss/draw counts
-        }
-      } catch (error) {
-        console.error('Error fetching match results:', error);
-      }
-    };
-
-    if (playerId) {
-      fetchMatchResults();
-    }
-  }, [playerId, token]);
-
   // Add synergy types (place near other interfaces)
   interface SynergyPairing {
     name?: string;
@@ -2041,8 +1834,6 @@ export default function CareerPage() {
           return;
         }
         if (aborted) return;
-
-        console.log('Synergy API', parsed);
 
         if (isSimpleSynergySingle(parsed)) {
           setBestPairing(parsed.bestPairing ?? null);
@@ -3471,7 +3262,7 @@ export default function CareerPage() {
                                 const playerTotal = key ? impactCalculationTotals.playerTotals[key] : 0;
                                 const leagueTotal = key ? impactCalculationTotals.leagueTotals[key] : 0;
                                 return `${row.metric} ${playerTotal}/${leagueTotal} = ${row.leagueDisplay}`;
-                              }).join(' • ')
+                              }).join(' â€¢ ')
                               : 'Waiting for filtered league stats...'}
                           </Typography>
                         </Box>
