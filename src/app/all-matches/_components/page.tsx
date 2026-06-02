@@ -827,7 +827,31 @@ export default function AllMatches() {
     // Listen to creation/update events to refresh instantly like league page
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        const handleRefresh = () => {
+        const handleRefresh = (evt?: Event) => {
+            const detail = (evt as CustomEvent<{
+                matchId?: string;
+                homeTeamGoals?: number;
+                awayTeamGoals?: number;
+                status?: string;
+                match?: Partial<Match>;
+            }> | undefined)?.detail;
+
+            if (detail?.matchId && detail.homeTeamGoals !== undefined && detail.awayTeamGoals !== undefined) {
+                const applyScore = (match: Match): Match => {
+                    if (String(match.id) !== String(detail.matchId)) return match;
+                    return {
+                        ...match,
+                        ...detail.match,
+                        homeTeamGoals: Number(detail.homeTeamGoals),
+                        awayTeamGoals: Number(detail.awayTeamGoals),
+                        status: detail.status || detail.match?.status || match.status,
+                        updatedAt: detail.match?.updatedAt || new Date().toISOString(),
+                    };
+                };
+                setMatches(prev => prev.map(applyScore));
+                setLeague(prev => prev ? { ...prev, matches: (prev.matches || []).map(applyScore) } : prev);
+            }
+
             if (token && selectedLeague !== 'all') {
                 fetchMatchesByLeague(selectedLeague);
             }

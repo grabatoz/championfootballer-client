@@ -1326,6 +1326,41 @@ export default function LeagueDetailPage() {
     // This handles both manual operations AND automatic match completion detection
     useCombinedMatchRefresh(fetchLeagueDetails, 60000); // Check every 60 seconds
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const handleOptimisticMatchUpdate = (evt: Event) => {
+            const detail = (evt as CustomEvent<{
+                matchId?: string;
+                homeTeamGoals?: number;
+                awayTeamGoals?: number;
+                status?: string;
+                match?: Partial<Match>;
+            }>).detail;
+
+            if (!detail?.matchId || detail.homeTeamGoals === undefined || detail.awayTeamGoals === undefined) return;
+
+            setLeague(prev => {
+                if (!prev?.matches?.length) return prev;
+                const updatedMatches = prev.matches.map(match => {
+                    if (String(match.id) !== String(detail.matchId)) return match;
+                    return {
+                        ...match,
+                        ...detail.match,
+                        homeTeamGoals: Number(detail.homeTeamGoals),
+                        awayTeamGoals: Number(detail.awayTeamGoals),
+                        status: detail.status || detail.match?.status || match.status,
+                        updatedAt: detail.match?.updatedAt || new Date().toISOString(),
+                    };
+                });
+                return { ...prev, matches: updatedMatches };
+            });
+        };
+
+        window.addEventListener('match-updated', handleOptimisticMatchUpdate);
+        return () => window.removeEventListener('match-updated', handleOptimisticMatchUpdate);
+    }, []);
+
     // Keep a lightweight local clock so fixtures/results can transition automatically.
     useEffect(() => {
         const timer = window.setInterval(() => {

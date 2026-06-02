@@ -184,9 +184,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   }, []);
 
   // Fetch match data function
-  const fetchMatchData = useCallback(() => {
+  const fetchMatchData = useCallback((silent = false) => {
     if (!matchId || !token) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
 
     console.log('🔄 Fetching match data with cache busting...');
 
@@ -231,7 +231,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
       // Refresh if it's our match or general update
       if (!customEvent.detail?.matchId || customEvent.detail.matchId === matchId) {
         console.log('🔄 Refreshing match data due to update event...');
-        fetchMatchData();
+        fetchMatchData(true);
       }
     };
 
@@ -243,7 +243,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     const lid = match?.leagueId || getNestedLeagueId(match);
     if (match && lid && token) {
       const seasonQuery = match?.seasonId ? `?seasonId=${encodeURIComponent(String(match.seasonId))}` : '';
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}${seasonQuery}`, {
+      const separator = seasonQuery ? '&' : '?';
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid}${seasonQuery}${separator}_t=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -277,7 +278,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     detailedFetchDone.current = true;
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid2}/matches/${match.id}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${lid2}/matches/${match.id}?_t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         if (data.success && data.match) {
@@ -403,7 +404,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // Fetch votes and set votedForId ONLY from backend
   const fetchVotes = useCallback(async () => {
     if (!token) return;
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${matchId}/votes?_t=${Date.now()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await response.json();
@@ -520,7 +521,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         window.dispatchEvent(new CustomEvent('match-updated', { detail: { matchId } }));
         setEditingPlayer(null);
         // Refresh match data
-        fetchMatchData();
+        fetchMatchData(true);
       }
     } catch {
       // silent

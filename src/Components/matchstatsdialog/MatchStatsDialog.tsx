@@ -1399,6 +1399,21 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 throw new Error(errorData.message || 'Failed to update goals');
             }
 
+            const goalsData = await goalsRes.json().catch(() => ({})) as {
+                match?: Partial<Match>;
+                data?: { match?: Partial<Match> };
+            };
+            const responseMatch = goalsData.match || goalsData.data?.match || {};
+            const optimisticMatch: Partial<Match> = {
+                ...responseMatch,
+                id: String(responseMatch.id || resolvedMatchId),
+                leagueId: String(responseMatch.leagueId || match.leagueId || resolvedLeagueId || ''),
+                homeTeamGoals: homeGoals,
+                awayTeamGoals: awayGoals,
+                status: String(responseMatch.status || match.status || 'RESULT_UPLOADED'),
+                updatedAt: String(responseMatch.updatedAt || new Date().toISOString()),
+            };
+
             // Update match note if provided
             if (note && note.trim()) {
                 const noteRes = await fetch(
@@ -1438,7 +1453,14 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             // ًں“¢ Dispatch event IMMEDIATELY to trigger parent refresh
             console.log('ًں“¢ Dispatching match-updated event for match:', resolvedMatchId);
             window.dispatchEvent(new CustomEvent('match-updated', {
-                detail: { matchId: resolvedMatchId }
+                detail: {
+                    matchId: resolvedMatchId,
+                    leagueId: optimisticMatch.leagueId,
+                    homeTeamGoals: homeGoals,
+                    awayTeamGoals: awayGoals,
+                    status: optimisticMatch.status,
+                    match: optimisticMatch,
+                }
             }));
 
             // âڈ±ï¸ڈ Small delay to let parent component start fetching
