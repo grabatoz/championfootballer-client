@@ -35,9 +35,12 @@ import { styled, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '@/lib/useAuth';
 import Cookies from 'js-cookie';
+import { getAuthToken } from '@/lib/tokenManager';
 import CloseButton from '@/Components/CloseButton';
 import PlayerCareerLoadingSkeleton from '@/Components/loading/PlayerCareerLoadingSkeleton';
 // import api from '@/lib/api'; // Adjust the import based on your project structure
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // ---------- THEME (Brand) ----------
 const themeColors = {
@@ -212,7 +215,10 @@ const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
   });
 
 const sameId = (a: unknown, b: unknown): boolean =>
-  String(a ?? '').trim() === String(b ?? '').trim();
+  String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (value: unknown): boolean => UUID_REGEX.test(String(value || '').trim());
 
 const isSeasonExplicitlyDeclined = (season: SeasonInfo): boolean => {
   const statusTokens = [
@@ -307,8 +313,23 @@ interface LeagueComparisonRow {
   metric: string;
   yourTotal: number;
   yourDisplay: string;
-  deltaPercent: number;
+  leagueAverage: number;
+  leagueDisplay: string;
 }
+
+type LeagueMetricValues = {
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  defence: number;
+  motmVotes: number;
+  defensiveImpactVotes: number;
+  impact: number;
+};
+
+type LeagueMetricTotals = LeagueMetricValues & {
+  matches?: number;
+};
 
 // ---------- DYNAMIC RECHARTS ----------
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
@@ -446,20 +467,6 @@ const toRoundedInt = (value: number): number => {
   return Math.round(value);
 };
 
-const toPercentDelta = (playerValue: number, leagueValue: number): number => {
-  if (!Number.isFinite(playerValue) || !Number.isFinite(leagueValue)) return 0;
-  const player = Number(playerValue.toFixed(4));
-  const league = Number(leagueValue.toFixed(4));
-  if (Math.abs(player - league) < 0.005) return 0;
-  // Product decision: do not show negative % when player's stat is zero.
-  if (player <= 0.0001) return 0;
-  if (league <= 0.0001) {
-    if (player <= 0.0001) return 0;
-    return 100;
-  }
-  return Math.round(((player - league) / league) * 100);
-};
-
 function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L' | 'D' | null {
   const explicit = match.playerStats?.result || match.result || match.outcome;
   if (explicit) {
@@ -569,6 +576,13 @@ export default function CareerPage() {
     const stillVisible = availableLeagues.some((l) => sameId(l.id, filters.leagueId));
     if (!stillVisible) dispatch(setLeagueFilter('all'));
   }, [availableLeagues, filters.leagueId, dispatch]);
+
+  const averageLeagues = useMemo(() => {
+    const source = leaguesFromRedux && leaguesFromRedux.length > 0
+      ? leaguesFromRedux
+      : ((data?.leagues || []) as LeagueWithMatches[]);
+    return source.filter((league) => String(league?.id || '').trim() !== '');
+  }, [leaguesFromRedux, data?.leagues]);
 
   const loading = !data;
 
@@ -702,8 +716,8 @@ export default function CareerPage() {
     }
     let cancelled = false;
     setSeasonsLoading(true);
-    const authToken = token || Cookies.get('token') || '';
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
+    const authToken = token || getAuthToken() || Cookies.get('token') || '';
+    const apiUrl = API_BASE_URL;
     const timestamp = Date.now();
     const endpoints = [
       `${apiUrl}/leagues/${filters.leagueId}/seasons?_t=${timestamp}`,
@@ -821,7 +835,7 @@ export default function CareerPage() {
   const timeSeasonFilteredMatches = useMemo(() => {
     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
     const bySeason = (m: LeagueMatch) => {
-    if (!seasonFilter || seasonFilter === 'all') return true;
+      if (!seasonFilter || seasonFilter === 'all') return true;
       if (m.seasonId) return sameId(m.seasonId, seasonFilter);
       const selectedSeason = availableSeasons.find((s) => sameId(s.id, seasonFilter));
       if (selectedSeason?.startDate) {
@@ -841,39 +855,237 @@ export default function CareerPage() {
   const [winLossLeague, setWinLossLeague] = useState<string>('all');
 
   // ------------- League averages from backend (for influence radar) -------------
-  const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, { goals: number; assists: number; cleanSheets: number; defence: number; motmVotes: number; defensiveImpactVotes: number; impact: number }>>({});
+  const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
+  const [leagueShareCache, setLeagueShareCache] = useState<Record<string, Record<string, LeagueMetricValues>>>({});
+  const [leagueTotalsCache, setLeagueTotalsCache] = useState<Record<string, LeagueMetricValues>>({});
+  const [leaguePlayerTotalsCache, setLeaguePlayerTotalsCache] = useState<Record<string, Record<string, LeagueMetricTotals>>>({});
+  const [leaderboardShareCache, setLeaderboardShareCache] = useState<Record<string, LeagueMetricValues>>({});
+  const [leaderboardTotalsCache, setLeaderboardTotalsCache] = useState<Record<string, LeagueMetricValues>>({});
+  const [leaderboardPlayerTotalsCache, setLeaderboardPlayerTotalsCache] = useState<Record<string, LeagueMetricTotals>>({});
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
-    if (!token || availableLeagues.length === 0) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://championfootballer-server.onrender.com';
+    const targetLeagueIds = Array.from(new Set([
+      ...averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean),
+      ...((filters.leagueId && filters.leagueId !== 'all') ? [String(filters.leagueId).trim()] : []),
+    ]));
+    const authToken = token || getAuthToken() || Cookies.get('token') || '';
+    if (!authToken || targetLeagueIds.length === 0) return;
+    const apiUrl = API_BASE_URL;
     let cancelled = false;
 
     const fetchAvg = async (leagueId: string) => {
       try {
-        const res = await fetch(`${apiUrl}/api/leagues/${leagueId}/player-averages`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          cache: 'no-store'
-        });
-        if (!res.ok) return null;
+        const params = new URLSearchParams();
+        if (filters.year && filters.year !== 'all') params.set('year', String(filters.year));
+        if (seasonFilter && seasonFilter !== 'all') params.set('seasonId', String(seasonFilter));
+        params.set('_t', String(Date.now()));
+        const endpoints = [
+          `${apiUrl}/leagues/${leagueId}/player-averages?${params.toString()}`,
+          `${apiUrl}/api/leagues/${leagueId}/player-averages?${params.toString()}`,
+        ];
+        console.log(`[fetchAvg] Starting averages fetch for league: ${leagueId}. Endpoints:`, endpoints);
+        let res: Response | null = null;
+        let lastError: any = null;
+        for (const endpoint of endpoints) {
+          try {
+            const attempt = await fetch(endpoint, {
+              headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+              cache: 'no-store'
+            });
+            if (attempt.ok) {
+              res = attempt;
+              break;
+            } else {
+              const errBody = await attempt.json().catch(() => ({}));
+              console.warn(`[fetchAvg] non-ok response from ${endpoint}: status=${attempt.status}`, errBody);
+              lastError = { status: attempt.status, body: errBody };
+            }
+          } catch (err) {
+            console.error(`[fetchAvg] failed to fetch from ${endpoint}:`, err);
+            lastError = err;
+          }
+        }
+        if (!res) {
+          console.error(`[fetchAvg] all endpoints failed for league ${leagueId}. Last error:`, lastError);
+          return null;
+        }
         const data = await res.json();
-        if (data.success) return { leagueId, leagueAvg: data.leagueAvg, players: data.players };
-      } catch { /* ignore */ }
+        console.log(`[fetchAvg] successfully retrieved averages for league ${leagueId}:`, data);
+        if (data.success) {
+          return {
+            leagueId,
+            leagueAvg: data.leagueAvg,
+            playerShares: data.playerShares,
+            leagueTotals: data.leagueTotals,
+            playerTotals: data.playerTotals,
+          };
+        } else {
+          console.error(`[fetchAvg] API returned success=false for league ${leagueId}:`, data);
+        }
+      } catch (err) {
+        console.error(`[fetchAvg] crashed for league ${leagueId}:`, err);
+      }
       return null;
     };
 
     (async () => {
-      const results = await Promise.all(availableLeagues.map(l => fetchAvg(l.id)));
+      const results = await Promise.all(targetLeagueIds.map((leagueId) => fetchAvg(leagueId)));
       if (cancelled) return;
       const cache: typeof leagueAvgCache = {};
+      const shareCache: typeof leagueShareCache = {};
+      const totalsCache: typeof leagueTotalsCache = {};
+      const playerTotalsCache: typeof leaguePlayerTotalsCache = {};
+
+      const normalizeKeys = (obj: Record<string, any>) => {
+        const next: Record<string, any> = {};
+        Object.entries(obj || {}).forEach(([k, v]) => {
+          next[k.trim().toLowerCase()] = v;
+        });
+        return next;
+      };
+
       for (const r of results) {
-        if (r) cache[r.leagueId] = r.leagueAvg;
+        if (r) {
+          const lid = r.leagueId.toLowerCase();
+          cache[lid] = r.leagueAvg;
+          shareCache[lid] = normalizeKeys(r.playerShares);
+          totalsCache[lid] = r.leagueTotals || { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+          playerTotalsCache[lid] = normalizeKeys(r.playerTotals);
+        }
       }
       setLeagueAvgCache(cache);
+      setLeagueShareCache(shareCache);
+      setLeagueTotalsCache(totalsCache);
+      setLeaguePlayerTotalsCache(playerTotalsCache);
     })();
 
     return () => { cancelled = true; };
-  }, [token, availableLeagues]);
+  }, [token, averageLeagues, filters.leagueId, filters.year, seasonFilter]);
+
+  useEffect(() => {
+    const currentPlayerId = String(playerId || '').trim();
+    const targetLeagueIds = Array.from(new Set([
+      ...averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean),
+      ...((filters.leagueId && filters.leagueId !== 'all') ? [String(filters.leagueId).trim()] : []),
+    ]));
+    const authToken = token || getAuthToken() || Cookies.get('token') || '';
+    if (!authToken || !currentPlayerId || targetLeagueIds.length === 0) return;
+
+    const apiUrl = API_BASE_URL;
+    let cancelled = false;
+
+    const metricMap = [
+      ['goals', 'goals'],
+      ['assists', 'assists'],
+      ['cleanSheets', 'cleanSheet'],
+      ['motmVotes', 'motm'],
+      ['defensiveImpactVotes', 'impact'],
+      ['impact', 'contribution'],
+    ] as const;
+
+    const calculateShareSummary = (players: Array<{ id?: unknown; value?: unknown }>) => {
+      const rows = Array.isArray(players) ? players : [];
+      const total = rows.reduce((sum, player) => sum + Math.max(0, Number(player.value) || 0), 0);
+      const playerTotal = rows
+        .filter((player) => sameId(player.id, currentPlayerId))
+        .reduce((sum, player) => sum + Math.max(0, Number(player.value) || 0), 0);
+      return {
+        share: total > 0 && playerTotal > 0 ? Math.round((playerTotal / total) * 100) : 0,
+        total,
+        playerTotal,
+      };
+    };
+
+    const fetchLeagueShareFallback = async (leagueId: string): Promise<[string, LeagueMetricValues, LeagueMetricValues, LeagueMetricTotals] | null> => {
+      const shares: LeagueMetricValues = {
+        goals: 0,
+        assists: 0,
+        cleanSheets: 0,
+        defence: 0,
+        motmVotes: 0,
+        defensiveImpactVotes: 0,
+        impact: 0,
+      };
+      const totals: LeagueMetricValues = { ...shares };
+      const playerTotals: LeagueMetricTotals = { ...shares };
+
+      await Promise.all(metricMap.map(async ([targetKey, leaderboardMetric]) => {
+        const params = new URLSearchParams({
+          metric: leaderboardMetric,
+          leagueId,
+          limit: '50',
+          _t: String(Date.now()),
+        });
+        if (seasonFilter && seasonFilter !== 'all' && isUuid(seasonFilter)) {
+          params.set('seasonId', String(seasonFilter));
+        }
+        try {
+          const leaderboardEndpoints = [
+            `${apiUrl}/leaderboard?${params.toString()}`,
+            `${apiUrl}/api/leaderboard?${params.toString()}`,
+            `${apiUrl}/v1/leaderboard?${params.toString()}`,
+            `${apiUrl}/api/v1/leaderboard?${params.toString()}`,
+          ];
+          let data: { players?: Array<{ id?: unknown; value?: unknown }> } | null = null;
+          let lastError: any = null;
+          for (const endpoint of leaderboardEndpoints) {
+            try {
+              const res = await fetch(endpoint, {
+                headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+                cache: 'no-store',
+              });
+              if (res.ok) {
+                const parsed = await res.json().catch(() => ({}));
+                if (Array.isArray(parsed?.players)) {
+                  data = parsed;
+                  break;
+                }
+              } else {
+                const errBody = await res.json().catch(() => ({}));
+                lastError = { status: res.status, body: errBody };
+              }
+            } catch (err) {
+              lastError = err;
+            }
+          }
+          if (!data) {
+            console.warn(`[fetchLeagueShareFallback] failed for metric ${targetKey} / ${leaderboardMetric}. Last error:`, lastError);
+            return;
+          }
+          const summary = calculateShareSummary(data?.players || []);
+          shares[targetKey] = summary.share;
+          totals[targetKey] = summary.total;
+          playerTotals[targetKey] = summary.playerTotal;
+        } catch (err) {
+          console.error(`[fetchLeagueShareFallback] crashed for metric ${targetKey}:`, err);
+        }
+      }));
+
+      return [leagueId, shares, totals, playerTotals];
+    };
+
+    (async () => {
+      const entries = await Promise.all(targetLeagueIds.map((leagueId) => fetchLeagueShareFallback(leagueId)));
+      if (cancelled) return;
+      const nextShareCache: Record<string, LeagueMetricValues> = {};
+      const nextTotalsCache: Record<string, LeagueMetricValues> = {};
+      const nextPlayerTotalsCache: Record<string, LeagueMetricTotals> = {};
+      entries.forEach((entry) => {
+        if (entry) {
+          const lid = entry[0].toLowerCase();
+          nextShareCache[lid] = entry[1];
+          nextTotalsCache[lid] = entry[2];
+          nextPlayerTotalsCache[lid] = entry[3];
+        }
+      });
+      setLeaderboardShareCache(nextShareCache);
+      setLeaderboardTotalsCache(nextTotalsCache);
+      setLeaderboardPlayerTotalsCache(nextPlayerTotalsCache);
+    })();
+
+    return () => { cancelled = true; };
+  }, [token, playerId, averageLeagues, filters.leagueId, seasonFilter]);
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
@@ -900,31 +1112,91 @@ export default function CareerPage() {
     };
   }, [influenceLeague, leagueAvgCache]);
 
-  // Compute league average for the IMPACT table (follows global league filter)
-  const impactLeagueAvg = useMemo(() => {
-    const selectedLeague = filters.leagueId;
-    if (selectedLeague && selectedLeague !== 'all' && leagueAvgCache[selectedLeague]) {
-      return leagueAvgCache[selectedLeague];
-    }
-    // Average across all leagues
-    const entries = Object.values(leagueAvgCache);
-    if (entries.length === 0) return null;
-    const sum = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-    for (const e of entries) {
-      sum.goals += e.goals; sum.assists += e.assists; sum.cleanSheets += e.cleanSheets;
-      sum.defence += e.defence; sum.motmVotes += e.motmVotes; sum.defensiveImpactVotes += e.defensiveImpactVotes || 0; sum.impact += e.impact;
-    }
-    const n = entries.length;
-    return {
-      goals: +(sum.goals / n).toFixed(2),
-      assists: +(sum.assists / n).toFixed(2),
-      cleanSheets: +(sum.cleanSheets / n).toFixed(2),
-      defence: +(sum.defence / n).toFixed(2),
-      motmVotes: +(sum.motmVotes / n).toFixed(2),
-      defensiveImpactVotes: +(sum.defensiveImpactVotes / n).toFixed(2),
-      impact: +(sum.impact / n).toFixed(2)
+  // Compute player contribution against filtered league totals for the IMPACT table.
+  const impactLeagueShare = useMemo(() => {
+    const currentPlayerId = String(playerId || '').trim().toLowerCase();
+    const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
+    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+    const percentShare = (playerValue: number, totalValue: number): number => {
+      if (!Number.isFinite(playerValue) || !Number.isFinite(totalValue) || totalValue <= 0 || playerValue <= 0) return 0;
+      return Math.round((playerValue / totalValue) * 100);
     };
-  }, [filters.leagueId, leagueAvgCache]);
+    const fromTotals = (leagueIdRaw: string): LeagueMetricValues | null => {
+      const leagueId = leagueIdRaw.toLowerCase();
+      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
+      const leagueTotals = leagueTotalsCache[leagueId];
+      if (!playerTotals || !leagueTotals) return null;
+      return metricKeys.reduce((acc, key) => {
+        acc[key] = percentShare(Number(playerTotals[key]) || 0, Number(leagueTotals[key]) || 0);
+        return acc;
+      }, { ...empty });
+    };
+    const forLeague = (leagueIdRaw: string): LeagueMetricValues | null => {
+      const leagueId = leagueIdRaw.toLowerCase();
+      return fromTotals(leagueId)
+        || (currentPlayerId ? leagueShareCache[leagueId]?.[currentPlayerId] : null)
+        || leaderboardShareCache[leagueId]
+        || null;
+    };
+
+    const selectedLeague = filters.leagueId;
+    if (selectedLeague && selectedLeague !== 'all') {
+      return forLeague(selectedLeague);
+    }
+
+    const leagueIds = Array.from(new Set([
+      ...Object.keys(leagueTotalsCache),
+      ...Object.keys(leaderboardTotalsCache),
+      ...Object.keys(leagueShareCache),
+      ...Object.keys(leaderboardShareCache)
+    ])).map(id => id.toLowerCase());
+
+    const playerSum: LeagueMetricValues = { ...empty };
+    const totalSum: LeagueMetricValues = { ...empty };
+    let hasTotals = false;
+
+    for (const leagueId of leagueIds) {
+      const backendPlayerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
+      const fallbackPlayerTotals = leaderboardPlayerTotalsCache[leagueId];
+      const playerTotals = backendPlayerTotals || fallbackPlayerTotals;
+      const leagueTotals = leagueTotalsCache[leagueId] || leaderboardTotalsCache[leagueId];
+      if (!playerTotals || !leagueTotals) continue;
+      hasTotals = true;
+      metricKeys.forEach((key) => {
+        playerSum[key] += Number(playerTotals[key]) || 0;
+        totalSum[key] += Number(leagueTotals[key]) || 0;
+      });
+    }
+
+    if (hasTotals) {
+      return metricKeys.reduce((acc, key) => {
+        acc[key] = percentShare(playerSum[key], totalSum[key]);
+        return acc;
+      }, { ...empty });
+    }
+
+    const shares = leagueIds.map((leagueId) => forLeague(leagueId)).filter(Boolean) as LeagueMetricValues[];
+    if (shares.length === 0) return null;
+    const sum = shares.reduce((acc, share) => {
+      metricKeys.forEach((key) => {
+        acc[key] += share[key] || 0;
+      });
+      return acc;
+    }, { ...empty });
+    return metricKeys.reduce((acc, key) => {
+      acc[key] = Math.round(sum[key] / shares.length);
+      return acc;
+    }, { ...empty });
+  }, [
+    filters.leagueId,
+    leaguePlayerTotalsCache,
+    leagueTotalsCache,
+    leagueShareCache,
+    leaderboardPlayerTotalsCache,
+    leaderboardTotalsCache,
+    leaderboardShareCache,
+    playerId,
+  ]);
 
   // Locally filtered matches for each card (independent of global Redux league filter)
   const chartMatches = useMemo(() =>
@@ -944,7 +1216,7 @@ export default function CareerPage() {
     [timeSeasonFilteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
-  const [groupMode, setGroupMode] = useState<'weekly'|'monthly'>('weekly');
+  const [groupMode, setGroupMode] = useState<'weekly' | 'monthly'>('weekly');
   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
 
   // ------------- AGGREGATION (supports forced modes) -------------
@@ -998,14 +1270,14 @@ export default function CareerPage() {
             });
           }
           filled.push(map.get(k)!);
-          cur = cur.add(1,'week');
+          cur = cur.add(1, 'week');
         }
       }
-      
+
       // Sort and calculate averages and cumulative
-      filled.sort((a,b) => a.key.localeCompare(b.key));
+      filled.sort((a, b) => a.key.localeCompare(b.key));
       let cumulativeSum = 0;
-      filled.forEach(r => { 
+      filled.forEach(r => {
         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
         cumulativeSum += r.totalPoints;
         r.cumulativePoints = cumulativeSum;
@@ -1038,8 +1310,8 @@ export default function CareerPage() {
       const keys = Array.from(map.keys()).sort();
       const filled: PerformanceRow[] = [];
       if (keys.length) {
-        let cur = dayjs(keys[0]+'-01');
-        const end = dayjs(keys[keys.length - 1]+'-01');
+        let cur = dayjs(keys[0] + '-01');
+        const end = dayjs(keys[keys.length - 1] + '-01');
         while (cur.isBefore(end) || cur.isSame(end)) {
           const k = cur.format('YYYY-MM');
           if (!map.has(k)) {
@@ -1054,12 +1326,12 @@ export default function CareerPage() {
             });
           }
           filled.push(map.get(k)!);
-          cur = cur.add(1,'month');
+          cur = cur.add(1, 'month');
         }
       }
-      
+
       // Sort and calculate averages and cumulative
-      filled.sort((a,b) => a.key.localeCompare(b.key));
+      filled.sort((a, b) => a.key.localeCompare(b.key));
       let cumulativeSum = 0;
       filled.forEach(r => {
         r.avgPoints = r.matches ? +(r.totalPoints / r.matches).toFixed(2) : 0;
@@ -1086,8 +1358,8 @@ export default function CareerPage() {
   const chartData = useMemo(() => {
     if (!performanceData.length) return [];
     if (!range) return performanceData;
-    const [s,e] = range;
-    return performanceData.slice(s, e+1);
+    const [s, e] = range;
+    return performanceData.slice(s, e + 1);
   }, [performanceData, range]);
 
   // Reset range if data length changes
@@ -1194,7 +1466,7 @@ export default function CareerPage() {
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
     console.log('Debug - All matches for impact:', matches);
-    
+
     const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
     const last10 = played.slice(-10);
     const prev10 = played.slice(-20, -10);
@@ -1202,20 +1474,20 @@ export default function CareerPage() {
     console.log('Debug - Last 10 matches:', last10);
     console.log('Debug - Previous 10 matches:', prev10);
 
-    const sum = (arr: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) =>
+    const sum = (arr: LeagueMatch[], pick: (ps: PlayerMatchStats) => number) =>
       arr.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-    
-    const count = (arr: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) =>
+
+    const count = (arr: LeagueMatch[], pred: (ps: PlayerMatchStats) => boolean) =>
       arr.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
 
     const agg = (arr: LeagueMatch[]) => {
       const n = arr.length || 0;
-      
+
       // Debug: Log first match playerStats to see available fields
       if (arr.length > 0) {
         console.log('Sample playerStats fields:', arr[0].playerStats);
       }
-      
+
       let wins = 0;
       let draws = 0;
       let losses = 0;
@@ -1232,17 +1504,17 @@ export default function CareerPage() {
       const goals = sum(arr, ps => ps.goals || 0);
       const assists = sum(arr, ps => ps.assists || 0);
       const cleanSheets = sum(arr, ps => ps.cleanSheets || 0);
-      
+
       // Match Contribution Index from backend impact (already a 0-100 percentage per match).
       const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
-      
+
       // For xG/xA/xCS: count matches where player scored/assisted/kept clean sheet (at least once)
       const matchesWithGoals = count(arr, ps => (ps.goals || 0) > 0);
       const matchesWithAssists = count(arr, ps => (ps.assists || 0) > 0);
       const matchesWithCleanSheets = count(arr, ps => (ps.cleanSheets || 0) > 0);
-      
+
       console.log('Debug - Aggregated stats:', { n, wins, losses, draws, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets });
-      
+
       return { n, wins, draws, losses, winRate, impactAvg, motmVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
     };
 
@@ -1252,8 +1524,8 @@ export default function CareerPage() {
   // Aggregated stats for current filters ("Your Stats") - ALL filtered matches
   const yourStats = useMemo(() => {
     const arr = filteredMatches;
-    const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats)=>number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
-    const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats)=>boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
+    const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats) => number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
+    const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats) => boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
 
     const n = arr.length || 0;
     let wins = 0, draws = 0, losses = 0;
@@ -1263,8 +1535,8 @@ export default function CareerPage() {
       else if (result === 'D') draws += 1;
       else if (result === 'L') losses += 1;
     });
-    
-    console.log('🏆 Win Rate Debug:', { total: n, wins, draws, losses, winRate: n ? (wins/n)*100 : 0 });
+
+    console.log('🏆 Win Rate Debug:', { total: n, wins, draws, losses, winRate: n ? (wins / n) * 100 : 0 });
 
     const winRate = n ? (wins / n) * 100 : 0;
     const motmVotes = sum(arr, ps => ps.motmVotes || 0);
@@ -1280,39 +1552,41 @@ export default function CareerPage() {
     const goals = sum(arr, ps => ps.goals || 0);
     const assists = sum(arr, ps => ps.assists || 0);
     const cleanSheets = sum(arr, ps => ps.cleanSheets || 0);
-    
+
     // For xG/xA/xCS: count matches where player scored/assisted/kept clean sheet (at least once)
     const matchesWithGoals = count(arr, ps => (ps.goals || 0) > 0);
     const matchesWithAssists = count(arr, ps => (ps.assists || 0) > 0);
     const matchesWithCleanSheets = count(arr, ps => (ps.cleanSheets || 0) > 0);
-    
+
     console.log('📊 xG/xA/xCS Debug:', {
       totalMatches: n,
       matchesWithGoals,
-      matchesWithAssists, 
+      matchesWithAssists,
       matchesWithCleanSheets,
       xG: (matchesWithGoals / Math.max(n, 1) * 100).toFixed(1) + '%',
       xA: (matchesWithAssists / Math.max(n, 1) * 100).toFixed(1) + '%',
       xCS: (matchesWithCleanSheets / Math.max(n, 1) * 100).toFixed(1) + '%'
     });
-    
+
     // Match Contribution Index from backend impact (already a 0-100 percentage per match).
     const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
-    
+
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
 
   // One consistent comparison model used by IMPACT + Top Strengths
   const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
-    const matchesCount = Math.max(yourStats.n, 1);
-    const hasLeagueAverage = Boolean(impactLeagueAvg);
-    const leaguePerMatch = {
-      goals: impactLeagueAvg?.goals ?? 0,
-      assists: impactLeagueAvg?.assists ?? 0,
-      cleanSheets: impactLeagueAvg?.cleanSheets ?? 0,
-      motmVotes: impactLeagueAvg?.motmVotes ?? 0,
-      defensiveImpactVotes: impactLeagueAvg?.defensiveImpactVotes ?? 0,
-      impact: impactLeagueAvg?.impact ?? 0,
+    const formatShare = (value: number) => {
+      const rounded = Number((Number(value || 0)).toFixed(2));
+      return `${rounded}%`;
+    };
+    const leagueShare = {
+      goals: impactLeagueShare?.goals ?? 0,
+      assists: impactLeagueShare?.assists ?? 0,
+      cleanSheets: impactLeagueShare?.cleanSheets ?? 0,
+      motmVotes: impactLeagueShare?.motmVotes ?? 0,
+      defensiveImpactVotes: impactLeagueShare?.defensiveImpactVotes ?? 0,
+      impact: impactLeagueShare?.impact ?? 0,
     };
 
     const rows = [
@@ -1320,43 +1594,43 @@ export default function CareerPage() {
         metric: 'Goals',
         yourTotal: toRoundedInt(yourStats.goals),
         yourDisplay: String(toRoundedInt(yourStats.goals)),
-        playerPerMatch: matchesCount > 0 ? yourStats.goals / matchesCount : 0,
-        leaguePerMatch: leaguePerMatch.goals,
+        leagueShare: leagueShare.goals,
+        leagueDisplay: formatShare(leagueShare.goals),
       },
       {
         metric: 'Assists',
         yourTotal: toRoundedInt(yourStats.assists),
         yourDisplay: String(toRoundedInt(yourStats.assists)),
-        playerPerMatch: matchesCount > 0 ? yourStats.assists / matchesCount : 0,
-        leaguePerMatch: leaguePerMatch.assists,
+        leagueShare: leagueShare.assists,
+        leagueDisplay: formatShare(leagueShare.assists),
       },
       {
         metric: 'Clean Sheets',
         yourTotal: toRoundedInt(yourStats.cleanSheets),
         yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
-        playerPerMatch: matchesCount > 0 ? yourStats.cleanSheets / matchesCount : 0,
-        leaguePerMatch: leaguePerMatch.cleanSheets,
+        leagueShare: leagueShare.cleanSheets,
+        leagueDisplay: formatShare(leagueShare.cleanSheets),
       },
       {
         metric: 'MOTM Votes',
         yourTotal: toRoundedInt(yourStats.motmVotes),
         yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
-        playerPerMatch: matchesCount > 0 ? yourStats.motmVotes / matchesCount : 0,
-        leaguePerMatch: leaguePerMatch.motmVotes,
+        leagueShare: leagueShare.motmVotes,
+        leagueDisplay: formatShare(leagueShare.motmVotes),
       },
       {
         metric: 'Defensive Impact Votes',
         yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
         yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
-        playerPerMatch: matchesCount > 0 ? yourStats.defensiveImpactVotes / matchesCount : 0,
-        leaguePerMatch: leaguePerMatch.defensiveImpactVotes,
+        leagueShare: leagueShare.defensiveImpactVotes,
+        leagueDisplay: formatShare(leagueShare.defensiveImpactVotes),
       },
       {
         metric: 'Game Contribution Index',
         yourTotal: toRoundedInt(yourStats.impactAvg),
         yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
-        playerPerMatch: yourStats.impactAvg,
-        leaguePerMatch: leaguePerMatch.impact,
+        leagueShare: leagueShare.impact,
+        leagueDisplay: formatShare(leagueShare.impact),
       },
     ];
 
@@ -1364,24 +1638,97 @@ export default function CareerPage() {
       metric: r.metric,
       yourTotal: r.yourTotal,
       yourDisplay: r.yourDisplay,
-      deltaPercent: hasLeagueAverage ? toPercentDelta(r.playerPerMatch, r.leaguePerMatch) : 0,
+      leagueAverage: Number((r.leagueShare || 0).toFixed(2)),
+      leagueDisplay: r.leagueDisplay,
     }));
-  }, [yourStats, impactLeagueAvg]);
+  }, [yourStats, impactLeagueShare]);
 
   const topStrengthRows = useMemo(
-    () => [...leagueComparisonRows].sort((a, b) => b.deltaPercent - a.deltaPercent).slice(0, 3),
+    () => [...leagueComparisonRows]
+      .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0)
+      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage)
+      .slice(0, 3),
     [leagueComparisonRows]
   );
 
   const topStrengthNote = useMemo(() => {
     if (!topStrengthRows.length) return '';
     const best = topStrengthRows[0];
-    if (best.deltaPercent === 0) {
-      return `${best.metric}: You are on par with league average.`;
-    }
-    const direction = best.deltaPercent > 0 ? 'above' : 'below';
-    return `${best.metric}: You are ${Math.abs(best.deltaPercent)}% ${direction} league average.`;
+    return `${best.metric}: ${best.yourDisplay} from filtered league total = ${best.leagueDisplay}.`;
   }, [topStrengthRows]);
+
+  const impactCalculationTotals = useMemo(() => {
+    const currentPlayerId = String(playerId || '').trim().toLowerCase();
+    const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
+    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
+    const addLeague = (leagueIdRaw: string, playerSum: LeagueMetricValues, totalSum: LeagueMetricValues): boolean => {
+      const leagueId = leagueIdRaw.toLowerCase();
+      const backendPlayerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
+      const fallbackPlayerTotals = leaderboardPlayerTotalsCache[leagueId];
+      const playerTotals = backendPlayerTotals || fallbackPlayerTotals;
+      const leagueTotals = leagueTotalsCache[leagueId] || leaderboardTotalsCache[leagueId];
+      if (!playerTotals || !leagueTotals) return false;
+      metricKeys.forEach((key) => {
+        playerSum[key] += Number(playerTotals[key]) || 0;
+        totalSum[key] += Number(leagueTotals[key]) || 0;
+      });
+      return true;
+    };
+
+    const playerTotals: LeagueMetricValues = { ...empty };
+    const leagueTotals: LeagueMetricValues = { ...empty };
+    const selectedLeague = filters.leagueId;
+    let hasData = false;
+
+    if (selectedLeague && selectedLeague !== 'all') {
+      hasData = addLeague(selectedLeague, playerTotals, leagueTotals);
+    } else {
+      const leagueIds = Array.from(new Set([
+        ...Object.keys(leagueTotalsCache),
+        ...Object.keys(leaderboardTotalsCache)
+      ])).map(id => id.toLowerCase());
+
+      leagueIds.forEach((leagueId) => {
+        hasData = addLeague(leagueId, playerTotals, leagueTotals) || hasData;
+      });
+    }
+
+    if (hasData) return { playerTotals, leagueTotals, source: 'backend' as const };
+
+    const fallbackPlayerTotals: LeagueMetricValues = {
+      goals: toRoundedInt(yourStats.goals),
+      assists: toRoundedInt(yourStats.assists),
+      cleanSheets: toRoundedInt(yourStats.cleanSheets),
+      defence: toRoundedInt(yourStats.defence),
+      motmVotes: toRoundedInt(yourStats.motmVotes),
+      defensiveImpactVotes: toRoundedInt(yourStats.defensiveImpactVotes),
+      impact: toRoundedInt(yourStats.impactAvg),
+    };
+
+    const fallbackLeagueTotals = metricKeys.reduce((acc, key) => {
+      const share = impactLeagueShare ? (Number(impactLeagueShare[key]) || 0) : 0;
+      const playerValue = Number(fallbackPlayerTotals[key]) || 0;
+      acc[key] = share > 0 && playerValue > 0 ? Number((playerValue / (share / 100)).toFixed(2)) : playerValue;
+      return acc;
+    }, { ...empty });
+
+    return {
+      playerTotals: fallbackPlayerTotals,
+      leagueTotals: fallbackLeagueTotals,
+      source: (impactLeagueShare ? 'estimated' : 'fallback') as 'estimated' | 'fallback',
+    };
+  }, [
+    filters.leagueId,
+    impactLeagueShare,
+    leaguePlayerTotalsCache,
+    leagueTotalsCache,
+    leaderboardPlayerTotalsCache,
+    leaderboardTotalsCache,
+    playerId,
+    yourStats,
+  ]);
+
+  console.log("testing", impactCalculationTotals)
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
@@ -1405,9 +1752,10 @@ export default function CareerPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}`, {
+        const authToken = token || getAuthToken() || Cookies.get('token') || '';
+        const res = await fetch(`${API_BASE_URL}/players/${playerId}`, {
           cache: 'no-store',
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+          headers: { ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) }
         });
         if (!res.ok) {
           console.warn('Player name fetch failed:', res.status, res.statusText);
@@ -1519,10 +1867,11 @@ export default function CareerPage() {
   useEffect(() => {
     const fetchMatchResults = async () => {
       try {
+        const authToken = token || getAuthToken() || Cookies.get('token') || '';
         // Call your matches API endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/matches`, {
+        const response = await fetch(`${API_BASE_URL}/players/${playerId}/matches`, {
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
           }
         });
         if (response.ok) {
@@ -1559,7 +1908,7 @@ export default function CareerPage() {
 
   // --- Simple Synergy API state ---
   const [synergyLoading, setSynergyLoading] = useState(false);
-  const [synergyError, setSynergyError] = useState<string|null>(null);
+  const [synergyError, setSynergyError] = useState<string | null>(null);
   const [bestPairing, setBestPairing] = useState<SynergyPairing | null>(null);
   const [toughestRival, setToughestRival] = useState<SynergyRival | null>(null);
   const [participatedMatches, setParticipatedMatches] = useState<number>(0);
@@ -1574,9 +1923,10 @@ export default function CareerPage() {
           setLeagueRank(null);
           return;
         }
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}&_t=${Date.now()}`;
+        const authToken = token || getAuthToken() || Cookies.get('token') || '';
+        const url = `${API_BASE_URL}/leaderboard?metric=goals&leagueId=${encodeURIComponent(filters.leagueId)}&_t=${Date.now()}`;
         const res = await fetch(url, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: { ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
           cache: 'no-store'
         });
         if (!res.ok) { setLeagueRank(null); return; }
@@ -1623,9 +1973,10 @@ export default function CareerPage() {
           params.set('seasonId', String(seasonFilter));
         }
         params.set('_t', String(Date.now()));
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/players/${playerId}/simple-synergy?${params.toString()}`;
+        const url = `${API_BASE_URL}/players/${playerId}/simple-synergy?${params.toString()}`;
+        const authToken = token || getAuthToken() || Cookies.get('token') || '';
         const res = await fetch(url, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: { ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
           cache: 'no-store'
         });
 
@@ -1642,7 +1993,7 @@ export default function CareerPage() {
 
         if (!res.ok) {
           // Real server error -> show error
-            throw new Error(`Server error ${res.status}`);
+          throw new Error(`Server error ${res.status}`);
         }
 
         // Type-safe synergy response models
@@ -1914,14 +2265,14 @@ export default function CareerPage() {
                 // pt: { xs: 2, md: 2 },
                 pb: 2,
               }}>
-                <Typography 
-                  variant="h2" 
-                  component="h1" 
-                  sx={{ 
+                <Typography
+                  variant="h2"
+                  component="h1"
+                  sx={{
                     fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
-                    fontWeight: 700, 
+                    fontWeight: 700,
                     fontStyle: 'normal',
-                    color: '#fff', 
+                    color: '#fff',
                     fontSize: isLongDashboardTitle
                       ? { xs: '22px', sm: '30px', md: '42px' }
                       : { xs: '26px', sm: '36px', md: '50px' },
@@ -2377,352 +2728,192 @@ export default function CareerPage() {
 
           {/* Main Content */}
           <Box sx={{ maxWidth: '1130px', mx: 'auto', px: { xs: 2, sm: 2, md: 3 } }}>
-          {loading ? (
-            <PlayerCareerLoadingSkeleton />
-          ) : (
-            <Box>
-              {/* Performance Over Time Chart */}
-              <GlassCard sx={{ mb: 3, border: `2px solid ${themeColors.border}`, background: '#232528' }}>
-                <Box sx={{ p: 0 }}>
-                  {/* Chart Header with toggles */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    p: 1.5,
-                    borderBottom: `1px solid ${themeColors.border}`,
-                    flexWrap: 'wrap',
-                    gap: 1
-                  }}>
-                    {/* Left side - League selector (independent per card) */}
-                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Button
-                        size="small"
-                        sx={{
-                          background: chartLeague === 'all' ? themeColors.primary : '#2a2a2a',
-                          color: themeColors.text,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          px: 1.2,
-                          py: 0.4,
-                          borderRadius: 1,
-                          minWidth: 'auto',
-                          '&:hover': { background: chartLeague === 'all' ? themeColors.primary : '#3a3a3a' }
-                        }}
-                        onClick={() => setChartLeague('all')}
-                      >
-                        All Leagues
-                      </Button>
-                      {(() => {
-                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                        if (!currentId || !currentName) return null;
-                        return (
-                          <Button
-                            size="small"
-                            sx={{
-                              background: chartLeague === currentId ? themeColors.primary : '#2a2a2a',
-                              color: themeColors.text,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              px: 1.2,
-                              py: 0.4,
-                              borderRadius: 1,
-                              minWidth: 'auto',
-                              '&:hover': { background: chartLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                            }}
-                            onClick={() => setChartLeague(currentId)}
-                          >
-                            Current
-                          </Button>
-                        );
-                      })()}
-                    </Box>
-
-                    {/* Right side - Time grouping toggles */}
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {['weekly', 'monthly'].map((mode) => (
-                        <Button
-                          key={mode}
-                          size="small"
-                          sx={{
-                            background: groupMode === mode ? themeColors.primary : '#2a2a2a',
-                            color: themeColors.text,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            textTransform: 'capitalize',
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: 1,
-                            minWidth: 'auto',
-                            '&:hover': { background: groupMode === mode ? themeColors.primary : '#3a3a3a' }
-                          }}
-                          onClick={() => setGroupMode(mode as 'weekly' | 'monthly')}
-                        >
-                          {mode}
-                        </Button>
-                      ))}
-                    </Box>
-                  </Box>
-
-                  {/* Chart Title */}
-                  <Box sx={{ textAlign: 'center', pt: 2, pb: 1 }}>
-                    <Typography sx={{ 
-                      fontSize: 14, 
-                      fontWeight: 600, 
-                      color: themeColors.text, 
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5
-                    }}>
-                      XP Performance Time Series
-                    </Typography>
-                  </Box>
-
-                  {/* Chart Container */}
-                  <Box sx={{ height: { xs: 250, sm: 280, md: 300 }, px: 2, pb: 1 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart 
-                        data={chartData.length > 0 ? chartData : performanceData} 
-                        margin={{ top: 10, left: 10, right: 10, bottom: 30 }}
-                      >
-                        <XAxis 
-                          dataKey="label"
-                          stroke={themeColors.textDim}
-                          tick={{ fontSize: 10, fill: themeColors.textDim }}
-                          interval="preserveStartEnd"
-                          tickMargin={8}
-                          angle={-30}
-                          textAnchor="end"
-                          tickLine={{ stroke: themeColors.border }}
-                          axisLine={{ stroke: themeColors.border }}
-                        />
-                        <YAxis
-                          yAxisId="avg"
-                          stroke={themeColors.textDim}
-                          tick={{ fontSize: 10, fill: themeColors.textDim }}
-                          width={40}
-                          tickLine={{ stroke: themeColors.border }}
-                          axisLine={{ stroke: themeColors.border }}
-                        />
-                        <YAxis
-                          yAxisId="cum"
-                          orientation="right"
-                          stroke={themeColors.textDim}
-                          tick={{ fontSize: 10, fill: themeColors.textDim }}
-                          width={45}
-                          tickLine={{ stroke: themeColors.border }}
-                          axisLine={{ stroke: themeColors.border }}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            background: themeColors.surfaceAlt,
-                            border: `1px solid ${themeColors.border}`,
-                            fontSize: 11,
-                            borderRadius: 4,
-                            color: themeColors.text
-                          }}
-                          labelStyle={{ fontWeight: 600, color: themeColors.text }}
-                          formatter={(value: unknown, name: unknown) => {
-                            const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-                            const n = typeof name === 'string' ? name : String(name ?? '');
-                            const period = groupMode === 'monthly' ? 'Month' : 'Week';
-                            if (n.includes('Avg')) return [v, `Avg Points Per ${period}`];
-                            if (n.includes('Cumulative')) return [v, `Cumulative XP (${period}ly)`];
-                            return [v, n];
-                          }}
-                        />
-                        
-                        {/* Bars for average points - Green/Teal */}
-                        <Bar
-                          yAxisId="avg"
-                          dataKey="avgPoints"
-                          fill={themeColors.chartBar}
-                          name={groupMode === 'monthly' ? 'Avg Points/Month' : 'Avg Points/Week'}
-                          maxBarSize={35}
-                          radius={[3, 3, 0, 0]}
-                        />
-                        
-                        {/* Line for cumulative points - Magenta/Pink */}
-                        <Line
-                          yAxisId="cum"
-                          type="monotone"
-                          dataKey="cumulativePoints"
-                          name={groupMode === 'monthly' ? 'Cumulative XP (Monthly)' : 'Cumulative XP (Weekly)'}
-                          stroke={themeColors.chartLine}
-                          strokeWidth={2}
-                          dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
-                          activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </Box>
-
-                  {/* Legend */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: 3, 
-                    pb: 2,
-                    pt: 2,
-                    backgroundColor: '#383a3f',
-                    borderTop: `1px solid ${themeColors.border}`,
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
-                      <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                        {groupMode === 'monthly' ? 'Average XP Points Per Month' : 'Average XP Points Per Week'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{ width: 14, height: 3, borderRadius: 1, background: themeColors.chartLine }} />
-                      <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                        {groupMode === 'monthly' ? 'Cumulative XP Points (Monthly)' : 'Cumulative XP Points (Weekly)'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </GlassCard>
-
-              {/* Influence and Win/Loss Row */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                {/* Influence Radar Chart */}
-                <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ background: '#27292d' }}>
-                    {/* Header with toggle */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'flex-start', 
+            {loading ? (
+              <PlayerCareerLoadingSkeleton />
+            ) : (
+              <Box>
+                {/* Performance Over Time Chart */}
+                <GlassCard sx={{ mb: 3, border: `2px solid ${themeColors.border}`, background: '#232528' }}>
+                  <Box sx={{ p: 0 }}>
+                    {/* Chart Header with toggles */}
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       p: 1.5,
                       borderBottom: `1px solid ${themeColors.border}`,
                       flexWrap: 'wrap',
-                      gap: 0.5
+                      gap: 1
                     }}>
-                      <Button
-                        size="small"
-                        sx={{
-                          background: influenceLeague === 'all' ? themeColors.primary : '#2a2a2a',
-                          color: themeColors.text,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          px: 1.2,
-                          py: 0.4,
-                          borderRadius: 1,
-                          minWidth: 'auto',
-                          '&:hover': { background: influenceLeague === 'all' ? themeColors.primary : '#3a3a3a' }
-                        }}
-                        onClick={() => setInfluenceLeague('all')}
-                      >
-                        All Leagues
-                      </Button>
-                      {(() => {
-                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                        if (!currentId || !currentName) return null;
-                        return (
-                          <Button
-                            size="small"
-                            sx={{
-                              background: influenceLeague === currentId ? themeColors.primary : '#2a2a2a',
-                              color: themeColors.text,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              px: 1.2,
-                              py: 0.4,
-                              borderRadius: 1,
-                              minWidth: 'auto',
-                              '&:hover': { background: influenceLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                            }}
-                            onClick={() => setInfluenceLeague(currentId)}
-                          >
-                            Current
-                          </Button>
-                        );
-                      })()}
-                    </Box>
-
-                    <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
-                      {/* Title */}
-                      <Typography sx={{ 
-                        fontSize: 14, 
-                        fontWeight: 'bold', 
-                        color: themeColors.text,
-                        textAlign: 'center',
-                        textTransform: 'uppercase',
-                        mb: 1
-                      }}>
-                        Influence
-                      </Typography>
-
-                      <Box sx={{ height: 160 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart 
-                            data={influenceRadarData} 
-                            outerRadius={55}
-                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          >
-                            <PolarGrid 
-                              gridType="polygon"
-                              stroke={themeColors.border}
-                              strokeWidth={1}
-                            />
-                            <PolarAngleAxis 
-                              dataKey="metric" 
-                              tick={{ fontSize: 8, fill: themeColors.textDim }}
-                              tickSize={8}
-                              reversed={false}
-                              scale="auto"
-                            />
-                            <PolarRadiusAxis 
-                              tick={{ fontSize: 7, fill: themeColors.textFaint }}
-                              tickCount={5}
-                              angle={90}
-                              allowDecimals={false}
-                              domain={[0, 'dataMax + 1']}
-                            />
-                            
-                            {/* Player Data - Cyan */}
-                            <Radar 
-                              name={playerName || 'Player'} 
-                              dataKey={playerName || 'Player'} 
-                              stroke={themeColors.cyan}
-                              fill={themeColors.cyan}
-                              fillOpacity={0.2}
-                              strokeWidth={2}
-                              dot={{ r: 2, fill: themeColors.cyan }}
-                            />
-                            
-                            {/* League Average - Teal */}
-                            <Radar 
-                              name="League Avg" 
-                              dataKey="League Avg" 
-                              stroke={themeColors.chartBar}
-                              fill={themeColors.chartBar}
-                              fillOpacity={0.1}
-                              strokeWidth={2}
-                              dot={{ r: 2, fill: themeColors.chartBar }}
-                            />
-                            
-                            <Tooltip 
-                              contentStyle={{
-                                background: themeColors.surfaceAlt,
-                                border: `1px solid ${themeColors.border}`,
-                                borderRadius: 4,
+                      {/* Left side - League selector (independent per card) */}
+                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: chartLeague === 'all' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: chartLeague === 'all' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setChartLeague('all')}
+                        >
+                          All Leagues
+                        </Button>
+                        {(() => {
+                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                          if (!currentId || !currentName) return null;
+                          return (
+                            <Button
+                              size="small"
+                              sx={{
+                                background: chartLeague === currentId ? themeColors.primary : '#2a2a2a',
                                 color: themeColors.text,
                                 fontSize: 10,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 1.2,
+                                py: 0.4,
+                                borderRadius: 1,
+                                minWidth: 'auto',
+                                '&:hover': { background: chartLeague === currentId ? themeColors.primary : '#3a3a3a' }
                               }}
-                            />
-                          </RadarChart>
-                        </ResponsiveContainer>
+                              onClick={() => setChartLeague(currentId)}
+                            >
+                              Current
+                            </Button>
+                          );
+                        })()}
                       </Box>
-                    </CardContent>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
+
+                      {/* Right side - Time grouping toggles */}
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        {['weekly', 'monthly'].map((mode) => (
+                          <Button
+                            key={mode}
+                            size="small"
+                            sx={{
+                              background: groupMode === mode ? themeColors.primary : '#2a2a2a',
+                              color: themeColors.text,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              textTransform: 'capitalize',
+                              px: 1.5,
+                              py: 0.5,
+                              borderRadius: 1,
+                              minWidth: 'auto',
+                              '&:hover': { background: groupMode === mode ? themeColors.primary : '#3a3a3a' }
+                            }}
+                            onClick={() => setGroupMode(mode as 'weekly' | 'monthly')}
+                          >
+                            {mode}
+                          </Button>
+                        ))}
+                      </Box>
+                    </Box>
+
+                    {/* Chart Title */}
+                    <Box sx={{ textAlign: 'center', pt: 2, pb: 1 }}>
+                      <Typography sx={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: themeColors.text,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5
+                      }}>
+                        XP Performance Time Series
+                      </Typography>
+                    </Box>
+
+                    {/* Chart Container */}
+                    <Box sx={{ height: { xs: 250, sm: 280, md: 300 }, px: 2, pb: 1 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={chartData.length > 0 ? chartData : performanceData}
+                          margin={{ top: 10, left: 10, right: 10, bottom: 30 }}
+                        >
+                          <XAxis
+                            dataKey="label"
+                            stroke={themeColors.textDim}
+                            tick={{ fontSize: 10, fill: themeColors.textDim }}
+                            interval="preserveStartEnd"
+                            tickMargin={8}
+                            angle={-30}
+                            textAnchor="end"
+                            tickLine={{ stroke: themeColors.border }}
+                            axisLine={{ stroke: themeColors.border }}
+                          />
+                          <YAxis
+                            yAxisId="avg"
+                            stroke={themeColors.textDim}
+                            tick={{ fontSize: 10, fill: themeColors.textDim }}
+                            width={40}
+                            tickLine={{ stroke: themeColors.border }}
+                            axisLine={{ stroke: themeColors.border }}
+                          />
+                          <YAxis
+                            yAxisId="cum"
+                            orientation="right"
+                            stroke={themeColors.textDim}
+                            tick={{ fontSize: 10, fill: themeColors.textDim }}
+                            width={45}
+                            tickLine={{ stroke: themeColors.border }}
+                            axisLine={{ stroke: themeColors.border }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              background: themeColors.surfaceAlt,
+                              border: `1px solid ${themeColors.border}`,
+                              fontSize: 11,
+                              borderRadius: 4,
+                              color: themeColors.text
+                            }}
+                            labelStyle={{ fontWeight: 600, color: themeColors.text }}
+                            formatter={(value: unknown, name: unknown) => {
+                              const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
+                              const n = typeof name === 'string' ? name : String(name ?? '');
+                              const period = groupMode === 'monthly' ? 'Month' : 'Week';
+                              if (n.includes('Avg')) return [v, `Avg Points Per ${period}`];
+                              if (n.includes('Cumulative')) return [v, `Cumulative XP (${period}ly)`];
+                              return [v, n];
+                            }}
+                          />
+
+                          {/* Bars for average points - Green/Teal */}
+                          <Bar
+                            yAxisId="avg"
+                            dataKey="avgPoints"
+                            fill={themeColors.chartBar}
+                            name={groupMode === 'monthly' ? 'Avg Points/Month' : 'Avg Points/Week'}
+                            maxBarSize={35}
+                            radius={[3, 3, 0, 0]}
+                          />
+
+                          {/* Line for cumulative points - Magenta/Pink */}
+                          <Line
+                            yAxisId="cum"
+                            type="monotone"
+                            dataKey="cumulativePoints"
+                            name={groupMode === 'monthly' ? 'Cumulative XP (Monthly)' : 'Cumulative XP (Weekly)'}
+                            stroke={themeColors.chartLine}
+                            strokeWidth={2}
+                            dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
+                            activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </Box>
+
+                    {/* Legend */}
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
                       gap: 3,
                       pb: 2,
                       pt: 2,
@@ -2730,437 +2921,610 @@ export default function CareerPage() {
                       borderTop: `1px solid ${themeColors.border}`,
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
-                        <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                          {playerName || 'Player'}
+                        <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
+                        <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
+                          {groupMode === 'monthly' ? 'Average XP Points Per Month' : 'Average XP Points Per Week'}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.chartBar, borderRadius: 1 }} />
-                        <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                          League Average
+                        <Box sx={{ width: 14, height: 3, borderRadius: 1, background: themeColors.chartLine }} />
+                        <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
+                          {groupMode === 'monthly' ? 'Cumulative XP Points (Monthly)' : 'Cumulative XP Points (Weekly)'}
                         </Typography>
                       </Box>
                     </Box>
-                  </GlassCard>
-                </Grid>
+                  </Box>
+                </GlassCard>
 
-                {/* Win/Loss Pie Chart */}
-                <Grid item xs={12} md={6}>
-                  <GlassCard sx={{ background: '#27292d' }}>
-                    {/* Header with toggle */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'flex-start', 
-                      alignItems: 'center',
-                      p: 1.5,
-                     
-                      borderBottom: `1px solid ${themeColors.border}`,
-                      flexWrap: 'wrap',
-                      gap: 0.5
-                    }}>
-                      <Button
-                        size="small"
-                        sx={{
-                          background: winLossLeague === 'all' ? themeColors.primary : '#2a2a2a',
-                          color: themeColors.text,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          px: 1.2,
-                          py: 0.4,
-                          borderRadius: 1,
-                          minWidth: 'auto',
-                          '&:hover': { background: winLossLeague === 'all' ? themeColors.primary : '#3a3a3a' }
-                        }}
-                        onClick={() => setWinLossLeague('all')}
-                      >
-                        All Leagues
-                      </Button>
-                      {(() => {
-                        const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                        const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                        if (!currentId || !currentName) return null;
-                        return (
-                          <Button
-                            size="small"
-                            sx={{
-                              background: winLossLeague === currentId ? themeColors.primary : '#2a2a2a',
-                              color: themeColors.text,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              px: 1.2,
-                              py: 0.4,
-                              borderRadius: 1,
-                              minWidth: 'auto',
-                              '&:hover': { background: winLossLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                            }}
-                            onClick={() => setWinLossLeague(currentId)}
-                          >
-                            Current
-                          </Button>
-                        );
-                      })()}
-                    </Box>
-
-                    <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
-                      {/* Title */}
-                      <Typography sx={{ 
-                        fontSize: 14, 
-                        fontWeight: 'bold', 
-                        color: themeColors.text,
-                        textAlign: 'center',
-                        textTransform: 'uppercase',
-                        mb: 1
+                {/* Influence and Win/Loss Row */}
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  {/* Influence Radar Chart */}
+                  <Grid item xs={12} md={6}>
+                    <GlassCard sx={{ background: '#27292d' }}>
+                      {/* Header with toggle */}
+                      <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderBottom: `1px solid ${themeColors.border}`,
+                        flexWrap: 'wrap',
+                        gap: 0.5
                       }}>
-                        Win/Loss/Draw
-                      </Typography>
-
-                      <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {actualWinLossData.every(d => d.value === 0) ? (
-                          <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
-                        ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={actualWinLossData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={55}
-                              paddingAngle={2}
-                              startAngle={90}
-                              endAngle={450}
-                              label={false}
-                              labelLine={false}
-                            />
-                            <Tooltip 
-                              contentStyle={{
-                                background: themeColors.surfaceAlt,
-                                border: `1px solid ${themeColors.border}`,
-                                borderRadius: 4,
+                        <Button
+                          size="small"
+                          sx={{
+                            background: influenceLeague === 'all' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: influenceLeague === 'all' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setInfluenceLeague('all')}
+                        >
+                          All Leagues
+                        </Button>
+                        {(() => {
+                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                          if (!currentId || !currentName) return null;
+                          return (
+                            <Button
+                              size="small"
+                              sx={{
+                                background: influenceLeague === currentId ? themeColors.primary : '#2a2a2a',
                                 color: themeColors.text,
                                 fontSize: 10,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 1.2,
+                                py: 0.4,
+                                borderRadius: 1,
+                                minWidth: 'auto',
+                                '&:hover': { background: influenceLeague === currentId ? themeColors.primary : '#3a3a3a' }
                               }}
-                              formatter={(value: unknown, name: unknown) => [`${value}%`, String(name ?? '')]}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        )}
+                              onClick={() => setInfluenceLeague(currentId)}
+                            >
+                              Current
+                            </Button>
+                          );
+                        })()}
                       </Box>
 
-                    </CardContent>
-                    <Box sx={{ 
-                      display: 'flex',
-                      justifyContent: 'center',
-                      gap: 2,
-                      pb: 2,
-                      pt: 2,
-                      backgroundColor: '#383a3f',
-                      borderTop: `1px solid ${themeColors.border}`,
-                    }}>
-                      {actualWinLossData.map((entry, index) => (
-                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ 
-                            width: 10, height: 10, borderRadius: '50%',
-                            backgroundColor: entry.color
-                          }} />
+                      <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
+                        {/* Title */}
+                        <Typography sx={{
+                          fontSize: 14,
+                          fontWeight: 'bold',
+                          color: themeColors.text,
+                          textAlign: 'center',
+                          textTransform: 'uppercase',
+                          mb: 1
+                        }}>
+                          Influence
+                        </Typography>
+
+                        <Box sx={{ height: 160 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart
+                              data={influenceRadarData}
+                              outerRadius={55}
+                              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            >
+                              <PolarGrid
+                                gridType="polygon"
+                                stroke={themeColors.border}
+                                strokeWidth={1}
+                              />
+                              <PolarAngleAxis
+                                dataKey="metric"
+                                tick={{ fontSize: 8, fill: themeColors.textDim }}
+                                tickSize={8}
+                                reversed={false}
+                                scale="auto"
+                              />
+                              <PolarRadiusAxis
+                                tick={{ fontSize: 7, fill: themeColors.textFaint }}
+                                tickCount={5}
+                                angle={90}
+                                allowDecimals={false}
+                                domain={[0, 'dataMax + 1']}
+                              />
+
+                              {/* Player Data - Cyan */}
+                              <Radar
+                                name={playerName || 'Player'}
+                                dataKey={playerName || 'Player'}
+                                stroke={themeColors.cyan}
+                                fill={themeColors.cyan}
+                                fillOpacity={0.2}
+                                strokeWidth={2}
+                                dot={{ r: 2, fill: themeColors.cyan }}
+                              />
+
+                              {/* League Average - Teal */}
+                              <Radar
+                                name="League Avg"
+                                dataKey="League Avg"
+                                stroke={themeColors.chartBar}
+                                fill={themeColors.chartBar}
+                                fillOpacity={0.1}
+                                strokeWidth={2}
+                                dot={{ r: 2, fill: themeColors.chartBar }}
+                              />
+
+                              <Tooltip
+                                contentStyle={{
+                                  background: themeColors.surfaceAlt,
+                                  border: `1px solid ${themeColors.border}`,
+                                  borderRadius: 4,
+                                  color: themeColors.text,
+                                  fontSize: 10,
+                                }}
+                              />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </CardContent>
+                      <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 3,
+                        pb: 2,
+                        pt: 2,
+                        backgroundColor: '#383a3f',
+                        borderTop: `1px solid ${themeColors.border}`,
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
                           <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
-                            {entry.name} {entry.value}%
+                            {playerName || 'Player'}
                           </Typography>
                         </Box>
-                      ))}
-                    </Box>
-                  </GlassCard>
-                </Grid>
-              </Grid>
-
-              {/* IMPACT Section */}
-              <GlassCard sx={{ mb: 3, background: '#232427' }}>
-                {/* Orange Header */}
-                <Box sx={{ 
-                  // background: themeColors.primary, 
-                  px: 2, 
-                  py: 1,
-                 
-                  borderRadius: '8px 8px 0 0'
-                }}>
-	                  <Typography sx={{ 
-	                    fontSize: { xs: 14, md: 16 }, 
-	                    fontWeight: 'bold', 
-	                    color: themeColors.text,
-	                    pl: { xs: 1.5, md: 5 },
-	                    pt:1,
-	                    textTransform: 'uppercase'
-	                  }}>
-                    IMPACT
-                  </Typography>
-                </Box>
-
-                <Box sx={{ p: 2 }}>
-                  <Grid container spacing={2} alignItems="flex-start">
-                    {/* Tables Container */}
-                    <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
-                      {/* First Table - Expected Probabilities */}
-	                      <Table
-	                        size="small"
-	                        sx={{
-	                          mb: 2,
-	                          width: '100%',
-	                          tableLayout: 'fixed',
-	                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
-	                        }}
-	                      >
-	                        <TableHead>
-	                          <TableRow sx={{ backgroundColor: '#202124' }}>
-	                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-	                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-	                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Expected Per Match'}</TableCell>
-	                          </TableRow>
-	                        </TableHead>
-                        <TableBody>
-                          {(() => {
-                            const current = yourStats;
-                            const totalMatches = current.n || 1;
-                            const xG = ((current.matchesWithGoals || 0) / totalMatches * 100);
-                            const xA = ((current.matchesWithAssists || 0) / totalMatches * 100);
-                            const xCS = ((current.matchesWithCleanSheets || 0) / totalMatches * 100);
-                            const winRate = current.winRate;
-                            
-                            return (
-                              <>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xG / 100).toFixed(1)}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xA / 100).toFixed(1)}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{(xCS / 100).toFixed(1)}</TableCell>
-                                </TableRow>
-                                <TableRow sx={{ bgcolor: '#383a3e' }}>
-                                  <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}></TableCell>
-                                </TableRow>
-                              </>
-                            );
-                          })()}
-                        </TableBody>
-                      </Table>
-
-                      {/* Second Table - Actual Stats */}
-	                      <Table
-	                        size="small"
-	                        sx={{
-	                          width: '100%',
-	                          tableLayout: 'fixed',
-	                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
-	                        }}
-	                      >
-	                        <TableHead>
-	                          <TableRow sx={{ backgroundColor: '#202124' }}>
-	                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-	                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-	                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Avg' : 'From League Average'}</TableCell>
-	                          </TableRow>
-	                        </TableHead>
-                        <TableBody>
-                          {(() => {
-                            return leagueComparisonRows.map((row) => {
-                              const isContribution = row.metric === 'Game Contribution Index';
-                              const deltaColor =
-                                row.deltaPercent === 0
-                                  ? themeColors.textDim
-                                  : row.deltaPercent > 0
-                                    ? themeColors.success
-                                    : themeColors.danger;
-                              return (
-                                <TableRow key={row.metric} sx={isContribution ? { bgcolor: '#383a3e' } : undefined}>
-                                  <TableCell
-                                    sx={{
-                                      fontSize: 11,
-                                      py: 0.8,
-                                      color: themeColors.text,
-                                      borderBottom: `1px solid ${themeColors.border}`,
-                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
-                                    }}
-                                  >
-                                    {row.metric}
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{
-                                      fontSize: 11,
-                                      py: 0.8,
-                                      color: themeColors.text,
-                                      borderBottom: `1px solid ${themeColors.border}`,
-                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
-                                    }}
-                                  >
-                                    {row.yourDisplay}
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{
-                                      fontSize: 11,
-                                      py: 0.8,
-                                      color: deltaColor,
-                                      borderBottom: `1px solid ${themeColors.border}`,
-                                      ...(isContribution ? { bgcolor: '#383a3e' } : {})
-                                    }}
-                                  >
-                                    {row.deltaPercent > 0 ? '+' : ''}{row.deltaPercent}%
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            });
-                          })()}
-                        </TableBody>
-                      </Table>
-                    </Grid>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.chartBar, borderRadius: 1 }} />
+                          <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                            League Average
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </GlassCard>
                   </Grid>
-                </Box>
-              </GlassCard>
 
-              {/* YOUR TOP STRENGTHS Section */}
-              <GlassCard sx={{ mb: 3, background: '#27292d' }}>
-                {/* Orange Header */}
-                <Box sx={{ 
-                  // background: '#202124', 
-                  px: 2, 
-                  py: 1,
-                  borderRadius: '8px 8px 0 0'
-                }}>
-                  <Typography sx={{ 
-                    fontSize: 14, 
-                    fontWeight: 'bold', 
-                    color: themeColors.text,
-                    pl: { xs: 1.5, md: 5 },
-                    pt: 1,
-                    textTransform: 'uppercase'
-                  }}>
-                    Your Top Strengths
-                  </Typography>
-                </Box>
+                  {/* Win/Loss Pie Chart */}
+                  <Grid item xs={12} md={6}>
+                    <GlassCard sx={{ background: '#27292d' }}>
+                      {/* Header with toggle */}
+                      <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        p: 1.5,
 
-                <Box sx={{ p: 2 }}>
-                  <Grid container spacing={2} alignItems="flex-start">
-                    <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
-                      <Table
-                        size="small"
-                        sx={{
-                          width: '100%',
-                          tableLayout: 'fixed',
-                          '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
-                        }}
-                      >
-                        <TableHead>
-                          <TableRow sx={{ backgroundColor: '#202124' }}>
-                            <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-                            <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                            <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Avg' : 'From League Average'}</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {topStrengthRows.map((row) => {
-                            const up = row.deltaPercent > 0;
-                            const isNeutral = row.deltaPercent === 0;
-                            const diff = `${row.deltaPercent > 0 ? '+' : ''}${row.deltaPercent}%`;
-                            return (
-                              <TableRow key={row.metric}>
-                                <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.metric}</TableCell>
-                                <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.yourDisplay}</TableCell>
-                                <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                    <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: isNeutral ? themeColors.textDim : up ? themeColors.success : themeColors.danger }}>
-                                      {diff}
-                                    </Typography>
-                                    {!isNeutral && (
-                                      up
-                                        ? <ArrowUpward sx={{ fontSize: 12, color: themeColors.success }} />
-                                        : <ArrowDownward sx={{ fontSize: 12, color: themeColors.danger }} />
-                                    )}
-                                  </Box>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                      {topStrengthNote && (
-                        <Typography sx={{ fontSize: 11, mt: 1.5, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
-                          {topStrengthNote}
+                        borderBottom: `1px solid ${themeColors.border}`,
+                        flexWrap: 'wrap',
+                        gap: 0.5
+                      }}>
+                        <Button
+                          size="small"
+                          sx={{
+                            background: winLossLeague === 'all' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: winLossLeague === 'all' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setWinLossLeague('all')}
+                        >
+                          All Leagues
+                        </Button>
+                        {(() => {
+                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
+                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
+                          if (!currentId || !currentName) return null;
+                          return (
+                            <Button
+                              size="small"
+                              sx={{
+                                background: winLossLeague === currentId ? themeColors.primary : '#2a2a2a',
+                                color: themeColors.text,
+                                fontSize: 10,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 1.2,
+                                py: 0.4,
+                                borderRadius: 1,
+                                minWidth: 'auto',
+                                '&:hover': { background: winLossLeague === currentId ? themeColors.primary : '#3a3a3a' }
+                              }}
+                              onClick={() => setWinLossLeague(currentId)}
+                            >
+                              Current
+                            </Button>
+                          );
+                        })()}
+                      </Box>
+
+                      <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
+                        {/* Title */}
+                        <Typography sx={{
+                          fontSize: 14,
+                          fontWeight: 'bold',
+                          color: themeColors.text,
+                          textAlign: 'center',
+                          textTransform: 'uppercase',
+                          mb: 1
+                        }}>
+                          Win/Loss/Draw
                         </Typography>
-                      )}
-                    </Grid>
-                  </Grid>
-                </Box>
-              </GlassCard>
 
-              {/* FOCUS AREA Section (private: only when viewing your own dashboard) */}
-              {canViewPersonalSections && (
-                <GlassCard sx={{ mb: 3, background: '#25262a' }}>
+                        <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {actualWinLossData.every(d => d.value === 0) ? (
+                            <Typography sx={{ fontSize: 12, color: themeColors.textDim }}>No match data available</Typography>
+                          ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={actualWinLossData}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={55}
+                                  paddingAngle={2}
+                                  startAngle={90}
+                                  endAngle={450}
+                                  label={false}
+                                  labelLine={false}
+                                />
+                                <Tooltip
+                                  contentStyle={{
+                                    background: themeColors.surfaceAlt,
+                                    border: `1px solid ${themeColors.border}`,
+                                    borderRadius: 4,
+                                    color: themeColors.text,
+                                    fontSize: 10,
+                                  }}
+                                  formatter={(value: unknown, name: unknown) => [`${value}%`, String(name ?? '')]}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          )}
+                        </Box>
+
+                      </CardContent>
+                      <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 2,
+                        pb: 2,
+                        pt: 2,
+                        backgroundColor: '#383a3f',
+                        borderTop: `1px solid ${themeColors.border}`,
+                      }}>
+                        {actualWinLossData.map((entry, index) => (
+                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{
+                              width: 10, height: 10, borderRadius: '50%',
+                              backgroundColor: entry.color
+                            }} />
+                            <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
+                              {entry.name} {entry.value}%
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </GlassCard>
+                  </Grid>
+                </Grid>
+
+                {/* IMPACT Section */}
+                <GlassCard sx={{ mb: 3, background: '#232427' }}>
                   {/* Orange Header */}
-                  <Box sx={{ 
-                    background: '#25262a', 
-                    px: 2, 
+                  <Box sx={{
+                    // background: themeColors.primary, 
+                    px: 2,
                     py: 1,
+
                     borderRadius: '8px 8px 0 0'
                   }}>
-                    <Typography sx={{ 
-                      fontSize: 14, 
-                      fontWeight: 'bold', 
+                    <Typography sx={{
+                      fontSize: { xs: 14, md: 16 },
+                      fontWeight: 'bold',
                       color: themeColors.text,
                       pl: { xs: 1.5, md: 5 },
                       pt: 1,
                       textTransform: 'uppercase'
                     }}>
-                      Focus Area
+                      IMPACT
                     </Typography>
                   </Box>
 
                   <Box sx={{ p: 2 }}>
-                    <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
-                      {focusSuggestion}
-                    </Typography>
+                    <Grid container spacing={2} alignItems="flex-start">
+                      {/* Tables Container */}
+                      <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
+                        {/* First Table - Expected Probabilities */}
+                        <Table
+                          size="small"
+                          sx={{
+                            mb: 2,
+                            width: '100%',
+                            tableLayout: 'fixed',
+                            '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
+                          }}
+                        >
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#202124' }}>
+                              <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Expected Per Match'}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {(() => {
+                              const current = yourStats;
+                              const totalMatches = current.n;
+                              const safeMatchCount = Math.max(totalMatches, 1);
+                              const xG = ((current.matchesWithGoals || 0) / safeMatchCount * 100);
+                              const xA = ((current.matchesWithAssists || 0) / safeMatchCount * 100);
+                              const xCS = ((current.matchesWithCleanSheets || 0) / safeMatchCount * 100);
+                              const goalsPerMatch = totalMatches > 0 ? current.goals / totalMatches : 0;
+                              const assistsPerMatch = totalMatches > 0 ? current.assists / totalMatches : 0;
+                              const cleanSheetsPerMatch = totalMatches > 0 ? current.cleanSheets / totalMatches : 0;
+                              const winRate = current.winRate;
+
+                              return (
+                                <>
+                                  <TableRow>
+                                    <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goalsPerMatch.toFixed(1)}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assistsPerMatch.toFixed(1)}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheetsPerMatch.toFixed(1)}</TableCell>
+                                  </TableRow>
+                                  <TableRow sx={{ bgcolor: '#383a3e' }}>
+                                    <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}></TableCell>
+                                  </TableRow>
+                                </>
+                              );
+                            })()}
+                          </TableBody>
+                        </Table>
+
+                        {/* Second Table - Actual Stats */}
+                        <Table
+                          size="small"
+                          sx={{
+                            width: '100%',
+                            tableLayout: 'fixed',
+                            '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
+                          }}
+                        >
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#202124' }}>
+                              <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'From League Average'}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {(() => {
+                              return leagueComparisonRows.map((row) => {
+                                const isContribution = row.metric === 'Game Contribution Index';
+                                return (
+                                  <TableRow key={row.metric} sx={isContribution ? { bgcolor: '#383a3e' } : undefined}>
+                                    <TableCell
+                                      sx={{
+                                        fontSize: 11,
+                                        py: 0.8,
+                                        color: themeColors.text,
+                                        borderBottom: `1px solid ${themeColors.border}`,
+                                        ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                      }}
+                                    >
+                                      {row.metric}
+                                    </TableCell>
+                                    <TableCell
+                                      align="center"
+                                      sx={{
+                                        fontSize: 11,
+                                        py: 0.8,
+                                        color: themeColors.text,
+                                        borderBottom: `1px solid ${themeColors.border}`,
+                                        ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                      }}
+                                    >
+                                      {row.yourDisplay}
+                                    </TableCell>
+                                    <TableCell
+                                      align="center"
+                                      sx={{
+                                        fontSize: 11,
+                                        py: 0.8,
+                                        color: row.leagueAverage > 0 ? themeColors.text : themeColors.textDim,
+                                        borderBottom: `1px solid ${themeColors.border}`,
+                                        ...(isContribution ? { bgcolor: '#383a3e' } : {})
+                                      }}
+                                    >
+                                      {row.leagueDisplay}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              });
+                            })()}
+                          </TableBody>
+                        </Table>
+                      </Grid>
+                    </Grid>
                   </Box>
                 </GlassCard>
-              )}
 
-              {/* Play Best With + Rivalries */}
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={{ 
-                  fontSize: 13, 
-                  fontWeight: 'bold', 
-                  mb: 1,
-                  textAlign: 'center',
-                  lineHeight: 1.45,
-                  color: themeColors.text 
-                }}>
-                  {topTeammateLine}
-                </Typography>
+                {/* YOUR TOP STRENGTHS Section */}
+                <GlassCard sx={{ mb: 3, background: '#27292d' }}>
+                  {/* Orange Header */}
+                  <Box sx={{
+                    // background: '#202124', 
+                    px: 2,
+                    py: 1,
+                    borderRadius: '8px 8px 0 0'
+                  }}>
+                    <Typography sx={{
+                      fontSize: 14,
+                      fontWeight: 'bold',
+                      color: themeColors.text,
+                      pl: { xs: 1.5, md: 5 },
+                      pt: 1,
+                      textTransform: 'uppercase'
+                    }}>
+                      Your Top Strengths
+                    </Typography>
+                  </Box>
 
-                <Typography sx={{ 
-                  fontSize: 13, 
-                  fontWeight: 'bold', 
-                  textAlign: 'center',
-                  lineHeight: 1.45,
-                  color: toughestRivalLine === 'No toughest opponent identified yet' ? themeColors.textDim : themeColors.text 
-                }}>
-                  {toughestRivalLine}
-                </Typography>
+                  <Box sx={{ p: 2 }}>
+                    <Grid container spacing={2} alignItems="flex-start">
+                      <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
+                        <Table
+                          size="small"
+                          sx={{
+                            width: '100%',
+                            tableLayout: 'fixed',
+                            '& .MuiTableCell-root:first-of-type': { pl: { xs: 1.2, md: 5 } },
+                          }}
+                        >
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#202124' }}>
+                              <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'From League Average'}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {topStrengthRows.map((row) => {
+                              return (
+                                <TableRow key={row.metric}>
+                                  <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.metric}</TableCell>
+                                  <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.yourDisplay}</TableCell>
+                                  <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                      <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: row.leagueAverage > 0 ? themeColors.text : themeColors.textDim }}>
+                                        {row.leagueDisplay}
+                                      </Typography>
+                                    </Box>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                        {topStrengthNote && (
+                          <Typography sx={{ fontSize: 11, mt: 1.5, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
+                            {topStrengthNote}
+                          </Typography>
+                        )}
+                        <Box sx={{ mt: 1, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
+                          <Typography sx={{ fontSize: 10.5 }}>
+                            Calculation data: Player: {playerName || playerId || 'Player'} | League: {selectedLeagueName || 'All Leagues'} | Season: {selectedSeasonLabel}
+                          </Typography>
+                          <Typography sx={{ fontSize: 10.5 }}>
+                            Formula data{impactCalculationTotals?.source === 'estimated' ? ' (estimated from returned % until backend totals deploy)' : ''}: {impactCalculationTotals
+                              ? leagueComparisonRows.map((row) => {
+                                const keyMap: Record<string, keyof LeagueMetricValues> = {
+                                  Goals: 'goals',
+                                  Assists: 'assists',
+                                  'Clean Sheets': 'cleanSheets',
+                                  'MOTM Votes': 'motmVotes',
+                                  'Defensive Impact Votes': 'defensiveImpactVotes',
+                                  'Game Contribution Index': 'impact',
+                                };
+                                const key = keyMap[row.metric];
+                                const playerTotal = key ? impactCalculationTotals.playerTotals[key] : 0;
+                                const leagueTotal = key ? impactCalculationTotals.leagueTotals[key] : 0;
+                                return `${row.metric} ${playerTotal}/${leagueTotal} = ${row.leagueDisplay}`;
+                              }).join(' • ')
+                              : 'Waiting for filtered league stats...'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </GlassCard>
+
+                {/* FOCUS AREA Section (private: only when viewing your own dashboard) */}
+                {canViewPersonalSections && (
+                  <GlassCard sx={{ mb: 3, background: '#25262a' }}>
+                    {/* Orange Header */}
+                    <Box sx={{
+                      background: '#25262a',
+                      px: 2,
+                      py: 1,
+                      borderRadius: '8px 8px 0 0'
+                    }}>
+                      <Typography sx={{
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        color: themeColors.text,
+                        pl: { xs: 1.5, md: 5 },
+                        pt: 1,
+                        textTransform: 'uppercase'
+                      }}>
+                        Focus Area
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ p: 2 }}>
+                      <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
+                        {focusSuggestion}
+                      </Typography>
+                    </Box>
+                  </GlassCard>
+                )}
+
+                {/* Play Best With + Rivalries */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography sx={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    mb: 1,
+                    textAlign: 'center',
+                    lineHeight: 1.45,
+                    color: themeColors.text
+                  }}>
+                    {topTeammateLine}
+                  </Typography>
+
+                  <Typography sx={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    lineHeight: 1.45,
+                    color: toughestRivalLine === 'No toughest opponent identified yet' ? themeColors.textDim : themeColors.text
+                  }}>
+                    {toughestRivalLine}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-          )}
+            )}
           </Box>
         </Box>
       </Container>

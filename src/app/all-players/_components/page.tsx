@@ -1171,7 +1171,9 @@ const AllPlayersPage = () => {
                   PaperProps={{
                     sx: {
                       mt: 0.6,
-                      width: isDesktop ? 150 : 'min(92vw, 340px)',
+                      minWidth: isDesktop ? 220 : leagueMenuAnchor?.offsetWidth || 150,
+                      width: isDesktop ? 'max-content' : 'min(92vw, 340px)',
+                      maxWidth: 'min(92vw, 360px)',
                       maxHeight: 260,
                       overflowY: 'auto',
                       overflowX: 'hidden',
@@ -1187,7 +1189,7 @@ const AllPlayersPage = () => {
                   <MenuItem
                     selected={selectedLeague === 'all'}
                     onClick={() => handleLeagueMenuSelect('all')}
-                    sx={{ fontSize: isMobile ? '13px' : '15px' }}
+                    sx={{ fontSize: isMobile ? '13px' : '15px', whiteSpace: 'nowrap' }}
                   >
                     All Leagues
                   </MenuItem>
@@ -1196,7 +1198,13 @@ const AllPlayersPage = () => {
                       key={leagueOption.id}
                       selected={selectedLeague === leagueOption.id}
                       onClick={() => handleLeagueMenuSelect(leagueOption.id)}
-                      sx={{ fontSize: isMobile ? '13px' : '15px' }}
+                      sx={{
+                        fontSize: isMobile ? '13px' : '15px',
+                        maxWidth: '100%',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
                     >
                       {leagueOption.name}
                     </MenuItem>
