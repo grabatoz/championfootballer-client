@@ -570,6 +570,7 @@ export default function CareerPage() {
 
   useEffect(() => {
     if (!filters.leagueId || filters.leagueId === 'all') return;
+    if (availableLeagues.length === 0) return;
     const stillVisible = availableLeagues.some((l) => sameId(l.id, filters.leagueId));
     if (!stillVisible) dispatch(setLeagueFilter('all'));
   }, [availableLeagues, filters.leagueId, dispatch]);
@@ -859,10 +860,13 @@ export default function CareerPage() {
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
-    const targetLeagueIds = Array.from(new Set([
-      ...averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean),
-      ...((filters.leagueId && filters.leagueId !== 'all') ? [String(filters.leagueId).trim()] : []),
-    ]));
+    const selectedLeagueId =
+      filters.leagueId && filters.leagueId !== 'all'
+        ? String(filters.leagueId).trim()
+        : (urlLeagueId ? String(urlLeagueId).trim() : '');
+    const targetLeagueIds = selectedLeagueId
+      ? [selectedLeagueId]
+      : Array.from(new Set(averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean)));
     const authToken = token || getAuthToken() || Cookies.get('token') || '';
     if (!authToken || targetLeagueIds.length === 0) return;
     const apiUrl = API_BASE_URL;
@@ -910,13 +914,6 @@ export default function CareerPage() {
     };
 
     (async () => {
-      const results = await Promise.all(targetLeagueIds.map((leagueId) => fetchAvg(leagueId)));
-      if (cancelled) return;
-      const cache: typeof leagueAvgCache = {};
-      const shareCache: typeof leagueShareCache = {};
-      const totalsCache: typeof leagueTotalsCache = {};
-      const playerTotalsCache: typeof leaguePlayerTotalsCache = {};
-
       const normalizeKeys = <T,>(obj?: Record<string, T> | null): Record<string, T> => {
         const next: Record<string, T> = {};
         Object.entries(obj || {}).forEach(([k, v]) => {
@@ -925,23 +922,22 @@ export default function CareerPage() {
         return next;
       };
 
-      for (const r of results) {
-        if (r) {
-          const lid = r.leagueId.toLowerCase();
-          cache[lid] = r.leagueAvg;
-          shareCache[lid] = normalizeKeys(r.playerShares);
-          totalsCache[lid] = r.leagueTotals || { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-          playerTotalsCache[lid] = normalizeKeys(r.playerTotals);
-        }
-      }
-      setLeagueAvgCache(cache);
-      setLeagueShareCache(shareCache);
-      setLeagueTotalsCache(totalsCache);
-      setLeaguePlayerTotalsCache(playerTotalsCache);
+      await Promise.all(targetLeagueIds.map(async (leagueId) => {
+        const r = await fetchAvg(leagueId);
+        if (cancelled || !r) return;
+        const lid = r.leagueId.toLowerCase();
+        setLeagueAvgCache((prev) => ({ ...prev, [lid]: r.leagueAvg }));
+        setLeagueShareCache((prev) => ({ ...prev, [lid]: normalizeKeys(r.playerShares) }));
+        setLeagueTotalsCache((prev) => ({
+          ...prev,
+          [lid]: r.leagueTotals || { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 },
+        }));
+        setLeaguePlayerTotalsCache((prev) => ({ ...prev, [lid]: normalizeKeys(r.playerTotals) }));
+      }));
     })();
 
     return () => { cancelled = true; };
-  }, [token, averageLeagues, filters.leagueId, filters.year, seasonFilter]);
+  }, [token, averageLeagues, filters.leagueId, filters.year, seasonFilter, urlLeagueId]);
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
