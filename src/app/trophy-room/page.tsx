@@ -1551,6 +1551,7 @@ export default function GlobalTrophyRoom() {
   const [completionTab, setCompletionTab] = useState<'completed' | 'uncompleted'>('uncompleted');
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
+  const [trophyRefreshKey, setTrophyRefreshKey] = useState(0);
   const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
 
   useEffect(() => {
@@ -1558,6 +1559,28 @@ export default function GlobalTrophyRoom() {
       setRelativeNowMs(Date.now());
     }, 60_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const triggerTrophyRefresh = () => {
+      setTrophyRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('match-stats-updated', triggerTrophyRefresh);
+    window.addEventListener('votes-updated', triggerTrophyRefresh);
+    window.addEventListener('vote-submitted', triggerTrophyRefresh);
+    window.addEventListener('captain-picks-updated', triggerTrophyRefresh);
+    window.addEventListener('match-updated', triggerTrophyRefresh);
+
+    return () => {
+      window.removeEventListener('match-stats-updated', triggerTrophyRefresh);
+      window.removeEventListener('votes-updated', triggerTrophyRefresh);
+      window.removeEventListener('vote-submitted', triggerTrophyRefresh);
+      window.removeEventListener('captain-picks-updated', triggerTrophyRefresh);
+      window.removeEventListener('match-updated', triggerTrophyRefresh);
+    };
   }, []);
 
   // Helper: determine if a league is completed (season-aware)
@@ -1761,7 +1784,7 @@ export default function GlobalTrophyRoom() {
       setLoading(true); // Keep loading screen until data is ready
       try {
         // Fetch leagues data with cache-busting
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?_=${Date.now()}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
@@ -1920,7 +1943,7 @@ export default function GlobalTrophyRoom() {
       console.log('[Trophy Room] Fetching seasons for league:', leagueId);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons?_=${Date.now()}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons?refresh=1&_t=${Date.now()}`,
           {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal,
@@ -1997,7 +2020,7 @@ export default function GlobalTrophyRoom() {
     const fetchWinners = async () => {
       setTrophyLoading(true);
       try {
-        const params = new URLSearchParams({ _: Date.now().toString() });
+        const params = new URLSearchParams({ refresh: '1', _t: Date.now().toString() });
         params.append('leagueId', selectedLeagueId);
 
         if (selectedSeasonId && selectedSeasonId !== 'all') {
@@ -2048,7 +2071,7 @@ export default function GlobalTrophyRoom() {
       }
     };
     fetchWinners();
-  }, [token, selectedLeagueId, selectedSeasonId, seasonsChecked]); // Re-fetch when league or season changes
+  }, [token, selectedLeagueId, selectedSeasonId, seasonsChecked, trophyRefreshKey]); // Re-fetch when league, season, or stats change
 
   // Persist and fetch achievements for the current user (saves XP to DB, then loads badges)
   useEffect(() => {
@@ -2057,7 +2080,7 @@ export default function GlobalTrophyRoom() {
       try {
         // First, persist any newly unlocked achievements and ensure XP is saved to profile
         try {
-          const awardRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements/award?_=${Date.now()}`, {
+          const awardRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements/award?refresh=1&_t=${Date.now()}`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -2068,7 +2091,7 @@ export default function GlobalTrophyRoom() {
         } catch { }
 
         // Then, fetch server-computed achievements summary for display
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements?_=${Date.now()}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/achievements?refresh=1&_t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data: ServerAchievementsResponse = await res.json();
@@ -2085,7 +2108,7 @@ export default function GlobalTrophyRoom() {
         setServerBadges(null);
       }
     })();
-  }, [token]);
+  }, [token, trophyRefreshKey]);
 
   // Fetch ALL trophies won by current user across all leagues and seasons (for My Achievements)
   useEffect(() => {
@@ -2101,7 +2124,7 @@ export default function GlobalTrophyRoom() {
           let seasons: Season[] = [];
           try {
             const seasonsRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons?_=${Date.now()}`,
+              `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons?refresh=1&_t=${Date.now()}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (seasonsRes.ok) {
@@ -2117,7 +2140,7 @@ export default function GlobalTrophyRoom() {
           if (seasons.length === 0) {
             // No seasons, try fetching trophies for league without season filter
             try {
-              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&_=${Date.now()}`;
+              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&refresh=1&_t=${Date.now()}`;
               const res = await fetch(url, {
                 headers: { Authorization: `Bearer ${token}` },
               });
@@ -2134,7 +2157,7 @@ export default function GlobalTrophyRoom() {
             // Fetch trophies for each season in this league
             for (const season of seasons) {
               try {
-                const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&_=${Date.now()}`;
+                const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&refresh=1&_t=${Date.now()}`;
                 const res = await fetch(url, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
@@ -2158,7 +2181,7 @@ export default function GlobalTrophyRoom() {
         setMyAllTrophies([]);
       }
     })();
-  }, [token, user?.id, leagues]); // Re-fetch when user or leagues change
+  }, [token, user?.id, leagues, trophyRefreshKey]); // Re-fetch when user, leagues, or stats change
 
   // Auto-select a default league (prefer a completed league, else first) - REMOVED to prevent double refresh
   // Initial selection is now done in the first useEffect after leagues are fetched
@@ -2318,7 +2341,7 @@ export default function GlobalTrophyRoom() {
       // Fetch quick-view, full player profile, and league stats in parallel
       const [quickViewRes, playerRes, statsRes] = await Promise.all([
         fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view?_=${Date.now()}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(String(trophy.leagueId))}/player/${encodeURIComponent(String(trophy.winnerId))}/quick-view?refresh=1&_t=${Date.now()}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
         fetch(
