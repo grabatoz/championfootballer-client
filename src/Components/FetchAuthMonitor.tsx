@@ -210,6 +210,32 @@ export default function FetchAuthMonitor() {
         }
 
         const res = await originalFetch(finalInput, finalInit);
+        if (res.status === 401) {
+          try {
+            const hasCookies = document.cookie.includes("token=") || document.cookie.includes("auth_token=");
+            const hasLocalStorage = localStorage.getItem("auth_token") || localStorage.getItem("token") || localStorage.getItem("access_token") || localStorage.getItem("user");
+            
+            if (hasCookies || hasLocalStorage) {
+              console.warn("[FetchAuthMonitor] 401 Unauthorized received. Logging out user and redirecting to login...");
+              
+              // Clear cookies
+              document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+              document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+              
+              // Clear localStorage
+              localStorage.removeItem("token");
+              localStorage.removeItem("auth_token");
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("user");
+              localStorage.removeItem("userData");
+              
+              // Redirect to login page
+              window.location.href = "/login?expired=1";
+            }
+          } catch (e) {
+            console.error("[FetchAuthMonitor] Error clearing auth state on 401:", e);
+          }
+        }
         if (matchId) {
           if (res.status === 404) {
             missingMatchIds[matchId] = Date.now();

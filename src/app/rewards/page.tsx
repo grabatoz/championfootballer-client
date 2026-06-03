@@ -829,12 +829,16 @@ export default function RewardsPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [xp, setXp] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const [leaguesLoading, setLeaguesLoading] = useState(true);
+  const [achievementsLoading, setAchievementsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, token } = useAuth();
   const [serverBadges, setServerBadges] = useState<Badge[] | null>(null);
  const theme = useTheme();
       const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  const loading = leaguesLoading || achievementsLoading;
+
   // Badge detail modal state
   const [openBadgeDlg, setOpenBadgeDlg] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
@@ -843,9 +847,12 @@ export default function RewardsPage() {
 
   // Fetch leagues data
   useEffect(() => {
+    if (!token) {
+      setLeaguesLoading(false);
+      return;
+    }
     const fetchLeagues = async () => {
-      if (!token) return;
-      setLoading(true);
+      setLeaguesLoading(true);
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues?_=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -864,7 +871,7 @@ export default function RewardsPage() {
         setLeagues([]);
         setError('An error occurred while fetching leagues.');
       } finally {
-        setLoading(false);
+        setLeaguesLoading(false);
       }
     };
     fetchLeagues();
@@ -872,7 +879,11 @@ export default function RewardsPage() {
 
   // Persist and fetch achievements
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setAchievementsLoading(false);
+      return;
+    }
+    setAchievementsLoading(true);
     (async () => {
       try {
         // Persist achievements
@@ -901,6 +912,8 @@ export default function RewardsPage() {
         }
       } catch (e) {
         console.error('[Rewards] achievements fetch error', e);
+      } finally {
+        setAchievementsLoading(false);
       }
     })();
   }, [token]);

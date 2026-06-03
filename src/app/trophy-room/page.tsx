@@ -1539,6 +1539,7 @@ export default function GlobalTrophyRoom() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [allLeagues, setAllLeagues] = useState<League[]>([]);
   const [backendTotalXP, setBackendTotalXP] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [trophyLoading, setTrophyLoading] = useState(false); // separate loading for trophy re-fetches (season/league change)
@@ -1790,6 +1791,7 @@ export default function GlobalTrophyRoom() {
         if (!res.ok) {
           console.error('[Trophy Room] auth/status failed:', res.status);
           setLeagues([]);
+          setAllLeagues([]);
           setLoading(false);
           return;
         }
@@ -1824,6 +1826,7 @@ export default function GlobalTrophyRoom() {
           });
 
           setLeagues(activeLeagues);
+          setAllLeagues(enrichedLeagues);
 
           // Auto-select preferred league from localStorage or first league
           if (activeLeagues.length > 0) {
@@ -1851,10 +1854,12 @@ export default function GlobalTrophyRoom() {
           } catch { }
         } else {
           setLeagues([]);
+          setAllLeagues([]);
         }
       } catch (err) {
         console.error('[Trophy Room] Failed to fetch leagues:', err);
         setLeagues([]);
+        setAllLeagues([]);
       } finally {
         // Only hide loading after data is ready
         setLoading(false);
@@ -2112,76 +2117,51 @@ export default function GlobalTrophyRoom() {
 
   // Fetch ALL trophies won by current user across all leagues and seasons (for My Achievements)
   useEffect(() => {
-    if (!token || !user || !leagues || leagues.length === 0) return;
+    if (!token || !user) return;
 
     (async () => {
       try {
-        const allUserTrophies: TrophyType[] = [];
-
-        // Iterate through all leagues where user is a member
-        for (const league of leagues) {
-          // First, fetch seasons for this league from the API
-          let seasons: Season[] = [];
-          try {
-            const seasonsRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons?refresh=1&_t=${Date.now()}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (seasonsRes.ok) {
-              const seasonsData = await seasonsRes.json().catch(() => null);
-              if (seasonsData?.success && Array.isArray(seasonsData.seasons)) {
-                seasons = seasonsData.seasons;
-              }
-            }
-          } catch {
-            // Ignore — will fall through to no-season fetch
-          }
-
-          if (seasons.length === 0) {
-            // No seasons, try fetching trophies for league without season filter
-            try {
-              const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&refresh=1&_t=${Date.now()}`;
-              const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (res.ok) {
-                const data = await res.json().catch(() => null);
-                if (data?.success && Array.isArray(data.trophyWinners)) {
-                  const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
-                  const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
-                  allUserTrophies.push(...userTrophies);
-                }
-              }
-            } catch { /* skip this league */ }
-          } else {
-            // Fetch trophies for each season in this league
-            for (const season of seasons) {
-              try {
-                const url = `${process.env.NEXT_PUBLIC_API_URL}/leagues/trophy-room?leagueId=${league.id}&seasonId=${season.id}&refresh=1&_t=${Date.now()}`;
-                const res = await fetch(url, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                if (res.ok) {
-                  const data = await res.json().catch(() => null);
-                  if (data?.success && Array.isArray(data.trophyWinners)) {
-                    const trophiesWithMeta = attachTrophyMeta(data.trophyWinners);
-                    const userTrophies = trophiesWithMeta.filter(t => t.winnerId && String(t.winnerId) === String(user.id));
-                    allUserTrophies.push(...userTrophies);
-                  }
-                }
-              } catch { /* skip this season */ }
-            }
-          }
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(String(user.id))}/trophies?refresh=1&_t=${Date.now()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) {
+          console.error('[My Trophies] Failed to fetch player trophies');
+          setMyAllTrophies([]);
+          return;
         }
-
-        console.log('[My Achievements] Total user trophies found:', allUserTrophies.length);
-        setMyAllTrophies(allUserTrophies);
+        const resJson = await res.json();
+        if (resJson?.success && resJson?.data?.trophies) {
+          const rawTrophies = resJson.data.trophies;
+          const flatRawWinners: any[] = [];
+          Object.entries(rawTrophies).forEach(([title, entries]) => {
+            if (!Array.isArray(entries)) return;
+            entries.forEach((it: any) => {
+              flatRawWinners.push({
+                title,
+                winnerId: String(user.id),
+                winner: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Player',
+                leagueId: it.leagueId,
+                leagueName: it.leagueName,
+                seasonId: it.seasonId,
+                seasonName: it.seasonName,
+                awardedAt: it.awardedAt,
+                updatedAt: it.updatedAt,
+              });
+            });
+          });
+          const trophiesWithMeta = attachTrophyMeta(flatRawWinners);
+          console.log('[My Trophies] Total user trophies found:', trophiesWithMeta.length);
+          setMyAllTrophies(trophiesWithMeta);
+        } else {
+          setMyAllTrophies([]);
+        }
       } catch (e) {
-        console.error('[My Achievements] Error fetching all trophies:', e);
+        console.error('[My Trophies] Error fetching player trophies:', e);
         setMyAllTrophies([]);
       }
     })();
-  }, [token, user?.id, leagues, trophyRefreshKey]); // Re-fetch when user, leagues, or stats change
+  }, [token, user?.id, trophyRefreshKey]);
 
   // Auto-select a default league (prefer a completed league, else first) - REMOVED to prevent double refresh
   // Initial selection is now done in the first useEffect after leagues are fetched
@@ -2946,21 +2926,48 @@ export default function GlobalTrophyRoom() {
         }}>
           {(() => {
             // Get ALL trophies won by current user across all leagues and seasons
-            const myTrophies = myAllTrophies || [];
+            // Helper to get trophy date object
+            const getTrophyDateObj = (trophy: TrophyType) => {
+              if (trophy.awardedAt) {
+                const d = new Date(trophy.awardedAt);
+                if (!isNaN(d.getTime())) return d;
+              }
+              if (trophy.createdAt) {
+                const d = new Date(trophy.createdAt);
+                if (!isNaN(d.getTime())) return d;
+              }
+              if (trophy.updatedAt) {
+                const d = new Date(trophy.updatedAt);
+                if (!isNaN(d.getTime())) return d;
+              }
+              if (trophy.leagueId) {
+                const league = allLeagues.find(l => String(l.id) === String(trophy.leagueId));
+                if (league?.createdAt) {
+                  const d = new Date(league.createdAt);
+                  if (!isNaN(d.getTime())) return d;
+                }
+              }
+              return null;
+            };
 
-            // Helper to get league date by ID
             const getLeagueDate = (leagueId?: string) => {
               if (!leagueId) return null;
-              const league = leagues.find(l => String(l.id) === String(leagueId));
+              const league = allLeagues.find(l => String(l.id) === String(leagueId));
               return league?.createdAt ? new Date(league.createdAt) : null;
             };
 
             // Helper to format date as MMM YYYY
-            const formatTrophyDate = (leagueId?: string) => {
-              const date = getLeagueDate(leagueId);
+            const formatTrophyDate = (trophy: TrophyType) => {
+              const date = getTrophyDateObj(trophy);
               if (!date) return 'N/A';
               return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
             };
+
+            // Filter out any trophies that don't have a valid date (avoid showing "N/A" on the screen)
+            const myTrophies = (myAllTrophies || []).filter(t => {
+              const d = getTrophyDateObj(t);
+              return d !== null;
+            });
 
             // Categorize and sort trophies by priority and date
             // Each trophy instance is shown separately (not grouped)
@@ -2969,16 +2976,16 @@ export default function GlobalTrophyRoom() {
             const leagueChampions = myTrophies
               .filter(t => t.title === 'League Champion')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA; // Descending (most recent first)
               });
 
             const runnersUp = myTrophies
               .filter(t => t.title === 'Runner-Up')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
@@ -2986,48 +2993,48 @@ export default function GlobalTrophyRoom() {
             const ballonDor = myTrophies
               .filter(t => t.title === "Ballon D'or")
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
             const goldenBoot = myTrophies
               .filter(t => t.title === 'Golden Boot')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
             const kingPlaymaker = myTrophies
               .filter(t => t.title === 'King Playmaker')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
             const starKeeper = myTrophies
               .filter(t => t.title === 'Star Keeper')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
             const legendaryShield = myTrophies
               .filter(t => t.title === 'Legendary Shield')
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
             const otherIndividual = myTrophies
               .filter(t => !['League Champion', 'Runner-Up', "Ballon D'or", 'Golden Boot', 'King Playmaker', 'Star Keeper', 'Legendary Shield'].includes(t.title))
               .sort((a, b) => {
-                const dateA = getLeagueDate(a.leagueId)?.getTime() || 0;
-                const dateB = getLeagueDate(b.leagueId)?.getTime() || 0;
+                const dateA = getTrophyDateObj(a)?.getTime() || 0;
+                const dateB = getTrophyDateObj(b)?.getTime() || 0;
                 return dateB - dateA;
               });
 
@@ -3184,7 +3191,7 @@ export default function GlobalTrophyRoom() {
                                       textAlign: 'center',
                                       lineHeight: 1.1,
                                     }}>
-                                      {formatTrophyDate(trophy.leagueId)}
+                                      {formatTrophyDate(trophy)}
                                     </Typography>
                                   </Box>
                                 ))}
@@ -3293,7 +3300,7 @@ export default function GlobalTrophyRoom() {
                                       textAlign: 'center',
                                       lineHeight: 1.1,
                                     }}>
-                                      {formatTrophyDate(trophy.leagueId)}
+                                      {formatTrophyDate(trophy)}
                                     </Typography>
                                   </Box>
                                 ))}
