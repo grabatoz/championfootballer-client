@@ -28,6 +28,8 @@ import { joinLeague } from '@/lib/features/leagueSlice';
 import { AppDispatch } from '@/lib/store';
 import Tooltip from '@mui/material/Tooltip';
 import Slide, { SlideProps } from '@mui/material/Slide';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
+
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), { loading: () => <></>, ssr: false });
@@ -2023,7 +2025,13 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   const memberAvatarSrc =
                     typeof member.profilePicture === 'string' && member.profilePicture.trim().length > 0
                       ? member.profilePicture.trim()
-                      : PlayerImg.src
+                      : undefined
+                  const initials = getAvatarInitials({
+                    name: memberName,
+                    firstName: member.firstName,
+                    lastName: member.lastName,
+                  })
+                  const avatarBgColor = getAvatarBackgroundColor(memberName || String(member.id || 'player'))
                   return (
                     <Box key={member.id}>
                       <ListItem
@@ -2040,15 +2048,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                         <ListItemAvatar>
                           <Avatar
                             src={memberAvatarSrc}
-                            imgProps={{
-                              onError: (e) => {
-                                const img = e.currentTarget as HTMLImageElement;
-                                if (img.src !== PlayerImg.src) img.src = PlayerImg.src;
-                              },
+                            sx={{
+                              bgcolor: avatarBgColor,
+                              color: '#fff',
+                              fontWeight: 700,
+                              fontSize: 14,
                             }}
-                            sx={{ bgcolor: '#374151' }}
                           >
-                            {(member.firstName?.[0] || '?').toUpperCase()}
+                            {initials}
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
