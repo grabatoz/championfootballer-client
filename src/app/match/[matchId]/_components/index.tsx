@@ -519,6 +519,14 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           }
         });
         window.dispatchEvent(new CustomEvent('match-updated', { detail: { matchId } }));
+        window.dispatchEvent(new CustomEvent('match-stats-updated', {
+          detail: {
+            matchId,
+            leagueId: match?.leagueId || getNestedLeagueId(match) || '',
+            playerId: apiPlayerId
+          }
+        }));
+        toast.success('stats update');
         setEditingPlayer(null);
         // Refresh match data
         fetchMatchData(true);

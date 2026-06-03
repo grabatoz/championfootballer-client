@@ -78,6 +78,7 @@ export default function LeaderBoardPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [registeredMemberIds, setRegisteredMemberIds] = useState<Set<string> | null>(null);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
+  const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
   const [leaguesDropdownAnchor, setLeaguesDropdownAnchor] = useState<null | HTMLElement>(null);
   const { token } = useAuth();
@@ -208,11 +209,25 @@ export default function LeaderBoardPage() {
     };
   }, [selectedLeague, token]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStatsUpdated = (evt: Event) => {
+      const detail = (evt as CustomEvent<{ leagueId?: string | number }>).detail;
+      const eventLeagueId = String(detail?.leagueId || '').trim();
+      if (eventLeagueId && selectedLeague && eventLeagueId !== String(selectedLeague)) return;
+      setLeaderboardRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('match-stats-updated', handleStatsUpdated);
+    return () => window.removeEventListener('match-stats-updated', handleStatsUpdated);
+  }, [selectedLeague]);
+
   // Fetch leaderboard when metric or league changes
   useEffect(() => {
     if (!selectedLeague || !token) return;
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${selectedLeague}&limit=5`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leaderboard?metric=${selectedMetric}&leagueId=${selectedLeague}&limit=5&refresh=1&_t=${Date.now()}`, {
       credentials: 'include',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -252,7 +267,7 @@ export default function LeaderBoardPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [selectedMetric, selectedLeague, token, registeredMemberIds]);
+  }, [selectedMetric, selectedLeague, token, registeredMemberIds, leaderboardRefreshKey]);
 
   const handleLeaguesDropdownOpen = (event: React.MouseEvent<HTMLElement>) => {
     setLeaguesDropdownAnchor(event.currentTarget);

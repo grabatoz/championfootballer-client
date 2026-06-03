@@ -950,8 +950,17 @@ export default function LeagueDetailPage() {
                     detail: { matchId: activeMatchId }
                 }));
 
+                // 📢 Dispatch stats-updated event so leaderboards refresh immediately
+                window.dispatchEvent(new CustomEvent('match-stats-updated', {
+                    detail: {
+                        matchId: activeMatchId,
+                        leagueId: league?.id || leagueId || '',
+                        playerId: data.playerId || (user?.id ? String(user.id) : '')
+                    }
+                }));
+
                 // ✅ Show success message
-                toast.success('Stats saved successfully!');
+                toast.success('stats update');
 
                 console.log('✨ Match updated and refreshed!');
             }

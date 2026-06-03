@@ -1736,8 +1736,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         
         const errors: string[] = [];
         let statsSuccess = false;
-        let voteSuccess = false;
-        let captainPicksSuccess = false;
 
         try {
             // 1. Save Stats
@@ -1762,16 +1760,34 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const statsApiSuccess = statsData?.success;
                 if (statsResponse.ok && statsApiSuccess !== false) {
                     statsSuccess = true;
+                    const playerId = String(statsData?.playerId ?? currentUserId ?? '');
                     const updatedStats = statsData?.updatedStats;
                     if (updatedStats && typeof updatedStats === 'object') {
                         Object.entries(updatedStats).forEach(([metric, value]) => {
                             if (typeof value === 'number') {
-                                const playerId = String(statsData?.playerId ?? currentUserId);
                                 cacheManager.updateLeaderboardCache(playerId, value, metric as keyof LeaderboardPlayer);
                             }
                         });
                     }
                     clearCacheByResource('stats', `${resolvedMatchId}_${currentUserId}`);
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('match-stats-updated', {
+                            detail: {
+                                matchId: resolvedMatchId,
+                                leagueId: resolvedLeagueId || match?.leagueId || '',
+                                playerId,
+                                stats: {
+                                    goals: stats.goals,
+                                    assists: stats.assists,
+                                    cleanSheets: stats.cleanSheets,
+                                    penalties: stats.penalties,
+                                    freeKicks: stats.freeKicks,
+                                    defence: stats.defence,
+                                    impact: computedImpact,
+                                },
+                            },
+                        }));
+                    }
                 } else {
                     const message = typeof statsData?.message === 'string' && statsData.message
                         ? statsData.message
@@ -1791,7 +1807,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     const voteData = await parseJsonSafely(voteResponse);
                     const voteApiSuccess = voteData?.success;
                     if (voteResponse.ok && voteApiSuccess !== false) {
-                        voteSuccess = true;
                         if (typeof window !== 'undefined') {
                             window.dispatchEvent(new CustomEvent('refresh-notifications'));
                         }
@@ -1805,14 +1820,11 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 } catch {
                     errors.push('Failed to save MOTM vote');
                 }
-            } else {
-                voteSuccess = true; // No vote to save
             }
 
             // 3. Save Defensive Impact / Mentality picks
             if (captainApiAvailable && (captainPicks.defence || captainPicks.influence)) {
                 try {
-                    captainPicksSuccess = true;
                     // Save Defensive Impact pick
                     if (captainPicks.defence) {
                         const defResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/captain-picks`, {
@@ -1829,7 +1841,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     ? defData.message
                                     : 'Failed to save Defensive Impact pick'
                             );
-                            captainPicksSuccess = false;
                         }
                     }
 
@@ -1849,25 +1860,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     ? menData.message
                                     : 'Failed to save + Mentality pick'
                             );
-                            captainPicksSuccess = false;
                         }
                     }
                 } catch {
-                    captainPicksSuccess = false;
                     errors.push('Failed to save captain picks');
                 }
-            } else {
-                captainPicksSuccess = true; // No picks selected or API unavailable
             }
 
             // Show result
             if (statsSuccess) {
-                const successParts = ['Stats saved'];
-                if (votedForId && voteSuccess) successParts.push('Vote saved');
-                if (captainPicksSuccess && (captainPicks.defence || captainPicks.influence)) {
-                    successParts.push('Captain picks saved');
-                }
-                toast.success(successParts.join(', ') + '!');
+                toast.success('stats update');
                 setIsStatsModalOpen(false);
                 setShowInlineStats(false);
                 await fetchLeagueAndMatchDetails(true);
