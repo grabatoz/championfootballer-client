@@ -2261,6 +2261,13 @@ export default function LeagueDetailPage() {
         return true; // Default to active
     }, [selectedSeasonId, league, seasonOptions]);
 
+    const hasLegacyUnseasonedMatches = React.useMemo(() => {
+        return (league?.matches || []).some((match) => {
+            const seasonId = normalizeEntityId((match as unknown as Record<string, unknown>)?.seasonId);
+            return !seasonId;
+        });
+    }, [league?.matches]);
+
     // Filter matches and members based on selected season
     const filteredLeague = React.useMemo(() => {
         console.log('🔄 filteredLeague useMemo triggered');
@@ -3556,19 +3563,27 @@ export default function LeagueDetailPage() {
             const localMember = league?.members?.find((m: User) => m.id === playerId);
 
             // Fetch quick-view (motmCount) AND full player profile (skills, xp, etc.) in parallel
-            const seasonParam = selectedSeasonId ? `?seasonId=${encodeURIComponent(selectedSeasonId)}` : '';
+            const shouldUseWholeLeaguePopup = hasLegacyUnseasonedMatches || seasonOptions.length <= 1;
+            const popupSeasonId = shouldUseWholeLeaguePopup ? null : selectedSeasonId;
+            const quickViewParams = new URLSearchParams({
+                seasonId: popupSeasonId || 'all',
+            });
+            const statsParams = new URLSearchParams({ leagueId });
+            if (popupSeasonId) {
+                statsParams.set('seasonId', popupSeasonId);
+            }
             const [quickViewRes, playerRes, statsRes] = await Promise.all([
                 fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view${seasonParam}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}/quick-view?${quickViewParams.toString()}`,
+                    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
                 ),
                 fetch(
                     `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
                 ),
                 fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}/stats?leagueId=${encodeURIComponent(leagueId)}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    `${process.env.NEXT_PUBLIC_API_URL}/players/${encodeURIComponent(playerId)}/stats?${statsParams.toString()}`,
+                    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
                 ),
             ]);
 
@@ -3583,14 +3598,17 @@ export default function LeagueDetailPage() {
 
             const fullPlayer = playerData?.success ? playerData.player : null;
             const matchStats = statsData?.success ? statsData.stats : null;
-            const overallXP = Number(fullPlayer?.xp ?? data.player?.xp ?? localMember?.xp ?? 0);
+            const statsScopedXP = Number(matchStats?.xp ?? matchStats?.totalXP);
+            const scopedXP = Number.isFinite(statsScopedXP)
+                ? statsScopedXP
+                : getLeagueXpForMember(playerId, localMember?.xp);
 
             const player: User & PlayerProfileLike = {
                 id: String(fullPlayer?.id ?? data.player?.id ?? playerId),
                 firstName: fullPlayer?.firstName ?? data.player?.firstName ?? localMember?.firstName ?? '',
                 lastName: fullPlayer?.lastName ?? data.player?.lastName ?? localMember?.lastName ?? '',
                 email: '',
-                xp: overallXP,
+                xp: scopedXP,
                 position: fullPlayer?.position ?? data.player?.position ?? localMember?.position ?? undefined,
                 profilePicture: fullPlayer?.profilePicture ?? data.player?.profilePicture ?? localMember?.profilePicture ?? null,
                 preferredFoot: fullPlayer?.preferredFoot ?? data.player?.preferredFoot ?? null,
@@ -3626,11 +3644,11 @@ export default function LeagueDetailPage() {
                     assists: Number(matchStats?.assists ?? data.stats?.assists ?? 0),
                 },
                 skills,
-                xp: overallXP,
-                cleanSheets: Number(data.cleanSheets ?? 0),
+                xp: scopedXP,
+                cleanSheets: Number(matchStats?.cleanSheets ?? data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
-                defensiveImpact: Number(data.defensiveImpact ?? 0),
-                mentality: Number(data.mentality ?? 0),
+                defensiveImpact: Number(matchStats?.defensiveImpact ?? data.defensiveImpact ?? 0),
+                mentality: Number(matchStats?.mentality ?? data.mentality ?? 0),
                 lastFive: Array.isArray(data.lastFive) ? data.lastFive : [],
             });
             setOpenQuickView(true);
