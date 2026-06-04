@@ -1986,7 +1986,7 @@ export default function AllMatches() {
                 <Box
                     sx={{
                         mb: { xs: 3, md: 5 },
-                        bgcolor: '#000',
+                        bgcolor: '#0E0E0E',
                         px: { xs: 1, sm: 2, md: 3 },
                         py: { xs: 2, md: 2.5 },
                         borderRadius: 0,
