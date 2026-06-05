@@ -445,18 +445,18 @@ export default function PlayerStatsPage() {
     const [statsModalOpen, setStatsModalOpen] = useState(false);
     const [statsModalTab, setStatsModalTab] = useState<'goals' | 'assists' | 'motm' | 'defensive' | 'totalXP'>('goals');
 
-    // Tabs only control visual highlight. Data always follows selected filters.
-    const effectiveTrophiesLeagueId = leagueId || 'all';
-    const effectiveTrophiesYear = year || 'all';
-    const effectiveTrophiesSeasonId = selectedSeason || 'all';
+    // When a profile tab is active, that card shows overall data; otherwise it follows selected filters.
+    const effectiveTrophiesLeagueId = activeTab === 'trophies' ? 'all' : (leagueId || 'all');
+    const effectiveTrophiesYear = activeTab === 'trophies' ? 'all' : (year || 'all');
+    const effectiveTrophiesSeasonId = activeTab === 'trophies' ? 'all' : (selectedSeason || 'all');
 
-    const effectiveRewardsLeagueId = leagueId || 'all';
-    const effectiveRewardsYear = year || 'all';
-    const effectiveRewardsSeasonId = selectedSeason || 'all';
+    const effectiveRewardsLeagueId = activeTab === 'rewards' ? 'all' : (leagueId || 'all');
+    const effectiveRewardsYear = activeTab === 'rewards' ? 'all' : (year || 'all');
+    const effectiveRewardsSeasonId = activeTab === 'rewards' ? 'all' : (selectedSeason || 'all');
 
-    const effectiveHistoryLeagueId = leagueId || 'all';
-    const effectiveHistoryYear = year || 'all';
-    const effectiveHistorySeasonId = selectedSeason || 'all';
+    const effectiveHistoryLeagueId = activeTab === 'history' ? 'all' : (leagueId || 'all');
+    const effectiveHistoryYear = activeTab === 'history' ? 'all' : (year || 'all');
+    const effectiveHistorySeasonId = activeTab === 'history' ? 'all' : (selectedSeason || 'all');
 
     // Latest year present in data (fallback: current year)
     const latestYearInData = useMemo(() => {
@@ -1441,7 +1441,7 @@ export default function PlayerStatsPage() {
         leagueId && leagueId !== 'all'
             ? leaguesForYear.find((l: LeagueWithMatchesTyped) => sameId(l.id, leagueId))?.name || 'Current League'
             : leaguesForYear[0]?.name || 'Current League';
-    const historyXpLabel = leagueId && leagueId !== 'all'
+    const historyXpLabel = activeTab !== 'history' && leagueId && leagueId !== 'all'
         ? 'Highest XP Points Received In A League (Selected League)'
         : 'Highest XP Points Received In A League';
 
