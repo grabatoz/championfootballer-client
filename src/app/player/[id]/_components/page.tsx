@@ -1060,6 +1060,30 @@ export default function PlayerStatsPage() {
         };
     }, [playerId, token, profileXPFallback]);
 
+    const currentScopedXP = useMemo(() => {
+        const matchesForScope = leagueId === 'all' ? allMatches : currentLeagueMatches;
+        return sumXPAwardedFromMatches(matchesForScope);
+    }, [leagueId, allMatches, currentLeagueMatches]);
+
+    const careerScopedXP = useMemo(() => sumXPAwardedFromMatches(careerMatches), [careerMatches]);
+
+    const displayXp = useMemo(() => {
+        if (activeTab === 'career') return careerScopedXP;
+        if (activeTab === 'current') return currentScopedXP;
+        return xp;
+    }, [activeTab, careerScopedXP, currentScopedXP, xp]);
+
+    const statsRowXpStatusTier = useMemo(() => getXPTier(displayXp), [displayXp]);
+
+    const statsRowXpProgressToMax = useMemo(() => {
+        const safeXp = Number.isFinite(displayXp) ? Math.max(0, displayXp) : 0;
+        const cappedXp = Math.min(XP_STATUS_MAX_POINTS, safeXp);
+        const rawPercent = (cappedXp / XP_STATUS_MAX_POINTS) * 100;
+        if (rawPercent <= 0) return 0;
+        if (rawPercent >= 100) return 100;
+        return Math.max(1, Math.round(rawPercent));
+    }, [displayXp]);
+
     // XP status from revised 7-level table
     const xpStatusTier = useMemo(() => getXPTier(xp), [xp]);
 
@@ -2847,9 +2871,9 @@ export default function PlayerStatsPage() {
                                     Total xp
                                 </Typography>
                                 <Typography sx={{ color: '#ffffff', fontSize:  {xs:15 , sm :15 , md:18}, fontWeight: 700 }}>
-                                    {xpLoading ? '...' : `${Math.max(0, xp).toLocaleString()} XP`}
+                                    {xpLoading ? '...' : `${Math.max(0, displayXp).toLocaleString()} XP`}
                                 </Typography>
-                                <Box sx={{ 
+                                {/* <Box sx={{ 
                                     width: '100%',
                                     height: 8, 
                                     bgcolor: '#444', 
@@ -2859,11 +2883,11 @@ export default function PlayerStatsPage() {
                                 }}>
                                     <Box sx={{ 
                                         height: '100%', 
-                                        bgcolor: xpStatusTier.cardColor, 
-                                        width: xpProgressToMax > 0 ? `max(${xpProgressToMax}%, 6px)` : '0%',
+                                        bgcolor: statsRowXpStatusTier.cardColor, 
+                                        width: statsRowXpProgressToMax > 0 ? `max(${statsRowXpProgressToMax}%, 6px)` : '0%',
                                         transition: 'width 0.4s ease'
                                     }} />
-                                </Box>
+                                </Box> */}
                             </Box>
                         </Grid>
                     </Grid>
