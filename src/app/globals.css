@@ -398,6 +398,16 @@ input:-webkit-autofill:active {
   box-shadow: 8px 0 12px -12px rgba(0, 0, 0, 0.35);
 }
 
+.league-standings-row.bg-table-row-even:hover > :nth-child(1),
+.league-standings-row.bg-table-row-even:hover > :nth-child(2) {
+  background-color: #424242 !important;
+}
+
+.league-standings-row.bg-table-row-odd:hover > :nth-child(1),
+.league-standings-row.bg-table-row-odd:hover > :nth-child(2) {
+  background-color: #353535 !important;
+}
+
 .league-standings-topbar-text {
   flex-wrap: wrap;
   row-gap: 2px;

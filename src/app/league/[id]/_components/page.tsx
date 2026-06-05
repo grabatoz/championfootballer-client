@@ -6165,7 +6165,7 @@ export default function LeagueDetailPage() {
                                                                     <div className="text-center text-white font-bold">{index + 1}</div>
 
                                                                     {/* Player Info */}
-                                                                    <div className={`flex items-center gap-3 min-w-0 sticky left-0 z-10 ${isEven ? 'bg-table-row-even group-hover:bg-[#424242]' : 'bg-table-row-odd group-hover:bg-[#353535]'} transition-colors duration-150`}>
+                                                                    <div className="flex items-center gap-3 min-w-0 sticky left-0 z-10 transition-colors duration-150">
                                                                         <div
                                                                             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
                                                                             style={{
