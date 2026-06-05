@@ -4689,7 +4689,7 @@ export default function LeagueDetailPage() {
                                                                 {/* XP Points column */}
                                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 5.5 }, textAlign: 'center' }}>
                                                                     <Typography className="league-table-row-text" sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
-                                                                        {getLeagueXpForMember(member.id, member.xp)}
+                                                                        {getLeagueXpForMember(member.id, member.xp).toLocaleString()}
                                                                     </Typography>
                                                                 </Box>
                                                             </ListItem>
@@ -6215,7 +6215,7 @@ export default function LeagueDetailPage() {
                                                                         {(player.goalDifference ?? 0) > 0 ? `+${player.goalDifference}` : (player.goalDifference ?? 0)}
                                                                     </div>
                                                                     <div className="text-center text-white font-bold">{player.winPercentage}</div>
-                                                                    <div className="text-center text-white font-extrabold uppercase">{xpPts}</div>
+                                                                    <div className="text-center text-white font-extrabold uppercase">{xpPts.toLocaleString()}</div>
                                                                 </div>
                                                             );
                                                         })}

@@ -1671,7 +1671,7 @@ const AllPlayersPage = () => {
                                 color: '#fff',
                                 fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
                               }}>
-                                {getCpPoints(player)}
+                                {getCpPoints(player)?.toLocaleString()}
                               </Typography>
                             </Box>
                           </ListItem>

@@ -3264,7 +3264,7 @@ export default function GlobalTrophyRoom() {
                     <Typography sx={{ mb: 1.25 }}>{selectedBadge.description}</Typography>
                     <Typography variant="body2" sx={{ color: '#334155', mb: 1 }}>
                       {selectedBadge.unlocked
-                        ? `Earned x${selectedBadge.count} • Total XP from this medal: ${selectedBadge.count * selectedBadge.xp}`
+                        ? `Earned x${selectedBadge.count} • Total XP from this medal: ${formatNumber(selectedBadge.count * selectedBadge.xp)}`
                         : (selectedBadge.progressText || 'Progress unavailable')}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748b' }}>

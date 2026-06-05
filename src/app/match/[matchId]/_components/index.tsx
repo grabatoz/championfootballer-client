@@ -1194,7 +1194,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           textAlign: 'center',
                                           fontSize: { xs: 11, sm: 12, md: 14 },
                                           fontWeight: 700
-                                        }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
+                                        }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
                                       </Box>
                                     </Box>
                                   ) : (
@@ -1246,7 +1246,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded : 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
                                       </Box>
                                     </Link>
                                   )}

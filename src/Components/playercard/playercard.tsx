@@ -548,7 +548,7 @@ const PlayerCard = ({
         {/* Top: XP Points */}
         <Box sx={{ mt: 0.5 }}>
           <Typography fontWeight={'bold'} fontSize="18px" color={'#000'}>
-            <span className='font-bold text-[16px]'> {points} xp </span>
+            <span className='font-bold text-[16px]'> {(points ?? 0).toLocaleString()} xp </span>
           </Typography>
         </Box>
 

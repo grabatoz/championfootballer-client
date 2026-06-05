@@ -1349,7 +1349,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               }}
             >
               <Typography sx={{ fontSize: { xs: 10, sm: 13 }, fontWeight: 700, letterSpacing: 0.2 }}>
-                {Math.round(player.xp)}
+                {Math.round(player.xp).toLocaleString()}
               </Typography>
               <Typography sx={{ fontSize: { xs: 8.5, sm: 10.5 }, fontWeight: 700  }}>
                 xp
@@ -1759,7 +1759,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
                       {hasPublishedResult && typeof (p as Player).xp === 'number' && (
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
                       )}
                     </Box>
                     <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
@@ -1782,7 +1782,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
                       </Box>
                       {hasPublishedResult && typeof (p as Player).xp === 'number' && (
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp} xp</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
                       )}
                     </Box>
                     <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
