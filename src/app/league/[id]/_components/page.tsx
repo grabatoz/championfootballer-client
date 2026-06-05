@@ -2601,7 +2601,7 @@ export default function LeagueDetailPage() {
             const votes: ManOfTheMatchVotes = hasMotmVotes(match) && match.manOfTheMatchVotes
                 ? match.manOfTheMatchVotes
                 : {};
-            
+
             const matchVoteCounts: Record<string, number> = {};
             Object.values(votes).forEach((votedForId) => {
                 const pid = String(votedForId);
@@ -4420,7 +4420,7 @@ export default function LeagueDetailPage() {
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
-                                <Box sx={{ width: '100%', mx: 'auto', mt: 1.2 , mb: 4, }}>
+                                <Box sx={{ width: '100%', mx: 'auto', mt: 1.2, mb: 4, }}>
                                     <Box
                                         sx={{
                                             width: '100%',
@@ -4564,6 +4564,8 @@ export default function LeagueDetailPage() {
                                                 msOverflowStyle: 'none',
                                                 borderBottomLeftRadius: '8px',
                                                 borderBottomRightRadius: '8px',
+                                                pl: 2,
+                                                pr: 2
                                             }}>
                                                 <List sx={{ p: 0 }}>
                                                     {filteredMembersForTable.map((member, idx) => {
@@ -4592,6 +4594,7 @@ export default function LeagueDetailPage() {
                                                                     '&:hover': { backgroundColor: rowBgColorHover },
                                                                     borderBottomLeftRadius: isLast ? '8px' : 0,
                                                                     borderBottomRightRadius: isLast ? '8px' : 0,
+                                                                    // p: 2
                                                                 }}
                                                             >
                                                                 {/* Avatar + Name column */}
@@ -4776,7 +4779,7 @@ export default function LeagueDetailPage() {
                                                 px: { xs: 1.5, sm: 2.5 },
                                                 mb: 2,
                                                 lineHeight: 1.5,
-                                                mt:2
+                                                mt: 2
                                             }}
                                         >
                                             Match fixtures will move to Match Results once the match has finished. Please check the fixture duration time to know when to view completed matches.
@@ -6529,7 +6532,7 @@ export default function LeagueDetailPage() {
                                             display: 'grid',
                                             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
                                             gap: 2,
-                                            
+
                                         }}
                                     >
                                         {LEADERBOARD_METRIC_CONFIG.map((metric) => (
