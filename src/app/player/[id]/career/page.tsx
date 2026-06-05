@@ -3085,23 +3085,23 @@ export default function CareerPage() {
                                 <>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goalsPerMatch.toFixed(1)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assistsPerMatch.toFixed(1)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheetsPerMatch.toFixed(1)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>-</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}></TableCell>
                                   </TableRow>
                                 </>
                               );

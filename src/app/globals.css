@@ -89,16 +89,50 @@ body {
   overflow-x: hidden;
 }
 
-/* Hide scrollbar UI globally (scroll still works with touch/wheel/trackpad) */
-* {
-  -ms-overflow-style: none !important; /* IE and old Edge */
-  scrollbar-width: none !important; /* Firefox */
+@media (min-width: 768px) {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  * {
+    -ms-overflow-style: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #8d8d8d transparent !important;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #8d8d8d !important;
+    border-radius: 999px !important;
+    border: 2px solid transparent !important;
+    background-clip: content-box !important;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #737373 !important;
+    background-clip: content-box !important;
+  }
 }
 
-*::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
+@media (max-width: 767px) {
+  * {
+    -ms-overflow-style: none !important; /* IE and old Edge */
+    scrollbar-width: none !important; /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
 }
 
 /* Buttons/labels use project primary font for parity between local and production */
