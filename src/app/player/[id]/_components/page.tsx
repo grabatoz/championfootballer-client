@@ -2866,11 +2866,11 @@ export default function PlayerStatsPage() {
                             />
                         </Grid>
                         <Grid item xs={12} sm={4} md>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                                <Typography sx={{ color: '#c8c8c8', fontSize: {xs:16 , sm :16 , md:19}, fontWeight: 500 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <Typography sx={{ color: '#c8c8c8', fontSize: { xs: 15, sm: 17, md: 19 }, fontWeight: 600 }}>
                                     Total xp
                                 </Typography>
-                                <Typography sx={{ color: '#ffffff', fontSize:  {xs:15 , sm :15 , md:18}, fontWeight: 700 }}>
+                                <Typography sx={{ color: '#ffffff', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700 }}>
                                     {xpLoading ? '...' : `${Math.max(0, displayXp).toLocaleString()} XP`}
                                 </Typography>
                                 {/* <Box sx={{ 
