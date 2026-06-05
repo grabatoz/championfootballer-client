@@ -6159,7 +6159,7 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-2 font-bold text-white`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-0 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-white font-bold">{index + 1}</div>
