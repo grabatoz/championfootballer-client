@@ -2540,7 +2540,7 @@ export default function GlobalTrophyRoom() {
               <Box
                 sx={{
                   display: 'flex',
-                  gap: { xs: 1.25, md: 2 },
+                  gap: { xs: 0.75, md: 1 },
                   flexWrap: 'wrap',
                   alignItems: { xs: 'stretch', md: 'center' },
                   justifyContent: { xs: 'center', md: 'flex-end' },
@@ -2558,7 +2558,7 @@ export default function GlobalTrophyRoom() {
                     '& .MuiOutlinedInput-root': {
                       color: 'white',
                       borderRadius: 6,
-                      '& .MuiSelect-select': { py: 1.25, px: 2 },
+                      '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
                       '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
                       '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
                       '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
@@ -2598,7 +2598,7 @@ export default function GlobalTrophyRoom() {
                     '& .MuiOutlinedInput-root': {
                       color: 'white',
                       borderRadius: 6,
-                      '& .MuiSelect-select': { py: 1.25, px: 2 },
+                      '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
                       '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
                       '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
                       '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
@@ -2642,7 +2642,7 @@ export default function GlobalTrophyRoom() {
                     '& .MuiOutlinedInput-root': {
                       color: 'white',
                       borderRadius: 6,
-                      '& .MuiSelect-select': { py: 1.25, px: 2 },
+                      '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
                       '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
                       '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
                       '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },

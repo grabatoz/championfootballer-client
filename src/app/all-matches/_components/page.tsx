@@ -1,5 +1,5 @@
 'use client';
-import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Chip, Alert, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Button, Container, Typography, Paper, MenuItem, Divider, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, CircularProgress, Menu, ListItemIcon, ListItemText, Chip, Alert, useTheme, useMediaQuery, TextField } from '@mui/material';
 import { Calendar, ChevronDown, Crown, Edit, Plus, Trash2, Trophy, Undo2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -361,6 +361,7 @@ export default function AllMatches() {
     const [seasonsLoading, setSeasonsLoading] = useState(false);
     const [matchFilter, setMatchFilter] = useState<'all' | 'results' | 'fixtures' | 'archived'>('results');
     const [loading, setLoading] = useState(true);
+    const [selectedYear, setSelectedYear] = useState<string>('all');
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
     console.log('selectedMatch', selectedMatch)
@@ -369,6 +370,47 @@ export default function AllMatches() {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [availabilityLoading, setAvailabilityLoading] = useState<{ [key: string]: boolean }>({});
     const router = useRouter();
+
+    // Extract years dynamically from existing leagues only
+    const yearOptions = React.useMemo(() => {
+        const years = new Set<number>();
+        leagues.forEach((league) => {
+            const dateStr = (league.createdAt || league.updatedAt || '').trim();
+            if (!dateStr) return;
+            const t = Date.parse(dateStr);
+            if (!Number.isFinite(t)) return;
+            years.add(new Date(t).getFullYear());
+        });
+        years.add(new Date().getFullYear());
+        return Array.from(years)
+            .sort((a, b) => b - a)
+            .map(String);
+    }, [leagues]);
+
+    const filteredLeagues = React.useMemo(() => {
+        if (!leagues?.length) return [];
+        return leagues.filter((league) => {
+            if (selectedYear === 'all') return true;
+            const dateStr = (league.createdAt || league.updatedAt || '').trim();
+            if (!dateStr) return false;
+            const t = Date.parse(dateStr);
+            if (!Number.isFinite(t)) return false;
+            const year = new Date(t).getFullYear();
+            return String(year) === selectedYear;
+        });
+    }, [leagues, selectedYear]);
+
+    // Keep the selected league at the top of the dropdown
+    const sortedLeagues = React.useMemo(() => {
+        if (!filteredLeagues?.length) return [];
+        const arr = [...filteredLeagues];
+        const idx = arr.findIndex(l => l.id === selectedLeague);
+        if (idx > 0) {
+            const [sel] = arr.splice(idx, 1);
+            arr.unshift(sel);
+        }
+        return arr;
+    }, [filteredLeagues, selectedLeague]);
     
     // Persist selection key - same as home page
     const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
@@ -678,14 +720,34 @@ export default function AllMatches() {
 
     // Add this effect for auto-select
     useEffect(() => {
-        if (leagues.length > 0 && selectedLeague === 'all') {
+        if (filteredLeagues.length > 0 && selectedLeague === 'all') {
             setLoading(true); // Set loading before changing league
             // Check localStorage for preferred league (same as home page)
             const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-            const preferred = storedId ? leagues.find(l => l.id === storedId) : null;
-            setSelectedLeague(preferred ? preferred.id : leagues[0].id);
+            const preferred = storedId ? filteredLeagues.find(l => l.id === storedId) : null;
+            setSelectedLeague(preferred ? preferred.id : filteredLeagues[0].id);
         }
-    }, [leagues, selectedLeague]);
+    }, [filteredLeagues, selectedLeague]);
+
+    // Reset selection if the current league is not in the filtered year
+    useEffect(() => {
+        if (selectedYear !== 'all' && selectedLeague !== 'all') {
+            const currentLeague = leagues.find(l => l.id === selectedLeague);
+            if (currentLeague) {
+                const dateStr = (currentLeague.createdAt || currentLeague.updatedAt || '').trim();
+                if (dateStr) {
+                    const t = Date.parse(dateStr);
+                    if (Number.isFinite(t)) {
+                        const year = new Date(t).getFullYear();
+                        if (String(year) !== selectedYear) {
+                            setSelectedLeague('all');
+                            setSelectedSeason('all');
+                        }
+                    }
+                }
+            }
+        }
+    }, [selectedYear, selectedLeague, leagues]);
 
     // Fetch matches whenever selected league changes
 
@@ -1360,17 +1422,7 @@ export default function AllMatches() {
         router.push(`/league/${league.id}/match`);
     };
 
-    // Keep the selected league at the top of the dropdown
-    const sortedLeagues = React.useMemo(() => {
-        if (!leagues?.length) return [];
-        const arr = [...leagues];
-        const idx = arr.findIndex(l => l.id === selectedLeague);
-        if (idx > 0) {
-            const [sel] = arr.splice(idx, 1);
-            arr.unshift(sel);
-        }
-        return arr;
-    }, [leagues, selectedLeague]);
+
 
     const sortedSeasons = React.useMemo(() => {
         if (!seasons?.length) return [];
@@ -2032,18 +2084,18 @@ export default function AllMatches() {
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
-                        gap: { xs: 1.25, md: 3 },
-                        mb: { xs: 3, md: 5 },
-                        flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                         flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'stretch', sm: 'center' },
-                        justifyContent: { xs: 'flex-start', sm: 'space-between' },
+                        rowGap: 2.25,
+                        columnGap: 2,
+                        mb: { xs: 3, md: 5 },
                         px: { xs: 0.5, sm: 1.5, md: 2 },
                         maxWidth: '1200px',
                         mx: 'auto',
                         width: '100%',
                     }}>
-
+                        {/* Left side: New Match */}
                         <Box sx={{
                             display: 'flex',
                             gap: { xs: 1, md: 2 },
@@ -2076,515 +2128,259 @@ export default function AllMatches() {
                                 <Plus size={22} style={{ marginRight: 6 }} />
                                  New Match
                             </Button>
-                            {/* <TextField
-                                label="Enter invite code"
-                                value={inviteCode}
-                                onChange={(e) => setInviteCode(e.target.value)}
-                                sx={{
-                                  flex: 1,
-                                  width: { xs: '100%', sm: 'auto' },
-                                  '& .MuiOutlinedInput-root': {
-                                    color: 'black',
-                                    backgroundColor: 'rgba(255,255,255,0.1)',
-                                    borderRadius: 2,
-                                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)', border: '2px solid green' },
-                                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)', border: '2px solid green' },
-                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.8)', border: '2px solid green' },
-                                  },
-                                  '& .MuiInputLabel-root': { color: 'green' },
-                                  
-                                }}
-                              /> */}
-                            {/* <TextField
-                                label="Enter invite code"
-                                // value={inviteCode}
-                                // onChange={(e) => setInviteCode(e.target.value)}
-                                size="medium"
-                                sx={{
-                                  flex: 1,
-                                  width: { xs: '100%', sm: 'auto' },
-                                  '& .MuiOutlinedInput-root': {
-                                    color: 'black',
-                                    backgroundColor: 'rgba(255,255,255,0.1)',
-                                    borderRadius: 2,
-                                    padding: '0', // Remove extra padding
-                                    '& input': {
-                                      padding: '13px 12px', // Reduce input height
-                                    },
-                                    '& fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                                    '&:hover fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                                    '&.Mui-focused fieldset': { borderColor: '#404040', border: '1px solid #404040' },
-                                  },
-                                  '& .MuiInputLabel-root': { color: '#8C8C8C' },
-                                }}
-                              /> */}
-                            <Button
-                                onClick={handleLeaguesDropdownOpen}
-                                sx={{
-                                    textTransform: 'uppercase',
-                                    fontFamily: 'Arial, Helvetica, sans-serif',
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                                    minHeight: { xs: 44, md: 48 },
-                                    height: { xs: 44, md: 48 },
-                                    lineHeight: 1.2,
-                                    wordBreak: 'normal',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flexShrink: 1,
-                                                                        width: { xs: '100%', sm: '210px' },
+                        </Box>
 
-                                    minWidth: { xs: 0, sm: 'unset', md: 'unset' },
-                                    textAlign: { xs: 'left', md: 'left' },
-                                    // color: 'white',
-                                    backgroundColor: '#2B2B2B',
-                                    borderRadius: 2,
-                                    px: { xs: 1.75, sm: 2 },
-                                    py: { xs: 0.7, sm: 1 },
-                                    '&:hover': {
-                                        backgroundColor: '#2B2B2B',
+                        {/* Right side: Dropdowns */}
+                        <Box sx={{
+                            display: 'flex',
+                            columnGap: { xs: 0.75, md: 1 },
+                            rowGap: { xs: 0.75, md: 1 },
+                            alignItems: 'center',
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                            width: { xs: '100%', sm: 'auto' }
+                        }}>
+                            {/* Year Select */}
+                            <TextField
+                                select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                size="small"
+                                sx={{
+                                    minWidth: 150,
+                                    width: { xs: '100%', sm: 180, md: 150 },
+                                    '& .MuiOutlinedInput-root': {
+                                        color: 'white',
+                                        borderRadius: 6,
+                                        '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+                                        '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
+                                        '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
                                     },
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: { xs: 0.5, sm: 1 },
-                                    // Dynamic text color: grey when no leagues, white otherwise
-                                    color: noLeagues ? '#fff' : 'white',
-                                    // Keep readable disabled style without dimming background
-                                    '&.Mui-disabled': {
-                                        color: '#fff',
-                                        backgroundColor: '#2B2B2B',
-                                        opacity: 1
-                                    },
-                                    // border: '1px solid rgba(255,255,255,0.3)',
+                                    '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
                                 }}
-                                endIcon={<ChevronDown size={20} />}
-                                disabled={noLeagues}
-                            >
-                                <Box
-                                    component="span"
-                                    sx={{
-                                        flex: 1,
-                                        minWidth: 0,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {loading
-                  ? 'Loading...'
-                  : noLeagues
-                  ? 'No leagues found'
-                                        : formatLeagueName(
-                                            leagues.find(l => l.id === selectedLeague)?.name || 'Select League'
-                                          )}
-                                </Box>
-                            </Button>
-                            <Menu
-                                anchorEl={leaguesDropdownAnchor}
-                                open={leaguesDropdownOpen}
-                                onClose={handleLeaguesDropdownClose}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-                                marginThreshold={0}
-                                MenuListProps={{ sx: { p: 0 } }}
-                                PaperProps={{
-                                    sx: {
-                                        p: 0.5,
-                                        mt: 1,
-                                        minWidth: 240,
-                                        ml: { xs: -1.5, sm: -1.5 },
-                                        maxWidth: { xs: '92vw', sm: 'none' },
-                                        bgcolor: 'rgba(15,15,15,0.92)',
-                                        color: '#E5E7EB',
-                                        borderRadius: 2.5,
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        backdropFilter: 'blur(10px)',
-                                        boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                                        // Dynamic height: only grow to content, but allow scroll if content exceeds 320px
-                                        maxHeight: { xs: 260, sm: 320 },
-                                        overflowY: 'auto',
-                                        overflowX: 'hidden',
-                                        overscrollBehavior: 'contain',
-                                        '& .MuiMenu-list': {
-                                          maxHeight: { xs: 260, sm: 320 },
-                                          overflowY: 'auto',
-                                        },
-                                        // Themed scrollbars (only appear if needed)
-                                        scrollbarWidth: 'thin',
-                                        scrollbarColor: '#374151 #111827',
-                                        '&::-webkit-scrollbar': { width: 8 },
-                                        '&::-webkit-scrollbar-track': { background: '#111827' },
-                                        '&::-webkit-scrollbar-thumb': {
-                                            background: '#374151',
-                                            borderRadius: 20,
-                                            border: '2px solid #111827'
-                                        },
-                                        '&::-webkit-scrollbar-thumb:hover': { background: '#4b5563' },
+                                SelectProps={{
+                                    MenuProps: {
+                                        PaperProps: {
+                                            sx: {
+                                                mt: 0,
+                                                maxHeight: { xs: 240, sm: 320 },
+                                                overflowY: 'auto',
+                                                bgcolor: '#1a1a1a',
+                                                color: 'white'
+                                            }
+                                        }
                                     }
                                 }}
                             >
+                                <MenuItem value="all">All Years</MenuItem>
+                                {yearOptions.map((year) => (
+                                    <MenuItem key={year} value={year}>
+                                        {year}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+
+                            {/* League Select */}
+                            <TextField
+                                select
+                                value={selectedLeague}
+                                onChange={(e) => handleLeagueSelect(e.target.value)}
+                                size="small"
+                                disabled={noLeagues}
+                                sx={{
+                                    minWidth: 150,
+                                    width: { xs: '100%', sm: 210, md: 190 },
+                                    '& .MuiOutlinedInput-root': {
+                                        color: 'white',
+                                        borderRadius: 6,
+                                        '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+                                        '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
+                                        '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
+                                    },
+                                    '& .Mui-disabled': { WebkitTextFillColor: 'rgba(255,255,255,0.55)' },
+                                    '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
+                                }}
+                                SelectProps={{
+                                    MenuProps: {
+                                        PaperProps: {
+                                            sx: {
+                                                mt: 0,
+                                                maxHeight: { xs: 240, sm: 320 },
+                                                overflowY: 'auto',
+                                                bgcolor: '#1a1a1a',
+                                                color: 'white'
+                                            }
+                                        }
+                                    }
+                                }}
+                            >
+                                {selectedLeague === 'all' && (
+                                    <MenuItem value="all" disabled>Select League</MenuItem>
+                                )}
                                 {[...sortedLeagues].sort((a, b) => {
                                     const an = (a?.name ?? '').toString().trim().toLowerCase();
                                     const bn = (b?.name ?? '').toString().trim().toLowerCase();
                                     if (an < bn) return -1;
                                     if (an > bn) return 1;
                                     return String(a.id).localeCompare(String(b.id));
-                                }).map((leagueItem) => {
-                                    const isActive = leagueItem.id === selectedLeague;
-                                    return (
-                                        <MenuItem
-                                            key={leagueItem.id}
-                                            onClick={() => handleLeagueSelect(leagueItem.id)}
-                                            sx={{
-                                                borderRadius: 1.5,
-                                                mx: 0.5,
-                                                my: 0.25,
-                                                py: 1.25,
-                                                px: 1.5,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1,
-                                                color: '#E5E7EB',
-                                                transition: 'all 0.2s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                    background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-                                                },
-                                                ...(isActive && {
-                                                    background: 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)',
-                                                    border: '1px solid rgba(3,136,227,0.35)',
-                                                }),
-                                            }}
-                                        >
-                                            <ListItemIcon sx={{ minWidth: 36 }}>
-                                                <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary={leagueItem.name}
-                                                sx={{
-                                                    '& .MuiListItemText-primary': {
-                                                        fontSize: '0.95rem',
-                                                        fontWeight: isActive ? 700 : 500,
-                                                        letterSpacing: 0.2,
-                                                        color: isActive ? '#FFFFFF' : '#E5E7EB',
-                                                    }
-                                                }}
-                                            />
-                                                            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                {(() => {
-                                                    // Define LeagueUser type if not already defined
-                                                    type LeagueUser = { id: string };
-                                                    const isLeagueAdmin = leagueItem.administrators?.some((admin: LeagueUser) => admin.id === user?.id);
-                                                    const isLeagueMember = leagueItem.members?.some((member: LeagueUser) => member.id === user?.id);
-                                                    const userRole = isLeagueAdmin ? 'ADMIN' : isLeagueMember ? 'MEMBER' : null;
-                                                    
-                                                    return userRole ? (
-                                                        <Box
-                                                            sx={{
-                                                                px: 1,
-                                                                py: 0.25,
-                                                                bgcolor: userRole === 'ADMIN' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
-                                                                color: userRole === 'ADMIN' ? '#1F2937' : '#FFFFFF',
-                                                                borderRadius: '9999px',
-                                                                fontSize: 10,
-                                                                fontWeight: 700,
-                                                                letterSpacing: 0.3,
-                                                                textTransform: 'uppercase',
-                                                            }}
-                                                        >
-                                                            {userRole === 'ADMIN' ? 'Admin' : 'Member'}
-                                                        </Box>
-                                                    ) : null;
-                                                })()}
-                                                {/* {isActive && (
-                                                    <Box
-                                                        sx={{
-                                                            px: 1,
-                                                            py: 0.25,
-                                                            bgcolor: '#0388E3',
-                                                            color: 'white',
-                                                            borderRadius: '9999px',
-                                                            fontSize: 10,
-                                                            fontWeight: 700,
-                                                            letterSpacing: 0.3,
-                                                            textTransform: 'uppercase',
-                                                        }}
-                                                    >
-                                                        Current
-                                                    </Box>
-                                                )} */}
-                                            </Box>
-                                        </MenuItem>
-                                    );
-                                })}
-                            </Menu>
+                                }).map((leagueItem) => (
+                                    <MenuItem key={leagueItem.id} value={leagueItem.id}>
+                                        {formatLeagueName(leagueItem.name)}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
 
-                            <Button
-                                onClick={handleSeasonDropdownOpen}
-                                sx={{
-                                    textTransform: 'uppercase',
-                                    fontFamily: 'Arial, Helvetica, sans-serif',
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '14px', sm: '16px', md: '18px' },
-                                    minHeight: { xs: 44, md: 48 },
-                                    height: { xs: 44, md: 48 },
-                                    lineHeight: 1.2,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flexShrink: 1,
-                                                                       width: { xs: '100%', sm: '210px' },
-
-                                    minWidth: { xs: 0, sm: 'unset', md: 'unset' },
-                                    textAlign: { xs: 'left', md: 'left' },
-                                    backgroundColor: '#2B2B2B',
-                                    borderRadius: 2,
-                                    px: { xs: 1.75, sm: 2 },
-                                    py: { xs: 0.7, sm: 1 },
-                                    '&:hover': { backgroundColor: '#2B2B2B' },
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: { xs: 0.5, sm: 1 },
-                                    color: 'white',
-                                    '&.Mui-disabled': {
-                                        color: '#fff',
-                                        backgroundColor: '#2B2B2B',
-                                        opacity: 0.75
-                                    },
-                                }}
-                                endIcon={<ChevronDown size={20} />}
+                            {/* Season Select */}
+                            <TextField
+                                select
+                                value={selectedSeason}
+                                onChange={(e) => handleSeasonSelect(e.target.value)}
+                                size="small"
                                 disabled={selectedLeague === 'all' || seasonsLoading}
-                            >
-                                <Box
-                                    component="span"
-                                    sx={{
-                                        flex: 1,
-                                        minWidth: 0,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {selectedLeague === 'all'
-                                        ? 'All Seasons'
-                                        : seasonsLoading
-                                            ? 'Loading seasons...'
-                                            : selectedSeasonName}
-                                </Box>
-                            </Button>
-                            <Menu
-                                anchorEl={seasonDropdownAnchor}
-                                open={seasonDropdownOpen}
-                                onClose={handleSeasonDropdownClose}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-                                marginThreshold={0}
-                                MenuListProps={{ sx: { p: 0 } }}
-                                PaperProps={{
-                                    sx: {
-                                        p: 0.5,
-                                        mt: 1,
-                                        minWidth: 220,
-                                        maxWidth: { xs: '92vw', sm: 320 },
-                                        bgcolor: 'rgba(15,15,15,0.92)',
-                                        color: '#E5E7EB',
-                                        borderRadius: 2.5,
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        backdropFilter: 'blur(10px)',
-                                        boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
-                                        maxHeight: { xs: 260, sm: 320 },
-                                        overflowY: 'auto',
+                                sx={{
+                                    minWidth: 150,
+                                    width: { xs: '100%', sm: 210, md: 190 },
+                                    '& .MuiOutlinedInput-root': {
+                                        color: 'white',
+                                        borderRadius: 6,
+                                        '& .MuiSelect-select': { py: 1.25, px: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+                                        '& fieldset': { borderColor: 'rgba(229, 106, 22, 0.8)', borderWidth: '2px' },
+                                        '&:hover fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(229, 106, 22, 1)', borderWidth: '2px' }
+                                    },
+                                    '& .Mui-disabled': { WebkitTextFillColor: 'rgba(255,255,255,0.55)' },
+                                    '& .MuiSvgIcon-root': { color: 'rgba(229, 106, 22, 1)' }
+                                }}
+                                SelectProps={{
+                                    MenuProps: {
+                                        PaperProps: {
+                                            sx: {
+                                                mt: 0,
+                                                maxHeight: { xs: 240, sm: 320 },
+                                                overflowY: 'auto',
+                                                bgcolor: '#1a1a1a',
+                                                color: 'white'
+                                            }
+                                        }
                                     }
                                 }}
                             >
-                                <MenuItem
-                                    selected={selectedSeason === 'all'}
-                                    onClick={() => handleSeasonSelect('all')}
-                                    sx={{
-                                        borderRadius: 1.5,
-                                        mx: 0.5,
-                                        my: 0.25,
-                                        py: 1.1,
-                                        px: 1.5,
-                                        fontWeight: selectedSeason === 'all' ? 700 : 500,
-                                    }}
-                                >
-                                    {/* All Seasons */}
-                                </MenuItem>
-
-                                {sortedSeasons.length === 0 ? (
-                                    <MenuItem
-                                        disabled
-                                        sx={{
-                                            borderRadius: 1.5,
-                                            mx: 0.5,
-                                            my: 0.25,
-                                            py: 1.1,
-                                            px: 1.5,
-                                            opacity: 0.8,
-                                        }}
-                                    >
-                                        <Typography className="empty-state-message" variant="body2">
-                                            No seasons found
-                                        </Typography>
+                                <MenuItem value="all">All Seasons</MenuItem>
+                                {sortedSeasons.map((season) => (
+                                    <MenuItem key={season.id} value={season.id}>
+                                        {season.name}
                                     </MenuItem>
-                                ) : (
-                                    sortedSeasons.map((season) => (
-                                        <MenuItem
-                                            key={season.id}
-                                            selected={selectedSeason === season.id}
-                                            onClick={() => handleSeasonSelect(season.id)}
-                                            sx={{
-                                                borderRadius: 1.5,
-                                                mx: 0.5,
-                                                my: 0.25,
-                                                py: 1.1,
-                                                px: 1.5,
-                                                fontWeight: selectedSeason === season.id ? 700 : 500,
-                                            }}
-                                        >
-                                            {season.name}
-                                        </MenuItem>
-                                    ))
-                                )}
-                            </Menu>
-                        </Box>
+                                ))}
+                            </TextField>
 
-                        {/* Filters: All | Results | Matches | Fixtures */}
-                        <Box sx={{
-                            display: { xs: 'grid', sm: 'flex' },
-                            gridTemplateColumns: {
-                                xs: (archivedMatchesCount > 0 || matchFilter === 'archived')
-                                    ? 'minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr)'
-                                    : 'repeat(2, minmax(0, 1fr))',
-                                sm: 'none'
-                            },
-                            gap: { xs: 0.75, sm: 1 },
-                            flexWrap: { xs: 'nowrap', sm: 'wrap', md: 'nowrap' },
-                            alignItems: 'center',
-                            justifyContent: { xs: 'center', sm: 'center' },
-                            width: { xs: '100%', sm: 'auto' },
-                            mt: { xs: 1, sm: 0 }
-                        }}>
-                            {/* <Button
-                                variant={matchFilter === 'all' ? 'contained' : 'outlined'}
-                                onClick={() => setMatchFilter('all')}
+                            {/* Clear Button */}
+                            <Button
+                                variant="outlined"
+                                onClick={() => {
+                                    setSelectedYear('all');
+                                    setSelectedLeague('all');
+                                    setSelectedSeason('all');
+                                    setMatchFilter('results');
+                                }}
                                 sx={{
-                                    backgroundColor: matchFilter === 'all' ? '#00a77f' : 'transparent',
                                     color: 'white',
-                                    border: '1px solid #b75512',
-                                    borderColor: '#b75512',
-                                    borderRadius: '9999px',
-                                    textTransform: 'none',
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '12.5px', sm: '14px' },
-                                    minHeight: { xs: 36, md: 48 },
-                                    height: { xs: 36, md: 48 },
-                                    minWidth: 0,
+                                    borderRadius: 6,
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    borderWidth: '2px',
+                                    px: 2.5,
+                                    py: 1.15,
                                     width: { xs: '100%', sm: 'auto' },
-                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.75, sm: 0.8 },
-                                    whiteSpace: 'nowrap',
-                                    lineHeight: 1.1,
+                                    fontWeight: 'bold',
+                                    textTransform: 'none',
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'all' ? '#00a77f' : 'rgba(183,85,18,0.08)',
-                                        borderColor: '#b75512',
-                                    },
+                                        borderColor: 'rgba(255,255,255,0.5)',
+                                        bgcolor: 'rgba(255,255,255,0.05)'
+                                    }
                                 }}
                             >
-                                All Matches
-                            </Button> */}
-                            {(archivedMatchesCount > 0 || matchFilter === 'archived') && (
-                                <Button
-                                    variant={matchFilter === 'archived' ? 'contained' : 'outlined'}
-                                    onClick={() => setMatchFilter('archived')}
-                                    sx={{
-                                        backgroundColor: matchFilter === 'archived' ? '#444' : 'transparent',
-                                        color: 'white',
-                                        border: '1px solid #b75512',
-                                        borderColor: '#b75512',
-                                        borderRadius: '9999px',
-                                        textTransform: 'none',
-                                        fontWeight: 'bold',
-                                        fontSize: { xs: '11.5px', sm: '14px' },
-                                        minHeight: { xs: 36, md: 48 },
-                                        height: { xs: 36, md: 48 },
-                                        minWidth: 0,
-                                        width: { xs: '100%', sm: 'auto' },
-                                        px: { xs: 0.2, sm: 1.5, md: 2.25 },
-                                        py: { xs: 0.75, sm: 0.8 },
-                                        whiteSpace: 'nowrap',
-                                        lineHeight: 1.1,
-                                        '&:hover': {
-                                            backgroundColor: matchFilter === 'archived' ? '#444' : 'rgba(183,85,18,0.08)',
-                                            borderColor: '#b75512',
-                                        },
-                                    }}
-                                >
-                                    Archived Matches
-                                </Button>
-                            )}
+                                Clear
+                            </Button>
+                        </Box>
+                    </Box>
 
+                    {/* Toggle Buttons: Results / Fixtures / Archived */}
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        mt: { xs: 2, md: 3 },
+                        mb: 4
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            bgcolor: '#3F4652',
+                            borderRadius: '12px',
+                            p: 0.5,
+                            width: { xs: '95%', sm: (archivedMatchesCount > 0 || matchFilter === 'archived' ? 480 : 360), md: (archivedMatchesCount > 0 || matchFilter === 'archived' ? 600 : 400) }
+                        }}>
                             <Button
-                                variant={matchFilter === 'results' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('results')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'results' ? '#444' : 'transparent',
-                                    color: 'white',
-                                    border: '1px solid #b75512',
-                                    borderColor: '#b75512',
-                                    borderRadius: '9999px',
-                                    textTransform: 'none',
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '12.5px', sm: '14px' },
-                                    minHeight: { xs: 36, md: 48 },
-                                    height: { xs: 36, md: 48 },
-                                    minWidth: 0,
-                                    width: { xs: '100%', sm: 'auto' , md: 130 },
-                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.75, sm: 0.8 },
-                                    whiteSpace: 'nowrap',
-                                    lineHeight: 1.1,
+                                    flex: 1,
+                                    textTransform: 'uppercase',
+                                    borderRadius: '10px',
+                                    py: { xs: 1, md: 1.5 },
+                                    fontSize: { xs: '12px', sm: '15px', md: '16px' },
+                                    fontFamily: 'var(--font-woodford-bourne-pro)',
+                                    fontWeight: 700,
+                                    bgcolor: matchFilter === 'results' ? '#00a896' : 'transparent',
+                                    color: '#ffffff',
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'results' ? '#444' : 'rgba(183,85,18,0.08)',
-                                        borderColor: '#b75512',
+                                        bgcolor: matchFilter === 'results' ? '#00a896' : '#3f4652',
                                     },
+                                    transition: 'all 0.3s ease',
                                 }}
                             >
                                 Match Results
                             </Button>
-                            
                             <Button
-                                variant={matchFilter === 'fixtures' ? 'contained' : 'outlined'}
                                 onClick={() => setMatchFilter('fixtures')}
                                 sx={{
-                                    backgroundColor: matchFilter === 'fixtures' ? '#444' : 'transparent',
-                                    color: 'white',
-                                    border: '1px solid #b75512',
-                                    borderColor: '#b75512',
-                                    borderRadius: '9999px',
-                                    textTransform: 'none',
-                                    fontWeight: 'bold',
-                                    fontSize: { xs: '12.5px', sm: '14px' },
-                                    minHeight: { xs: 36, md: 48 },
-                                    height: { xs: 36, md: 48 },
-                                    minWidth: 0,
-                                    width: { xs: '100%', sm: 'auto' , md: 130},
-                                    px: { xs: 0.35, sm: 1.5, md: 2.25 },
-                                    py: { xs: 0.75, sm: 0.8 },
-                                    whiteSpace: 'nowrap',
-                                    lineHeight: 1.1,
+                                    flex: 1,
+                                    textTransform: 'uppercase',
+                                    borderRadius: '10px',
+                                    py: { xs: 1, md: 1.5 },
+                                    fontSize: { xs: '12px', sm: '15px', md: '16px' },
+                                    fontFamily: 'var(--font-woodford-bourne-pro)',
+                                    fontWeight: 700,
+                                    bgcolor: matchFilter === 'fixtures' ? '#00a896' : 'transparent',
+                                    color: '#ffffff',
                                     '&:hover': {
-                                        backgroundColor: matchFilter === 'fixtures' ? '#444' : 'rgba(183,85,18,0.08)',
-                                        borderColor: '#b75512',
+                                        bgcolor: matchFilter === 'fixtures' ? '#00a896' : '#3f4652',
                                     },
+                                    transition: 'all 0.3s ease',
                                 }}
                             >
                                 Fixtures
                             </Button>
+                            {(archivedMatchesCount > 0 || matchFilter === 'archived') && (
+                                <Button
+                                    onClick={() => setMatchFilter('archived')}
+                                    sx={{
+                                        flex: 1,
+                                        textTransform: 'uppercase',
+                                        borderRadius: '10px',
+                                        py: { xs: 1, md: 1.5 },
+                                        fontSize: { xs: '12px', sm: '15px', md: '16px' },
+                                        fontFamily: 'var(--font-woodford-bourne-pro)',
+                                        fontWeight: 700,
+                                        bgcolor: matchFilter === 'archived' ? '#00a896' : 'transparent',
+                                        color: '#ffffff',
+                                        '&:hover': {
+                                            bgcolor: matchFilter === 'archived' ? '#00a896' : '#3f4652',
+                                        },
+                                        transition: 'all 0.3s ease',
+                                    }}
+                                >
+                                    Archived
+                                </Button>
+                            )}
                         </Box>
                     </Box>
                 </Box>
