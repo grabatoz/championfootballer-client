@@ -3060,53 +3060,62 @@ export default function PlayerStatsPage() {
                                 }}>
                                     History & Records
                                 </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, position: 'relative', pl: 2.5 }}>
-                                    {/* Vertical line */}
-                                    <Box sx={{ 
-                                        position: 'absolute', 
-                                        left: 4, 
-                                        top: 8, 
-                                        bottom: 8, 
-                                        width: 2, 
-                                        bgcolor: '#00a77f',
-                                        borderRadius: 1,
-                                    }} />
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Longest Win Streak</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-                                            {historyRecords.longestWinStreak}
+                                {historyRecordsLoading ? (
+                                    <Box sx={{ display: 'flex', flex: 1, minHeight: 156, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1.25 }}>
+                                        <CircularProgress size={26} sx={{ color: TEAL_PRIMARY }} />
+                                        <Typography sx={{ color: '#aaa', fontSize: 13 }}>
+                                            Loading history...
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most Goals Scored In A League</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-                                            {historyRecords.mostGoalsInLeague}
-                                        </Typography>
+                                ) : (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, position: 'relative', pl: 2.5 }}>
+                                        {/* Vertical line */}
+                                        <Box sx={{ 
+                                            position: 'absolute', 
+                                            left: 4, 
+                                            top: 8, 
+                                            bottom: 8, 
+                                            width: 2, 
+                                            bgcolor: '#00a77f',
+                                            borderRadius: 1,
+                                        }} />
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
+                                            <Typography sx={{ color: '#ccc', fontSize: 13 }}>Longest Win Streak</Typography>
+                                            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                {historyRecords.longestWinStreak}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
+                                            <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most Goals Scored In A League</Typography>
+                                            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                {historyRecords.mostGoalsInLeague}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
+                                            <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most MOTM Votes Received In A League</Typography>
+                                            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                {historyRecords.mostMotmInLeague}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
+                                            <Typography sx={{ color: '#ccc', fontSize: 13 }}>Largest Win Margin</Typography>
+                                            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                {historyRecords.longestWinMargin}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
+                                            <Typography sx={{ color: '#ccc', fontSize: 13 }}>{historyXpLabel}</Typography>
+                                            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                                                {historyRecords.highestXpInLeague.toLocaleString()}
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Most MOTM Votes Received In A League</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-                                            {historyRecords.mostMotmInLeague}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>Largest Win Margin</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-                                            {historyRecords.longestWinMargin}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                                        <Box sx={{ position: 'absolute', left: -19, top: '50%', transform: 'translateY(-50%)', width: 8, height: 8, borderRadius: '50%', bgcolor: '#00a77f' }} />
-                                        <Typography sx={{ color: '#ccc', fontSize: 13 }}>{historyXpLabel}</Typography>
-                                        <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-                                            {historyRecords.highestXpInLeague.toLocaleString()}
-                                        </Typography>
-                                    </Box>
-                                </Box>
+                                )}
                             </Paper>
                         </Grid>
                     </Grid>
