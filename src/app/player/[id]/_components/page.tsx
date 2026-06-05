@@ -445,18 +445,18 @@ export default function PlayerStatsPage() {
     const [statsModalOpen, setStatsModalOpen] = useState(false);
     const [statsModalTab, setStatsModalTab] = useState<'goals' | 'assists' | 'motm' | 'defensive' | 'totalXP'>('goals');
 
-    // When a profile tab is active, that card shows overall data; otherwise it follows selected filters.
-    const effectiveTrophiesLeagueId = activeTab === 'trophies' ? 'all' : (leagueId || 'all');
-    const effectiveTrophiesYear = activeTab === 'trophies' ? 'all' : (year || 'all');
-    const effectiveTrophiesSeasonId = activeTab === 'trophies' ? 'all' : (selectedSeason || 'all');
+    // Trophies, rewards, and history cards always show overall career-wide data ('all')
+    const effectiveTrophiesLeagueId = 'all';
+    const effectiveTrophiesYear = 'all';
+    const effectiveTrophiesSeasonId = 'all';
 
-    const effectiveRewardsLeagueId = activeTab === 'rewards' ? 'all' : (leagueId || 'all');
-    const effectiveRewardsYear = activeTab === 'rewards' ? 'all' : (year || 'all');
-    const effectiveRewardsSeasonId = activeTab === 'rewards' ? 'all' : (selectedSeason || 'all');
+    const effectiveRewardsLeagueId = 'all';
+    const effectiveRewardsYear = 'all';
+    const effectiveRewardsSeasonId = 'all';
 
-    const effectiveHistoryLeagueId = activeTab === 'history' ? 'all' : (leagueId || 'all');
-    const effectiveHistoryYear = activeTab === 'history' ? 'all' : (year || 'all');
-    const effectiveHistorySeasonId = activeTab === 'history' ? 'all' : (selectedSeason || 'all');
+    const effectiveHistoryLeagueId = 'all';
+    const effectiveHistoryYear = 'all';
+    const effectiveHistorySeasonId = 'all';
 
     // Latest year present in data (fallback: current year)
     const latestYearInData = useMemo(() => {
@@ -1068,10 +1068,10 @@ export default function PlayerStatsPage() {
     const careerScopedXP = useMemo(() => sumXPAwardedFromMatches(careerMatches), [careerMatches]);
 
     const displayXp = useMemo(() => {
-        if (activeTab === 'career') return careerScopedXP;
+        if (activeTab === 'career') return xp;
         if (activeTab === 'current') return currentScopedXP;
         return xp;
-    }, [activeTab, careerScopedXP, currentScopedXP, xp]);
+    }, [activeTab, currentScopedXP, xp]);
 
     const statsRowXpStatusTier = useMemo(() => getXPTier(displayXp), [displayXp]);
 
