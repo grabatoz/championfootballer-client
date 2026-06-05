@@ -1695,6 +1695,25 @@ export default function GlobalTrophyRoom() {
   const [myAllTrophies, setMyAllTrophies] = useState<TrophyType[] | null>(null);
 
 
+  // Helper to normalize title
+  const normalizeTrophyTitle = (title: string): string => {
+    const t = (title || '').trim();
+    const tLower = t.toLowerCase();
+    if (tLower === 'champion footballer' || tLower === 'champion' || tLower === 'league champion') {
+      return 'League Champion';
+    }
+    if (tLower === 'runner up' || tLower === 'runner-up') {
+      return 'Runner-Up';
+    }
+    if (tLower === "ballon d'or" || tLower === "ballon dor") {
+      return "Ballon D'or";
+    }
+    if (tLower === 'the dark horse' || tLower === 'dark horse') {
+      return 'Dark Horse';
+    }
+    return t;
+  };
+
   // Helper to attach local meta (image/color/description) by title
   const attachTrophyMeta = (items: Array<{
     title: string;
@@ -1707,7 +1726,8 @@ export default function GlobalTrophyRoom() {
     [key: string]: unknown;
   }>): TrophyType[] => {
     return items.map(it => {
-      const meta = trophies.find(t => t.title === it.title);
+      const normTitle = normalizeTrophyTitle(it.title);
+      const meta = trophies.find(t => t.title === normTitle);
       const awardedAt = normalizeTimestampToISO(
         it.awardedAt ?? it.awardedOn ?? it.awardDate ?? it.wonAt ?? it.winnerAssignedAt ?? it.date ?? it.timestamp
       );
@@ -1718,7 +1738,7 @@ export default function GlobalTrophyRoom() {
         it.createdAt ?? it.created_at
       );
       return {
-        title: it.title,
+        title: normTitle,
         description: meta?.description ?? '',
         image: meta?.image ?? TrophyImg,
         color: meta?.color ?? '#999',
