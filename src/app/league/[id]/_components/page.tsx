@@ -722,7 +722,13 @@ export default function LeagueDetailPage() {
     // Season dropdown state
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
     const [seasonDropdownAnchor, setSeasonDropdownAnchor] = useState<null | HTMLElement>(null);
-    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(initialSeasonIdFromQuery || null);
+    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(() => {
+        if (initialSeasonIdFromQuery) return initialSeasonIdFromQuery;
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('preferredSeasonId_' + leagueId) || null;
+        }
+        return null;
+    });
     const [seasonOptions, setSeasonOptions] = useState<Array<{
         id: string;
         seasonNumber: number;
@@ -734,6 +740,13 @@ export default function LeagueDetailPage() {
         inviteLink?: string;
     }>>([]);
     const seasonCreatedToastShownRef = React.useRef(false);
+
+    useEffect(() => {
+        if (selectedSeasonId && leagueId) {
+            localStorage.setItem('preferredSeasonId_' + leagueId, selectedSeasonId);
+            localStorage.setItem('preferredSeasonId', selectedSeasonId);
+        }
+    }, [selectedSeasonId, leagueId]);
 
     // Match detail modal state
     const [matchDetailModalOpen, setMatchDetailModalOpen] = useState(false);

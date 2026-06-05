@@ -983,6 +983,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [settingsImageFile, setSettingsImageFile] = useState<File | null>(null)
   const [settingsImagePreview, setSettingsImagePreview] = useState<string | null>(null)
   const [settingsRemoveImage, setSettingsRemoveImage] = useState(false)
+  const [isActivatingSeason, setIsActivatingSeason] = useState(false)
   const settingsFileInputRef = React.useRef<HTMLInputElement | null>(null)
   const lastLeagueIdRef = React.useRef<string | null>(null)
   const { token } = useAuth()
@@ -1621,6 +1622,106 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     onClose()
   }, [currentSeason, currentUserInSelectedSeason, getSeasonLabel, league?.id, onClose, onMembersChanged, selectedSeasonId, token])
 
+  const handleActivateSeason = async () => {
+    if (!token || !league?.id || !selectedSeasonId || isActivatingSeason) return;
+
+    const confirmed = window.confirm('Are you sure you want to activate this season? This will deactivate all other seasons of this league.');
+    if (!confirmed) return;
+
+    setIsActivatingSeason(true);
+    try {
+      // 1. Activate the selected season
+      const activatePayload = {
+        isActive: true,
+        active: true,
+        status: 'active'
+      };
+
+      const activateEndpoints = [
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}`, body: activatePayload },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}`, body: activatePayload },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: activatePayload },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: activatePayload }
+      ] as const;
+
+      let activated = false;
+      let lastErrorMsg = 'Failed to activate season';
+
+      for (const endpoint of activateEndpoints) {
+        try {
+          const res = await fetch(endpoint.url, {
+            method: endpoint.method,
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(endpoint.body),
+          });
+          const payload: any = await res.json().catch(() => ({}));
+          if (res.ok && payload.success !== false) {
+            activated = true;
+            break;
+          }
+          if (payload.message) lastErrorMsg = payload.message;
+        } catch (err) {
+          console.error('Error in activate endpoint candidate:', err);
+        }
+      }
+
+      if (!activated) {
+        throw new Error(lastErrorMsg);
+      }
+
+      // 2. Deactivate all other seasons of the league in parallel
+      const otherSeasons = seasons.filter(s => String(s.id) !== String(selectedSeasonId));
+      const deactivatePromises = otherSeasons.map(async (other) => {
+        const deactivatePayload = {
+          isActive: false,
+          active: false,
+          status: 'inactive'
+        };
+        const deactivateEndpoints = [
+          { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${other.id}`, body: deactivatePayload },
+          { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${other.id}`, body: deactivatePayload },
+          { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${other.id}/status`, body: deactivatePayload },
+          { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${other.id}/status`, body: deactivatePayload }
+        ] as const;
+
+        for (const endpoint of deactivateEndpoints) {
+          try {
+            const res = await fetch(endpoint.url, {
+              method: endpoint.method,
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(endpoint.body),
+            });
+            const payload: any = await res.json().catch(() => ({}));
+            if (res.ok && payload.success !== false) {
+              break;
+            }
+          } catch (err) {
+            console.error('Error deactivating other season:', err);
+          }
+        }
+      });
+      await Promise.all(deactivatePromises);
+
+      toast.success('Season activated successfully!');
+      
+      // Update local state in parent components
+      if (onMembersChanged) {
+        await Promise.resolve(onMembersChanged());
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'An error occurred while activating the season';
+      toast.error(msg);
+    } finally {
+      setIsActivatingSeason(false);
+    }
+  };
+
   // Do not return before declaring hooks to preserve hook order. Render nothing if no league.
   if (!league) return null
 
@@ -1931,22 +2032,58 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
 
               <FormControl component="fieldset">
                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                  Change league active status
+                  Season Status
                 </Typography>
-                <RadioGroup row value={isActive ? 'active' : 'inactive'} onChange={(e) => setIsActive(e.target.value === 'active')}>
-                  <FormControlLabel
-                    value="active"
-                    disabled={!canManageLeagueSettings}
-                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: '#27ab83' } }} />}
-                    label="Active"
-                  />
-                  <FormControlLabel
-                    value="inactive"
-                    disabled={!canManageLeagueSettings}
-                    control={<Radio sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: 'red' } }} />}
-                    label="Inactive"
-                  />
-                </RadioGroup>
+                {currentSeason?.isActive ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label="Active"
+                      sx={{
+                        bgcolor: 'rgba(39, 171, 131, 0.15)',
+                        color: '#27ab83',
+                        border: '1px solid rgba(39, 171, 131, 0.3)',
+                        fontWeight: 600,
+                        height: 24,
+                      }}
+                    />
+                    <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
+                      This season is currently active.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Chip
+                      label="Inactive"
+                      sx={{
+                        bgcolor: 'rgba(239, 83, 80, 0.15)',
+                        color: '#ef5350',
+                        border: '1px solid rgba(239, 83, 80, 0.3)',
+                        fontWeight: 600,
+                        height: 24,
+                      }}
+                    />
+                    {canManageLeagueSettings && selectedSeasonId && (
+                      <Button
+                        variant="contained"
+                        onClick={handleActivateSeason}
+                        disabled={isActivatingSeason}
+                        sx={{
+                          bgcolor: '#27ab83',
+                          '&:hover': { bgcolor: '#1e8463' },
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          fontSize: '12px',
+                          py: 0.5,
+                          px: 1.5,
+                          textTransform: 'none',
+                          minHeight: 30,
+                        }}
+                      >
+                        {isActivatingSeason ? 'Activating...' : 'Activate Season'}
+                      </Button>
+                    )}
+                  </Box>
+                )}
               </FormControl>
 
               <FormControl fullWidth>

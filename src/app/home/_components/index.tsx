@@ -69,7 +69,7 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { initializeFromStorage, mergeUser } from '@/lib/features/authSlice';
 import { League, User, Match } from '@/types/user';
 import { joinLeague } from '@/lib/features/leagueSlice';
-import { ChevronRight, CloudUpload, X, Plus } from 'lucide-react';
+import { ChevronRight, CloudUpload, X, Plus, Calendar } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
 import { leagueAPI } from '@/lib/api-ultra-fast';
 import { Trophy } from 'lucide-react';
@@ -138,6 +138,7 @@ type LeagueWithComputed = BasicLeague & {
   isLocked?: boolean;
   userRole?: 'ADMIN' | 'MEMBER';
   seasonNumber?: number;
+  seasons?: any[];
 };
 
 type ApiLeague = {
@@ -175,6 +176,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   const { token } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
 
+  const [seasonsList, setSeasonsList] = useState<any[]>([]);
+  const [seasonsLoading, setSeasonsLoading] = useState(false);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
+  const [showSeasonDropdown, setShowSeasonDropdown] = useState(false);
+
   const isFetching = !networkDone;
 
   // Notify parent about admin status changes
@@ -194,7 +200,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     }
     // Fallback: check administrators array
     if (Array.isArray(l.administrators)) {
-      const isAdmin = l.administrators.some((u) => u && String(u.id) === currentId);
+      const isAdmin = l.administrators.some((u: any) => u && String(u.id) === currentId);
       return isAdmin ? 'ADMIN' : 'MEMBER';
     }
     return undefined;
@@ -229,6 +235,65 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       // ignore storage errors (quota/SSG)
     }
   }, [selectedLeague?.id]);
+
+  // Fetch/hydrate seasons for selected league
+  useEffect(() => {
+    if (!selectedLeague?.id || !token) {
+      setSeasonsList([]);
+      return;
+    }
+
+    if (selectedLeague.seasons && selectedLeague.seasons.length > 0) {
+      setSeasonsList(selectedLeague.seasons);
+      return;
+    }
+
+    const fetchSeasons = async () => {
+      setSeasonsLoading(true);
+      try {
+        const timestamp = Date.now();
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeague.id}?_t=${timestamp}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const seasons = data?.league?.seasons || [];
+          setSeasonsList(seasons);
+          setSelectedLeague(prev => prev && String(prev.id) === String(selectedLeague.id) ? { ...prev, seasons } : prev);
+        }
+      } catch (err) {
+        console.error('Failed to fetch seasons for league:', err);
+      } finally {
+        setSeasonsLoading(false);
+      }
+    };
+
+    fetchSeasons();
+  }, [selectedLeague?.id, token]);
+
+  // Auto-select preferred season or default
+  useEffect(() => {
+    if (seasonsList.length === 0 || !selectedLeague?.id) {
+      setSelectedSeasonId('');
+      return;
+    }
+
+    const storedSeasonId = localStorage.getItem(`preferredSeasonId_${selectedLeague.id}`);
+    const hasStored = storedSeasonId && seasonsList.some(s => String(s.id) === String(storedSeasonId));
+
+    if (hasStored) {
+      setSelectedSeasonId(String(storedSeasonId));
+    } else {
+      const active = seasonsList.find(s => s.isActive || s.active || String(s.status || '').toLowerCase() === 'active');
+      const fallback = active || seasonsList[0];
+      if (fallback) {
+        setSelectedSeasonId(String(fallback.id));
+        localStorage.setItem(`preferredSeasonId_${selectedLeague.id}`, String(fallback.id));
+        localStorage.setItem('preferredSeasonId', String(fallback.id));
+      }
+    }
+  }, [seasonsList, selectedLeague?.id]);
 
   // Helper: determine if a league is completed (exclude from dropdown)
   const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
@@ -312,6 +377,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
+        setShowSeasonDropdown(false);
       }
     };
 
@@ -1079,16 +1145,17 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             borderRadius: 2,
             boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
             border: '2px solid #fff',
-            ...(showDropdown && {
+            ...((showDropdown || showSeasonDropdown) && {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
             })
           }}
-          // Clicking the main button opens the list
+          // Clicking the main button opens the list of leagues
           onClick={(e) => {
             e.stopPropagation();
             if (isFetching) return; // Disable open while loading
-            setShowDropdown(true);
+            setShowDropdown(prev => !prev);
+            setShowSeasonDropdown(false);
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
@@ -1120,41 +1187,33 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 </Typography>
                 {!isFetching && selectedLeague?.name && (
                   <Typography
+                    onClick={(e) => {
+                      e.stopPropagation(); // Stop propagation to prevent opening league dropdown!
+                      if (isFetching) return;
+                      setShowSeasonDropdown(prev => !prev);
+                      setShowDropdown(false);
+                    }}
                     sx={{
                       fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
                       fontWeight: 'normal',
                       opacity: 0.9,
                       lineHeight: 1,
-                      marginLeft: 0
+                      marginLeft: 0,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      textDecoration: 'underline',
+                      '&:hover': {
+                        opacity: 1
+                      }
                     }}
                   >
-                    (Season {selectedLeague?.seasonNumber || 1})
+                    (Season {seasonsList.find(s => String(s.id) === selectedSeasonId)?.seasonNumber || selectedLeague?.seasonNumber || 1} ▾)
                   </Typography>
                 )}
               </Box>
             </Box>
-
-            {/* Role pill for the currently selected league */}
-            {/* {selectedLeague?.userRole && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box
-                sx={{
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: '9999px',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: 0.4,
-                  textTransform: 'uppercase',
-                  bgcolor: selectedLeague.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
-                  color: selectedLeague.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
-                  border: selectedLeague.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
-                }}
-              >
-                {selectedLeague.userRole === 'ADMIN' ? 'Admin' : 'Member'}
-              </Box>
-            </Box>
-          )} */}
 
             <Box
               sx={{
@@ -1180,6 +1239,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 e.stopPropagation();
                 if (isFetching) return; // Disable toggle while loading
                 setShowDropdown(prev => !prev);
+                setShowSeasonDropdown(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -1187,6 +1247,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   e.stopPropagation();
                   if (isFetching) return;
                   setShowDropdown(prev => !prev);
+                  setShowSeasonDropdown(false);
                 }
               }}
             >
@@ -1245,9 +1306,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             {sortedUserLeagues.map((league) => {
               const isActive = league.id === selectedLeague?.id;
               return (
-                <Link href={`/league/${league.id}`} key={league.id} passHref>
+                <Link
+                  href={`/league/${league.id}`}
+                  key={league.id}
+                  passHref
+                  style={{ textDecoration: 'none', width: '100%' }}
+                >
                   <MenuItem
-                    key={league.id}
                     onClick={() => {
                       try {
                         if (typeof window !== 'undefined') {
@@ -1280,7 +1345,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                       }),
                     }}
                   >
-
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                       <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
@@ -1294,19 +1358,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                           }}
                         >
                           {formatLeagueName(league.name)}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: '0.7rem',
-                            fontWeight: 400,
-                            letterSpacing: 0.1,
-                            color: '#FFFFFF',
-                            opacity: 0.85,
-                            lineHeight: 1,
-                            marginLeft: 0
-                          }}
-                        >
-                          (Season {league.seasonNumber || 1})
                         </Typography>
                       </Box>
                     </Box>
@@ -1333,7 +1384,85 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                     )}
                   </MenuItem>
                 </Link>
+              );
+            })}
+          </Box>
+        )}
 
+        {/* Season Dropdown menu */}
+        {showSeasonDropdown && !isFetching && seasonsList.length > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              maxHeight: 200,
+              overflowY: 'auto',
+              p: 0.5,
+              zIndex: 99999,
+              bgcolor: '#00A77F',
+              color: '#FFFFFF',
+              borderRadius: 2,
+              borderTopLeftRadius: 0,
+              borderTopRightRadius: 0,
+              border: '2px solid #FFFFFF',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              '&::-webkit-scrollbar': {
+                width: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(255,255,255,0.14)',
+                borderRadius: 10,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(255,255,255,0.55)',
+                borderRadius: 10,
+                border: '1px solid rgba(0,0,0,0.1)',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: 'rgba(255,255,255,0.75)',
+              },
+              msOverflowStyle: 'auto',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255,255,255,0.65) rgba(255,255,255,0.14)',
+            }}
+          >
+            {seasonsList.map((season) => {
+              const isSeasonActive = String(season.id) === selectedSeasonId;
+              return (
+                <MenuItem
+                  key={season.id}
+                  onClick={() => {
+                    setSelectedSeasonId(String(season.id));
+                    if (selectedLeague?.id) {
+                      localStorage.setItem(`preferredSeasonId_${selectedLeague.id}`, String(season.id));
+                    }
+                    localStorage.setItem('preferredSeasonId', String(season.id));
+                    setShowSeasonDropdown(false);
+                  }}
+                  sx={{
+                    borderRadius: 1.5,
+                    mx: 0.5,
+                    my: 0.25,
+                    py: 1,
+                    px: 1.5,
+                    color: '#FFFFFF',
+                    fontWeight: isSeasonActive ? 700 : 500,
+                    ...(isSeasonActive && {
+                      backgroundColor: 'rgba(255,255,255,0.20)',
+                      border: '1px solid rgba(255,255,255,0.65)',
+                    }),
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.12)',
+                    }
+                  }}
+                >
+                  Season {season.seasonNumber} {season.isActive ? '(Active)' : ''}
+                </MenuItem>
               );
             })}
           </Box>

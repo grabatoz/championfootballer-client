@@ -1679,6 +1679,10 @@ export default function GlobalTrophyRoom() {
 
   const handleSeasonSelect = (seasonId: string) => {
     setSelectedSeasonId(seasonId);
+    if (selectedLeagueId) {
+      localStorage.setItem('preferredSeasonId_' + selectedLeagueId, seasonId);
+      localStorage.setItem('preferredSeasonId', seasonId);
+    }
   };
 
   // Badge detail modal state
@@ -1926,8 +1930,9 @@ export default function GlobalTrophyRoom() {
         if (data?.success && Array.isArray(data.seasons) && data.seasons.length > 0) {
           // Store seasons in dedicated state (NOT in leagues array)
           setLeagueSeasons(data.seasons);
-          // Directly select the active season
-          const active = data.seasons.find((s: Season) => s.isActive) || data.seasons[0];
+          // Directly select the preferred season if set in localStorage, else active season
+          const storedSeasonId = typeof window !== 'undefined' ? localStorage.getItem('preferredSeasonId_' + selectedLeagueId) : null;
+          const active = (storedSeasonId && data.seasons.find((s: Season) => String(s.id) === storedSeasonId)) || data.seasons.find((s: Season) => s.isActive) || data.seasons[0];
           if (active) {
             console.log('[Trophy Room] ✅ Directly selecting season:', active.id, active.name);
             setSelectedSeasonId(active.id);

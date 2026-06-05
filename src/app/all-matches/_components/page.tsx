@@ -830,8 +830,12 @@ export default function AllMatches() {
                 }).filter((s) => Boolean(s.id));
 
                 setSeasons(formatted);
-                // Auto-select latest season for selected league.
-                setSelectedSeason(pickLatestSeasonId(formatted));
+                // Auto-select preferred season if exists, else fallback to latest season for selected league.
+                const storedSeasonId = typeof window !== 'undefined' ? localStorage.getItem('preferredSeasonId_' + selectedLeague) : null;
+                const initialSeason = (storedSeasonId && formatted.some(s => String(s.id) === storedSeasonId))
+                    ? storedSeasonId
+                    : pickLatestSeasonId(formatted);
+                setSelectedSeason(initialSeason);
             })
             .catch((err) => {
                 console.error('Failed to fetch seasons:', err);
@@ -1220,6 +1224,10 @@ export default function AllMatches() {
 
     const handleSeasonSelect = (seasonId: string) => {
         setSelectedSeason(seasonId);
+        if (selectedLeague && selectedLeague !== 'all') {
+            localStorage.setItem('preferredSeasonId_' + selectedLeague, seasonId);
+            localStorage.setItem('preferredSeasonId', seasonId);
+        }
         handleSeasonDropdownClose();
     };
 
