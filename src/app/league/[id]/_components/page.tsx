@@ -53,6 +53,8 @@ import toast from 'react-hot-toast';
 import LeagueDetailLoadingSkeleton from '@/Components/loading/LeagueDetailLoadingSkeleton';
 import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
+import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
+import PlayerCardLoadingSkeleton from '@/Components/loading/PlayerCardLoadingSkeleton';
 import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
@@ -79,15 +81,15 @@ const TeamPreviewScreen = dynamic(() => import('@/Components/viewteam/viewteam')
     ssr: false
 });
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard').then(mod => ({ default: mod.default })), {
-    loading: () => <CircularProgress />,
-    ssr: false
+    loading: () => <PlayerCardLoadingSkeleton />,
+    ssr: false,
 });
 const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/edit/_components/EditMatchPage'), {
     loading: () => <EditMatchPopupLoadingSkeleton />,
-    ssr: false
+    ssr: false,
 });
 const MatchDetailsPage = dynamic(() => import('@/app/match/[matchId]/_components/index'), {
-    loading: () => <CircularProgress />,
+    loading: () => <MatchResultLoadingSkeleton mode="dialog" />,
     ssr: false
 });
 import CloseIcon from '@mui/icons-material/Close';
@@ -5227,7 +5229,8 @@ export default function LeagueDetailPage() {
                                                         justifyContent: 'center',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        '&:hover': { backgroundColor: '#444' },
+                                                        // '&:hover': { backgroundColor: '#444' },
+                                                        '&:hover': { backgroundColor: '#8E4B1C' },
                                                         '& .MuiButton-startIcon': {
                                                             mr: { xs: 0.2, sm: 0.35 },
                                                             ml: 0,
@@ -5585,7 +5588,7 @@ export default function LeagueDetailPage() {
                                                                                             cursor: 'pointer',
                                                                                             width: '100%',
                                                                                             '&:hover .add-stats-btn': {
-                                                                                                backgroundColor: '#444',
+                                                                                                backgroundColor: '#8E4B1C',
                                                                                             },
                                                                                         }}
                                                                                     >
@@ -6931,8 +6934,8 @@ export default function LeagueDetailPage() {
                                     bgcolor: '#2b2b2b',
                                     backgroundImage: 'none',
                                     borderRadius: { xs: 0, sm: 3 },
-                                    width: { xs: '100vw', sm: 'auto' },
-                                    maxWidth: { xs: '100vw', sm: 'calc(100% - 64px)' },
+                                    width: { xs: '100vw', sm: 'min(900px, calc(100vw - 40px))' },
+                                    maxWidth: { xs: '100vw', sm: '900px' },
                                     height: { xs: '100dvh', sm: 'auto' },
                                     maxHeight: { xs: '100dvh', sm: '95vh' },
                                     overflow: 'hidden',

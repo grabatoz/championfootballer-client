@@ -11,6 +11,8 @@ import awayTeamIcon from '@/Components/images/2nd champion icon football.png';
 import AllMatchesLoadingSkeleton from '@/Components/loading/AllMatchesLoadingSkeleton';
 import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLoadingSkeleton';
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
+import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
+import PlayerCardLoadingSkeleton from '@/Components/loading/PlayerCardLoadingSkeleton';
 import HomeTeamImage from '@/Components/images/hometeamshirt.png';
 import AwayTeamImage from '@/Components/images/awayteamshirt.png';
 import FootBallIcon from '@/Components/images/cardfootball.png';
@@ -33,7 +35,7 @@ import { mutateWithRefresh } from '@/lib/utils/cacheManager';
 
 // Lazy load heavy components
 const PlayerCard = dynamic(() => import('@/Components/playercard/playercard'), {
-  loading: () => <CircularProgress size={24} />,
+  loading: () => <PlayerCardLoadingSkeleton width={240} height={400} />,
   ssr: false
 });
 
@@ -58,7 +60,7 @@ const EditMatchPage = dynamic(() => import('@/app/league/[id]/match/[matchId]/ed
 });
 
 const MatchDetailsPage = dynamic(() => import('@/app/match/[matchId]/_components'), {
-  loading: () => <CircularProgress />,
+  loading: () => <MatchResultLoadingSkeleton mode="dialog" />,
   ssr: false
 });
 
@@ -2629,7 +2631,8 @@ export default function AllMatches() {
                                                             justifyContent: 'center',
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',
-                                                            '&:hover': { backgroundColor: '#444' },
+                                                            // '&:hover': { backgroundColor: '#444' },
+                                                            '&:hover': { backgroundColor: '#8E4B1C' },
                                                             '&.Mui-disabled': {
                                                                 color: 'rgba(255,255,255,0.68)',
                                                                 borderColor: 'rgba(249,115,22,0.45)',
@@ -3211,8 +3214,8 @@ export default function AllMatches() {
                                                 bgcolor: '#2b2b2b',
                                                 backgroundImage: 'none',
                                                 borderRadius: { xs: 0, sm: 3 },
-                                                width: { xs: '100vw', sm: 'auto' },
-                                                maxWidth: { xs: '100vw', sm: 'calc(100% - 64px)' },
+                                                width: { xs: '100vw', sm: 'min(900px, calc(100vw - 40px))' },
+                                                maxWidth: { xs: '100vw', sm: '900px' },
                                                 height: { xs: '100dvh', sm: 'auto' },
                                                 maxHeight: { xs: '100dvh', sm: '95vh' },
                                                 overflow: 'hidden',
