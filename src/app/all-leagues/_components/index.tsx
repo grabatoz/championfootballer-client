@@ -2838,7 +2838,6 @@ function AllLeagues() {
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedSeasons, setShowArchivedSeasons] = useState(false);
-  const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
   const [archivedSeasonActionId, setArchivedSeasonActionId] = useState<string | null>(null);
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
   const [leagueLiveUpdatingId, setLeagueLiveUpdatingId] = useState<string | null>(null);
@@ -3650,46 +3649,6 @@ function AllLeagues() {
       window.removeEventListener('league-deleted', scheduleRefresh as EventListener);
     };
   }, [token, fetchAllLeagues]);
-
-  const handlePermanentDeleteArchivedLeague = useCallback(async (league: LeagueWithStatus) => {
-    if (!token) return;
-    if (!window.confirm(`Permanently delete "${league.name}"? This cannot be undone.`)) return;
-
-    const leagueId = String(league.id);
-    setArchivedLeagueActionId(leagueId);
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error('Failed to delete league');
-
-      toast.success('League permanently deleted');
-      setLeagues(prev => prev.filter(l => String(l.id) !== leagueId));
-      setLocallyDeletedLeagueIds((prev) => (prev.includes(leagueId) ? prev : [...prev, leagueId]));
-      dispatchLeagueMutationEvent('league-deleted', { leagueId, reason: 'permanent-delete-archived' });
-
-      if (selectedLeague && String(selectedLeague.id) === leagueId) {
-        setSelectedLeague(null);
-        setOpenMembers(false);
-      }
-      if (adminSettingsLeague && String(adminSettingsLeague.id) === leagueId) {
-        setAdminSettingsLeague(null);
-        setOpenAdminSettings(false);
-      }
-
-      void fetchAllLeagues();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to delete league';
-      toast.error(msg);
-    } finally {
-      setArchivedLeagueActionId(null);
-    }
-  }, [token, selectedLeague, adminSettingsLeague, fetchAllLeagues, dispatchLeagueMutationEvent]);
 
   const handleRestoreArchivedSeasonGlobal = useCallback(async (league: LeagueWithStatus, season: Season) => {
     if (!token) return;
@@ -6024,7 +5983,6 @@ function AllLeagues() {
                   </Box>
                 )}
                 {archivedLeagues.map((league) => {
-                  const actionLoading = archivedLeagueActionId === String(league.id);
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
                   return (
@@ -6066,7 +6024,6 @@ function AllLeagues() {
                             <Button
                               size="small"
                               variant="contained"
-                              disabled={actionLoading}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
@@ -6096,26 +6053,6 @@ function AllLeagues() {
                               }}
                             >
                               Restore
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              disabled={actionLoading}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePermanentDeleteArchivedLeague(league);
-                              }}
-                              sx={{
-                                bgcolor: '#dc2626',
-                                '&:hover': { bgcolor: '#b91c1c' },
-                                fontSize: '11px',
-                                px: 1.5,
-                                py: 0.3,
-                                minWidth: 'auto',
-                                textTransform: 'none',
-                              }}
-                            >
-                              {actionLoading ? 'Deleting...' : 'Permanent Delete'}
                             </Button>
                           </>
                         )}
