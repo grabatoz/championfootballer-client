@@ -153,6 +153,7 @@ type ApiLeague = {
   isComplete?: boolean;
   isCompleted?: boolean;
   maxGames?: number;
+  seasons?: unknown[];
 };
 
 // Runtime type guard for ApiLeague
@@ -162,6 +163,92 @@ const isApiLeague = (val: unknown): val is ApiLeague => {
   const id = maybe.id;
   const idOk = typeof id === 'string' || typeof id === 'number';
   return idOk;
+};
+
+const readHomeSeasonId = (season: unknown): string => {
+  if (!season || typeof season !== 'object') return '';
+  const record = season as Record<string, unknown>;
+  return String(record.id || record.seasonId || '');
+};
+
+const readHomeSeasonNumber = (season: unknown): number => {
+  if (!season || typeof season !== 'object') return 0;
+  const record = season as Record<string, unknown>;
+  const direct = typeof record.seasonNumber === 'number'
+    ? record.seasonNumber
+    : (typeof record.seasonNumber === 'string' ? Number(record.seasonNumber) : NaN);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  const label = String(record.name || '');
+  const hits = label.match(/\d+/g);
+  if (hits && hits.length > 0) {
+    const parsed = Number(hits[hits.length - 1]);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return 0;
+};
+
+const isHomeActiveSeason = (season: unknown): boolean => {
+  if (!season || typeof season !== 'object') return false;
+  const record = season as Record<string, unknown>;
+  if (record.archived === true || record.deleted === true) return false;
+  const status = String(record.status || '').trim().toLowerCase();
+  return (
+    record.isActive === true ||
+    record.active === true ||
+    status === 'active' ||
+    status === 'current' ||
+    status === 'ongoing'
+  );
+};
+
+const normalizeHomeSeason = (season: unknown): Record<string, unknown> | null => {
+  if (!season || typeof season !== 'object') return null;
+  const record = season as Record<string, unknown>;
+  const seasonId = readHomeSeasonId(record);
+  const seasonNumber = readHomeSeasonNumber(record);
+  return {
+    ...record,
+    ...(seasonId ? { id: seasonId } : {}),
+    ...(seasonNumber > 0 ? { seasonNumber } : {}),
+    isActive: isHomeActiveSeason(record),
+  };
+};
+
+const dedupeHomeSeasons = (seasons: Array<Record<string, unknown>>): Array<Record<string, unknown>> => {
+  const map = new Map<string, Record<string, unknown>>();
+  seasons.forEach((season) => {
+    const key =
+      readHomeSeasonId(season) ||
+      (readHomeSeasonNumber(season) > 0 ? `season-${readHomeSeasonNumber(season)}` : String(season.name || ''));
+    if (!key || map.has(key)) return;
+    map.set(key, season);
+  });
+  return Array.from(map.values());
+};
+
+const parseHomeLeagueSeasonName = (name: string | undefined | null): { baseName: string; seasonNumber: number } | null => {
+  const trimmed = String(name ?? '').trim();
+  const match = trimmed.match(/^season\s*(\d+)\s+(.+)$/i);
+  if (!match) return null;
+
+  const seasonNumber = Number(match[1]);
+  const baseName = match[2]?.trim();
+  if (!Number.isFinite(seasonNumber) || seasonNumber <= 0 || !baseName) return null;
+
+  return { baseName, seasonNumber };
+};
+
+const cleanHomeLeagueDisplayName = (name: string | undefined | null): string => {
+  return String(name ?? '')
+    .trim()
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ');
+};
+
+const getHomeLeagueBaseKey = (name: string): string => {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 };
 
 const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, onAdminStatusChange }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number; onAdminStatusChange?: (isAdmin: boolean) => void }) => {
@@ -574,13 +661,24 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
   // Format league name function
   const formatLeagueName = (name: string | undefined | null) => {
-    const trimmed = String(name ?? '').trim();
+    const trimmed = cleanHomeLeagueDisplayName(name);
     if (!trimmed) return '';
     const words = trimmed.split(/\s+/);
     return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
   const formatLeagueNameShort = (name: string | undefined | null) => {
     return formatLeagueName(name);
+  };
+  const getDisplayLeagueName = (league?: LeagueWithComputed | null) => {
+    const parsed = parseHomeLeagueSeasonName(league?.name);
+    return formatLeagueName(cleanHomeLeagueDisplayName(parsed?.baseName || league?.name || ''));
+  };
+  const getDisplaySeasonNumber = (league?: LeagueWithComputed | null, season?: unknown) => {
+    const fromSeason = readHomeSeasonNumber(season);
+    if (fromSeason > 0) return fromSeason;
+    const parsed = parseHomeLeagueSeasonName(league?.name);
+    if (parsed?.seasonNumber) return parsed.seasonNumber;
+    return league?.seasonNumber || 0;
   };
   const getLeagueLabelFontSize = (name?: string) => {
     const len = String(name ?? '').trim().length;
@@ -658,6 +756,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             isCompleted: l.isCompleted,
             userRole: role,
             maxGames: l.maxGames,
+            seasons: Array.isArray(l.seasons)
+              ? dedupeHomeSeasons(l.seasons.map(normalizeHomeSeason).filter((season: unknown): season is Record<string, unknown> => Boolean(season)))
+              : undefined,
           } as LeagueWithComputed;
         });
         const optimisticCreatedLeague: LeagueWithComputed | null = createdLeague?.id
@@ -672,6 +773,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             archived: (createdLeague as unknown as { archived?: boolean }).archived,
             userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
             maxGames: createdLeague.maxGames,
+            seasons: Array.isArray((createdLeague as unknown as { seasons?: unknown[] }).seasons)
+              ? dedupeHomeSeasons((createdLeague as unknown as { seasons: unknown[] }).seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
+              : undefined,
           }
           : null;
 
@@ -723,6 +827,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             let maxGamesFromDetails: number | undefined = undefined;
             let seasonNumberFromDetails: number | undefined = undefined;
             let seasonNumberFromSeasonsApi: number | undefined = undefined;
+            let seasonsFromDetails: Record<string, unknown>[] | undefined = undefined;
 
             try {
               const seasonEndpoints = [
@@ -785,13 +890,22 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               }
 
               const seasonsParsed = allRawSeasons
-                .map((s) => (typeof s === 'object' && s !== null ? (s as Record<string, unknown>) : null))
+                .map(normalizeHomeSeason)
                 .filter((s): s is Record<string, unknown> => Boolean(s))
                 .map((s) => ({
                   seasonNumber: parseSeasonNumber(s),
                   isActive: s.isActive === true || s.active === true || String(s.status || '').toLowerCase() === 'active',
                 }))
                 .filter((s) => s.seasonNumber > 0);
+
+              const normalizedSeasonsFromApi = dedupeHomeSeasons(
+                allRawSeasons
+                  .map(normalizeHomeSeason)
+                  .filter((s): s is Record<string, unknown> => Boolean(s))
+              );
+              if (normalizedSeasonsFromApi.length > 0) {
+                seasonsFromDetails = normalizedSeasonsFromApi;
+              }
 
               const activeSeason = seasonsParsed.find((s) => s.isActive);
               if (activeSeason) {
@@ -835,6 +949,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               const currentSeason = leagueData?.league?.currentSeason as
                 | { seasonNumber?: number }
                 | undefined;
+              if (Array.isArray(seasons)) {
+                const normalizedDetailSeasons = dedupeHomeSeasons(
+                  seasons
+                    .map(normalizeHomeSeason)
+                    .filter((season): season is Record<string, unknown> => Boolean(season))
+                );
+                seasonsFromDetails = normalizedDetailSeasons;
+              }
               console.log(`[League ${l.id}] All seasons from backend:`, seasons);
               console.log(`[League ${l.id}] Current season from backend:`, currentSeason);
 
@@ -915,6 +1037,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   maxGames: maxGamesFromDetails ?? item.maxGames,
                   matches: matchesFromDetails ?? item.matches,
                   seasonNumber: seasonNumberFromDetails ?? item.seasonNumber,
+                  seasons: seasonsFromDetails ?? item.seasons,
                 };
                 // Normalize defaults
                 return {
@@ -935,6 +1058,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   maxGames: maxGamesFromDetails ?? prev.maxGames,
                   matches: matchesFromDetails ?? prev.matches,
                   seasonNumber: seasonNumberFromDetails ?? prev.seasonNumber,
+                  seasons: seasonsFromDetails ?? prev.seasons,
                   status: typeof prev?.status === 'string' && prev.status!.trim() !== '' ? prev.status : 'active',
                   active: typeof prev?.active === 'boolean' ? prev.active : true,
                 };
@@ -986,6 +1110,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         image: (l as unknown as { image?: string }).image,
         userRole: computeUserRoleForCreatedLeague(l as unknown as League, currentUserId),
         maxGames: (l as unknown as { maxGames?: number }).maxGames,
+        seasons: Array.isArray((l as unknown as { seasons?: unknown[] }).seasons)
+          ? dedupeHomeSeasons((l as unknown as { seasons: unknown[] }).seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
+          : undefined,
       }));
 
       if (minimal.length) {
@@ -1023,6 +1150,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         status: createdLeague.status,
         active: createdLeague.active,
         userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
+        seasons: Array.isArray((createdLeague as unknown as { seasons?: unknown[] }).seasons)
+          ? dedupeHomeSeasons((createdLeague as unknown as { seasons: unknown[] }).seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
+          : undefined,
       };
       map.set(String(entry.id), entry);
       return Array.from(map.values());
@@ -1036,6 +1166,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       status: createdLeague.status,
       active: createdLeague.active,
       userRole: computeUserRoleForCreatedLeague(createdLeague, currentUserId),
+      seasons: Array.isArray((createdLeague as unknown as { seasons?: unknown[] }).seasons)
+        ? dedupeHomeSeasons((createdLeague as unknown as { seasons: unknown[] }).seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
+        : undefined,
     });
   }, [createdLeague]);
 
@@ -1069,6 +1202,69 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     });
     return arr;
   }, [userLeagues, selectedLeague]);
+
+  const activeLeagueBaseNameCounts = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    sortedUserLeagues.forEach((league) => {
+      const parsed = parseHomeLeagueSeasonName(league.name);
+      const key = getHomeLeagueBaseKey(parsed?.baseName || league.name || '');
+      if (!key) return;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    return counts;
+  }, [sortedUserLeagues]);
+
+  const leagueDropdownOptions = React.useMemo(() => {
+    return sortedUserLeagues.flatMap((league) => {
+      const parsedLeagueName = parseHomeLeagueSeasonName(league.name);
+      const baseLeagueName = formatLeagueName(parsedLeagueName?.baseName || league.name);
+      const baseLeagueKey = getHomeLeagueBaseKey(parsedLeagueName?.baseName || league.name || '');
+      const hasMultipleRowsForBaseLeague = (activeLeagueBaseNameCounts.get(baseLeagueKey) || 0) > 1;
+      const normalizedSeasons = Array.isArray(league.seasons)
+        ? dedupeHomeSeasons(league.seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
+        : [];
+      const activeSeasons = normalizedSeasons
+        .filter(isHomeActiveSeason)
+        .sort((a, b) => readHomeSeasonNumber(a) - readHomeSeasonNumber(b));
+      const shouldShowSeasonNumber = activeSeasons.length > 1;
+
+      if (shouldShowSeasonNumber) {
+        return activeSeasons.map((season) => {
+          const seasonId = readHomeSeasonId(season);
+          const seasonNumber = readHomeSeasonNumber(season);
+          return {
+            key: `${league.id}:${seasonId || seasonNumber}`,
+            league,
+            seasonId,
+            seasonNumber,
+            baseLeagueName,
+            isSeasonActive: true,
+            label: `${baseLeagueName} (Season ${seasonNumber || 1})`,
+          };
+        });
+      }
+
+      const onlyActiveSeason = activeSeasons[0] || null;
+      const hasNoSeasons = Array.isArray(league.seasons) && league.seasons.length === 0;
+      const seasonNumber = hasNoSeasons
+        ? 0
+        : (onlyActiveSeason
+          ? readHomeSeasonNumber(onlyActiveSeason)
+          : (parsedLeagueName?.seasonNumber || league.seasonNumber || 0));
+      const shouldShowParsedSeasonNumber = hasMultipleRowsForBaseLeague && seasonNumber > 0;
+      return [{
+        key: String(league.id),
+        league,
+        seasonId: onlyActiveSeason ? readHomeSeasonId(onlyActiveSeason) : '',
+        seasonNumber,
+        baseLeagueName,
+        isSeasonActive: onlyActiveSeason !== null || seasonNumber > 0,
+        label: shouldShowParsedSeasonNumber
+          ? `${baseLeagueName} (Season ${seasonNumber})`
+          : baseLeagueName,
+      }];
+    });
+  }, [activeLeagueBaseNameCounts, sortedUserLeagues]);
 
   // Keep the button visible even while fetching; show inline loader in the button instead of a separate skeleton
 
@@ -1168,7 +1364,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', minWidth: 0 }}>
                 <Typography
                   sx={{
-                    fontSize: getLeagueLabelFontSize(selectedLeague?.name),
+                    fontSize: getLeagueLabelFontSize(getDisplayLeagueName(selectedLeague)),
                     fontWeight: 600,
                     lineHeight: '100%',
                     letterSpacing: '0%',
@@ -1183,35 +1379,40 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 >
                   {isFetching
                     ? 'Loading…'
-                    : (selectedLeague?.name ? formatLeagueNameShort(selectedLeague.name) : 'Select a league')}
+                    : (selectedLeague?.name ? getDisplayLeagueName(selectedLeague) : 'Select a league')}
                 </Typography>
-                {!isFetching && selectedLeague?.name && (
-                  <Typography
-                    onClick={(e) => {
-                      e.stopPropagation(); // Stop propagation to prevent opening league dropdown!
-                      if (isFetching) return;
-                      setShowSeasonDropdown(prev => !prev);
-                      setShowDropdown(false);
-                    }}
-                    sx={{
-                      fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
-                      fontWeight: 'normal',
-                      opacity: 0.9,
-                      lineHeight: 1,
-                      marginLeft: 0,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      textDecoration: 'underline',
-                      '&:hover': {
-                        opacity: 1
-                      }
-                    }}
-                  >
-                    (Season {seasonsList.find(s => String(s.id) === selectedSeasonId)?.seasonNumber || selectedLeague?.seasonNumber || 1} ▾)
-                  </Typography>
-                )}
+                {!isFetching && selectedLeague?.name && (() => {
+                  const hasNoSeasons = Array.isArray(selectedLeague.seasons) && selectedLeague.seasons.length === 0;
+                  const displaySeasonNum = getDisplaySeasonNumber(selectedLeague, seasonsList.find(s => String(s.id) === selectedSeasonId));
+                  if (hasNoSeasons || displaySeasonNum <= 0) return null;
+                  return (
+                    <Typography
+                      onClick={(e) => {
+                        e.stopPropagation(); // Stop propagation to prevent opening league dropdown!
+                        if (isFetching) return;
+                        setShowSeasonDropdown(prev => !prev);
+                        setShowDropdown(false);
+                      }}
+                      sx={{
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
+                        fontWeight: 'normal',
+                        opacity: 0.9,
+                        lineHeight: 1,
+                        marginLeft: 0,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        textDecoration: 'underline',
+                        '&:hover': {
+                          opacity: 1
+                        }
+                      }}
+                    >
+                      (Season {displaySeasonNum} ▾)
+                    </Typography>
+                  );
+                })()}
               </Box>
             </Box>
 
@@ -1303,12 +1504,25 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             id="league-dropdown-list"
             role="listbox"
           >
-            {sortedUserLeagues.map((league) => {
-              const isActive = league.id === selectedLeague?.id;
+            {leagueDropdownOptions.map((option) => {
+              const { league } = option;
+              const optionMatchesSelectedSeason = option.seasonId
+                ? (
+                  selectedSeasonId
+                    ? String(option.seasonId) === String(selectedSeasonId)
+                    : Number(option.seasonNumber || 0) === Number(selectedLeague?.seasonNumber || 0)
+                )
+                : true;
+              const isActive =
+                String(league.id) === String(selectedLeague?.id) &&
+                optionMatchesSelectedSeason;
+              const href = option.seasonId
+                ? `/league/${league.id}?tab=table&seasonId=${encodeURIComponent(option.seasonId)}`
+                : `/league/${league.id}`;
               return (
                 <Link
-                  href={`/league/${league.id}`}
-                  key={league.id}
+                  href={href}
+                  key={option.key}
                   passHref
                   style={{ textDecoration: 'none', width: '100%' }}
                 >
@@ -1317,9 +1531,19 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                       try {
                         if (typeof window !== 'undefined') {
                           localStorage.setItem(PREFERRED_LEAGUE_KEY, String(league.id));
+                          if (option.seasonId) {
+                            localStorage.setItem(`preferredSeasonId_${league.id}`, String(option.seasonId));
+                            localStorage.setItem('preferredSeasonId', String(option.seasonId));
+                          }
                         }
                       } catch { }
                       setSelectedLeague(league);
+                      if (option.seasonId) {
+                        setSelectedSeasonId(String(option.seasonId));
+                      }
+                      if (Array.isArray(league.seasons) && league.seasons.length > 0) {
+                        setSeasonsList(league.seasons);
+                      }
                       setShowDropdown(false);
                     }}
                     role="option"
@@ -1357,8 +1581,22 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                             lineHeight: 1.2
                           }}
                         >
-                          {formatLeagueName(league.name)}
+                          {option.baseLeagueName || option.label}
                         </Typography>
+                        {option.seasonNumber > 0 && (
+                          <Typography
+                            sx={{
+                              fontSize: '0.75rem',
+                              fontWeight: 'normal',
+                              opacity: 0.8,
+                              color: isActive ? '#FFFFFF' : '#E7F6EF',
+                              lineHeight: 1.1,
+                              mt: 0.25
+                            }}
+                          >
+                            Season {option.seasonNumber} {option.isSeasonActive ? '(Active)' : ''}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                     {/* Role pill on the right */}

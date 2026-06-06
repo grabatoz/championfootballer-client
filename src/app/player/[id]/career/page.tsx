@@ -324,10 +324,6 @@ type LeagueMetricValues = {
   impact: number;
 };
 
-type LeagueMetricTotals = LeagueMetricValues & {
-  matches?: number;
-};
-
 // ---------- DYNAMIC RECHARTS ----------
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
 const ComposedChart = dynamic(() => import('recharts').then(m => m.ComposedChart), { ssr: false });
@@ -467,6 +463,41 @@ const toRoundedInt = (value: number): number => {
 const toStatNumber = (value: unknown): number => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+};
+
+const createEmptyLeagueMetrics = (): LeagueMetricValues => ({
+  goals: 0,
+  assists: 0,
+  cleanSheets: 0,
+  defence: 0,
+  motmVotes: 0,
+  defensiveImpactVotes: 0,
+  impact: 0,
+});
+
+const averageLeagueMetrics = (entries: Array<LeagueMetricValues | null | undefined>): LeagueMetricValues | null => {
+  const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
+  const validEntries = entries.filter((entry): entry is LeagueMetricValues => Boolean(entry));
+  if (validEntries.length === 0) return null;
+
+  const totals = createEmptyLeagueMetrics();
+  validEntries.forEach((entry) => {
+    metricKeys.forEach((key) => {
+      totals[key] += toStatNumber(entry[key]);
+    });
+  });
+
+  const count = validEntries.length;
+  return metricKeys.reduce((acc, key) => {
+    acc[key] = Number((totals[key] / count).toFixed(2));
+    return acc;
+  }, createEmptyLeagueMetrics());
+};
+
+const formatStatDecimal = (value: number, suffix = ''): string => {
+  const rounded = Math.round(toStatNumber(value) * 10) / 10;
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${display}${suffix}`;
 };
 
 function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L' | 'D' | null {
@@ -859,9 +890,6 @@ export default function CareerPage() {
 
   // ------------- League averages from backend (for influence radar) -------------
   const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
-  const [leagueShareCache, setLeagueShareCache] = useState<Record<string, Record<string, LeagueMetricValues>>>({});
-  const [leagueTotalsCache, setLeagueTotalsCache] = useState<Record<string, LeagueMetricValues>>({});
-  const [leaguePlayerTotalsCache, setLeaguePlayerTotalsCache] = useState<Record<string, Record<string, LeagueMetricTotals>>>({});
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
@@ -907,9 +935,6 @@ export default function CareerPage() {
           return {
             leagueId,
             leagueAvg: data.leagueAvg,
-            playerShares: data.playerShares,
-            leagueTotals: data.leagueTotals,
-            playerTotals: data.playerTotals,
           };
         }
       } catch {
@@ -919,25 +944,11 @@ export default function CareerPage() {
     };
 
     (async () => {
-      const normalizeKeys = <T,>(obj?: Record<string, T> | null): Record<string, T> => {
-        const next: Record<string, T> = {};
-        Object.entries(obj || {}).forEach(([k, v]) => {
-          next[k.trim().toLowerCase()] = v as T;
-        });
-        return next;
-      };
-
       await Promise.all(targetLeagueIds.map(async (leagueId) => {
         const r = await fetchAvg(leagueId);
         if (cancelled || !r) return;
         const lid = r.leagueId.toLowerCase();
-        setLeagueAvgCache((prev) => ({ ...prev, [lid]: r.leagueAvg }));
-        setLeagueShareCache((prev) => ({ ...prev, [lid]: normalizeKeys(r.playerShares) }));
-        setLeagueTotalsCache((prev) => ({
-          ...prev,
-          [lid]: r.leagueTotals || { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 },
-        }));
-        setLeaguePlayerTotalsCache((prev) => ({ ...prev, [lid]: normalizeKeys(r.playerTotals) }));
+        setLeagueAvgCache((prev) => ({ ...prev, [lid]: r.leagueAvg || createEmptyLeagueMetrics() }));
       }));
     })();
 
@@ -946,106 +957,20 @@ export default function CareerPage() {
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
-    if (influenceLeague !== 'all' && leagueAvgCache[influenceLeague]) {
-      return leagueAvgCache[influenceLeague];
+    const selectedLeagueId = String(influenceLeague || '').trim().toLowerCase();
+    if (selectedLeagueId && selectedLeagueId !== 'all') {
+      return leagueAvgCache[selectedLeagueId] || null;
     }
-    // Average across all leagues
-    const entries = Object.values(leagueAvgCache);
-    if (entries.length === 0) return null;
-    const sum = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-    for (const e of entries) {
-      sum.goals += e.goals; sum.assists += e.assists; sum.cleanSheets += e.cleanSheets;
-      sum.defence += e.defence; sum.motmVotes += e.motmVotes; sum.defensiveImpactVotes += e.defensiveImpactVotes || 0; sum.impact += e.impact;
-    }
-    const n = entries.length;
-    return {
-      goals: +(sum.goals / n).toFixed(2),
-      assists: +(sum.assists / n).toFixed(2),
-      cleanSheets: +(sum.cleanSheets / n).toFixed(2),
-      defence: +(sum.defence / n).toFixed(2),
-      motmVotes: +(sum.motmVotes / n).toFixed(2),
-      defensiveImpactVotes: +(sum.defensiveImpactVotes / n).toFixed(2),
-      impact: +(sum.impact / n).toFixed(2)
-    };
+    return averageLeagueMetrics(Object.values(leagueAvgCache));
   }, [influenceLeague, leagueAvgCache]);
 
-  // Compute player contribution against filtered league totals for the IMPACT table.
-  const impactLeagueShare = useMemo(() => {
-    const currentPlayerId = String(playerId || '').trim().toLowerCase();
-    const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
-    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-    const percentShare = (playerValue: number, totalValue: number): number => {
-      if (!Number.isFinite(playerValue) || !Number.isFinite(totalValue) || totalValue <= 0 || playerValue <= 0) return 0;
-      return Math.round((playerValue / totalValue) * 100);
-    };
-    const fromTotals = (leagueIdRaw: string): LeagueMetricValues | null => {
-      const leagueId = leagueIdRaw.toLowerCase();
-      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
-      const leagueTotals = leagueTotalsCache[leagueId];
-      if (!playerTotals || !leagueTotals) return null;
-      return metricKeys.reduce((acc, key) => {
-        acc[key] = percentShare(Number(playerTotals[key]) || 0, Number(leagueTotals[key]) || 0);
-        return acc;
-      }, { ...empty });
-    };
-    const forLeague = (leagueIdRaw: string): LeagueMetricValues | null => {
-      const leagueId = leagueIdRaw.toLowerCase();
-      return fromTotals(leagueId)
-        || (currentPlayerId ? leagueShareCache[leagueId]?.[currentPlayerId] : null)
-        || null;
-    };
-
-    const selectedLeague = filters.leagueId;
-    if (selectedLeague && selectedLeague !== 'all') {
-      return forLeague(selectedLeague);
+  const currentImpactLeagueAvg = useMemo(() => {
+    const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
+    if (selectedLeagueId && selectedLeagueId !== 'all') {
+      return leagueAvgCache[selectedLeagueId] || null;
     }
-
-    const leagueIds = Array.from(new Set([
-      ...Object.keys(leagueTotalsCache),
-      ...Object.keys(leagueShareCache),
-    ])).map(id => id.toLowerCase());
-
-    const playerSum: LeagueMetricValues = { ...empty };
-    const totalSum: LeagueMetricValues = { ...empty };
-    let hasTotals = false;
-
-    for (const leagueId of leagueIds) {
-      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
-      const leagueTotals = leagueTotalsCache[leagueId];
-      if (!playerTotals || !leagueTotals) continue;
-      hasTotals = true;
-      metricKeys.forEach((key) => {
-        playerSum[key] += Number(playerTotals[key]) || 0;
-        totalSum[key] += Number(leagueTotals[key]) || 0;
-      });
-    }
-
-    if (hasTotals) {
-      return metricKeys.reduce((acc, key) => {
-        acc[key] = percentShare(playerSum[key], totalSum[key]);
-        return acc;
-      }, { ...empty });
-    }
-
-    const shares = leagueIds.map((leagueId) => forLeague(leagueId)).filter(Boolean) as LeagueMetricValues[];
-    if (shares.length === 0) return null;
-    const sum = shares.reduce((acc, share) => {
-      metricKeys.forEach((key) => {
-        acc[key] += share[key] || 0;
-      });
-      return acc;
-    }, { ...empty });
-    return metricKeys.reduce((acc, key) => {
-      acc[key] = Math.round(sum[key] / shares.length);
-      return acc;
-    }, { ...empty });
-  }, [
-    filters.leagueId,
-    leaguePlayerTotalsCache,
-    leagueTotalsCache,
-    leagueShareCache,
-    playerId,
-  ]);
+    return averageLeagueMetrics(Object.values(leagueAvgCache));
+  }, [filters.leagueId, leagueAvgCache]);
 
   // Locally filtered matches for each card (independent of global Redux league filter)
   const chartMatches = useMemo(() =>
@@ -1230,14 +1155,14 @@ export default function CareerPage() {
     };
     filteredMatches.forEach(m => {
       const ps = m.playerStats || {};
-      total.Goals += ps.goals || 0;
-      total.Assists += ps.assists || 0;
-      total['Clean Sheets'] += ps.cleanSheets || 0;
-      total.Impact += ps.impact || 0;
-      total.Defence += ps.defence || 0;
-      total['Free Kicks'] += ps.freeKicks || 0;
-      total.Penalties += ps.penalties || 0;
-      total['MOTM Votes'] += ps.motmVotes || 0;
+      total.Goals += toStatNumber(ps.goals);
+      total.Assists += toStatNumber(ps.assists);
+      total['Clean Sheets'] += toStatNumber(ps.cleanSheets);
+      total.Impact += toStatNumber(ps.impact);
+      total.Defence += toStatNumber(ps.defence);
+      total['Free Kicks'] += toStatNumber(ps.freeKicks);
+      total.Penalties += toStatNumber(ps.penalties);
+      total['MOTM Votes'] += toStatNumber(ps.motmVotes);
     });
     // convert to weighted contribution consistent with calcPoints()
     const weight: Record<string, number> = {
@@ -1338,14 +1263,14 @@ export default function CareerPage() {
       });
 
       const winRate = n ? (wins / n) * 100 : 0;
-      const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-      const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-      const goals = sum(arr, ps => ps.goals || 0);
-      const assists = sum(arr, ps => ps.assists || 0);
-      const cleanSheets = sum(arr, ps => ps.cleanSheets || 0);
+      const motmVotes = sum(arr, ps => toStatNumber(ps.motmVotes));
+      const ga = sum(arr, ps => toStatNumber(ps.goals) + toStatNumber(ps.assists));
+      const goals = sum(arr, ps => toStatNumber(ps.goals));
+      const assists = sum(arr, ps => toStatNumber(ps.assists));
+      const cleanSheets = sum(arr, ps => toStatNumber(ps.cleanSheets));
 
       // Match Contribution Index from backend impact (already a 0-100 percentage per match).
-      const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
+      const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => toStatNumber(ps.impact)) / n)) : 0;
 
       // For xG/xA/xCS: count matches where player scored/assisted/kept clean sheet (at least once)
       const matchesWithGoals = count(arr, ps => (ps.goals || 0) > 0);
@@ -1375,8 +1300,8 @@ export default function CareerPage() {
 
 
     const winRate = n ? (wins / n) * 100 : 0;
-    const motmVotes = sum(arr, ps => ps.motmVotes || 0);
-    const defence = sum(arr, ps => ps.defence || 0);
+    const motmVotes = sum(arr, ps => toStatNumber(ps.motmVotes));
+    const defence = sum(arr, ps => toStatNumber(ps.defence));
     // Count defensive impact votes: check homeDefensiveImpactId/awayDefensiveImpactId per match
     const defensiveImpactVotes = arr.reduce((total, m) => {
       if (String(m.homeDefensiveImpactId) === String(playerId) || String(m.awayDefensiveImpactId) === String(playerId)) {
@@ -1384,10 +1309,10 @@ export default function CareerPage() {
       }
       return total;
     }, 0);
-    const ga = sum(arr, ps => (ps.goals || 0) + (ps.assists || 0));
-    const goals = sum(arr, ps => ps.goals || 0);
-    const assists = sum(arr, ps => ps.assists || 0);
-    const cleanSheets = sum(arr, ps => ps.cleanSheets || 0);
+    const ga = sum(arr, ps => toStatNumber(ps.goals) + toStatNumber(ps.assists));
+    const goals = sum(arr, ps => toStatNumber(ps.goals));
+    const assists = sum(arr, ps => toStatNumber(ps.assists));
+    const cleanSheets = sum(arr, ps => toStatNumber(ps.cleanSheets));
 
     // For xG/xA/xCS: count matches where player scored/assisted/kept clean sheet (at least once)
     const matchesWithGoals = count(arr, ps => (ps.goals || 0) > 0);
@@ -1396,155 +1321,62 @@ export default function CareerPage() {
 
 
     // Match Contribution Index from backend impact (already a 0-100 percentage per match).
-    const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => ps.impact || 0) / n)) : 0;
+    const impactAvg = n ? Math.max(0, Math.min(100, sum(arr, ps => toStatNumber(ps.impact)) / n)) : 0;
 
     return { n, wins, draws, losses, winRate, impactAvg, motmVotes, defence, defensiveImpactVotes, ga, goals, assists, cleanSheets, matchesWithGoals, matchesWithAssists, matchesWithCleanSheets };
   }, [filteredMatches, playerId]);
 
-  const impactCalculationTotals = useMemo(() => {
-    const currentPlayerId = String(playerId || '').trim().toLowerCase();
-    const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
-    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-    const addLeague = (leagueIdRaw: string, playerSum: LeagueMetricValues, totalSum: LeagueMetricValues): boolean => {
-      const leagueId = leagueIdRaw.toLowerCase();
-      const playerTotals = currentPlayerId ? leaguePlayerTotalsCache[leagueId]?.[currentPlayerId] : null;
-      const leagueTotals = leagueTotalsCache[leagueId];
-      if (!playerTotals || !leagueTotals) return false;
-      metricKeys.forEach((key) => {
-        playerSum[key] += Number(playerTotals[key]) || 0;
-        totalSum[key] += Number(leagueTotals[key]) || 0;
-      });
-      return true;
-    };
-
-    const playerTotals: LeagueMetricValues = { ...empty };
-    const leagueTotals: LeagueMetricValues = { ...empty };
-    const selectedLeague = filters.leagueId;
-    let hasData = false;
-
-    if (selectedLeague && selectedLeague !== 'all') {
-      hasData = addLeague(selectedLeague, playerTotals, leagueTotals);
-    } else {
-      const leagueIds = Array.from(new Set([
-        ...Object.keys(leagueTotalsCache),
-      ])).map(id => id.toLowerCase());
-
-      leagueIds.forEach((leagueId) => {
-        hasData = addLeague(leagueId, playerTotals, leagueTotals) || hasData;
-      });
-    }
-
-    if (hasData) return { playerTotals, leagueTotals, source: 'backend' as const };
-
-    const fallbackPlayerTotals: LeagueMetricValues = {
-      goals: toRoundedInt(yourStats.goals),
-      assists: toRoundedInt(yourStats.assists),
-      cleanSheets: toRoundedInt(yourStats.cleanSheets),
-      defence: toRoundedInt(yourStats.defence),
-      motmVotes: toRoundedInt(yourStats.motmVotes),
-      defensiveImpactVotes: toRoundedInt(yourStats.defensiveImpactVotes),
-      impact: toRoundedInt(yourStats.impactAvg),
-    };
-
-    const fallbackLeagueTotals = metricKeys.reduce((acc, key) => {
-      const share = impactLeagueShare ? (Number(impactLeagueShare[key]) || 0) : 0;
-      const playerValue = Number(fallbackPlayerTotals[key]) || 0;
-      acc[key] = share > 0 && playerValue > 0 ? Number((playerValue / (share / 100)).toFixed(2)) : playerValue;
-      return acc;
-    }, { ...empty });
-
-    return {
-      playerTotals: fallbackPlayerTotals,
-      leagueTotals: fallbackLeagueTotals,
-      source: (impactLeagueShare ? 'estimated' : 'fallback') as 'estimated' | 'fallback',
-    };
-  }, [
-    filters.leagueId,
-    impactLeagueShare,
-    leaguePlayerTotalsCache,
-    leagueTotalsCache,
-    playerId,
-    yourStats,
-  ]);
-
   // One consistent comparison model used by IMPACT + Top Strengths
   const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
-    const formatShare = (value: number) => {
-      const rounded = Number((Number(value || 0)).toFixed(2));
-      return `${rounded}%`;
-    };
-
-    const empty = { goals: 0, assists: 0, cleanSheets: 0, defence: 0, motmVotes: 0, defensiveImpactVotes: 0, impact: 0 };
-    const playerTotals = impactCalculationTotals?.playerTotals || empty;
-    const leagueTotals = impactCalculationTotals?.leagueTotals || empty;
-
-    const percentShare = (playerVal: number, leagueVal: number): number => {
-      if (!Number.isFinite(playerVal) || !Number.isFinite(leagueVal) || leagueVal <= 0 || playerVal <= 0) return 0;
-      return Math.round((playerVal / leagueVal) * 100);
-    };
-
-    const leagueShare = {
-      goals: percentShare(playerTotals.goals, leagueTotals.goals),
-      assists: percentShare(playerTotals.assists, leagueTotals.assists),
-      cleanSheets: percentShare(playerTotals.cleanSheets, leagueTotals.cleanSheets),
-      motmVotes: percentShare(playerTotals.motmVotes, leagueTotals.motmVotes),
-      defensiveImpactVotes: percentShare(playerTotals.defensiveImpactVotes, leagueTotals.defensiveImpactVotes),
-      impact: percentShare(playerTotals.impact, leagueTotals.impact),
-    };
+    const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
 
     const rows = [
       {
         metric: 'Goals',
         yourTotal: toRoundedInt(yourStats.goals),
         yourDisplay: String(toRoundedInt(yourStats.goals)),
-        leagueShare: leagueShare.goals,
-        leagueDisplay: formatShare(leagueShare.goals),
+        leagueAverage: toStatNumber(leagueAverage.goals),
+        leagueDisplay: formatStatDecimal(leagueAverage.goals),
       },
       {
         metric: 'Assists',
         yourTotal: toRoundedInt(yourStats.assists),
         yourDisplay: String(toRoundedInt(yourStats.assists)),
-        leagueShare: leagueShare.assists,
-        leagueDisplay: formatShare(leagueShare.assists),
+        leagueAverage: toStatNumber(leagueAverage.assists),
+        leagueDisplay: formatStatDecimal(leagueAverage.assists),
       },
       {
         metric: 'Clean Sheets',
         yourTotal: toRoundedInt(yourStats.cleanSheets),
         yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
-        leagueShare: leagueShare.cleanSheets,
-        leagueDisplay: formatShare(leagueShare.cleanSheets),
+        leagueAverage: toStatNumber(leagueAverage.cleanSheets),
+        leagueDisplay: formatStatDecimal(leagueAverage.cleanSheets),
       },
       {
         metric: 'MOTM Votes',
         yourTotal: toRoundedInt(yourStats.motmVotes),
         yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
-        leagueShare: leagueShare.motmVotes,
-        leagueDisplay: formatShare(leagueShare.motmVotes),
+        leagueAverage: toStatNumber(leagueAverage.motmVotes),
+        leagueDisplay: formatStatDecimal(leagueAverage.motmVotes),
       },
       {
         metric: 'Defensive Impact Votes',
         yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
         yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
-        leagueShare: leagueShare.defensiveImpactVotes,
-        leagueDisplay: formatShare(leagueShare.defensiveImpactVotes),
+        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes),
+        leagueDisplay: formatStatDecimal(leagueAverage.defensiveImpactVotes),
       },
       {
         metric: 'Game Contribution Index',
         yourTotal: toRoundedInt(yourStats.impactAvg),
         yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
-        leagueShare: leagueShare.impact,
-        leagueDisplay: formatShare(leagueShare.impact),
+        leagueAverage: toStatNumber(leagueAverage.impact),
+        leagueDisplay: formatStatDecimal(leagueAverage.impact, '%'),
       },
     ];
 
-    return rows.map((r) => ({
-      metric: r.metric,
-      yourTotal: r.yourTotal,
-      yourDisplay: r.yourDisplay,
-      leagueAverage: Number((r.leagueShare || 0).toFixed(2)),
-      leagueDisplay: r.leagueDisplay,
-    }));
-  }, [yourStats, impactCalculationTotals]);
+    return rows;
+  }, [yourStats, currentImpactLeagueAvg]);
 
   const topStrengthRows = useMemo(
     () => [...leagueComparisonRows]
@@ -1557,7 +1389,7 @@ export default function CareerPage() {
   const topStrengthNote = useMemo(() => {
     if (!topStrengthRows.length) return '';
     const best = topStrengthRows[0];
-    return `${best.metric}: ${best.yourDisplay} from filtered league total = ${best.leagueDisplay}.`;
+    return `${best.metric}: ${best.yourDisplay}; league average ${best.leagueDisplay}.`;
   }, [topStrengthRows]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
@@ -3046,7 +2878,7 @@ export default function CareerPage() {
                     <Grid container spacing={2} alignItems="flex-start">
                       {/* Tables Container */}
                       <Grid item xs={12} md={12} sx={{ px: { xs: 1, md: 0 } }}>
-                        {/* First Table - Expected Probabilities */}
+                        {/* First Table - Expected Per Match */}
                         <Table
                           size="small"
                           sx={{
@@ -3067,10 +2899,6 @@ export default function CareerPage() {
                             {(() => {
                               const current = yourStats;
                               const totalMatches = current.n;
-                              const safeMatchCount = Math.max(totalMatches, 1);
-                              const xG = ((current.matchesWithGoals || 0) / safeMatchCount * 100);
-                              const xA = ((current.matchesWithAssists || 0) / safeMatchCount * 100);
-                              const xCS = ((current.matchesWithCleanSheets || 0) / safeMatchCount * 100);
                               const goalsPerMatch = totalMatches > 0 ? current.goals / totalMatches : 0;
                               const assistsPerMatch = totalMatches > 0 ? current.assists / totalMatches : 0;
                               const cleanSheetsPerMatch = totalMatches > 0 ? current.cleanSheets / totalMatches : 0;
@@ -3080,18 +2908,18 @@ export default function CareerPage() {
                                 <>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{goalsPerMatch.toFixed(1)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xG.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.goals)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(goalsPerMatch)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{assistsPerMatch.toFixed(1)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xA.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.assists)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(assistsPerMatch)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{cleanSheetsPerMatch.toFixed(1)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{xCS.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.cleanSheets)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(cleanSheetsPerMatch)}</TableCell>
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
@@ -3239,22 +3067,9 @@ export default function CareerPage() {
                             Calculation data: Player: {playerName || playerId || 'Player'} | League: {selectedLeagueName || 'All Leagues'} | Season: {selectedSeasonLabel}
                           </Typography>
                           <Typography sx={{ fontSize: 10.5 }}>
-                            Formula data{impactCalculationTotals?.source === 'estimated' ? ' (estimated from returned % until backend totals deploy)' : ''}: {impactCalculationTotals
-                              ? leagueComparisonRows.map((row) => {
-                                const keyMap: Record<string, keyof LeagueMetricValues> = {
-                                  Goals: 'goals',
-                                  Assists: 'assists',
-                                  'Clean Sheets': 'cleanSheets',
-                                  'MOTM Votes': 'motmVotes',
-                                  'Defensive Impact Votes': 'defensiveImpactVotes',
-                                  'Game Contribution Index': 'impact',
-                                };
-                                const key = keyMap[row.metric];
-                                const playerTotal = key ? impactCalculationTotals.playerTotals[key] : 0;
-                                const leagueTotal = key ? impactCalculationTotals.leagueTotals[key] : 0;
-                                return `${row.metric} ${playerTotal}/${leagueTotal} = ${row.leagueDisplay}`;
-                              }).join(' â€¢ ')
-                              : 'Waiting for filtered league stats...'}
+                            Average data: {currentImpactLeagueAvg
+                              ? leagueComparisonRows.map((row) => `${row.metric}: ${row.leagueDisplay}`).join(' | ')
+                              : 'Waiting for filtered league averages...'}
                           </Typography>
                         </Box>
                       </Grid>

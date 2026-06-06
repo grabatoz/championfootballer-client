@@ -462,6 +462,8 @@ export default function LeagueDetailPage() {
     console.log('leagues matches', league?.matches)
     console.log('league archived status:', league?.archived, '| league active:', league?.active, '| league name:', league?.name)
     const [error, setError] = useState<string | null>(null);
+    const [leagueDetailsLoading, setLeagueDetailsLoading] = useState(false);
+    const [leagueDetailsAttempted, setLeagueDetailsAttempted] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [hasLoadedAllLeagues, setHasLoadedAllLeagues] = useState(false);
     const [allLeaguesFetchFailed, setAllLeaguesFetchFailed] = useState(false);
@@ -1067,6 +1069,8 @@ export default function LeagueDetailPage() {
 
     const fetchLeagueDetails = useCallback(async (seasonIdOverride?: string | null) => {
         if (!token || !leagueId || isSigningOut) return;
+        setLeagueDetailsAttempted(true);
+        setLeagueDetailsLoading(true);
         try {
             setError((prev) => (prev === 'No leagues found' ? prev : null));
             console.log("Fetching league details - Token:", token ? 'Present' : 'Missing');
@@ -1194,6 +1198,8 @@ export default function LeagueDetailPage() {
             console.error('Error fetching league details:', error);
             if (isSigningOut || !isAuthenticated) return;
             setError('Failed to fetch league details');
+        } finally {
+            if (!isSigningOut) setLeagueDetailsLoading(false);
         }
     }, [
         leagueId,
@@ -1205,6 +1211,13 @@ export default function LeagueDetailPage() {
         allLeaguesFetchFailed,
         allLeagues.length
     ]);
+
+    useEffect(() => {
+        setLeague(null);
+        setError(null);
+        setLeagueDetailsAttempted(false);
+        setLeagueDetailsLoading(false);
+    }, [leagueId]);
 
     // Fetch dream team data based on selected league and season
     const fetchDreamTeam = useCallback(async () => {
@@ -2688,26 +2701,47 @@ export default function LeagueDetailPage() {
     // ...existing code...
 
     useEffect(() => {
-        if (!league?.id || !token) return;
+        if (!league?.id || !token) {
+            setLeagueStats(null);
+            return;
+        }
+
+        let ignore = false;
+        const controller = new AbortController();
+        setLeagueStats(null);
+
         (async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/statistics`, {
+                const params = new URLSearchParams();
+                params.set('_t', String(Date.now()));
+                if (selectedSeasonId) params.set('seasonId', selectedSeasonId);
+
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/statistics?${params.toString()}`, {
                     headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                    signal: controller.signal,
                 });
                 if (!res.ok) {
                     // Endpoint may not exist yet - fail silently
                     console.warn('League statistics endpoint returned', res.status);
-                    setLeagueStats(null);
+                    if (!ignore) setLeagueStats(null);
                     return;
                 }
                 const json = await res.json();
-                if (json?.success) setLeagueStats(json.data);
+                if (!ignore) {
+                    setLeagueStats(json?.success && json.data ? json.data : null);
+                }
             } catch (e) {
+                if (controller.signal.aborted) return;
                 console.warn('Failed to load league statistics', e);
-                setLeagueStats(null);
+                if (!ignore) setLeagueStats(null);
             }
         })();
-    }, [league?.id, token]);
+        return () => {
+            ignore = true;
+            controller.abort();
+        };
+    }, [league?.id, token, selectedSeasonId]);
 
     // Fetch leaderboard for ALL metrics when league or season changes
     useEffect(() => {
@@ -3004,6 +3038,61 @@ export default function LeagueDetailPage() {
                     </Button>
                     <Typography className="empty-state-message" variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
                         {error}
+                    </Typography>
+                </Container>
+            </Box>
+        );
+    }
+
+    if (!league && !isSigningOut) {
+        const shouldShowLeagueSkeleton = authLoading || leagueDetailsLoading || (!!token && !leagueDetailsAttempted);
+
+        if (shouldShowLeagueSkeleton) {
+            return (
+                <Box
+                    sx={{
+                        minHeight: '100vh',
+                        fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), Arial, sans-serif',
+                        py: { xs: 2, md: 4 },
+                        px: { xs: 1, md: 0 },
+                        background: 'transparent',
+                    }}
+                >
+                    <Container maxWidth="lg">
+                        <LeagueDetailLoadingSkeleton mode="page" />
+                    </Container>
+                </Box>
+            );
+        }
+
+        return (
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    fontFamily: 'var(--font-inter), var(--font-woodford-bourne-pro), Arial, sans-serif',
+                    py: { xs: 2, md: 4 },
+                    px: { xs: 1, md: 0 },
+                    background: 'transparent',
+                }}
+            >
+                <Container maxWidth="lg">
+                    <Button
+                        startIcon={<ArrowLeft />}
+                        onClick={handleBackToAllLeagues}
+                        sx={{
+                            mb: 2,
+                            color: 'white',
+                            backgroundColor: '#388e3c',
+                            '&:hover': { backgroundColor: '#388e3c' },
+                        }}
+                    >
+                        Back to All Leagues
+                    </Button>
+                    <Typography className="empty-state-message" variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                        Unable to load league details.
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.72)', mt: 1 }}>
+                        Please open another league or refresh this page.
                     </Typography>
                 </Container>
             </Box>
@@ -6235,6 +6324,13 @@ export default function LeagueDetailPage() {
                                                                 </div>
                                                             );
                                                         })}
+                                                    {tableData.length === 0 && (
+                                                        <div className="league-table-row-text grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 bg-table-row-even font-bold text-white">
+                                                            <div className="text-center text-white/80" style={{ gridColumn: '1 / -1' }}>
+                                                                No players found for this season.
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </Box>

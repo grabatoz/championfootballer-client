@@ -944,6 +944,7 @@ type LeagueUpdatePayload = {
   seasonId?: string
   seasonMaxGames?: number
   seasonShowPoints?: boolean
+  seasonIsActive?: boolean
   imageFile?: File | null
   removeImage?: boolean
 }
@@ -980,10 +981,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('')
   const [seasonMaxGames, setSeasonMaxGames] = useState(20)
   const [seasonShowPoints, setSeasonShowPoints] = useState(true)
+  const [seasonIsActive, setSeasonIsActive] = useState(true)
   const [settingsImageFile, setSettingsImageFile] = useState<File | null>(null)
   const [settingsImagePreview, setSettingsImagePreview] = useState<string | null>(null)
   const [settingsRemoveImage, setSettingsRemoveImage] = useState(false)
-  const [isActivatingSeason, setIsActivatingSeason] = useState(false)
   const settingsFileInputRef = React.useRef<HTMLInputElement | null>(null)
   const lastLeagueIdRef = React.useRef<string | null>(null)
   const { token } = useAuth()
@@ -1053,10 +1054,12 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         setSelectedSeasonId(currentSeason.id)
         setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
         setSeasonShowPoints(currentSeason.showPoints !== false)
+        setSeasonIsActive(currentSeason.isActive === true)
       } else {
         setSelectedSeasonId('')
         setSeasonMaxGames(league.maxGames || 20)
         setSeasonShowPoints(league.showPoints !== false)
+        setSeasonIsActive(false)
       }
     }
   }, [league])
@@ -1078,6 +1081,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     if (currentSeason) {
       setSeasonMaxGames(currentSeason.maxGames || league.maxGames || 20)
       setSeasonShowPoints(currentSeason.showPoints !== false)
+      setSeasonIsActive(currentSeason.isActive === true)
     }
   }, [currentSeason, league.maxGames])
 
@@ -1111,12 +1115,16 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         seasonId: selectedSeasonId,
         seasonMaxGames: seasonMaxGames,
         seasonShowPoints: seasonShowPoints,
+        seasonIsActive: seasonIsActive,
       } : {}),
       // Image changes
       ...(settingsImageFile ? { imageFile: settingsImageFile } : {}),
       ...(settingsRemoveImage ? { removeImage: true } : {}),
     }
     try {
+      if (selectedSeasonId && currentSeason && currentSeason.isActive !== seasonIsActive) {
+        await persistSelectedSeasonStatus(seasonIsActive)
+      }
       await Promise.resolve(onUpdate(updatedData))
       if (onMembersChanged) {
         try {
@@ -1622,57 +1630,51 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     onClose()
   }, [currentSeason, currentUserInSelectedSeason, getSeasonLabel, league?.id, onClose, onMembersChanged, selectedSeasonId, token])
 
-  const handleActivateSeason = async () => {
-    if (!token || !league?.id || !selectedSeasonId || isActivatingSeason) return;
+  const persistSelectedSeasonStatus = async (nextIsActive: boolean) => {
+    if (!token || !league?.id || !selectedSeasonId) return;
 
-    const confirmed = window.confirm('Are you sure you want to activate this season? This will deactivate all other seasons of this league.');
-    if (!confirmed) return;
+    const statusPayload = {
+      isActive: nextIsActive,
+      active: nextIsActive,
+      status: nextIsActive ? 'active' : 'inactive'
+    };
 
-    setIsActivatingSeason(true);
-    try {
-      // 1. Activate the selected season
-      const activatePayload = {
-        isActive: true,
-        active: true,
-        status: 'active'
-      };
+    const statusEndpoints = [
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}`, body: statusPayload },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}`, body: statusPayload },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: statusPayload },
+      { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: statusPayload }
+    ] as const;
 
-      const activateEndpoints = [
-        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}`, body: activatePayload },
-        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}`, body: activatePayload },
-        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: activatePayload },
-        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${selectedSeasonId}/status`, body: activatePayload }
-      ] as const;
+    let saved = false;
+    let lastErrorMsg = nextIsActive ? 'Failed to activate season' : 'Failed to deactivate season';
 
-      let activated = false;
-      let lastErrorMsg = 'Failed to activate season';
-
-      for (const endpoint of activateEndpoints) {
-        try {
-          const res = await fetch(endpoint.url, {
-            method: endpoint.method,
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(endpoint.body),
-          });
-          const payload: any = await res.json().catch(() => ({}));
-          if (res.ok && payload.success !== false) {
-            activated = true;
-            break;
-          }
-          if (payload.message) lastErrorMsg = payload.message;
-        } catch (err) {
-          console.error('Error in activate endpoint candidate:', err);
+    for (const endpoint of statusEndpoints) {
+      try {
+        const res = await fetch(endpoint.url, {
+          method: endpoint.method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(endpoint.body),
+        });
+        const payload: any = await res.json().catch(() => ({}));
+        if (res.ok && payload.success !== false) {
+          saved = true;
+          break;
         }
+        if (payload.message) lastErrorMsg = payload.message;
+      } catch (err) {
+        console.error('Error in season status endpoint candidate:', err);
       }
+    }
 
-      if (!activated) {
-        throw new Error(lastErrorMsg);
-      }
+    if (!saved) {
+      throw new Error(lastErrorMsg);
+    }
 
-      // 2. Deactivate all other seasons of the league in parallel
+    if (nextIsActive) {
       const otherSeasons = seasons.filter(s => String(s.id) !== String(selectedSeasonId));
       const deactivatePromises = otherSeasons.map(async (other) => {
         const deactivatePayload = {
@@ -1707,18 +1709,6 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         }
       });
       await Promise.all(deactivatePromises);
-
-      toast.success('Season activated successfully!');
-      
-      // Update local state in parent components
-      if (onMembersChanged) {
-        await Promise.resolve(onMembersChanged());
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'An error occurred while activating the season';
-      toast.error(msg);
-    } finally {
-      setIsActivatingSeason(false);
     }
   };
 
@@ -1778,6 +1768,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(10px)',
           boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+          width: { xs: '100%', sm: 'calc(100% - 32px)' },
+          maxWidth: { xs: '100%', sm: 900 },
           overflow: 'hidden',
         },
       }}
@@ -1793,10 +1785,10 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         </IconButton>
       </DialogTitle>
 
-      <DialogContent>
-        <Grid container spacing={3} sx={{ mt: 0 }}>
-          <Grid item xs={12} md={6}>
-            <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
+        <Grid container spacing={3} sx={{ mt: 0, minWidth: 0 }}>
+          <Grid item xs={12} md={6} sx={{ minWidth: 0 }}>
+            <Box component="form" noValidate autoComplete="off" sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
               {/* Season Selector */}
               {seasons.length > 0 && (
                 <FormControl fullWidth>
@@ -1924,6 +1916,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 <Box sx={{
                   display: 'flex',
                   alignItems: 'center',
+                  flexDirection: { xs: 'column', sm: 'row' },
                   gap: 2,
                   mb: 1.5,
                   p: 2,
@@ -1931,6 +1924,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   borderRadius: 2,
                   background: 'rgba(255,255,255,0.03)',
                   minHeight: 70,
+                  minWidth: 0,
                 }}>
                   <Avatar
                     src={settingsImagePreview || '/assets/league.png'}
@@ -1943,11 +1937,11 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     }}
                     variant="rounded"
                   />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.3 }}>
+                  <Box sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' }, textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Typography variant="body2" sx={{ color: '#E5E7EB', mb: 0.3, overflowWrap: 'anywhere' }}>
                       {settingsImagePreview && !settingsRemoveImage ? 'Current Image' : 'No Image'}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                    <Typography variant="caption" sx={{ color: '#9CA3AF', display: 'block', overflowWrap: 'anywhere', lineHeight: 1.35 }}>
                       {settingsImagePreview && !settingsRemoveImage
                         ? `Upload a new image to replace or click Remove (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`
                         : `Upload a custom image for your league (Max ${LEAGUE_IMAGE_MAX_SIZE_MB}MB)`}
@@ -1968,6 +1962,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           px: 2,
                           fontWeight: 600,
                           fontSize: 13,
+                          minWidth: 0,
+                          whiteSpace: 'normal',
+                          textAlign: 'center',
                           '&:hover': {
                             borderColor: '#0388E3',
                             backgroundColor: 'rgba(3,136,227,0.08)',
@@ -2012,6 +2009,8 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             px: 2,
                             fontWeight: 600,
                             fontSize: 13,
+                            minWidth: 0,
+                            whiteSpace: 'normal',
                             '&:hover': {
                               borderColor: '#ff6b6b',
                               backgroundColor: 'rgba(255,107,107,0.08)',
@@ -2023,67 +2022,62 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                       )}
                     </>
                   ) : (
-                    <Typography variant="caption" sx={{ color: '#9CA3AF' }}>
+                    <Typography variant="caption" sx={{ color: '#9CA3AF', overflowWrap: 'anywhere' }}>
                       Only league admins can change league image settings.
                     </Typography>
                   )}
                 </Box>
               </FormControl>
 
-              <FormControl component="fieldset">
+              <FormControl component="fieldset" fullWidth sx={{ minWidth: 0 }}>
                 <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
-                  Season Status
+                  League Season Status
                 </Typography>
-                {currentSeason?.isActive ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip
-                      label="Active"
-                      sx={{
-                        bgcolor: 'rgba(39, 171, 131, 0.15)',
-                        color: '#27ab83',
-                        border: '1px solid rgba(39, 171, 131, 0.3)',
-                        fontWeight: 600,
-                        height: 24,
-                      }}
-                    />
-                    <Typography variant="body2" sx={{ color: '#9CA3AF' }}>
-                      This season is currently active.
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Chip
-                      label="Inactive"
-                      sx={{
-                        bgcolor: 'rgba(239, 83, 80, 0.15)',
-                        color: '#ef5350',
-                        border: '1px solid rgba(239, 83, 80, 0.3)',
-                        fontWeight: 600,
-                        height: 24,
-                      }}
-                    />
-                    {canManageLeagueSettings && selectedSeasonId && (
-                      <Button
-                        variant="contained"
-                        onClick={handleActivateSeason}
-                        disabled={isActivatingSeason}
+                <RadioGroup
+                  row
+                  value={seasonIsActive ? 'active' : 'inactive'}
+                  onChange={(event) => setSeasonIsActive(event.target.value === 'active')}
+                  sx={{
+                    gap: { xs: 0.5, sm: 1.5 },
+                    flexWrap: 'wrap',
+                    minWidth: 0,
+                    '& .MuiFormControlLabel-root': {
+                      mr: { xs: 1, sm: 2 },
+                      minWidth: 0,
+                    },
+                    '& .MuiFormControlLabel-label': {
+                      color: '#E5E7EB',
+                      fontWeight: 600,
+                    },
+                  }}
+                >
+                  <FormControlLabel
+                    value="active"
+                    disabled={!selectedSeasonId || !canManageLeagueSettings}
+                    control={
+                      <Radio
                         sx={{
-                          bgcolor: '#27ab83',
-                          '&:hover': { bgcolor: '#1e8463' },
-                          borderRadius: 2,
-                          fontWeight: 600,
-                          fontSize: '12px',
-                          py: 0.5,
-                          px: 1.5,
-                          textTransform: 'none',
-                          minHeight: 30,
+                          color: 'rgba(39,171,131,0.75)',
+                          '&.Mui-checked': { color: '#27ab83' },
                         }}
-                      >
-                        {isActivatingSeason ? 'Activating...' : 'Activate Season'}
-                      </Button>
-                    )}
-                  </Box>
-                )}
+                      />
+                    }
+                    label="Active"
+                  />
+                  <FormControlLabel
+                    value="inactive"
+                    disabled={!selectedSeasonId || !canManageLeagueSettings}
+                    control={
+                      <Radio
+                        sx={{
+                          color: 'rgba(239,83,80,0.75)',
+                          '&.Mui-checked': { color: '#ef5350' },
+                        }}
+                      />
+                    }
+                    label="Inactive"
+                  />
+                </RadioGroup>
               </FormControl>
 
               <FormControl fullWidth>
@@ -2106,7 +2100,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     '& .MuiInputBase-input': { color: '#E5E7EB' },
                   }}
                   helperText={!selectedSeasonId ? 'Select a season first' : `This setting controls how many matches can be played in ${currentSeason?.name || 'this season'}`}
-                  FormHelperTextProps={{ sx: { color: '#9CA3AF' } }}
+                  FormHelperTextProps={{ sx: { color: '#9CA3AF', overflowWrap: 'anywhere', mx: 0, lineHeight: 1.35 } }}
                 />
               </FormControl>
 
@@ -2140,15 +2134,27 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                     : `Classic League Points Scoring for ${currentSeason ? currentSeason.name : 'this season'}`
                 }
                 sx={{
+                  m: 0,
+                  alignItems: 'flex-start',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  gap: 1,
+                  '& .MuiSwitch-root': {
+                    flexShrink: 0,
+                    mt: -0.5,
+                  },
                   '& .MuiFormControlLabel-label': {
                     color: seasonShowPoints ? '#E5E7EB' : '#E5E7EB',
                     fontWeight: 600,
+                    lineHeight: 1.35,
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
                   },
                 }}
               />
             </Box>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} sx={{ minWidth: 0 }}>
             {/* Members management (right side) */}
             <Box sx={{ mt: { xs: 1, md: 2 }, pr: 1 }}>
               <Typography variant="subtitle1" fontWeight="medium" gutterBottom sx={{ color: '#E5E7EB' }}>
@@ -4397,6 +4403,7 @@ function AllLeagues() {
       if (data.seasonId) formData.append('seasonId', data.seasonId);
       if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
       if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+      if (data.seasonIsActive !== undefined) formData.append('seasonIsActive', String(data.seasonIsActive));
       if (data.imageFile) formData.append('image', data.imageFile);
       if (data.removeImage) formData.append('removeImage', 'true');
       fetchOptions = {
@@ -4420,6 +4427,7 @@ function AllLeagues() {
           seasonId: data.seasonId,
           seasonMaxGames: data.seasonMaxGames,
           seasonShowPoints: data.seasonShowPoints,
+          seasonIsActive: data.seasonIsActive,
         }),
       };
     }
@@ -4475,8 +4483,12 @@ function AllLeagues() {
             ...season,
             ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
             ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
           }
-          : season
+          : {
+            ...season,
+            ...(data.seasonIsActive === true ? { isActive: false } : {}),
+          }
       ));
     };
 
@@ -4485,13 +4497,16 @@ function AllLeagues() {
       if (String(l.id) !== String(selectedLeague.id)) return l;
       const leagueWithSeasons = l as League & { seasons?: Season[]; currentSeason?: Season | null };
       const nextSeasons = patchSeasons(leagueWithSeasons.seasons);
-      const nextCurrentSeason = leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
-        ? {
-          ...leagueWithSeasons.currentSeason,
-          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
-          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
-        }
-        : leagueWithSeasons.currentSeason;
+      const nextCurrentSeason = data.seasonIsActive === true && selectedSeasonId
+        ? (nextSeasons?.find((season) => String(season.id) === selectedSeasonId) || leagueWithSeasons.currentSeason)
+        : leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
+          ? {
+            ...leagueWithSeasons.currentSeason,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
+          }
+          : leagueWithSeasons.currentSeason;
 
       return {
         ...leagueWithSeasons,
@@ -4515,13 +4530,16 @@ function AllLeagues() {
       if (!prev) return prev;
       const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
       const nextSeasons = patchSeasons(prevWithSeasons.seasons);
-      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
-        ? {
-          ...prevWithSeasons.currentSeason,
-          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
-          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
-        }
-        : prevWithSeasons.currentSeason;
+      const nextCurrentSeason = data.seasonIsActive === true && selectedSeasonId
+        ? (nextSeasons?.find((season) => String(season.id) === selectedSeasonId) || prevWithSeasons.currentSeason)
+        : prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+          ? {
+            ...prevWithSeasons.currentSeason,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
+          }
+          : prevWithSeasons.currentSeason;
 
       return {
         ...prevWithSeasons,
@@ -4639,6 +4657,7 @@ function AllLeagues() {
       if (data.seasonId) formData.append('seasonId', data.seasonId);
       if (data.seasonMaxGames !== undefined) formData.append('seasonMaxGames', String(data.seasonMaxGames));
       if (data.seasonShowPoints !== undefined) formData.append('seasonShowPoints', String(data.seasonShowPoints));
+      if (data.seasonIsActive !== undefined) formData.append('seasonIsActive', String(data.seasonIsActive));
       if (data.imageFile) formData.append('image', data.imageFile);
       if (data.removeImage) formData.append('removeImage', 'true');
       fetchOptions = {
@@ -4662,6 +4681,7 @@ function AllLeagues() {
           seasonId: data.seasonId,
           seasonMaxGames: data.seasonMaxGames,
           seasonShowPoints: data.seasonShowPoints,
+          seasonIsActive: data.seasonIsActive,
         }),
       };
     }
@@ -4716,8 +4736,12 @@ function AllLeagues() {
             ...season,
             ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
             ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
           }
-          : season
+          : {
+            ...season,
+            ...(data.seasonIsActive === true ? { isActive: false } : {}),
+          }
       ));
     };
 
@@ -4726,13 +4750,16 @@ function AllLeagues() {
       if (String(l.id) !== String(adminSettingsLeague.id)) return l;
       const leagueWithSeasons = l as League & { seasons?: Season[]; currentSeason?: Season | null };
       const nextSeasons = patchSeasons(leagueWithSeasons.seasons);
-      const nextCurrentSeason = leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
-        ? {
-          ...leagueWithSeasons.currentSeason,
-          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
-          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
-        }
-        : leagueWithSeasons.currentSeason;
+      const nextCurrentSeason = data.seasonIsActive === true && selectedSeasonId
+        ? (nextSeasons?.find((season) => String(season.id) === selectedSeasonId) || leagueWithSeasons.currentSeason)
+        : leagueWithSeasons.currentSeason && selectedSeasonId && String(leagueWithSeasons.currentSeason.id) === selectedSeasonId
+          ? {
+            ...leagueWithSeasons.currentSeason,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
+          }
+          : leagueWithSeasons.currentSeason;
 
       return {
         ...leagueWithSeasons,
@@ -4756,13 +4783,16 @@ function AllLeagues() {
       if (!prev) return prev;
       const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
       const nextSeasons = patchSeasons(prevWithSeasons.seasons);
-      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
-        ? {
-          ...prevWithSeasons.currentSeason,
-          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
-          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
-        }
-        : prevWithSeasons.currentSeason;
+      const nextCurrentSeason = data.seasonIsActive === true && selectedSeasonId
+        ? (nextSeasons?.find((season) => String(season.id) === selectedSeasonId) || prevWithSeasons.currentSeason)
+        : prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+          ? {
+            ...prevWithSeasons.currentSeason,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
+          }
+          : prevWithSeasons.currentSeason;
 
       return {
         ...prevWithSeasons,
@@ -4786,13 +4816,16 @@ function AllLeagues() {
       if (!prev || prev.id !== adminSettingsLeague.id) return prev;
       const prevWithSeasons = prev as League & { seasons?: Season[]; currentSeason?: Season | null };
       const nextSeasons = patchSeasons(prevWithSeasons.seasons);
-      const nextCurrentSeason = prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
-        ? {
-          ...prevWithSeasons.currentSeason,
-          ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
-          ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
-        }
-        : prevWithSeasons.currentSeason;
+      const nextCurrentSeason = data.seasonIsActive === true && selectedSeasonId
+        ? (nextSeasons?.find((season) => String(season.id) === selectedSeasonId) || prevWithSeasons.currentSeason)
+        : prevWithSeasons.currentSeason && selectedSeasonId && String(prevWithSeasons.currentSeason.id) === selectedSeasonId
+          ? {
+            ...prevWithSeasons.currentSeason,
+            ...(data.seasonMaxGames !== undefined ? { maxGames: data.seasonMaxGames } : {}),
+            ...(data.seasonShowPoints !== undefined ? { showPoints: data.seasonShowPoints } : {}),
+            ...(data.seasonIsActive !== undefined ? { isActive: data.seasonIsActive } : {}),
+          }
+          : prevWithSeasons.currentSeason;
 
       return {
         ...prevWithSeasons,

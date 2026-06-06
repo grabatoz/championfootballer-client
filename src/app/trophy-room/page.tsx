@@ -2566,7 +2566,7 @@ export default function GlobalTrophyRoom() {
               <Box
                 sx={{
                   display: 'flex',
-                  gap: { xs: 0.75, md: 1 },
+                  gap: { xs: 0.75, md: 0.5 },
                   flexWrap: 'wrap',
                   alignItems: { xs: 'stretch', md: 'center' },
                   justifyContent: { xs: 'center', md: 'flex-end' },
@@ -2596,7 +2596,7 @@ export default function GlobalTrophyRoom() {
                       PaperProps: {
                         sx: {
                           mt: 0,
-                          maxHeight: { xs: 240, sm: 320 },
+                          maxHeight: { xs: 240, sm: 320, md: 150 },
                           overflowY: 'auto',
                           bgcolor: '#1a1a1a',
                           color: 'white',
@@ -2636,7 +2636,7 @@ export default function GlobalTrophyRoom() {
                       PaperProps: {
                         sx: {
                           mt: 0,
-                          maxHeight: { xs: 240, sm: 320 },
+                          maxHeight: { xs: 240, sm: 320, md: 150 },
                           overflowY: 'auto',
                           bgcolor: '#1a1a1a',
                           color: 'white',
@@ -2681,7 +2681,7 @@ export default function GlobalTrophyRoom() {
                       PaperProps: {
                         sx: {
                           mt: 0,
-                          maxHeight: { xs: 240, sm: 320 },
+                          maxHeight: { xs: 240, sm: 320, md: 150 },
                           overflowY: 'auto',
                           bgcolor: '#1a1a1a',
                           color: 'white',

@@ -2143,7 +2143,7 @@ export default function AllMatches() {
                         {/* Right side: Dropdowns */}
                         <Box sx={{
                             display: 'flex',
-                            columnGap: { xs: 0.75, md: 1 },
+                            columnGap: { xs: 0.75, md: 0.5 },
                             rowGap: { xs: 0.75, md: 1 },
                             alignItems: 'center',
                             flexWrap: { xs: 'wrap', sm: 'nowrap' },
@@ -2173,7 +2173,7 @@ export default function AllMatches() {
                                         PaperProps: {
                                             sx: {
                                                 mt: 0,
-                                                maxHeight: { xs: 240, sm: 320 },
+                                                maxHeight: { xs: 240, sm: 320 , md:150},
                                                 overflowY: 'auto',
                                                 bgcolor: '#1a1a1a',
                                                 color: 'white'
@@ -2216,7 +2216,7 @@ export default function AllMatches() {
                                         PaperProps: {
                                             sx: {
                                                 mt: 0,
-                                                maxHeight: { xs: 240, sm: 320 },
+                                                maxHeight: { xs: 240, sm: 320 , md:150},
                                                 overflowY: 'auto',
                                                 bgcolor: '#1a1a1a',
                                                 color: 'white'
@@ -2267,7 +2267,7 @@ export default function AllMatches() {
                                         PaperProps: {
                                             sx: {
                                                 mt: 0,
-                                                maxHeight: { xs: 240, sm: 320 },
+                                                maxHeight: { xs: 240, sm: 320 , md:150},
                                                 overflowY: 'auto',
                                                 bgcolor: '#1a1a1a',
                                                 color: 'white'
