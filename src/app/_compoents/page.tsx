@@ -469,9 +469,9 @@ export default function LandingPage() {
                     width: '100%',
                     p: { xs: 1.15, md: 1.3 },
                     bgcolor: 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    display: 'grid',
+                    placeItems: 'center',
+                    minHeight: 0,
                   }}
                 >
                   <Box
@@ -481,6 +481,9 @@ export default function LandingPage() {
                       height: '100%',
                       maxWidth: '100%',
                       mx: 'auto',
+                      display: 'grid',
+                      placeItems: 'center',
+                      overflow: 'hidden',
                       // background: 'linear-gradient(180deg, #0b0f13 0%, #010305 100%)',
                     }}
                   >
@@ -489,7 +492,11 @@ export default function LandingPage() {
                       alt={f.title}
                       fill
                       sizes="(max-width: 600px) 90vw, 25vw"
-                      style={{ objectFit: 'contain', padding: '8px 14px' }}
+                      style={{
+                        objectFit: 'contain',
+                        objectPosition: 'center center',
+                        padding: '8px 14px',
+                      }}
                       loading="lazy"
                       placeholder="blur"
                     />
