@@ -974,7 +974,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           fontSize: { xs: 10, sm: 12, md: 15 },
                         }}
                       >
-                        <Box sx={{ minWidth: { xs: 800, sm: 800, md: 900 } }}>
+                        <Box sx={{ minWidth: { xs: 800, sm: 900, md: 1040 } }}>
                           {/* Header */}
                           <Box
                             sx={{
