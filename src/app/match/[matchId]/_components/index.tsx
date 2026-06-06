@@ -102,7 +102,7 @@ interface League {
   name: string;
   isAdmin?: boolean;
   maxGames?: number;
-  seasons?: Array<{ id: string; maxGames?: number }>;
+  seasons?: Array<SeasonOption>;
   matches: {
     id: string;
     seasonId?: string;
@@ -113,6 +113,18 @@ interface League {
     awayMentalityId?: string | null
   }[];
 }
+
+type SeasonOption = {
+  id?: string;
+  _id?: string;
+  maxGames?: number;
+  isActive?: boolean;
+  active?: boolean;
+  locked?: boolean;
+  archived?: boolean;
+  status?: string | null;
+  endDate?: string | null;
+};
 
 type PlayerWithTeam = User & { __team: 'home' | 'away' };
 
@@ -144,6 +156,73 @@ const formatPlayerDisplayName = (player: { firstName?: string; lastName?: string
   return player.isGuest ? `${full} (Guest)` : full;
 };
 
+const normalizeEntityId = (value: unknown): string => String(value ?? '').trim();
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isSeasonLikeActive = (seasonLike: unknown): boolean => {
+  if (!isRecord(seasonLike)) return true;
+
+  if (typeof seasonLike.isActive === 'boolean') return seasonLike.isActive;
+  if (typeof seasonLike.active === 'boolean') return seasonLike.active;
+
+  const status = String(seasonLike.status || '').trim().toLowerCase();
+  if (status === 'active' || status === 'current' || status === 'ongoing') return true;
+  if (
+    seasonLike.locked === true ||
+    seasonLike.archived === true ||
+    status === 'inactive' ||
+    status === 'completed' ||
+    status === 'archived' ||
+    status === 'locked' ||
+    status === 'finished' ||
+    status === 'ended'
+  ) {
+    return false;
+  }
+
+  const endDate = typeof seasonLike.endDate === 'string' ? seasonLike.endDate : '';
+  if (endDate) {
+    const endMs = new Date(endDate).getTime();
+    if (Number.isFinite(endMs) && endMs < Date.now()) return false;
+  }
+
+  return true;
+};
+
+const extractSeasonOptions = (payloadUnknown: unknown): SeasonOption[] => {
+  const payloadRecord = isRecord(payloadUnknown) ? payloadUnknown : {};
+  const nestedData = isRecord(payloadRecord.data) ? payloadRecord.data : {};
+  const raw = Array.isArray(payloadUnknown)
+    ? payloadUnknown
+    : (
+      Array.isArray(payloadRecord.seasons)
+        ? payloadRecord.seasons
+        : (
+          Array.isArray(payloadRecord.data)
+            ? payloadRecord.data
+            : (Array.isArray(nestedData.seasons) ? nestedData.seasons : [])
+        )
+    );
+
+  return raw
+    .map((seasonUnknown) => isRecord(seasonUnknown) ? seasonUnknown : null)
+    .filter((seasonUnknown): seasonUnknown is Record<string, unknown> => Boolean(seasonUnknown))
+    .map((season) => ({
+      id: typeof season.id === 'string' || typeof season.id === 'number' ? String(season.id) : undefined,
+      _id: typeof season._id === 'string' || typeof season._id === 'number' ? String(season._id) : undefined,
+      maxGames: typeof season.maxGames === 'number' ? season.maxGames : undefined,
+      isActive: typeof season.isActive === 'boolean' ? season.isActive : undefined,
+      active: typeof season.active === 'boolean' ? season.active : undefined,
+      locked: typeof season.locked === 'boolean' ? season.locked : undefined,
+      archived: typeof season.archived === 'boolean' ? season.archived : undefined,
+      status: typeof season.status === 'string' ? season.status : null,
+      endDate: typeof season.endDate === 'string' ? season.endDate : null,
+    }))
+    .filter((season) => normalizeEntityId(season.id ?? season._id));
+};
+
 
 export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string } = {}) {
   const params = useParams();
@@ -155,6 +234,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away' | null>(null);
   const [league, setLeague] = useState<League | null>(null);
+  const [seasonOptions, setSeasonOptions] = useState<SeasonOption[]>([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availabilityLoading, setAvailabilityLoading] = useState<{ [matchId: string]: boolean }>({});
@@ -182,6 +262,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     if (!nestedLeague || typeof nestedLeague !== 'object') return '';
     return String((nestedLeague as Record<string, unknown>).id || '').trim();
   }, []);
+  const resolvedLeagueId = match?.leagueId || getNestedLeagueId(match);
 
   // Fetch match data function
   const fetchMatchData = useCallback((silent = false) => {
@@ -240,7 +321,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   }, [matchId, fetchMatchData]);
 
   useEffect(() => {
-    const lid = match?.leagueId || getNestedLeagueId(match);
+    const lid = resolvedLeagueId;
     if (match && lid && token) {
       const seasonQuery = match?.seasonId ? `?seasonId=${encodeURIComponent(String(match.seasonId))}` : '';
       const separator = seasonQuery ? '&' : '?';
@@ -251,6 +332,8 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
         .then(data => {
           if (data.success && data.league) {
             setLeague(data.league);
+            const seasonsFromLeague = extractSeasonOptions(data.league.seasons);
+            if (seasonsFromLeague.length) setSeasonOptions(seasonsFromLeague);
             // Set admin flag from league response
             if (data.league.isAdmin === true) setIsAdmin(true);
             // Merge captain pick IDs from league matches into current match
@@ -267,7 +350,38 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
           }
         });
     }
-  }, [match, token, getNestedLeagueId]);
+  }, [match, token, resolvedLeagueId]);
+
+  useEffect(() => {
+    if (!resolvedLeagueId || !token) {
+      setSeasonOptions([]);
+      return;
+    }
+
+    let active = true;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/seasons?_t=${Date.now()}`, {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+      .then(async (res) => {
+        if (!res.ok) return [];
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) return [];
+        return extractSeasonOptions(await res.json().catch(() => ({})));
+      })
+      .then((parsedSeasons) => {
+        if (!active) return;
+        setSeasonOptions(Array.isArray(parsedSeasons) ? parsedSeasons : []);
+      })
+      .catch(() => {
+        if (active) setSeasonOptions([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [resolvedLeagueId, token]);
 
   // Fetch detailed match (including guests) if not present in initial /matches/:id response
   useEffect(() => {
@@ -440,6 +554,30 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
       window.removeEventListener('match-updated', handleVotesEvent);
     };
   }, [matchId, fetchVotes]);
+
+  const currentMatchSeasonActive = React.useMemo(() => {
+    const matchSeasonId = normalizeEntityId(match?.seasonId);
+    if (!matchSeasonId) return true;
+
+    const seasonFromApi = seasonOptions.find((season) =>
+      normalizeEntityId(season.id ?? season._id) === matchSeasonId
+    );
+    if (seasonFromApi) return isSeasonLikeActive(seasonFromApi);
+
+    const seasonFromLeague = league?.seasons?.find((season) =>
+      normalizeEntityId(season.id ?? season._id) === matchSeasonId
+    );
+    if (seasonFromLeague) return isSeasonLikeActive(seasonFromLeague);
+
+    return true;
+  }, [match?.seasonId, seasonOptions, league?.seasons]);
+
+  useEffect(() => {
+    if (!currentMatchSeasonActive && adminEditMode) {
+      setAdminEditMode(false);
+    }
+  }, [currentMatchSeasonActive, adminEditMode]);
+
   const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
 
   const toApiPlayerId = (playerId: string): string =>
@@ -448,6 +586,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // Admin: open player stats editor
   const handleOpenPlayerEdit = async (player: User & { __team?: 'home' | 'away' }) => {
     if (!token || !matchId) return;
+    if (!currentMatchSeasonActive) {
+      toast.error('This season is inactive. Stats cannot be edited.');
+      return;
+    }
     setEditingPlayer(player);
     setEditStatsLoading(true);
     try {
@@ -479,6 +621,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // Admin: save player stats
   const handleSavePlayerStats = async () => {
     if (!editingPlayer || !token || !matchId) return;
+    if (!currentMatchSeasonActive) {
+      toast.error('This season is inactive. Stats cannot be edited.');
+      return;
+    }
     setEditStatsSaving(true);
     try {
       const apiPlayerId = toApiPlayerId(editingPlayer.id);
@@ -737,6 +883,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             availabilityLoading={availabilityLoading}
             handleToggleAvailability={handleToggleAvailability}
             embeddedInDialog={isEmbeddedInDialog}
+            seasonActive={currentMatchSeasonActive}
           />
           {!showGoals && (
             <Typography align="center" sx={{ mb: 3, color: 'gray' }}>
@@ -777,6 +924,10 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             {isAdmin && (
               <Box
                 onClick={() => {
+                  if (!currentMatchSeasonActive) {
+                    toast.error('This season is inactive. Stats cannot be edited.');
+                    return;
+                  }
                   setAdminEditMode(prev => {
                     const next = !prev;
                     if (next) {
@@ -791,8 +942,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  cursor: 'pointer',
-                  '&:hover': { opacity: 0.8 },
+                  cursor: currentMatchSeasonActive ? 'pointer' : 'not-allowed',
+                  opacity: currentMatchSeasonActive ? 1 : 0.55,
+                  '&:hover': { opacity: currentMatchSeasonActive ? 0.8 : 0.55 },
                   // bgcolor: adminEditMode ? 'rgba(255,255,255,0.15)' : 'transparent',
                   px: 1.5,
                   py: 0.5,

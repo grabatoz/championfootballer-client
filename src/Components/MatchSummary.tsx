@@ -39,6 +39,7 @@ interface MatchSummaryProps {
   availabilityLoading: { [matchId: string]: boolean }
   handleToggleAvailability: (matchId: string, isAvailable: boolean) => void
   embeddedInDialog?: boolean
+  seasonActive?: boolean
 }
 
 const getElapsedTime = (startTime: string, endTime?: string) => {
@@ -73,6 +74,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   availabilityLoading,
   handleToggleAvailability,
   embeddedInDialog = false,
+  seasonActive = true,
 }) => {
   const [, setElapsed] = useState("00:00")
   const { token, user } = useAuth()
@@ -490,6 +492,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         setShouldShowAdminGoals(true);
                         setStatsDialogOpen(true);
                       }}
+                      disabled={!seasonActive}
                       sx={{
                         bgcolor: "#2B2B2B",
                         color: "white",
@@ -502,6 +505,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         width: { xs: 120, sm: 140, md: 180 },
                         minWidth: 0,
                         whiteSpace: { xs: "normal", md: "nowrap" },
+                        "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
                       }}
                     >
                       Add Score
@@ -516,6 +520,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         setShouldShowAdminGoals(false);
                         setStatsDialogOpen(true);
                       }}
+                      disabled={!seasonActive}
                       sx={{
                         bgcolor: "#2B2B2B",
                         color: "white",
@@ -528,6 +533,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                         width: { xs: 120, sm: 140, md: 180 },
                         minWidth: 0,
                         whiteSpace: { xs: "normal", md: "nowrap" },
+                        "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
                       }}
                     >
                       Add Your Stats
@@ -575,6 +581,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       setShouldShowAdminGoals(true);
                       setStatsDialogOpen(true);
                     }}
+                    disabled={!seasonActive}
                     sx={{
                       bgcolor: "#2B2B2B",
                       color: "white",
@@ -587,6 +594,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                       width: { xs: 120, sm: 140, md: 180 },
                       minWidth: 0,
                       whiteSpace: { xs: "normal", md: "nowrap" },
+                      "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
                     }}
                   >
                     ADD Score
@@ -602,6 +610,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     setShouldShowAdminGoals(false);
                     setStatsDialogOpen(true);
                   }}
+                  disabled={!seasonActive}
                   sx={{
                     bgcolor: "#2B2B2B",
                     color: "white",
@@ -614,6 +623,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
                     width: { xs: 120, sm: 140, md: 180 },
                     minWidth: 0,
                     whiteSpace: { xs: "normal", md: "nowrap" },
+                    "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
                   }}
                 >
                   Add Your Stats

@@ -150,6 +150,7 @@ interface SeasonOption {
     isActive?: boolean;
     active?: boolean;
     locked?: boolean;
+    archived?: boolean;
     status?: string | null;
 }
 
@@ -169,15 +170,28 @@ const parseSeasonNumber = (value: unknown): number | null => {
 };
 
 const isSeasonActiveLike = (season: SeasonOption): boolean => {
-    if (season.isActive === true || season.active === true) return true;
+    if (typeof season.isActive === 'boolean') return season.isActive;
+    if (typeof season.active === 'boolean') return season.active;
 
     const status = String(season.status || '').trim().toLowerCase();
     if (status === 'active' || status === 'current' || status === 'ongoing') return true;
 
     // If season is explicitly locked, do not treat it as active.
-    if (season.locked === true || status === 'locked' || status === 'completed' || status === 'archived') {
+    if (
+        season.locked === true ||
+        season.archived === true ||
+        status === 'locked' ||
+        status === 'completed' ||
+        status === 'archived' ||
+        status === 'inactive' ||
+        status === 'finished' ||
+        status === 'ended'
+    ) {
         return false;
     }
+
+    const endMs = getSeasonDateMs(season.endDate);
+    if (Number.isFinite(endMs) && endMs !== -Infinity && endMs < Date.now()) return false;
 
     // Active season often has no end date yet.
     return !season.endDate;
@@ -830,6 +844,7 @@ export default function AllMatches() {
                         isActive: typeof season.isActive === 'boolean' ? season.isActive : undefined,
                         active: typeof season.active === 'boolean' ? season.active : undefined,
                         locked: typeof season.locked === 'boolean' ? season.locked : undefined,
+                        archived: typeof season.archived === 'boolean' ? season.archived : undefined,
                         status: typeof season.status === 'string' ? season.status : null,
                     };
                 }).filter((s) => Boolean(s.id));
@@ -1353,6 +1368,16 @@ export default function AllMatches() {
         // Active season with no endDate
         return matchTime >= seasonStart;
     }, [selectedSeason, seasons]);
+
+    const isMatchSeasonActiveForStats = useCallback((m: Match): boolean => {
+        const matchSeasonId = normalizeId((m as { seasonId?: unknown }).seasonId);
+        if (!matchSeasonId) return true;
+
+        const matchSeason = seasons.find((season) => String(season.id) === matchSeasonId);
+        if (!matchSeason) return true;
+
+        return isSeasonActiveLike(matchSeason);
+    }, [seasons]);
 
     const filteredMatches = React.useMemo(() => {
         const allMatches = Array.isArray(matches) ? matches : [];
@@ -2784,6 +2809,7 @@ export default function AllMatches() {
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
                             const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
                             const isCompleted = isResultLikeStatus(match.status);
+                            const matchSeasonActiveForStats = isMatchSeasonActiveForStats(match);
                             const matchNumber = getNumericIndex(match) ?? (idx + 1);
                             const startTime = match.start ? new Date(match.start as string) : new Date(match.date);
                             const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
@@ -2975,7 +3001,8 @@ export default function AllMatches() {
                                                             const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
                                                             const isDisabled =
                                                                 !league?.active ||
-                                                                match.archived;
+                                                                match.archived ||
+                                                                !matchSeasonActiveForStats;
                                                             const canUseAddStats = (isAdmin || !!isInMatch) && !isDisabled;
                                                             return (
                                                             <Box
@@ -3045,7 +3072,7 @@ export default function AllMatches() {
                                                             <Button
                                                                 onClick={() => { setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(true); setMatchStatsOpen(true); }}
                                                                 startIcon={<Edit size={14} color="#00a77f" />}
-                                                                disabled={match.archived || !league?.active}
+                                                                disabled={match.archived || !league?.active || !matchSeasonActiveForStats}
                                                                 sx={{
                                                                     color: '#fff',
                                                                     justifyContent: 'flex-start',

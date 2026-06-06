@@ -522,6 +522,35 @@ export default function LeagueDetailPage() {
         }
         return null;
     };
+    const isSeasonLikeActive = useCallback((seasonLike: unknown): boolean => {
+        if (!isRecord(seasonLike)) return true;
+
+        if (typeof seasonLike.isActive === 'boolean') return seasonLike.isActive;
+        if (typeof seasonLike.active === 'boolean') return seasonLike.active;
+
+        const status = String(seasonLike.status || '').trim().toLowerCase();
+        if (status === 'active' || status === 'current' || status === 'ongoing') return true;
+        if (
+            seasonLike.locked === true ||
+            seasonLike.archived === true ||
+            status === 'inactive' ||
+            status === 'completed' ||
+            status === 'archived' ||
+            status === 'locked' ||
+            status === 'finished' ||
+            status === 'ended'
+        ) {
+            return false;
+        }
+
+        const endDate = typeof seasonLike.endDate === 'string' ? seasonLike.endDate : '';
+        if (endDate) {
+            const endMs = new Date(endDate).getTime();
+            if (Number.isFinite(endMs) && endMs < Date.now()) return false;
+        }
+
+        return true;
+    }, []);
     const normalizeXPMapPayload = useCallback((payload: unknown): Record<string, number> => {
         const normalized: Record<string, number> = {};
 
@@ -736,6 +765,9 @@ export default function LeagueDetailPage() {
         seasonNumber: number;
         isActive?: boolean;
         active?: boolean;
+        locked?: boolean;
+        archived?: boolean;
+        endDate?: string | null;
         status?: string | null;
         inviteCode?: string;
         seasonInviteCode?: string;
@@ -1861,8 +1893,11 @@ export default function LeagueDetailPage() {
                     .map((seasonRaw) => ({
                         id: String(seasonRaw.id ?? seasonRaw._id ?? '').trim(),
                         seasonNumber: parseSeasonNumber(seasonRaw),
-                        isActive: seasonRaw.isActive === true,
-                        active: seasonRaw.active === true,
+                        isActive: typeof seasonRaw.isActive === 'boolean' ? seasonRaw.isActive : undefined,
+                        active: typeof seasonRaw.active === 'boolean' ? seasonRaw.active : undefined,
+                        locked: typeof seasonRaw.locked === 'boolean' ? seasonRaw.locked : undefined,
+                        archived: typeof seasonRaw.archived === 'boolean' ? seasonRaw.archived : undefined,
+                        endDate: typeof seasonRaw.endDate === 'string' ? seasonRaw.endDate : null,
                         status: typeof seasonRaw.status === 'string' ? seasonRaw.status : null,
                         inviteCode: typeof seasonRaw.inviteCode === 'string'
                             ? seasonRaw.inviteCode.trim()
@@ -2277,17 +2312,36 @@ export default function LeagueDetailPage() {
                 return String(seasonObj?.id || '') === selectedSeasonId;
             });
             if (season) {
-                const seasonObj = season as Record<string, unknown>;
-                return seasonObj?.isActive === true;
+                return isSeasonLikeActive(season);
             }
         }
         const seasonFromOptions = seasonOptions.find((season) => season.id === selectedSeasonId);
         if (seasonFromOptions) {
-            const status = String(seasonFromOptions.status || '').trim().toLowerCase();
-            return seasonFromOptions.isActive === true || seasonFromOptions.active === true || status === 'active' || status === 'current' || status === 'ongoing';
+            return isSeasonLikeActive(seasonFromOptions);
         }
         return true; // Default to active
-    }, [selectedSeasonId, league, seasonOptions]);
+    }, [selectedSeasonId, league, seasonOptions, isSeasonLikeActive]);
+
+    const isMatchSeasonActiveForStats = useCallback((match: Match): boolean => {
+        const matchSeasonId = normalizeEntityId((match as unknown as Record<string, unknown>)?.seasonId);
+        if (!matchSeasonId) return selectedSeasonId ? isSelectedSeasonActive : true;
+
+        const seasonFromOptions = seasonOptions.find((season) => season.id === matchSeasonId);
+        if (seasonFromOptions) return isSeasonLikeActive(seasonFromOptions);
+
+        const seasonsUnknown = (league as unknown as Record<string, unknown>)?.seasons;
+        if (Array.isArray(seasonsUnknown)) {
+            const seasonFromLeague = seasonsUnknown.find((seasonUnknown) => {
+                const seasonRecord = (seasonUnknown && typeof seasonUnknown === 'object')
+                    ? (seasonUnknown as Record<string, unknown>)
+                    : {};
+                return normalizeEntityId(seasonRecord.id ?? seasonRecord._id) === matchSeasonId;
+            });
+            if (seasonFromLeague) return isSeasonLikeActive(seasonFromLeague);
+        }
+
+        return true;
+    }, [league, seasonOptions, selectedSeasonId, isSelectedSeasonActive, isSeasonLikeActive]);
 
     const hasLegacyUnseasonedMatches = React.useMemo(() => {
         return (league?.matches || []).some((match) => {
@@ -5315,6 +5369,7 @@ export default function LeagueDetailPage() {
                                                     const startTime = match.start ? new Date(match.start) : new Date(match.date);
                                                     const endTime = match.end ? new Date(match.end) : new Date(startTime.getTime() + 90 * 60000);
                                                     const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                                                    const matchSeasonActiveForStats = isMatchSeasonActiveForStats(match);
                                                     const cardActionButtonSx = {
                                                         color: 'white',
                                                         fontSize: { xs: '0.48rem', sm: '0.55rem' },
@@ -5660,7 +5715,7 @@ export default function LeagueDetailPage() {
                                                                                 const isDisabled =
                                                                                     !league?.active ||
                                                                                     match.archived ||
-                                                                                    !isSelectedSeasonActive;
+                                                                                    !matchSeasonActiveForStats;
                                                                                 return (
                                                                                     <Box
                                                                                         onClick={() => {
@@ -5687,7 +5742,7 @@ export default function LeagueDetailPage() {
                                                                                             }
                                                                                         }}
                                                                                         sx={{
-                                                                                            cursor: 'pointer',
+                                                                                            cursor: isDisabled ? 'not-allowed' : 'pointer',
                                                                                             width: '100%',
                                                                                             '&:hover .add-stats-btn': {
                                                                                                 backgroundColor: '#8E4B1C',
@@ -5698,7 +5753,7 @@ export default function LeagueDetailPage() {
                                                                                             className="add-stats-btn"
                                                                                             size="small"
                                                                                             startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
-                                                                                            disabled={isDisabled && (isAdmin || !!isInMatch)}
+                                                                                            disabled={isDisabled}
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
@@ -5768,7 +5823,7 @@ export default function LeagueDetailPage() {
                                                                                         setShouldShowAdminGoals(true);
                                                                                         setMatchStatsOpen(true);
                                                                                     }}
-                                                                                    disabled={match.archived || !league?.active}
+                                                                                    disabled={match.archived || !league?.active || !matchSeasonActiveForStats}
                                                                                     startIcon={<Edit size={14} color="#00a77f" />}
                                                                                     sx={{
                                                                                         color: '#fff',
