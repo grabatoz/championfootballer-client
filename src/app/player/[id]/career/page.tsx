@@ -464,6 +464,11 @@ const toRoundedInt = (value: number): number => {
   return Math.round(value);
 };
 
+const toStatNumber = (value: unknown): number => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
 function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L' | 'D' | null {
   const explicit = match.playerStats?.result || match.result || match.outcome;
   if (explicit) {
@@ -1603,7 +1608,6 @@ export default function CareerPage() {
 
   // Real Influence data from backend
   const influenceRadarData = useMemo(() => {
-    // Real player stats calculation
     const playerTotals = {
       Goals: 0,
       Assists: 0,
@@ -1614,22 +1618,12 @@ export default function CareerPage() {
 
     influenceMatches.forEach(match => {
       const ps = match.playerStats || {};
-      playerTotals.Goals += ps.goals || 0;
-      playerTotals.Assists += ps.assists || 0;
-      playerTotals['Clean Sheets'] += ps.cleanSheets || 0;
-      playerTotals['Defensive Impact'] += ps.defence || 0;
-      playerTotals['MOTM Votes'] += ps.motmVotes || 0;
+      playerTotals.Goals += toStatNumber(ps.goals);
+      playerTotals.Assists += toStatNumber(ps.assists);
+      playerTotals['Clean Sheets'] += toStatNumber(ps.cleanSheets);
+      playerTotals['Defensive Impact'] += toStatNumber(ps.defence);
+      playerTotals['MOTM Votes'] += toStatNumber(ps.motmVotes);
     });
-
-    // Calculate per-game averages for player
-    const matchCount = Math.max(influenceMatches.length, 1);
-    const playerAvgPerGame = {
-      Goals: Math.round(playerTotals.Goals / matchCount),
-      Assists: Math.round(playerTotals.Assists / matchCount),
-      'Clean Sheets': Math.round(playerTotals['Clean Sheets'] / matchCount),
-      'Defensive Impact': Math.round(playerTotals['Defensive Impact'] / matchCount),
-      'MOTM Votes': Math.round(playerTotals['MOTM Votes'] / matchCount)
-    };
 
     // Use real league averages from backend if available
     const dbAvg = currentInfluenceLeagueAvg;
@@ -1648,10 +1642,11 @@ export default function CareerPage() {
     };
 
     const displayName = playerName || 'Player';
+    const metrics = Object.keys(playerTotals) as Array<keyof typeof playerTotals>;
 
-    return Object.keys(playerAvgPerGame).map(metric => ({
+    return metrics.map(metric => ({
       metric,
-      [displayName]: playerAvgPerGame[metric as keyof typeof playerAvgPerGame],
+      [displayName]: toRoundedInt(playerTotals[metric]),
       'League Avg': Math.round(leagueAvg[metric as keyof typeof leagueAvg])
     }));
   }, [influenceMatches, playerName, currentInfluenceLeagueAvg]);
