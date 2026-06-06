@@ -494,6 +494,44 @@ const averageLeagueMetrics = (entries: Array<LeagueMetricValues | null | undefin
   }, createEmptyLeagueMetrics());
 };
 
+const normalizeLeagueMetrics = (entry: unknown): LeagueMetricValues | null => {
+  if (!entry || typeof entry !== 'object') return null;
+  const record = entry as Partial<Record<keyof LeagueMetricValues, unknown>>;
+  return {
+    goals: toStatNumber(record.goals),
+    assists: toStatNumber(record.assists),
+    cleanSheets: toStatNumber(record.cleanSheets),
+    defence: toStatNumber(record.defence),
+    motmVotes: toStatNumber(record.motmVotes),
+    defensiveImpactVotes: toStatNumber(record.defensiveImpactVotes),
+    impact: toStatNumber(record.impact),
+  };
+};
+
+const averageLeagueMetricsFromPlayerMap = (players: unknown): LeagueMetricValues | null => {
+  const playerEntries = Array.isArray(players)
+    ? players
+    : (players && typeof players === 'object' ? Object.values(players as Record<string, unknown>) : []);
+
+  const normalized = playerEntries
+    .map(normalizeLeagueMetrics)
+    .filter((entry): entry is LeagueMetricValues => Boolean(entry));
+
+  return averageLeagueMetrics(normalized);
+};
+
+const resolveLeagueAverageFromPayload = (payload: unknown): LeagueMetricValues => {
+  if (!payload || typeof payload !== 'object') return createEmptyLeagueMetrics();
+  const record = payload as Record<string, unknown>;
+
+  // Client formula: average each player's per-match metric, then divide by player count.
+  // Example: (player1 xG 0.8 + player2 xG 0.5) / 2 = 0.65.
+  const fromPlayers = averageLeagueMetricsFromPlayerMap(record.players);
+  if (fromPlayers) return fromPlayers;
+
+  return normalizeLeagueMetrics(record.leagueAvg) || createEmptyLeagueMetrics();
+};
+
 const formatStatDecimal = (value: number, suffix = ''): string => {
   const rounded = Math.round(toStatNumber(value) * 10) / 10;
   const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
@@ -617,6 +655,19 @@ export default function CareerPage() {
       : ((data?.leagues || []) as LeagueWithMatches[]);
     return source.filter((league) => String(league?.id || '').trim() !== '');
   }, [leaguesFromRedux, data?.leagues]);
+
+  const averageTargetLeagueIds = useMemo(() => {
+    const selectedLeagueId =
+      filters.leagueId && filters.leagueId !== 'all'
+        ? String(filters.leagueId).trim()
+        : (urlLeagueId ? String(urlLeagueId).trim() : '');
+
+    if (selectedLeagueId) return [selectedLeagueId];
+
+    return Array.from(
+      new Set(averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean))
+    );
+  }, [averageLeagues, filters.leagueId, urlLeagueId]);
 
   const loading = !data;
 
@@ -893,13 +944,7 @@ export default function CareerPage() {
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
-    const selectedLeagueId =
-      filters.leagueId && filters.leagueId !== 'all'
-        ? String(filters.leagueId).trim()
-        : (urlLeagueId ? String(urlLeagueId).trim() : '');
-    const targetLeagueIds = selectedLeagueId
-      ? [selectedLeagueId]
-      : Array.from(new Set(averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean)));
+    const targetLeagueIds = averageTargetLeagueIds;
     const authToken = token || getAuthToken() || Cookies.get('token') || '';
     if (!authToken || targetLeagueIds.length === 0) return;
     const apiUrl = API_BASE_URL;
@@ -934,7 +979,7 @@ export default function CareerPage() {
         if (data.success) {
           return {
             leagueId,
-            leagueAvg: data.leagueAvg,
+            leagueAvg: resolveLeagueAverageFromPayload(data),
           };
         }
       } catch {
@@ -953,7 +998,7 @@ export default function CareerPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [token, averageLeagues, filters.leagueId, filters.year, seasonFilter, urlLeagueId]);
+  }, [token, averageTargetLeagueIds, filters.year, seasonFilter]);
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
@@ -961,16 +1006,22 @@ export default function CareerPage() {
     if (selectedLeagueId && selectedLeagueId !== 'all') {
       return leagueAvgCache[selectedLeagueId] || null;
     }
-    return averageLeagueMetrics(Object.values(leagueAvgCache));
-  }, [influenceLeague, leagueAvgCache]);
+    const scopedEntries = averageTargetLeagueIds
+      .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
+      .filter((entry): entry is LeagueMetricValues => Boolean(entry));
+    return averageLeagueMetrics(scopedEntries);
+  }, [influenceLeague, leagueAvgCache, averageTargetLeagueIds]);
 
   const currentImpactLeagueAvg = useMemo(() => {
     const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
     if (selectedLeagueId && selectedLeagueId !== 'all') {
       return leagueAvgCache[selectedLeagueId] || null;
     }
-    return averageLeagueMetrics(Object.values(leagueAvgCache));
-  }, [filters.leagueId, leagueAvgCache]);
+    const scopedEntries = averageTargetLeagueIds
+      .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
+      .filter((entry): entry is LeagueMetricValues => Boolean(entry));
+    return averageLeagueMetrics(scopedEntries);
+  }, [filters.leagueId, leagueAvgCache, averageTargetLeagueIds]);
 
   // Locally filtered matches for each card (independent of global Redux league filter)
   const chartMatches = useMemo(() =>
@@ -2945,7 +2996,7 @@ export default function CareerPage() {
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
                               <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'From League Average'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'League Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -3036,7 +3087,7 @@ export default function CareerPage() {
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
                               <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'From League Average'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'League Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
