@@ -968,7 +968,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           },
                           background: '#383838',
                           borderRadius: { xs: '0 0 8px 8px', md: '0 0 12px 12px' },
-                          p: { xs: 0.5, sm: 1 },
+                          pt: 0,
+                          pb: { xs: 0.5, sm: 1 },
+                          px: { xs: 0.5, sm: 1 },
                           fontSize: { xs: 10, sm: 12, md: 15 },
                         }}
                       >
