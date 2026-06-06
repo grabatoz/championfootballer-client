@@ -1223,45 +1223,33 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
       const normalizedSeasons = Array.isArray(league.seasons)
         ? dedupeHomeSeasons(league.seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
         : [];
-      const activeSeasons = normalizedSeasons
-        .filter(isHomeActiveSeason)
-        .sort((a, b) => readHomeSeasonNumber(a) - readHomeSeasonNumber(b));
-      const shouldShowSeasonNumber = activeSeasons.length > 1;
 
-      if (shouldShowSeasonNumber) {
-        return activeSeasons.map((season) => {
+      if (normalizedSeasons.length > 0) {
+        const sortedSeasons = [...normalizedSeasons].sort((a, b) => readHomeSeasonNumber(a) - readHomeSeasonNumber(b));
+        return sortedSeasons.map((season) => {
           const seasonId = readHomeSeasonId(season);
           const seasonNumber = readHomeSeasonNumber(season);
+          const isActiveSeason = isHomeActiveSeason(season);
           return {
             key: `${league.id}:${seasonId || seasonNumber}`,
             league,
             seasonId,
             seasonNumber,
             baseLeagueName,
-            isSeasonActive: true,
+            isSeasonActive: isActiveSeason,
             label: `${baseLeagueName} (Season ${seasonNumber || 1})`,
           };
         });
       }
 
-      const onlyActiveSeason = activeSeasons[0] || null;
-      const hasNoSeasons = Array.isArray(league.seasons) && league.seasons.length === 0;
-      const seasonNumber = hasNoSeasons
-        ? 0
-        : (onlyActiveSeason
-          ? readHomeSeasonNumber(onlyActiveSeason)
-          : (parsedLeagueName?.seasonNumber || league.seasonNumber || 0));
-      const shouldShowParsedSeasonNumber = hasMultipleRowsForBaseLeague && seasonNumber > 0;
       return [{
         key: String(league.id),
         league,
-        seasonId: onlyActiveSeason ? readHomeSeasonId(onlyActiveSeason) : '',
-        seasonNumber,
+        seasonId: '',
+        seasonNumber: 0,
         baseLeagueName,
-        isSeasonActive: onlyActiveSeason !== null || seasonNumber > 0,
-        label: shouldShowParsedSeasonNumber
-          ? `${baseLeagueName} (Season ${seasonNumber})`
-          : baseLeagueName,
+        isSeasonActive: false,
+        label: formatLeagueName(league.name),
       }];
     });
   }, [activeLeagueBaseNameCounts, sortedUserLeagues]);
@@ -1473,6 +1461,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
               overflowY: 'auto',
               overflowX: 'hidden',
               p: 0.5,
+              pr: 1.5,
               zIndex: 99999,
               bgcolor: '#00A77F',
               color: '#FFFFFF',
@@ -1581,9 +1570,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                             lineHeight: 1.2
                           }}
                         >
-                          {option.baseLeagueName || option.label}
+                          {option.label}
                         </Typography>
-                        {option.seasonNumber > 0 && (
+                        {option.seasonNumber > 0 && option.isSeasonActive && (
                           <Typography
                             sx={{
                               fontSize: '0.75rem',
@@ -1594,14 +1583,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                               mt: 0.25
                             }}
                           >
-                            Season {option.seasonNumber} {option.isSeasonActive ? '(Active)' : ''}
+                            Active
                           </Typography>
                         )}
                       </Box>
                     </Box>
                     {/* Role pill on the right */}
                     {league.userRole && (
-                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                         <Box
                           sx={{
                             px: 1,
@@ -1613,7 +1602,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                             textTransform: 'uppercase',
                             bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
                             color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
-                            border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)'
+                            border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)',
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
