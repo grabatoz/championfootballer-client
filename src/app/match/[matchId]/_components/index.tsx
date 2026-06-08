@@ -1234,7 +1234,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                     <Box
                                       onClick={() => handleOpenPlayerEdit(player)}
                                       title="Click to edit player stats"
-                                      sx={{ cursor: 'pointer' }}
+                                      sx={{ cursor: 'pointer', width: '100%' }}
                                     >
                                       <Box
                                         sx={{
@@ -1242,26 +1242,33 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                                           alignItems: 'center',
                                           columnGap: { xs: 2, sm: 2, md: 1.7 },
-                                          p: { xs: 0.3, sm: 0.5, md: 0.75 },
+                                          px: { xs: 1, sm: 1.5, md: 2 },
+                                          py: { xs: 0.3, sm: 0.5, md: 0.75 },
                                           background: idx % 2 === 0
                                             ? 'linear-gradient(90deg, rgba(229,106,22,0.22) 0%, #383838 40%)'
                                             : 'linear-gradient(90deg, rgba(229,106,22,0.16) 0%, #2b2b2b 40%)',
                                           color: textColor,
                                           fontWeight,
                                           minHeight: { xs: 32, sm: 38, md: 44 },
-                                          mb: { xs: 0.5, sm: 0.75 },
-                                          borderRadius: 1,
+                                          mb: 0,
+                                          borderRadius: 0,
                                           border: '1px solid rgba(229,106,22,0.35)',
                                           boxShadow: '0 0 0 1px rgba(229,106,22,0.12), 0 4px 10px rgba(0,0,0,0.15)',
+                                          transition: 'all 0.2s',
                                           '&:hover': {
                                             opacity: 0.95,
                                             transform: 'translateY(-1px)',
                                             boxShadow: '0 0 0 1px rgba(229,106,22,0.28), 0 8px 18px rgba(0,0,0,0.2)',
-                                            transition: 'all 0.2s'
+                                            bgcolor: idx % 2 === 0 ? '#454545' : '#3b3b3b',
+                                            '& .player-sticky-cell': {
+                                              background: idx % 2 === 0
+                                                ? 'linear-gradient(90deg, rgba(229,106,22,0.28) 0%, #454545 60%)'
+                                                : 'linear-gradient(90deg, rgba(229,106,22,0.22) 0%, #3b3b3b 60%)',
+                                            }
                                           }
                                         }}
                                       >
-                                        <Box sx={{
+                                        <Box className="player-sticky-cell" sx={{
                                           display: 'flex',
                                           alignItems: 'center',
                                           minWidth: 0,
@@ -1271,7 +1278,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           background: idx % 2 === 0
                                             ? 'linear-gradient(90deg, rgba(229,106,22,0.22) 0%, #383838 60%)'
                                             : 'linear-gradient(90deg, rgba(229,106,22,0.16) 0%, #2b2b2b 60%)',
-                                          pr: 1.5,
+                                          pl: { xs: 1.5, sm: 2, md: 3 },
+                                          pr: { xs: 1, sm: 1.5, md: 2 },
+                                          transition: 'background 0.2s'
                                         }}>
                                           <Box sx={{
                                             display: 'flex',
@@ -1315,65 +1324,43 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                               />
                                             )}
                                           </Typography>
-
-
                                         </Box>
-
-                                        {/* Stats cells */}
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{stats.goals ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{stats.assists ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{stats.cleanSheets ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{playerVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{defImpactVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 }
-                                        }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{
-                                          textAlign: 'center',
-                                          fontSize: { xs: 11, sm: 12, md: 14 },
-                                          fontWeight: 700
-                                        }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
                                       </Box>
                                     </Box>
                                   ) : (
-                                    <Link href={`/player/${player.id}`} passHref>
+                                    <Link href={`/player/${player.id}`} passHref style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
                                       <Box
                                         sx={{
                                           display: 'grid',
                                           gridTemplateColumns: { xs: GRID_COLS.xs, sm: GRID_COLS.sm, md: GRID_COLS.md },
                                           alignItems: 'center',
                                           columnGap: { xs: 2, sm: 2, md: 1.7 },
-                                          p: { xs: 0.3, sm: 0.5, md: 0.75 },
+                                          px: { xs: 1, sm: 1.5, md: 2 },
+                                          py: { xs: 0.3, sm: 0.5, md: 0.75 },
                                           background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
                                           color: textColor,
                                           fontWeight,
                                           minHeight: { xs: 32, sm: 38, md: 44 },
-                                          mb: { xs: 0.5, sm: 0.75 },
-                                          borderRadius: 1,
+                                          mb: 0,
+                                          borderRadius: 0,
+                                          transition: 'background-color 0.2s',
                                           '&:hover': {
-                                            opacity: 0.9,
-                                            transition: 'opacity 0.2s'
+                                            bgcolor: idx % 2 === 0 ? '#454545' : '#3b3b3b',
+                                            cursor: 'pointer',
+                                            '& .player-sticky-cell': {
+                                              bgcolor: idx % 2 === 0 ? '#454545' : '#3b3b3b',
+                                            }
                                           }
                                         }}
                                       >
-                                        {/* Player cell */}
-                                        <Box sx={{
+                                        <Box className="player-sticky-cell" sx={{
                                           display: 'flex',
                                           alignItems: 'center',
                                           minWidth: 0,
@@ -1381,7 +1368,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                           left: 0,
                                           zIndex: 2,
                                           background: idx % 2 === 0 ? '#383838' : '#2b2b2b',
-                                          pr: 1.5,
+                                          pl: { xs: 1.5, sm: 2, md: 3 },
+                                          pr: { xs: 1, sm: 1.5, md: 2 },
+                                          transition: 'background-color 0.2s',
                                         }}>
                                           <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 0.5, sm: 1, md: 2 }, minWidth: { xs: 28, sm: 36, md: 44 } }}>
                                             <Box sx={{ position: 'relative', width: { xs: 28, sm: 32, md: 40 }, height: { xs: 28, sm: 32, md: 40 } }}>
@@ -1392,7 +1381,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
                                             {player.isGuest && !isGuestLastName(player.lastName) && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
                                           </Typography>
-
                                         </Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
                                         <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
