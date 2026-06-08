@@ -118,6 +118,7 @@ type LeagueComputedStatus = {
   missing?: Array<unknown>;
   [key: string]: unknown;
 };
+type HomeSeason = Record<string, unknown>;
 // Minimal shape used by this component only
 type BasicLeague = {
   id: string | number;
@@ -138,7 +139,7 @@ type LeagueWithComputed = BasicLeague & {
   isLocked?: boolean;
   userRole?: 'ADMIN' | 'MEMBER';
   seasonNumber?: number;
-  seasons?: any[];
+  seasons?: HomeSeason[];
 };
 
 type ApiLeague = {
@@ -189,16 +190,52 @@ const readHomeSeasonNumber = (season: unknown): number => {
   return 0;
 };
 
+const isHomeCompletedSeason = (season: unknown): boolean => {
+  if (!season || typeof season !== 'object') return false;
+  const record = season as Record<string, unknown>;
+  if (
+    record.archived === true ||
+    record.deleted === true ||
+    record.isComplete === true ||
+    record.isCompleted === true ||
+    record.completed === true ||
+    record.locked === true
+  ) {
+    return true;
+  }
+
+  const status = String(record.status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return new Set([
+    'archived',
+    'complete',
+    'completed',
+    'done',
+    'ended',
+    'finished',
+    'inactive',
+    'locked',
+    'result_complete',
+    'result_completed',
+    'result_done',
+    'result_ended',
+    'result_finished',
+    'result_published',
+    'result_uploaded',
+  ]).has(status);
+};
+
 const isHomeActiveSeason = (season: unknown): boolean => {
   if (!season || typeof season !== 'object') return false;
   const record = season as Record<string, unknown>;
-  if (record.archived === true || record.deleted === true) return false;
-  const status = String(record.status || '').trim().toLowerCase();
+  if (isHomeCompletedSeason(record)) return false;
+  const status = String(record.status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   return (
     record.isActive === true ||
     record.active === true ||
     status === 'active' ||
     status === 'current' ||
+    status === 'in_progress' ||
+    status === 'running' ||
     status === 'ongoing'
   );
 };
@@ -216,8 +253,8 @@ const normalizeHomeSeason = (season: unknown): Record<string, unknown> | null =>
   };
 };
 
-const dedupeHomeSeasons = (seasons: Array<Record<string, unknown>>): Array<Record<string, unknown>> => {
-  const map = new Map<string, Record<string, unknown>>();
+const dedupeHomeSeasons = (seasons: HomeSeason[]): HomeSeason[] => {
+  const map = new Map<string, HomeSeason>();
   seasons.forEach((season) => {
     const key =
       readHomeSeasonId(season) ||
@@ -265,10 +302,9 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   const { token } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [seasonsList, setSeasonsList] = useState<any[]>([]);
-  const [seasonsLoading, setSeasonsLoading] = useState(false);
+  const [seasonsList, setSeasonsList] = useState<HomeSeason[]>([]);
+  const [, setSeasonsLoading] = useState(false);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
-  const [showSeasonDropdown, setShowSeasonDropdown] = useState(false);
 
   const isFetching = !networkDone;
 
@@ -289,7 +325,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     }
     // Fallback: check administrators array
     if (Array.isArray(l.administrators)) {
-      const isAdmin = l.administrators.some((u: any) => u && String(u.id) === currentId);
+      const isAdmin = l.administrators.some((u) => u && String(u.id) === currentId);
       return isAdmin ? 'ADMIN' : 'MEMBER';
     }
     return undefined;
@@ -333,7 +369,12 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     }
 
     if (selectedLeague.seasons && selectedLeague.seasons.length > 0) {
-      setSeasonsList(selectedLeague.seasons);
+      const normalizedSeasons = dedupeHomeSeasons(
+        selectedLeague.seasons
+          .map(normalizeHomeSeason)
+          .filter((season): season is Record<string, unknown> => Boolean(season))
+      );
+      setSeasonsList(normalizedSeasons);
       return;
     }
 
@@ -347,7 +388,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         });
         if (res.ok) {
           const data = await res.json();
-          const seasons = data?.league?.seasons || [];
+          const seasons = Array.isArray(data?.league?.seasons)
+            ? dedupeHomeSeasons(
+              (data.league.seasons as unknown[])
+                .map(normalizeHomeSeason)
+                .filter((season): season is Record<string, unknown> => Boolean(season))
+            )
+            : [];
           setSeasonsList(seasons);
           setSelectedLeague(prev => prev && String(prev.id) === String(selectedLeague.id) ? { ...prev, seasons } : prev);
         }
@@ -374,7 +421,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     if (hasStored) {
       setSelectedSeasonId(String(storedSeasonId));
     } else {
-      const active = seasonsList.find(s => s.isActive || s.active || String(s.status || '').toLowerCase() === 'active');
+      const active = seasonsList.find(isHomeActiveSeason);
       const fallback = active || seasonsList[0];
       if (fallback) {
         setSelectedSeasonId(String(fallback.id));
@@ -466,7 +513,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
-        setShowSeasonDropdown(false);
       }
     };
 
@@ -589,7 +635,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           .map((s) => (typeof s === 'object' && s !== null ? (s as Record<string, unknown>) : null))
           .filter((s): s is Record<string, unknown> => Boolean(s));
 
-        const activeSeason = seasons.find((s) => s.isActive === true);
+        const activeSeason = seasons.find(isHomeActiveSeason);
         const activeId = activeSeason ? getId(activeSeason.id) : null;
         if (activeId) return activeId;
 
@@ -895,7 +941,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 .filter((s): s is Record<string, unknown> => Boolean(s))
                 .map((s) => ({
                   seasonNumber: parseSeasonNumber(s),
-                  isActive: s.isActive === true || s.active === true || String(s.status || '').toLowerCase() === 'active',
+                  isActive: isHomeActiveSeason(s),
                 }))
                 .filter((s) => s.seasonNumber > 0);
 
@@ -1000,16 +1046,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   return 0;
                 };
 
-                const activeSeasonFromDetails = seasonRecords.find((seasonRecord) => {
-                  const status = String(seasonRecord.status || '').trim().toLowerCase();
-                  return (
-                    seasonRecord.isActive === true ||
-                    seasonRecord.active === true ||
-                    status === 'active' ||
-                    status === 'current' ||
-                    status === 'ongoing'
-                  );
-                });
+                const activeSeasonFromDetails = seasonRecords.find(isHomeActiveSeason);
 
                 const seasonToUse = activeSeasonFromDetails || [...seasonRecords].sort((a, b) => {
                   const aNum = parseSeasonNumberFromDetails(a);
@@ -1334,7 +1371,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             borderRadius: 2,
             boxShadow: '0 4px 12px rgba(67,160,71,0.3)',
             border: '2px solid #fff',
-            ...((showDropdown || showSeasonDropdown) && {
+            ...(showDropdown && {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
             })
@@ -1344,7 +1381,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             e.stopPropagation();
             if (isFetching) return; // Disable open while loading
             setShowDropdown(prev => !prev);
-            setShowSeasonDropdown(false);
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
@@ -1380,29 +1416,23 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   if (hasNoSeasons || displaySeasonNum <= 0) return null;
                   return (
                     <Typography
-                      onClick={(e) => {
-                        e.stopPropagation(); // Stop propagation to prevent opening league dropdown!
-                        if (isFetching) return;
-                        setShowSeasonDropdown(prev => !prev);
-                        setShowDropdown(false);
-                      }}
                       sx={{
                         fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.75rem' },
                         fontWeight: 'normal',
                         opacity: 0.9,
                         lineHeight: 1,
                         marginLeft: 0,
-                        cursor: 'pointer',
+                        cursor: 'default',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 0.5,
-                        textDecoration: 'underline',
+                        textDecoration: 'none',
                         '&:hover': {
                           opacity: 1
                         }
                       }}
                     >
-                      Season {displaySeasonNum} ▾
+                      Season {displaySeasonNum}
                     </Typography>
                   );
                 })()}
@@ -1433,7 +1463,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                 e.stopPropagation();
                 if (isFetching) return; // Disable toggle while loading
                 setShowDropdown(prev => !prev);
-                setShowSeasonDropdown(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -1441,7 +1470,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                   e.stopPropagation();
                   if (isFetching) return;
                   setShowDropdown(prev => !prev);
-                  setShowSeasonDropdown(false);
                 }
               }}
             >
@@ -1528,15 +1556,27 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                           if (option.seasonId) {
                             localStorage.setItem(`preferredSeasonId_${league.id}`, String(option.seasonId));
                             localStorage.setItem('preferredSeasonId', String(option.seasonId));
+                          } else {
+                            localStorage.removeItem(`preferredSeasonId_${league.id}`);
                           }
                         }
                       } catch { }
                       setSelectedLeague(league);
                       if (option.seasonId) {
                         setSelectedSeasonId(String(option.seasonId));
+                      } else {
+                        setSelectedSeasonId('');
                       }
                       if (Array.isArray(league.seasons) && league.seasons.length > 0) {
-                        setSeasonsList(league.seasons);
+                        setSeasonsList(
+                          dedupeHomeSeasons(
+                            league.seasons
+                              .map(normalizeHomeSeason)
+                              .filter((season): season is Record<string, unknown> => Boolean(season))
+                          )
+                        );
+                      } else {
+                        setSeasonsList([]);
                       }
                       setShowDropdown(false);
                     }}
@@ -1622,84 +1662,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           </Box>
         )}
 
-        {/* Season Dropdown menu */}
-        {showSeasonDropdown && !isFetching && seasonsList.length > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              maxHeight: 200,
-              overflowY: 'auto',
-              p: 0.5,
-              zIndex: 99999,
-              bgcolor: '#00A77F',
-              color: '#FFFFFF',
-              borderRadius: 2,
-              borderTopLeftRadius: 0,
-              borderTopRightRadius: 0,
-              border: '2px solid #FFFFFF',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-              '&::-webkit-scrollbar': {
-                width: 8,
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'rgba(255,255,255,0.14)',
-                borderRadius: 10,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'rgba(255,255,255,0.55)',
-                borderRadius: 10,
-                border: '1px solid rgba(0,0,0,0.1)',
-              },
-              '&::-webkit-scrollbar-thumb:hover': {
-                background: 'rgba(255,255,255,0.75)',
-              },
-              msOverflowStyle: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255,255,255,0.65) rgba(255,255,255,0.14)',
-            }}
-          >
-            {seasonsList.map((season) => {
-              const isSeasonActive = String(season.id) === selectedSeasonId;
-              return (
-                <MenuItem
-                  key={season.id}
-                  onClick={() => {
-                    setSelectedSeasonId(String(season.id));
-                    if (selectedLeague?.id) {
-                      localStorage.setItem(`preferredSeasonId_${selectedLeague.id}`, String(season.id));
-                    }
-                    localStorage.setItem('preferredSeasonId', String(season.id));
-                    setShowSeasonDropdown(false);
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    mx: 0.5,
-                    my: 0.25,
-                    py: 1,
-                    px: 1.5,
-                    color: '#FFFFFF',
-                    fontWeight: isSeasonActive ? 700 : 500,
-                    ...(isSeasonActive && {
-                      backgroundColor: 'rgba(255,255,255,0.20)',
-                      border: '1px solid rgba(255,255,255,0.65)',
-                    }),
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.12)',
-                    }
-                  }}
-                >
-                  Season {season.seasonNumber}
-                </MenuItem>
-              );
-            })}
-          </Box>
-        )}
       </Box>
 
       {/* Add New Season Button */}
