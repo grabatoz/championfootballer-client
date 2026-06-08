@@ -2297,7 +2297,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
         // Keep API sync as best effort; UI selection should not fail if API fails.
         if (!captainApiAvailable) {
-            toast.success('Captain pick selected (local mode).');
+            toast.success(category === 'defence' ? 'Defensive impact player voted' : '+mentality player voted');
             return;
         }
 
@@ -2314,7 +2314,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             if (res.status === 404 || res.status === 405) {
                 setCaptainApiAvailable(false);
-                toast.success('Captain pick selected (local mode).');
+                toast.success(category === 'defence' ? 'Defensive impact player voted' : '+mentality player voted');
                 return;
             }
 
@@ -2324,7 +2324,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 return;
             }
 
-            toast.success(`${category === 'defence' ? 'Defensive Impact' : '+ Mentality'} captain pick saved!`);
+            toast.success(category === 'defence' ? 'Defensive impact player voted' : '+mentality player voted');
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message :

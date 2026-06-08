@@ -3316,7 +3316,7 @@ export default function PlayerStatsPage() {
                                                 }}
                                             >
                                                 <Box sx={{
-                                                    borderBottom: statsModalTab === tab.key ? `4px solid #00a77f` : '4px solid #c0bbb5',
+                                                    borderBottom: statsModalTab === tab.key ? `4px solid #E56B16` : '4px solid #c0bbb5',
                                                     transition: 'all 0.2s ease',
                                                     minWidth: { xs: '120px', md: '150px' },
                                                     textAlign: 'start',
@@ -3373,7 +3373,7 @@ export default function PlayerStatsPage() {
                                                                 overflow: 'hidden'
                                                             }}>
                                                                 <Box sx={{ 
-                                                                    bgcolor: value > 0 ? '#2d2d2d' : 'transparent', 
+                                                                    bgcolor: value > 0 ? '#07BFA5' : 'transparent', 
                                                                     height: '100%', 
                                                                     width: value > 0 ? `${Math.max(percentage, 10)}%` : '0%',
                                                                     transition: 'width 0.5s ease',
