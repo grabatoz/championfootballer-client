@@ -457,7 +457,7 @@ export default function WorldRankingTable() {
 
             {/* Search */}
             <Box sx={{
-              flex: { xs: '1 1 100%', md: '0 0 280px' },
+              flex: { xs: '1 1 100%', md: '0 0 300px' },
               display: 'flex',
               alignItems: 'center',
               gap: 1,
