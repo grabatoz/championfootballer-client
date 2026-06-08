@@ -2943,7 +2943,7 @@ export default function CareerPage() {
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
                               <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Expected Per Match'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Leage Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -3113,7 +3113,7 @@ export default function CareerPage() {
                             {topStrengthNote}
                           </Typography>
                         )}
-                        <Box sx={{ mt: 1, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
+                        {/* <Box sx={{ mt: 1, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
                           <Typography sx={{ fontSize: 10.5 }}>
                             Calculation data: Player: {playerName || playerId || 'Player'} | League: {selectedLeagueName || 'All Leagues'} | Season: {selectedSeasonLabel}
                           </Typography>
@@ -3122,7 +3122,7 @@ export default function CareerPage() {
                               ? leagueComparisonRows.map((row) => `${row.metric}: ${row.leagueDisplay}`).join(' | ')
                               : 'Waiting for filtered league averages...'}
                           </Typography>
-                        </Box>
+                        </Box> */}
                       </Grid>
                     </Grid>
                   </Box>
