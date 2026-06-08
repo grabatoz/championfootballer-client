@@ -1822,18 +1822,16 @@ export default function CareerPage() {
     preferredAppliedRef.current = true;
   }, [urlLeagueId, preferredLeagueId, filters.leagueId, availableLeagues, dispatch]);
 
-  // Auto-select "Current" on card toggles whenever top filters change.
+  // Keep a manually selected "Current" toggle pointed at the active current league.
   useEffect(() => {
-    if (currentCardLeagueId) {
-      setChartLeague(currentCardLeagueId);
-      setInfluenceLeague(currentCardLeagueId);
-      setWinLossLeague(currentCardLeagueId);
-      return;
-    }
-    setChartLeague('all');
-    setInfluenceLeague('all');
-    setWinLossLeague('all');
-  }, [filters.year, filters.leagueId, seasonFilter, currentCardLeagueId]);
+    const nextSelection = (previous: string) => (
+      previous === 'all' ? 'all' : (currentCardLeagueId || 'all')
+    );
+
+    setChartLeague(nextSelection);
+    setInfluenceLeague(nextSelection);
+    setWinLossLeague(nextSelection);
+  }, [currentCardLeagueId]);
 
   const selectedSeasonLabel = useMemo(() => {
     if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';

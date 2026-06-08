@@ -415,7 +415,7 @@ export default function PlayerStatsPage() {
     }, []);
     
     // Tab navigation state
-    const [activeTab, setActiveTab] = useState('current');
+    const [activeTab, setActiveTab] = useState('career');
     const [refreshNonce, setRefreshNonce] = useState(0);
     const trophiesCardRef = useRef<HTMLDivElement | null>(null);
     const rewardsCardRef = useRef<HTMLDivElement | null>(null);
@@ -886,9 +886,12 @@ export default function PlayerStatsPage() {
     }, [data]);
 
     const careerMatches = useMemo<LeagueMatch[]>(() => {
-        const source = careerData || data;
+        const canUseVisibleDataAsCareer =
+            (!leagueId || leagueId === 'all') &&
+            (!year || year === 'all');
+        const source = careerData || (canUseVisibleDataAsCareer ? data : null);
         return (source?.leagues || []).flatMap((l) => (hasMatches(l) ? l.matches ?? [] : []));
-    }, [careerData, data]);
+    }, [careerData, data, leagueId, year]);
 
     const currentLeagueMatches = useMemo<LeagueMatch[]>(() => {
         const leaguesList: LeagueWithMatchesTyped[] = (data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? [];
@@ -1067,11 +1070,24 @@ export default function PlayerStatsPage() {
 
     const careerScopedXP = useMemo(() => sumXPAwardedFromMatches(careerMatches), [careerMatches]);
 
+    const isCurrentStatsTab = activeTab === 'current';
+
     const displayXp = useMemo(() => {
-        if (activeTab === 'career') return xp;
-        if (activeTab === 'current') return currentScopedXP;
-        return xp;
-    }, [activeTab, currentScopedXP, xp]);
+        return isCurrentStatsTab ? currentScopedXP : xp;
+    }, [isCurrentStatsTab, currentScopedXP, xp]);
+
+    const displayedStatsMatches = isCurrentStatsTab
+        ? (leagueId === 'all' ? allMatches.length : currentLeagueMatches.length)
+        : careerMatches.length;
+    const displayedStatsTotals = isCurrentStatsTab
+        ? (leagueId === 'all' ? accumulativeTotals : currentLeagueTotals)
+        : careerTotals;
+    const displayedMotmVotes = isCurrentStatsTab
+        ? (leagueId === 'all' ? careerMotmVotesCount : motmVotesCount)
+        : careerMotmVotesCount;
+    const displayedDefensiveImpact = isCurrentStatsTab
+        ? (leagueId === 'all' ? careerDefensiveImpactCount : defensiveImpactCount)
+        : careerDefensiveImpactCount;
 
     const statsRowXpStatusTier = useMemo(() => getXPTier(displayXp), [displayXp]);
 
@@ -2832,37 +2848,37 @@ export default function PlayerStatsPage() {
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="Matches"
-                                value={activeTab === 'career' ? careerMatches.length : (leagueId === 'all' ? allMatches.length : currentLeagueMatches.length)}
+                                value={displayedStatsMatches}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="Goals"
-                                value={activeTab === 'career' ? careerTotals.goals : (leagueId === 'all' ? accumulativeTotals.goals : currentLeagueTotals.goals)}
+                                value={displayedStatsTotals.goals}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="Assists"
-                                value={activeTab === 'career' ? careerTotals.assists : (leagueId === 'all' ? accumulativeTotals.assists : currentLeagueTotals.assists)}
+                                value={displayedStatsTotals.assists}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="MOTM Votes"
-                                value={activeTab === 'career' ? careerMotmVotesCount : (leagueId === 'all' ? careerMotmVotesCount : motmVotesCount)}
+                                value={displayedMotmVotes}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="Defensive Imp."
-                                value={activeTab === 'career' ? careerDefensiveImpactCount : (leagueId === 'all' ? careerDefensiveImpactCount : defensiveImpactCount)}
+                                value={displayedDefensiveImpact}
                             />
                         </Grid>
                         <Grid item xs={4} sm={4} md>
                             <StatItem
                                 label="Clean Sheet"
-                                value={activeTab === 'career' ? careerTotals.cleanSheets : (leagueId === 'all' ? accumulativeTotals.cleanSheets : currentLeagueTotals.cleanSheets)}
+                                value={displayedStatsTotals.cleanSheets}
                             />
                         </Grid>
                         <Grid item xs={12} sm={4} md>
