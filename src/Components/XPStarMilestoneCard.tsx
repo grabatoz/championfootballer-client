@@ -45,9 +45,9 @@ export const XP_TIERS: XPTier[] = [
   },
   {
     level: 4,
-    title: 'The Specialist',
+    title: 'Pro',
     minXP: 5000,
-    maxXP: 8000,
+    maxXP: 15000,
     cardColor: '#9B59B6',
     starColor: '#6F2E8A',
     description: 'High mastery and control over matches with consistent dominance.',
@@ -55,8 +55,8 @@ export const XP_TIERS: XPTier[] = [
   {
     level: 5,
     title: 'Elite',
-    minXP: 8000,
-    maxXP: 11000,
+    minXP: 15000,
+    maxXP: 25000,
     cardColor: '#3448FF',
     starColor: '#1D2DB5',
     description: 'Known for unwavering talent and a relentless winning mentality.',
@@ -64,8 +64,8 @@ export const XP_TIERS: XPTier[] = [
   {
     level: 6,
     title: 'Champion Footballer',
-    minXP: 11000,
-    maxXP: 15000,
+    minXP: 25000,
+    maxXP: 50000,
     cardColor: '#E74C3C',
     starColor: '#A8281C',
     description: 'A benchmark of excellence. Respected as a true icon of the game.',
@@ -73,7 +73,7 @@ export const XP_TIERS: XPTier[] = [
   {
     level: 7,
     title: 'GOAT',
-    minXP: 15000,
+    minXP: 50000,
     maxXP: Infinity,
     cardColor: '#F1C40F',
     starColor: '#A67C00',

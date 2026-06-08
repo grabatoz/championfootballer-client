@@ -4531,10 +4531,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   { level: 1, title: 'Rookie', range: '0 - 500', desc: 'Building your way to football dominance, all the way to Champion Footballer', color: '#B0B0B0', label: 'Cool Gray' },
                   { level: 2, title: 'Rising Star', range: '500 - 2,500', desc: 'Rising in prominence with every performance', color: '#4AA3FF', label: 'Sky Blue' },
                   { level: 3, title: 'Baller', range: '2,500 - 5,000', desc: "A force on the field that can't be ignored", color: '#00a896', label: 'CF Green' },
-                  { level: 4, title: 'The Specialist', range: '5,000 - 8,000', desc: 'High mastery and control over the matches, consistently excelling and asserting dominance in your position', color: '#9B59B6', label: 'Purple' },
-                  { level: 5, title: 'Elite', range: '8,000 - 11,000', desc: 'Regarded as an elite player by peers, known for unwavering talent and a relentless winning mentality', color: '#3448FF', label: 'Royal Blue' },
-                  { level: 6, title: 'Champion Footballer', range: '11,000 - 15,000', desc: 'Attaining coveted status as a benchmark of excellence. A true icon of the game, respected by peers and feared by opponents', color: '#E74C3C', label: 'Crimson' },
-                  { level: 7, title: 'GOAT', range: '15,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold' },
+                  { level: 4, title: 'Pro', range: '5,000 - 15,000', desc: 'High mastery and control over the matches, consistently excelling and asserting dominance in your position', color: '#9B59B6', label: 'Purple' },
+                  { level: 5, title: 'Elite', range: '15,000 - 25,000', desc: 'Regarded as an elite player by peers, known for unwavering talent and a relentless winning mentality', color: '#3448FF', label: 'Royal Blue' },
+                  { level: 6, title: 'Champion Footballer', range: '25,000 - 50,000', desc: 'Attaining coveted status as a benchmark of excellence. A true icon of the game, respected by peers and feared by opponents', color: '#E74C3C', label: 'Crimson' },
+                  { level: 7, title: 'GOAT', range: '50,000+', desc: 'An undisputed footballer, forever cemented in the history books as the greatest of all time', color: '#F1C40F', label: 'Gold' },
                 ].map((row) => (
                   <TableRow key={row.level} sx={{ '&:hover': { bgcolor: '#252525' } }}>
                     <TableCell

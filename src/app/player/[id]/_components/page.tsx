@@ -57,7 +57,7 @@ const DARK_BG = '#383838';
 const CARD_BG = '#272727';
 const TEAL_PRIMARY = '#00a77f';
 const ORANGE_ACCENT = '#ff6b35';
-const XP_STATUS_MAX_POINTS = 15000;
+const XP_STATUS_MAX_POINTS = 50000;
 
 // Add the blue filter constant
 const BLUE_FILTER = 'invert(30%) sepia(98%) saturate(2000%) hue-rotate(201deg) brightness(92%) contrast(101%)';
