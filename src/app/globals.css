@@ -414,6 +414,38 @@ input:-webkit-autofill:active {
   min-width: 0;
 }
 
+/* Freeze pane: sticky rank (#) and player-name columns in league table */
+.league-table-sticky-rank {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background-color: inherit;
+}
+
+.league-table-sticky-name {
+  position: sticky;
+  left: 50px;
+  z-index: 2;
+  background-color: inherit;
+  box-shadow: 8px 0 12px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Ensure header sticky-name gets a lighter shadow */
+.league-header-row .league-table-sticky-rank,
+.league-header-row .league-table-sticky-name {
+  background-color: inherit;
+}
+
+.league-header-row .league-table-sticky-name {
+  box-shadow: 8px 0 12px -12px rgba(0, 0, 0, 0.35);
+}
+
+/* Hover states for freeze pane columns */
+.league-row:hover .league-table-sticky-rank,
+.league-row:hover .league-table-sticky-name {
+  background-color: inherit;
+}
+
 /* Responsive tweaks for league table (keep layout, shrink type on small screens) */
 @media (max-width: 900px) {
   .league-header-text {

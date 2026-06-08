@@ -3882,10 +3882,10 @@ export default function LeagueDetailPage() {
                             )}
                             <Paper sx={{
                                 px: 0,
-                                py: { xs: 2, md: 2 },
+                                py: { xs: 0.5, md: 2 },
                                 background: '#0e0e0e',
                                 color: 'white',
-                                minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+                                minHeight: { xs: '80px', md: 'auto' },
                             }}>
                                 <Box
                                     sx={{
@@ -3922,7 +3922,7 @@ export default function LeagueDetailPage() {
                                         width: '100%',
                                         px: { xs: 1.5, sm: 2, md: 0 },
                                         gap: 0.5,
-                                        mt: { xs: 8, sm: 12, md: 17 },
+                                        mt: { xs: 3, sm: 12, md: 17 },
                                     }}>
                                         <Box sx={{
                                             display: 'flex',

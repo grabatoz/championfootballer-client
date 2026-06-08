@@ -26,9 +26,9 @@ type PageHeaderProps = {
 };
 
 const baseHeaderSx: SystemStyleObject<Theme> = {
-  mb: { xs: 1.5, md: 5 },
+  mb: { xs: 0.5, md: 5 },
   bgcolor: '#0E0E0E',
-  p: { xs: 1.5, md: 3 },
+  p: { xs: 0.5, md: 3 },
   minHeight: { xs: 'auto', md: 'auto' },
 };
 
@@ -52,7 +52,7 @@ const baseDividerSx: SystemStyleObject<Theme> = {
   marginRight: 0,
   height: 'var(--header-divider-height)',
   background: 'var(--header-divider-color)',
-  mb: { xs: 2, md: 2 },
+  mb: { xs: 0.5, md: 2 },
 };
 
 export default function PageHeader({
