@@ -1485,6 +1485,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
         { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${league.id}/seasons/${seasonId}` },
         { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}/seasons/${seasonId}` },
         { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}` },
+        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/seasons/${seasonId}` },
       ] as const
 
       let done = false
@@ -2397,6 +2398,22 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               </Button>
             </>
           )}
+          {canManageLeagueSettings && (
+            <Button
+              variant="outlined"
+              onClick={() => setArchivedSeasonsOpen(true)}
+              sx={{
+                borderColor: 'rgba(3,136,227,0.6)',
+                color: '#0388E3',
+                width: { xs: '100%', md: 'auto' },
+                flex: { md: 1 },
+                minHeight: { xs: 42, md: 'auto' },
+                '&:hover': { borderColor: '#0388E3', bgcolor: 'rgba(3,136,227,0.08)' }
+              }}
+            >
+              Archived Seasons ({archivedSeasons.length})
+            </Button>
+          )}
           {/* <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
@@ -2839,6 +2856,8 @@ function AllLeagues() {
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedSeasons, setShowArchivedSeasons] = useState(false);
   const [archivedSeasonActionId, setArchivedSeasonActionId] = useState<string | null>(null);
+  const [archivedLeagueActionId, setArchivedLeagueActionId] = useState<string | null>(null);
+  const [locallyDeletedSeasonIds, setLocallyDeletedSeasonIds] = useState<string[]>([]);
   const [creatingSeasonLeagueId, setCreatingSeasonLeagueId] = useState<string | null>(null);
   const [leagueLiveUpdatingId, setLeagueLiveUpdatingId] = useState<string | null>(null);
   const [seasonConfirmOpen, setSeasonConfirmOpen] = useState(false);
@@ -3070,9 +3089,8 @@ function AllLeagues() {
   }, [isLeagueCompleted]);
 
   const isArchivedLeague = useCallback((l: LeagueWithStatus): boolean => {
-    if (isLeagueCompleted(l)) return false;
     return Boolean((l as LeagueWithStatus & { archived?: boolean }).archived);
-  }, [isLeagueCompleted]);
+  }, []);
 
   const handleToggleLeagueLiveStatus = useCallback(async (league: LeagueWithStatus, nextLive: boolean) => {
     if (!token) {
@@ -3290,12 +3308,14 @@ function AllLeagues() {
 
   const archivedSeasons = useMemo(() => {
     const items: Array<{ league: LeagueWithStatus; season: Season }> = [];
+    const deletedSeasonIds = new Set(locallyDeletedSeasonIds.map((id) => String(id)));
 
     leagues.forEach((league) => {
       const leagueSeasons = (league as LeagueWithStatus & { seasons?: Season[] }).seasons;
       if (!Array.isArray(leagueSeasons)) return;
 
       leagueSeasons.forEach((season) => {
+        if (deletedSeasonIds.has(String(season.id))) return;
         if (Boolean((season as Season & { deleted?: boolean }).deleted)) return;
         const statusUnknown = (season as unknown as { status?: unknown }).status;
         const seasonStatus = typeof statusUnknown === 'string' ? statusUnknown.toLowerCase() : '';
@@ -3306,7 +3326,7 @@ function AllLeagues() {
     });
 
     return items;
-  }, [leagues]);
+  }, [leagues, locallyDeletedSeasonIds]);
 
   const groupedArchivedSeasons = useMemo(() => {
     const grouped = new Map<string, { league: LeagueWithStatus; seasons: Season[] }>();
@@ -3723,6 +3743,7 @@ function AllLeagues() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}`,
         `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}`,
         `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/seasons/${seasonId}`,
       ];
 
       let success = false;
@@ -3752,6 +3773,14 @@ function AllLeagues() {
       if (!success) throw new Error(errorMessage);
 
       toast.success('Season permanently deleted');
+      setLocallyDeletedSeasonIds((prev) => (prev.includes(seasonId) ? prev : [...prev, seasonId]));
+      setLeagues(prev => prev.map((leagueItem) => {
+        if (String(leagueItem.id) !== leagueId) return leagueItem;
+        const seasons = Array.isArray((leagueItem as LeagueWithStatus & { seasons?: Season[] }).seasons)
+          ? ((leagueItem as LeagueWithStatus & { seasons?: Season[] }).seasons || []).filter((item) => String(item.id) !== seasonId)
+          : undefined;
+        return { ...leagueItem, ...(seasons ? { seasons } : {}) } as LeagueWithStatus;
+      }));
       await fetchAllLeagues();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to permanently delete season';
@@ -3760,6 +3789,83 @@ function AllLeagues() {
       setArchivedSeasonActionId(null);
     }
   }, [fetchAllLeagues, isLeagueAdminForCurrentUser, token]);
+
+  const handlePermanentDeleteArchivedLeague = useCallback(async (league: LeagueWithStatus) => {
+    if (!token) {
+      toast.error('Please login again and try.');
+      return;
+    }
+    if (!isLeagueAdminForCurrentUser(league)) {
+      toast.error('Only league admin can permanently delete this league.');
+      return;
+    }
+
+    const leagueId = String(league.id);
+    const leagueLabel = formatLeagueName(league.name) || 'this league';
+    if (!window.confirm(`Permanently delete "${leagueLabel}"? This cannot be restored from Archived Leagues, but player XP/history will remain preserved.`)) return;
+
+    setArchivedLeagueActionId(leagueId);
+    try {
+      const endpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}`,
+      ];
+
+      let success = false;
+      let errorMessage = 'Failed to permanently delete league';
+
+      for (let i = 0; i < endpoints.length; i += 1) {
+        const response = await fetch(endpoints[i], {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const payloadUnknown: unknown = await response.json().catch(() => ({}));
+        const payload = isRecord(payloadUnknown)
+          ? (payloadUnknown as { success?: boolean; message?: string })
+          : {};
+
+        if (response.ok && payload.success !== false) {
+          success = true;
+          break;
+        }
+
+        if (payload.message) errorMessage = payload.message;
+      }
+
+      if (!success) throw new Error(errorMessage);
+
+      toast.success('League permanently deleted');
+      setLeagues(prev => prev.filter(l => String(l.id) !== leagueId));
+      setLocallyDeletedLeagueIds((prev) => (prev.includes(leagueId) ? prev : [...prev, leagueId]));
+      dispatchLeagueMutationEvent('league-deleted', { leagueId, reason: 'archived-permanent-delete' });
+
+      if (selectedLeague && String(selectedLeague.id) === leagueId) {
+        setSelectedLeague(null);
+        setOpenMembers(false);
+      }
+      if (adminSettingsLeague && String(adminSettingsLeague.id) === leagueId) {
+        setAdminSettingsLeague(null);
+        setOpenAdminSettings(false);
+      }
+
+      await fetchAllLeagues();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to permanently delete league';
+      toast.error(msg);
+    } finally {
+      setArchivedLeagueActionId(null);
+    }
+  }, [
+    adminSettingsLeague,
+    dispatchLeagueMutationEvent,
+    fetchAllLeagues,
+    isLeagueAdminForCurrentUser,
+    selectedLeague,
+    token,
+  ]);
 
   const handleCreateSeasonForLeague = useCallback(async (league: LeagueWithStatus) => {
     const leagueId = String(league.id);
@@ -5985,6 +6091,7 @@ function AllLeagues() {
                 {archivedLeagues.map((league) => {
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
+                  const leagueActionLoading = archivedLeagueActionId === String(league.id);
                   return (
                     <Box
                       key={league.id}
@@ -6024,6 +6131,7 @@ function AllLeagues() {
                             <Button
                               size="small"
                               variant="contained"
+                              disabled={leagueActionLoading}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (!window.confirm(`Restore "${league.name}" from archive?`)) return;
@@ -6053,6 +6161,26 @@ function AllLeagues() {
                               }}
                             >
                               Restore
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              disabled={leagueActionLoading}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handlePermanentDeleteArchivedLeague(league);
+                              }}
+                              sx={{
+                                bgcolor: '#dc2626',
+                                '&:hover': { bgcolor: '#b91c1c' },
+                                fontSize: '11px',
+                                px: 1.5,
+                                py: 0.3,
+                                minWidth: 'auto',
+                                textTransform: 'none',
+                              }}
+                            >
+                              {leagueActionLoading ? 'Deleting...' : 'Permanent Delete'}
                             </Button>
                           </>
                         )}
