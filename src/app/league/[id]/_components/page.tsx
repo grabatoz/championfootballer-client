@@ -4388,8 +4388,8 @@ export default function LeagueDetailPage() {
                                                 py: 0.5,
                                                 minWidth: { xs: '50%', sm: 'auto' },
                                                 whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                                                textAlign: { xs: 'left', sm: 'center' },
-                                                justifyContent: { xs: 'flex-start', sm: 'center' },
+                                                textAlign: 'center',
+                                                justifyContent: 'center',
                                                 lineHeight: 1.2,
                                                 minHeight: { xs: 42, sm: 'auto' },
                                             },
@@ -6253,8 +6253,8 @@ export default function LeagueDetailPage() {
 
                                                 <>
                                                     <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-white league-header-row league-header-inset font-bold sticky top-0 z-20">
-                                                        <div className="text-center league-table-heading">#</div>
-                                                        <div className="pl-[52px] sticky left-0 z-10 bg-table-header league-table-heading league-table-heading-left">NAME</div>
+                                                        <div className="text-center league-table-heading league-table-sticky-rank">#</div>
+                                                        <div className="pl-[52px] league-table-heading league-table-heading-left league-table-sticky-name">NAME</div>
                                                         <div className="text-center league-table-heading">MOTM</div>
                                                         <div className="text-center league-table-heading">P</div>
                                                         <div className="text-center league-table-heading">W</div>
@@ -6333,10 +6333,10 @@ export default function LeagueDetailPage() {
                                                                     className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-0 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
-                                                                    <div className="text-center text-white font-bold">{index + 1}</div>
+                                                                    <div className="text-center text-white font-bold league-table-sticky-rank">{index + 1}</div>
 
                                                                     {/* Player Info */}
-                                                                    <div className="flex items-center gap-3 min-w-0 sticky left-0 z-10 transition-colors duration-150">
+                                                                    <div className="flex items-center gap-3 min-w-0 league-table-sticky-name transition-colors duration-150">
                                                                         <div
                                                                             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
                                                                             style={{
