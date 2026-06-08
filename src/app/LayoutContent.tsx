@@ -117,7 +117,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     ? <HomeDashboardLoadingSkeleton />
     : isAllLeaguesPage
       ? <AllLeaguesLoadingSkeleton />
-    : isAllMatchesPage
+      : isAllMatchesPage
         ? <AllMatchesLoadingSkeleton />
         : isAllPlayersPage
           ? <AllPlayersLoadingSkeleton />
@@ -129,31 +129,31 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 ? <WorldRankingLoadingSkeleton />
                 : isProfileSettingsPage
                   ? <ProfileSettingsLoadingSkeleton />
-                : isDreamTeamPage
-                  ? <DreamTeamLoadingSkeleton />
-                  : isLeaderBoardPage
-                    ? <LeaderBoardLoadingSkeleton />
-                    : isContactPage
-                      ? <ContactPageLoadingSkeleton />
-                      : isLegalPage
-                        ? <LegalPageLoadingSkeleton />
-        : isLeagueDetailPage
-          ? <LeagueDetailLoadingSkeleton />
-          : isLeagueTrophyRoomPage
-            ? <TrophyRoomLoadingSkeleton />
-            : isScheduleMatchPage
-              ? <ScheduleMatchLoadingSkeleton />
-              : isLeagueEditMatchPage
-                ? <EditMatchPopupLoadingSkeleton mode="page" />
-                : isLeaguePlayMatchPage
-                  ? <MatchResultLoadingSkeleton />
-          : isMatchResultPage
-            ? <MatchResultLoadingSkeleton />
-          : isPlayerCareerPage
-            ? <PlayerCareerLoadingSkeleton />
-            : isPlayerProfilePage
-              ? <PlayerProfileLoadingSkeleton />
-          : <PageLoadingSkeleton />;
+                  : isDreamTeamPage
+                    ? <DreamTeamLoadingSkeleton />
+                    : isLeaderBoardPage
+                      ? <LeaderBoardLoadingSkeleton />
+                      : isContactPage
+                        ? <ContactPageLoadingSkeleton />
+                        : isLegalPage
+                          ? <LegalPageLoadingSkeleton />
+                          : isLeagueDetailPage
+                            ? <LeagueDetailLoadingSkeleton />
+                            : isLeagueTrophyRoomPage
+                              ? <TrophyRoomLoadingSkeleton />
+                              : isScheduleMatchPage
+                                ? <ScheduleMatchLoadingSkeleton />
+                                : isLeagueEditMatchPage
+                                  ? <EditMatchPopupLoadingSkeleton mode="page" />
+                                  : isLeaguePlayMatchPage
+                                    ? <MatchResultLoadingSkeleton />
+                                    : isMatchResultPage
+                                      ? <MatchResultLoadingSkeleton />
+                                      : isPlayerCareerPage
+                                        ? <PlayerCareerLoadingSkeleton />
+                                        : isPlayerProfilePage
+                                          ? <PlayerProfileLoadingSkeleton />
+                                          : <PageLoadingSkeleton />;
   const [showPageSkeleton, setShowPageSkeleton] = useState(true);
 
   useEffect(() => {
