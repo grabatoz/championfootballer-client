@@ -7389,7 +7389,7 @@ export default function LeagueDetailPage() {
                                 order: { xs: 1, sm: 1 },
                                 mt: { xs: 3.4, sm: 6 }
                             }}>
-                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
+                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' , md : '0.79rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                                 <Box
                                     sx={{
                                         display: 'flex',
@@ -7416,7 +7416,7 @@ export default function LeagueDetailPage() {
                                             }}
                                         >
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
-                                                <Image src={it.img} alt={it.label} width={isMobile ? 10 : 20} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
+                                                <Image src={it.img} alt={it.label} width={isMobile ? 10 : 19} height={isMobile ? 10 : 20} style={{ objectFit: 'contain' }} />
                                                 <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.58rem', sm: '0.9rem' }, lineHeight: 1 }}>
                                                     {it.value}
                                                 </Typography>
