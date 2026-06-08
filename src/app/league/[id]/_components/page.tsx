@@ -490,7 +490,7 @@ export default function LeagueDetailPage() {
         ? (searchParams.get('seasonId') || '').trim()
         : '';
     const [hasCommonLeague, setHasCommonLeague] = useState(false);
-    const [, setCheckedCommonLeague] = useState(false);
+    const [checkedCommonLeague, setCheckedCommonLeague] = useState(false);
     const [userLeagueXP, setUserLeagueXP] = useState<Record<string, number>>({});
     const syncTableHorizontalScroll = useCallback(() => {
         const scrollEl = tableScrollRef.current;
@@ -1992,13 +1992,10 @@ export default function LeagueDetailPage() {
         if (selectedLeagueId !== leagueId) {
             // Reset season selection so the new league shows all its matches
             setSelectedSeasonId(null);
-            const nextLeague = allLeagues.find((leagueItem) => String(leagueItem.id) === String(selectedLeagueId));
-            if (nextLeague) {
-                setLeague(nextLeague);
-            } else {
-                setLeague(null);
-            }
+            setLeague(null);
             setError(null);
+            setLeagueDetailsAttempted(false);
+            setLeagueDetailsLoading(true);
             try {
                 localStorage.setItem('preferredLeagueId', String(selectedLeagueId));
                 localStorage.removeItem(`preferredSeasonId_${selectedLeagueId}`);
@@ -3816,6 +3813,21 @@ export default function LeagueDetailPage() {
 
 
 
+    const routeLeagueLoaded = !!league && String(league.id) === String(leagueId);
+    const leagueAccessCheckReady =
+        routeLeagueLoaded &&
+        isAuthenticated &&
+        !!user &&
+        !authLoading &&
+        !leagueDetailsLoading &&
+        leagueDetailsAttempted &&
+        (!profilePlayerId || checkedCommonLeague);
+    const shouldShowAccessDenied =
+        leagueAccessCheckReady &&
+        !isMember &&
+        !isAdmin &&
+        !hasCommonLeague;
+
     return (
         <Box
             sx={{
@@ -3834,8 +3846,8 @@ export default function LeagueDetailPage() {
             {/* <Box sx={{ ml:5}}> */}
             {/* </Box> */}
             <Container>
-                {/* Access control for non-members - only show when league data is available */}
-                {league && isAuthenticated && !!user && !isMember && !hasCommonLeague ? (
+                {/* Access control for non-members - only show after league/access checks finish */}
+                {shouldShowAccessDenied ? (
                     <Box sx={{ p: 4, minHeight: '100vh' }}>
                         <Typography className="empty-state-message" color="error" variant="h6">
                             You don&apos;t have access to this league.
