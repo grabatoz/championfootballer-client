@@ -1123,7 +1123,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                           pt: 0,
                           pb: { xs: 0.5, sm: 1 },
                           px: { xs: 0.5, sm: 1 },
-                          fontSize: { xs: 10, sm: 12, md: 15 },
+                          fontSize: { xs: 13, sm: 12, md: 15 },
                         }}
                       >
                         <Box sx={{ minWidth: { xs: 800, sm: 900, md: 1040 } }}>
@@ -1148,7 +1148,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             <Box sx={{
                               color: 'white',
                               fontWeight: 500,
-                              fontSize: { xs: 13, sm: 14, md: 17 },
+                              fontSize: { xs: 14, sm: 14, md: 17 },
                               pl: { xs: 1.5, sm: 2, md: 3 },
                               pr: { xs: 1, sm: 1.5, md: 2 },
                               textTransform: 'uppercase',
@@ -1160,14 +1160,14 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
-                              fontSize: { xs: 12, sm: 13, md: 16 },
+                              fontSize: { xs: 14, sm: 13, md: 16 },
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Goals</Box>
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
-                              fontSize: { xs: 12, sm: 13, md: 16 },
+                              fontSize: { xs: 14, sm: 13, md: 16 },
                               textAlign: 'center',
                               textTransform: 'uppercase'
                             }}>Assists</Box>
@@ -1175,7 +1175,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               sx={{
                                 color: 'white',
                                 fontWeight: '500',
-                                fontSize: { xs: 11, sm: 12, md: 16 },
+                                fontSize: { xs: 14, sm: 12, md: 16 },
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
                                 textTransform: 'uppercase'
@@ -1187,7 +1187,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
-                              fontSize: { xs: 11, sm: 12, md: 16 },
+                              fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
@@ -1195,7 +1195,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
-                              fontSize: { xs: 11, sm: 12, md: 16 },
+                              fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
@@ -1203,7 +1203,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
-                              fontSize: { xs: 11, sm: 12, md: 16 },
+                              fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               textTransform: 'uppercase'
@@ -1213,7 +1213,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               fontWeight: '500',
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
-                              fontSize: { xs: 11, sm: 12, md: 16 },
+                              fontSize: { xs: 14, sm: 12, md: 16 },
                             }}>
                               <span style={{ fontWeight: '500' }}>xp </span>
                               <span style={{ fontSize: '1em', fontWeight: '500', letterSpacing: 1 }}>PTS</span>
@@ -1301,7 +1301,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             sx={{
                                               fontWeight: 'medium',
                                               color: 'white',
-                                              fontSize: { xs: 11, sm: 12, md: 14 },
+                                              fontSize: { xs: 14, sm: 12, md: 14 },
                                               whiteSpace: 'nowrap',
                                               overflow: 'hidden',
                                               textOverflow: 'ellipsis',
@@ -1325,13 +1325,13 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                             )}
                                           </Typography>
                                         </Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
                                       </Box>
                                     </Box>
                                   ) : (
@@ -1377,18 +1377,18 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                               <Image src={playerShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
                                             </Box>
                                           </Box>
-                                          <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 11, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={formatPlayerDisplayName(player)}>
+                                          <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'white', fontSize: { xs: 14, sm: 12, md: 14 }, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={formatPlayerDisplayName(player)}>
                                             {formatPlayerDisplayName(player)}{isCaptain ? ' (C)' : ''}
                                             {player.isGuest && !isGuestLastName(player.lastName) && <Chip label="G" size="small" sx={{ ml: { xs: 0.3, sm: 0.5, md: 1 }, height: { xs: 14, sm: 16, md: 18 }, bgcolor: '#e67e22', color: 'white', fontSize: { xs: 8, sm: 9, md: 10 }, '& .MuiChip-label': { px: 0.5, fontWeight: 700 } }} />}
                                           </Typography>
                                         </Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
-                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 11, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.goals ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.assists ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{stats.cleanSheets ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{playerVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{defImpactVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 } }}>{mentalityVotes[player.id] ?? 0}</Box>
+                                        <Box sx={{ textAlign: 'center', fontSize: { xs: 14, sm: 12, md: 14 }, fontWeight: 700 }}>{typeof stats.xpAwarded === 'number' ? stats.xpAwarded.toLocaleString() : 0}</Box>
                                       </Box>
                                     </Link>
                                   )}

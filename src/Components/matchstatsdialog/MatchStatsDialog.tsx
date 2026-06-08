@@ -233,7 +233,7 @@ const MotmCoin = ({ voted, onClick, disabled, sx = {} }: MotmButtonProps) => (
             minWidth: 'auto',
             px: 2,
             py: 0.5,
-            fontSize: { xs: '0.6rem', sm: '0.75rem', md: '0.875rem' },
+            fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' },
             fontWeight: 'bold',
             textTransform: 'none',
             backgroundColor: voted ? 'red' : 'transparent',
@@ -349,7 +349,7 @@ const VotedPlayerAvatar = ({
                 justifyContent: 'center',
                 color: '#fff',
                 fontWeight: 700,
-                fontSize: { xs: '0.72rem', md: '0.82rem' },
+                fontSize: { xs: '0.85rem', md: '0.82rem' },
                 letterSpacing: 0.4,
             }}
             aria-label={fullName || 'Player initials'}
@@ -390,7 +390,7 @@ const PlayerInitialsAvatar = ({
                 bgcolor: profilePicture ? '#000' : bg,
                 color: '#fff',
                 fontWeight: 700,
-                fontSize: '0.72rem',
+                fontSize: { xs: '0.85rem', md: '0.72rem' },
                 '& .MuiAvatar-img': { backgroundColor: '#000', objectFit: 'cover' }
             }}
             aria-label={fullName || 'Player'}
@@ -3842,18 +3842,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 }}
                             >
                                 <Box sx={{ px: 1, py: 0.55, borderBottom: '1px solid rgba(0,0,0,0.28)' }}>
-                                    <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, md: 12 }, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
                                         {adminHeaderLeagueText}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                                     <Box sx={{ px: 1, py: 0.5, borderRight: '1px solid rgba(0,0,0,0.28)' }}>
-                                        <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, md: 12 }, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
                                             MATCH {computedMatchNumber ?? ''}
                                         </Typography>
                                     </Box>
                                     <Box sx={{ px: 1, py: 0.5 }}>
-                                        <Typography sx={{ fontWeight: 600, fontSize: 12, textAlign: 'center', lineHeight: 1.2 }}>
+                                        <Typography sx={{ fontWeight: 600, fontSize: { xs: 14, md: 12 }, textAlign: 'center', lineHeight: 1.2 }}>
                                             {adminHeaderDateText}
                                         </Typography>
                                     </Box>
@@ -4311,18 +4311,18 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 }}
                             >
                                 <Box sx={{ px: 1, py: 0.55, borderBottom: '1px solid rgba(0,0,0,0.28)' }}>
-                                    <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, md: 12 }, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
                                         {dialogLeagueTitle}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                                     <Box sx={{ px: 1, py: 0.5, borderRight: '1px solid rgba(0,0,0,0.28)' }}>
-                                        <Typography sx={{ fontWeight: 700, fontSize: 12, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, md: 12 }, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>
                                             Match {computedMatchNumber || ''}
                                         </Typography>
                                     </Box>
                                     <Box sx={{ px: 1, py: 0.5 }}>
-                                        <Typography sx={{ fontWeight: 600, fontSize: 12, textAlign: 'center', lineHeight: 1.2 }}>
+                                        <Typography sx={{ fontWeight: 600, fontSize: { xs: 14, md: 12 }, textAlign: 'center', lineHeight: 1.2 }}>
                                             {dialogDateTitle}
                                         </Typography>
                                     </Box>
