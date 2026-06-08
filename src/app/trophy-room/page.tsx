@@ -2497,11 +2497,11 @@ export default function GlobalTrophyRoom() {
         {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}
 
         <Paper sx={{
-          p: { xs: 2, md: 3 },
+          p: { xs: 1.5, md: 3 },
           background: '#0e0e0e',
           color: 'white',
           borderRadius: 0,
-          minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+          minHeight: { xs: 'auto', md: 'auto' },
           width: '100vw',
           position: 'relative',
           left: '50%',
@@ -2511,6 +2511,7 @@ export default function GlobalTrophyRoom() {
             variant="h3"
             className="all-leagues-heading"
             sx={{
+              display: { xs: 'none', md: 'block' },
               color: 'white',
               fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
               fontWeight: 700,
@@ -2531,6 +2532,7 @@ export default function GlobalTrophyRoom() {
 
           {/* Orange divider */}
           <Box sx={{
+            display: { xs: 'none', md: 'block' },
             height: 'var(--header-divider-height)',
             bgcolor: 'var(--header-divider-color)',
             width: '100vw',
@@ -2602,8 +2604,8 @@ export default function GlobalTrophyRoom() {
                   gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
                   alignItems: 'center',
                   justifyContent: { xs: 'stretch', md: 'flex-end' },
-                  columnGap: { xs: 0.25, md: 0.50 },
-                  rowGap: { xs: 0.25, md: 0.50 },
+                  columnGap: { xs: 2.0, md: 0.50 },
+                  rowGap: { xs: 2.0, md: 0.50 },
                   width: { xs: '100%', md: 'auto' },
                   maxWidth: { xs: 340, sm: 520, md: 'none' },
                   mx: { xs: 'auto', md: 0 },

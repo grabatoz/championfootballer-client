@@ -2103,12 +2103,12 @@ export default function AllMatches() {
                 </Button> */}
                 <Box
                     sx={{
-                        mb: { xs: 3, md: 5 },
+                        mb: { xs: 1.5, md: 5 },
                         bgcolor: '#0E0E0E',
                         px: { xs: 1, sm: 2, md: 3 },
-                        py: { xs: 2, md: 2.5 },
+                        py: { xs: 1.5, md: 2.5 },
                         borderRadius: 0,
-                        minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+                        minHeight: { xs: 'auto', md: 'auto' },
                         width: '100vw',
                         position: 'relative',
                         left: '50%',
@@ -2117,6 +2117,7 @@ export default function AllMatches() {
                 >
                     {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
                     <Typography variant="h3" sx={{
+                        display: { xs: 'none', md: 'block' },
                         mb: { xs: 4, md: 4.5 },
                         mt:{xs: 1.25, md: 3},
                         color: 'white',
@@ -2136,6 +2137,7 @@ export default function AllMatches() {
 
                     <Box
                         sx={{
+                            display: { xs: 'none', md: 'block' },
                             width: '100vw',
                             position: 'relative',
                             left: '50%',
@@ -2203,8 +2205,8 @@ export default function AllMatches() {
                                 gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
                                 alignItems: 'center',
                                 justifyContent: { xs: 'stretch', md: 'flex-end' },
-                                columnGap: { xs: 0.25, md: 0.50 },
-                                rowGap: { xs: 0.25, md: 0.50 },
+                                columnGap: { xs: 2.0, md: 0.50 },
+                                rowGap: { xs: 2.0, md: 0.50 },
                                 width: { xs: '100%', md: 'auto' },
                                 maxWidth: { xs: 340, sm: 520, md: 'none' },
                                 mx: { xs: 'auto', md: 0 },

@@ -5038,10 +5038,10 @@ function AllLeagues() {
         {/* Close Button */}
         <Box
           sx={{
-            mb: { xs: 3, md: 5 },
+            mb: { xs: 1.5, md: 5 },
             bgcolor: '#0E0E0E',
-            p: { xs: 2, md: 3 },
-            minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+            p: { xs: 1.5, md: 3 },
+            minHeight: { xs: 'auto', md: 'auto' },
             width: '100vw',
             position: 'relative',
             left: '50%',
@@ -5050,6 +5050,7 @@ function AllLeagues() {
         >
           {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
           <Typography variant="h3" sx={{
+            display: { xs: 'none', md: 'block' },
             color: 'white',
             fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
             fontWeight: 700,
@@ -5068,6 +5069,7 @@ function AllLeagues() {
 
           {/* Divider line below heading */}
           <Box sx={{
+            display: { xs: 'none', md: 'block' },
             width: '100vw',
             position: 'relative',
             left: '50%',
@@ -5182,12 +5184,11 @@ function AllLeagues() {
               </Box>
             </Box>
 
-            {/* Right side: Dropdowns + Clear */}
             <Box
               sx={{
                 display: 'flex',
-                columnGap: { xs: 0.25, md: 0.50 },
-                rowGap: { xs: 0.25, md: 0.50 },
+                columnGap: { xs: 2.0, md: 0.50 },
+                rowGap: { xs: 2.0, md: 0.50 },
                 alignItems: 'center',
                 flexWrap: { xs: 'wrap', md: 'nowrap' },
                 width: { xs: '100%', md: 'auto' }

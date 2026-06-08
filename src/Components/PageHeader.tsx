@@ -26,10 +26,10 @@ type PageHeaderProps = {
 };
 
 const baseHeaderSx: SystemStyleObject<Theme> = {
-  mb: { xs: 3, md: 5 },
+  mb: { xs: 1.5, md: 5 },
   bgcolor: '#0E0E0E',
-  p: { xs: 2, md: 3 },
-  minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+  p: { xs: 1.5, md: 3 },
+  minHeight: { xs: 'auto', md: 'auto' },
 };
 
 const baseTitleSx: SystemStyleObject<Theme> = {
@@ -90,14 +90,18 @@ export default function PageHeader({
   const headerTitleSx: SxProps<Theme> = [baseTitleSx, ...toSxArray(titleSx)];
   const headerTitleRowSx: SxProps<Theme> = [
     {
-      display: 'flex',
+      display: { xs: 'none', md: 'flex' },
       alignItems: 'center',
       justifyContent: 'center',
       gap: { xs: 1, md: 1.25 },
     },
     ...toSxArray(titleRowSx),
   ];
-  const headerDividerSx: SxProps<Theme> = [dividerBaseSx, ...toSxArray(dividerSx)];
+  const headerDividerSx: SxProps<Theme> = [
+    dividerBaseSx,
+    { display: { xs: 'none', md: 'block' } },
+    ...toSxArray(dividerSx)
+  ];
   return (
     <Box sx={headerSx}>
       <Box sx={headerTitleRowSx}>
