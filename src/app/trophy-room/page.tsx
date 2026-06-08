@@ -2886,7 +2886,7 @@ export default function GlobalTrophyRoom() {
                     <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
                     {availableSeasons.map((season) => (
                       <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                        {season.name} {season.isActive ? '(Active)' : ''}
+                        {season.name}
                       </option>
                     ))}
                   </select>
@@ -2981,7 +2981,7 @@ export default function GlobalTrophyRoom() {
                             '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
                           }}
                         >
-                          {season.name} {season.isActive ? '(Active)' : ''}
+                          {season.name}
                         </MenuItem>
                       ))}
                     </Menu>
