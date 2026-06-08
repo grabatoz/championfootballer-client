@@ -29,6 +29,7 @@ import {
   useMediaQuery,
   Dialog,
   DialogContent,
+  Autocomplete,
 } from "@mui/material"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
@@ -1557,59 +1558,69 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
             {/* COUNTRY + CITY/STATE */}
             <Box>
               <Typography sx={{ mb: 0.75, color: '#000', fontSize: '0.9rem' }}>Select Country/Region</Typography>
-              <FormControl fullWidth>
-                <Select
-                  id="country-select"
-                  value={selectedCountryCode}
-                  onChange={(e) => handleCountrySelect(e.target.value as string)}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (!selected) return <span style={{ color: '#757575' }}>Country/Region</span>
-                    const code = selected as string
-                    const c = countries.find((country) => country.isoCode === code)
-                    const flagUrl = getCountryFlagUrl(code)
-                    return (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {flagUrl ? (
-                          <Box
-                            component='img'
-                            src={flagUrl}
-                            alt={`${code} flag`}
-                            sx={{
-                              width: 20,
-                              height: 15,
-                              borderRadius: '2px',
-                              objectFit: 'cover',
-                              border: '1px solid rgba(0,0,0,0.12)',
-                              flexShrink: 0,
-                            }}
-                          />
-                        ) : null}
-                        <Box component='span'>{c?.name || ''}</Box>
-                      </Box>
-                    )
-                  }}
-                  input={<OutlinedInput notched={false} />}
-                  sx={registerSelectSx}
-                  MenuProps={{
-                    ...dropdownMenuBaseProps,
-                    PaperProps: { sx: dropdownPaperBaseSx },
-                  }}
-                  required
-                >
-                  <MenuItem value='' disabled>
-                    <em>Country/Region</em>
-                  </MenuItem>
-                  {countries.map((c) => {
-                    const flagUrl = getCountryFlagUrl(c.isoCode)
-                    return (
-                      <MenuItem key={c.isoCode} value={c.isoCode}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {flagUrl ? (
+              <Autocomplete
+                id="country-select"
+                options={countries}
+                getOptionLabel={(option) => option.name}
+                value={countries.find((c) => c.isoCode === selectedCountryCode) || null}
+                onChange={(event, newValue) => {
+                  handleCountrySelect(newValue ? newValue.isoCode : "");
+                }}
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props as any;
+                  const flagUrl = getCountryFlagUrl(option.isoCode);
+                  return (
+                    <Box
+                      key={option.isoCode}
+                      component="li"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      {...optionProps}
+                    >
+                      {flagUrl ? (
+                        <Box
+                          component="img"
+                          src={flagUrl}
+                          alt={`${option.isoCode} flag`}
+                          sx={{
+                            width: 20,
+                            height: 15,
+                            borderRadius: '2px',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(0,0,0,0.12)',
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : null}
+                      <Box component="span" sx={{ color: '#000' }}>{option.name}</Box>
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => {
+                  const selectedCountry = countries.find((c) => c.isoCode === selectedCountryCode);
+                  const flagUrl = selectedCountry ? getCountryFlagUrl(selectedCountry.isoCode) : "";
+                  return (
+                    <TextField
+                      {...params}
+                      placeholder="Country/Region"
+                      required={!selectedCountryCode}
+                      sx={{
+                        ...registerInputSx,
+                        "& .MuiOutlinedInput-root": {
+                          ...(registerInputSx as any)["& .MuiOutlinedInput-root"],
+                          "& input": {
+                            ...((registerInputSx as any)["& .MuiOutlinedInput-root"]?.["& input"] || {}),
+                            paddingLeft: flagUrl ? "40px !important" : "14px !important",
+                          }
+                        }
+                      }}
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: flagUrl ? (
+                          <InputAdornment position="start" sx={{ position: 'absolute', left: 14, margin: 0 }}>
                             <Box
-                              component='img'
+                              component="img"
                               src={flagUrl}
-                              alt={`${c.isoCode} flag`}
+                              alt={`${selectedCountryCode} flag`}
                               sx={{
                                 width: 20,
                                 height: 15,
@@ -1619,14 +1630,24 @@ const AuthTabs = ({ showLogin = true }: AuthTabsProps) => {
                                 flexShrink: 0,
                               }}
                             />
-                          ) : null}
-                          <Box component='span'>{c.name}</Box>
-                        </Box>
-                      </MenuItem>
-                    )
-                  })}
-                </Select>
-              </FormControl>
+                          </InputAdornment>
+                        ) : null
+                      }}
+                    />
+                  );
+                }}
+                filterOptions={(options, state) => {
+                  return options.filter((option) =>
+                    option.name.toLowerCase().startsWith(state.inputValue.toLowerCase()) ||
+                    option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                  );
+                }}
+                slotProps={{
+                  paper: {
+                    sx: dropdownPaperBaseSx
+                  }
+                }}
+              />
             </Box>
 
             <Box>

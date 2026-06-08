@@ -2496,7 +2496,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
     icon: React.ReactNode;
     href?: string;
     resolveHrefLabel?: string;
-    onClick?: () => void;
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
     isActive?: () => boolean;
   };
 
@@ -2547,11 +2547,21 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       isActive: () => isNavActive('REWARDS', '/rewards'),
     },
     {
-      key: 'profile',
-      label: 'Profile',
-      icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
-      href: '/profile',
-      isActive: () => pathname?.startsWith('/profile') ?? false,
+      key: 'notifications',
+      label: 'Alerts',
+      icon: (
+        <Badge 
+          badgeContent={unreadCount} 
+          color="error" 
+          max={99}
+        >
+          <NotificationsIcon sx={{ fontSize: 20 }} />
+        </Badge>
+      ),
+      onClick: (e) => {
+        handleNotificationClick(e);
+      },
+      isActive: () => Boolean(notificationAnchor),
     },
   ];
 
@@ -2722,8 +2732,9 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               alignItems: 'center',
               flexShrink: 0,
               position: { xs: 'absolute', md: 'static' },
-              left: { xs: '40%', md: 'auto' },
-              transform: { xs: 'translateX(-50%)', md: 'none' },
+              left: { xs: '46%', md: 'auto' },
+              top: { xs: '50%', md: 'auto' },
+              transform: { xs: 'translate(-50%, -50%)', md: 'none' },
               zIndex: 1,
             }}
           >
@@ -2830,7 +2841,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       boxShadow: '0 6px 24px 0 rgba(67,160,71,0.28)',
                       transform: 'translateY(-2px) scale(1.04)',
                     },
-                    // px: 1.5,
                     py: 0.3,
                   }}
                 >
@@ -2843,51 +2853,6 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   alignItems: 'center',
                   gap: 0.5
                 }}>
-                  {/* MOBILE ADD STATS BUTTON */}
-                  {/* <Button
-                    onClick={() => setStatsOpen(true)}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      display: { xs: 'inline-flex', lg: 'none' },
-                      textTransform: 'none',
-                      color: '#fff',
-                      borderColor: 'rgba(255,255,255,0.6)',
-                      px: 1,
-                      py: 0.5,
-                      lineHeight: 1,
-                      fontSize: '12px',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: '#fff' }
-                    }}
-                  >
-                    Add Stats
-                  </Button> */}
-                  {/* MOBILE NOTIFICATION BELL */}
-                  <IconButton
-                    onClick={handleNotificationClick}
-                    sx={{
-                      color: '#fff',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        transform: 'scale(1.1)',
-                      }
-                    }}
-                  >
-                    <Badge 
-                      badgeContent={unreadCount} 
-                      color="error" 
-                      max={99}
-                      sx={{
-                        // '& .MuiBadge-badge': {
-                        //   // animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
-                        // }
-                      }}
-                    >
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-
                   {/* MOBILE MENU BUTTON */}
                   <IconButton
                     edge="end"
@@ -2896,10 +2861,11 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                     onClick={() => setDrawerOpen(true)}
                     sx={{ 
                       color: '#fff',
+                      mt: { xs: '5px', lg: 0 },
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,0.15)',
                       }
-                                       }}
+                    }}
                   >
                     <MenuIcon />
                   </IconButton>
@@ -4019,6 +3985,41 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             {/* PROFILE BUTTON IN MOBILE DRAWER */}
             {isAuthenticated && (
               <>
+                <ListItem disablePadding>
+                  <Button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      router.push('/profile');
+                    }}
+                    startIcon={<PersonOutlineOutlinedIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                    fullWidth
+                    sx={{
+                      textTransform: 'none',
+                      fontFamily: 'var(--font-woodford-bourne-pro)',
+                      fontWeight: 700,
+                      color: '#F3F4F6',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 1,
+                      px: 1.75,
+                      py: 0.95,
+                      fontSize: '14px',
+                      justifyContent: 'flex-start',
+                      minHeight: 44,
+                      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
+                      mb: 0.75,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.10)',
+                        color: '#fff',
+                        borderColor: 'rgba(255,255,255,0.22)',
+                      },
+                      '& .MuiButton-startIcon': { marginRight: 1 },
+                    }}
+                  >
+                    Profile
+                  </Button>
+                </ListItem>
                 <ListItem disablePadding>
                   <Button
                     onClick={() => {
