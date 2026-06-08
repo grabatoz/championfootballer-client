@@ -2286,8 +2286,9 @@ export default function AllMatches() {
                                                 borderRadius: 1,
                                                 border: '1px solid rgba(255,255,255,0.25)',
                                                 backgroundColor: '#1a1a1a',
-                                                width: yearFilterButtonRef.current?.offsetWidth || 148,
-                                                maxWidth: yearFilterButtonRef.current?.offsetWidth || 148,
+                                                minWidth: yearFilterButtonRef.current?.offsetWidth || 148,
+                                                width: 'max-content',
+                                                maxWidth: '90vw',
                                             }
                                         }}
                                         MenuListProps={{ sx: { py: 0 } }}
@@ -2415,8 +2416,9 @@ export default function AllMatches() {
                                                 borderRadius: 1,
                                                 border: '1px solid rgba(255,255,255,0.25)',
                                                 backgroundColor: '#1a1a1a',
-                                                width: leagueFilterButtonRef.current?.offsetWidth || 148,
-                                                maxWidth: leagueFilterButtonRef.current?.offsetWidth || 148,
+                                                minWidth: leagueFilterButtonRef.current?.offsetWidth || 148,
+                                                width: 'max-content',
+                                                maxWidth: '90vw',
                                             }
                                         }}
                                         MenuListProps={{ sx: { py: 0 } }}
@@ -2561,8 +2563,9 @@ export default function AllMatches() {
                                                 borderRadius: 1,
                                                 border: '1px solid rgba(255,255,255,0.25)',
                                                 backgroundColor: '#1a1a1a',
-                                                width: seasonFilterButtonRef.current?.offsetWidth || 148,
-                                                maxWidth: seasonFilterButtonRef.current?.offsetWidth || 148,
+                                                minWidth: seasonFilterButtonRef.current?.offsetWidth || 148,
+                                                width: 'max-content',
+                                                maxWidth: '90vw',
                                             }
                                         }}
                                         MenuListProps={{ sx: { py: 0 } }}

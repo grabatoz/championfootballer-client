@@ -3885,36 +3885,22 @@ export default function LeagueDetailPage() {
                                 py: { xs: 0.5, md: 2 },
                                 background: '#0e0e0e',
                                 color: 'white',
-                                minHeight: { xs: '80px', md: 'auto' },
+                                minHeight: 'auto',
                             }}>
                                 <Box
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        flexDirection: 'row',
-                                        justifyContent: 'space-between',
-                                        mb: 2,
-                                        gap: 1,
-                                        position: 'relative'
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        width: '100%',
+                                        position: 'relative',
+                                        mt: { xs: 1.5, sm: 2, md: 2 }
                                     }}
                                 >
-                                    {/* Left side - Trophy + League Name */}
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: { xs: 0.8, sm: 1, md: 2 },
-                                        flex: 1,
-                                        minWidth: 0,
-                                        overflow: 'hidden'
-                                    }}>
-                                        {/* Left spacer; trophy moved to center with title */}
-                                    </Box>
-
                                     {/* Centered League Name */}
                                     <Box sx={{
-                                        position: 'absolute',
-                                        left: 0,
-                                        right: 0,
+                                        position: 'relative',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
@@ -3922,7 +3908,7 @@ export default function LeagueDetailPage() {
                                         width: '100%',
                                         px: { xs: 1.5, sm: 2, md: 0 },
                                         gap: 0.5,
-                                        mt: { xs: 3, sm: 12, md: 17 },
+                                        mt: 0,
                                     }}>
                                         <Box sx={{
                                             display: 'flex',
@@ -4350,7 +4336,7 @@ export default function LeagueDetailPage() {
                                     sx={{
                                         height: 'var(--header-divider-height)',
                                         bgcolor: 'var(--header-divider-color)',
-                                        mt: { xs: 8, sm: 12, md: 17 },
+                                        mt: { xs: 1.5, sm: 2, md: 2 },
                                         width: '100%',
                                     }}
                                 />
@@ -6710,6 +6696,7 @@ export default function LeagueDetailPage() {
                                             display: 'grid',
                                             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
                                             gap: 2,
+                                            mb: 1,
 
                                         }}
                                     >
@@ -7389,7 +7376,7 @@ export default function LeagueDetailPage() {
                                 order: { xs: 1, sm: 1 },
                                 mt: { xs: 3.4, sm: 6 }
                             }}>
-                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem' , md : '0.79rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
+                                <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.8rem', md: '0.79rem' }, letterSpacing: 0, mb: 0.15, lineHeight: 1.05 }}>Current Stats</Typography>
                                 <Box
                                     sx={{
                                         display: 'flex',

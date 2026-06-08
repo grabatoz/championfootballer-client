@@ -4360,7 +4360,21 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 <Table stickyHeader aria-label="point scoring rules table" sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid #333' } }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Action</TableCell>
+                      <TableCell sx={{
+                        bgcolor: '#2b2b2b !important',
+                        color: '#00a896 !important',
+                        fontWeight: 800,
+                        fontFamily: 'var(--font-woodford-bourne-pro)',
+                        fontSize: { xs: '0.85rem', md: '0.95rem' },
+                        py: 2,
+                        whiteSpace: 'nowrap',
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 4,
+                        boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
+                        minWidth: { xs: '120px', md: '160px' },
+                        maxWidth: { xs: '120px', md: '160px' },
+                      }}>Action</TableCell>
                       <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
                       <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Winning Team</TableCell>
                       <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Losing Team</TableCell>
@@ -4383,7 +4397,23 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       const rowBg = idx % 2 === 0 ? '#242424' : '#1e1e1e';
                       return (
                         <TableRow key={idx} sx={{ bgcolor: rowBg, '&:hover': { bgcolor: '#2c2c2c' }, transition: 'background-color 0.15s' }}>
-                          <TableCell sx={{ py: 1.5 }}>
+                          <TableCell sx={{
+                            py: 1.5,
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 2,
+                            bgcolor: rowBg,
+                            boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                            transition: 'background-color 0.15s',
+                            minWidth: { xs: '120px', md: '160px' },
+                            maxWidth: { xs: '120px', md: '160px' },
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            '.MuiTableRow-root:hover &': {
+                              bgcolor: '#2c2c2c',
+                              boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
+                            },
+                          }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 24 }}>{getRowIcon(row.action)}</Box>
                               <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'var(--font-woodford-bourne-pro)' }}>{row.action}</Typography>
@@ -4432,7 +4462,14 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
 
                     {/* Streak Bonuses Header Row */}
                     <TableRow sx={{ bgcolor: '#2b2b2b !important' }}>
-                      <TableCell colSpan={5} sx={{ bgcolor: '#2b2b2b !important', py: 1.8, borderBottom: '2px solid #E56A16' }}>
+                      <TableCell colSpan={5} sx={{
+                        bgcolor: '#2b2b2b !important',
+                        py: 1.8,
+                        borderBottom: '2px solid #E56A16',
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 3,
+                      }}>
                         <Typography sx={{
                           fontFamily: 'var(--font-woodford-bourne-pro)',
                           fontWeight: 800,
@@ -4455,7 +4492,23 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                       const rowBg = idx % 2 === 0 ? '#242424' : '#1e1e1e';
                       return (
                         <TableRow key={`streak-${idx}`} sx={{ bgcolor: rowBg, '&:hover': { bgcolor: '#2c2c2c' }, transition: 'background-color 0.2s' }}>
-                          <TableCell sx={{ py: 1.5 }}>
+                          <TableCell sx={{
+                            py: 1.5,
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 2,
+                            bgcolor: rowBg,
+                            boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                            transition: 'background-color 0.2s',
+                            minWidth: { xs: '120px', md: '160px' },
+                            maxWidth: { xs: '120px', md: '160px' },
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            '.MuiTableRow-root:hover &': {
+                              bgcolor: '#2c2c2c',
+                              boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
+                            },
+                          }}>
                             <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'var(--font-woodford-bourne-pro)' }}>
                               {row.action}
                             </Typography>

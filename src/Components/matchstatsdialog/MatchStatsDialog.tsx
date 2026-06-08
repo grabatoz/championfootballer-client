@@ -658,8 +658,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 const enriched = await Promise.all(
                     normalized.map(async (l) => {
                         try {
-                            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, { 
-                                headers: { Authorization: `Bearer ${token}` } 
+                            const detailsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${l.id}`, {
+                                headers: { Authorization: `Bearer ${token}` }
                             });
                             const detailsJson = await detailsRes.json().catch(() => ({} as Record<string, unknown>));
                             const leagueObj: Record<string, unknown> = (detailsJson?.league as Record<string, unknown>) || {};
@@ -1659,7 +1659,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const computedMatchNumber = React.useMemo(() => {
         const backendNumber = getNumericIndex(match);
         if (backendNumber !== undefined) return backendNumber;
-        
+
         // Fallback: calculate from league matches array position
         if (league?.matches && match?.id) {
             const allMatches = Array.isArray(league.matches) ? league.matches : [];
@@ -1668,7 +1668,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 return matchIndex + 1; // 1-based index
             }
         }
-        
+
         return undefined;
     }, [match, league?.matches]);
 
@@ -1704,7 +1704,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                         }
                     });
                 }
-                
+
                 // ًں†• Trigger notification refresh for all players
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('refresh-notifications'));
@@ -1751,7 +1751,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             return;
         }
         setIsSubmittingStats(true);
-        
+
         const errors: string[] = [];
         let statsSuccess = false;
 
@@ -2061,9 +2061,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     // NEW: Fetch existing stats for current user
     const fetchUserStats = useCallback(async () => {
         if (!token || !resolvedMatchId || !currentUserId) return;
-        
+
         console.log('ًں“ٹ Fetching existing stats for user:', currentUserId);
-        
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}/stats?playerId=${encodeURIComponent(currentUserId)}&_t=${Date.now()}`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -2076,7 +2076,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             const data = await res.json();
             console.log('ًں“ٹ Stats response:', data);
-            
+
             const userStat = data?.success ? data?.stats : null;
             if (userStat) {
                 console.log('âœ… Found existing stats for user:', userStat);
@@ -2416,10 +2416,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             if (response.ok && apiSuccess !== false) {
                 // ًں”„ Clear stats cache for this player to force fresh fetch
                 clearCacheByResource('stats', `${resolvedMatchId}_${selectedPlayerForAdmin.id}`);
-                
+
                 toast.success(`Stats added for ${formatGuestAwarePlayerName(selectedPlayerForAdmin)}`);
                 handleCloseAdminStatsModal();
-                
+
                 // Refetch match details to update UI
                 await fetchLeagueAndMatchDetails(true);
                 closeParentDialogAfterSave();
@@ -2685,8 +2685,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const mentalityPlayer = mentalityWinnerId ? allPlayersForVoting.find((p) => String(p.id) === mentalityWinnerId) : undefined;
 
     const content = (
-        <Box sx={{ 
-            minHeight: { xs: 'auto', md: '100vh' }, 
+        <Box sx={{
+            minHeight: { xs: 'auto', md: '100vh' },
             color: 'black',
             overflow: 'hidden',
             '&::-webkit-scrollbar': {
@@ -2763,169 +2763,170 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mb: 1 }} /> */}
 
                             {/* {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) ? ( */}
-                                <>
-                                    {/* Goals Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                        <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                        <TextField
-                                            type="text"
-                                            value={stats.goals}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val === '') {
-                                                    setStats(prev => ({ ...prev, goals: 0 }));
-                                                    return;
-                                                }
-                                                // Only allow numbers
-                                                if (!/^\d+$/.test(val)) return;
-                                                
-                                                const numVal = parseInt(val, 10);
-                                                if (!isNaN(numVal)) {
-                                                    const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
-                                                    setStats(prev => ({ ...prev, goals: newVal }));
-                                                }
-                                            }}
-                                            onFocus={(e) => e.target.select()}
-                                            inputProps={{ style: { textAlign: 'center' } }}
-                                            sx={{
-                                                width: { xs: 96, md: 180 },
-                                                '& .MuiOutlinedInput-root': {
-                                                    color: '#fff',
-                                                    '& fieldset': { borderColor: '#d9d9d9' },
-                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                                },
-                                                '& .MuiInputBase-input': {
-                                                    fontSize: { xs: '1rem', md: '1.25rem' },
-                                                    fontWeight: 600,
-                                                    py: 0.75,
-                                                },
-                                                '& input[type=number]': {
-                                                    MozAppearance: 'textfield'
-                                                },
-                                                '& input[type=number]::-webkit-outer-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                },
-                                                '& input[type=number]::-webkit-inner-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                }
-                                            }}
-                                        />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                            Goals
-                                        </Typography>
-                                    </Box>
+                            <>
+                                {/* Goals Row */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                    <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
+                                    <TextField
+                                        type="text"
+                                        value={stats.goals}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '') {
+                                                setStats(prev => ({ ...prev, goals: 0 }));
+                                                return;
+                                            }
+                                            // Only allow numbers
+                                            if (!/^\d+$/.test(val)) return;
 
-                                    {/* Assists Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                        <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                        <TextField
-                                            type="text"
-                                            value={stats.assists}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val === '') {
-                                                    setStats(prev => ({ ...prev, assists: 0 }));
-                                                    return;
-                                                }
-                                                // Only allow numbers
-                                                if (!/^\d+$/.test(val)) return;
-                                                
-                                                const numVal = parseInt(val, 10);
-                                                if (!isNaN(numVal)) {
-                                                    const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
-                                                    setStats(prev => ({ ...prev, assists: newVal }));
-                                                }
-                                            }}
-                                            onFocus={(e) => e.target.select()}
-                                            inputProps={{ style: { textAlign: 'center' } }}
-                                            sx={{
-                                                width: { xs: 96, md: 180 },
-                                                '& .MuiOutlinedInput-root': {
-                                                    color: '#fff',
-                                                    '& fieldset': { borderColor: '#d9d9d9' },
-                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                                },
-                                                '& .MuiInputBase-input': {
-                                                    fontSize: { xs: '1rem', md: '1.25rem' },
-                                                    fontWeight: 600,
-                                                    py: 0.75,
-                                                },
-                                                '& input[type=number]': {
-                                                    MozAppearance: 'textfield'
-                                                },
-                                                '& input[type=number]::-webkit-outer-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                },
-                                                '& input[type=number]::-webkit-inner-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                }
-                                            }}
-                                        />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                            Assists
-                                        </Typography>
-                                    </Box>
+                                            const numVal = parseInt(val, 10);
+                                            if (!isNaN(numVal)) {
+                                                const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                                setStats(prev => ({ ...prev, goals: newVal }));
+                                            }
+                                        }}
+                                        onFocus={(e) => e.target.select()}
+                                        inputProps={{ style: { textAlign: 'center' } }}
+                                        sx={{
+                                            width: { xs: 96, md: 180 },
+                                            '& .MuiOutlinedInput-root': {
+                                                color: '#fff',
+                                                '& fieldset': { borderColor: '#d9d9d9' },
+                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                            },
+                                            '& .MuiInputBase-input': {
+                                                fontSize: { xs: '1rem', md: '1.25rem' },
+                                                fontWeight: 600,
+                                                py: 0.75,
+                                            },
+                                            '& input[type=number]': {
+                                                MozAppearance: 'textfield'
+                                            },
+                                            '& input[type=number]::-webkit-outer-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            },
+                                            '& input[type=number]::-webkit-inner-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            }
+                                        }}
+                                    />
+                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                        Goals
+                                    </Typography>
+                                </Box>
 
-                                    {/* Clean Sheet Row */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                        <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                        <TextField
-                                            type="text"
-                                            value={stats.cleanSheets}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val === '') {
-                                                    setStats(prev => ({ ...prev, cleanSheets: 0 }));
-                                                    return;
-                                                }
-                                                // Only allow numbers
-                                                if (!/^\d+$/.test(val)) return;
-                                                
-                                                const numVal = parseInt(val, 10);
-                                                if (!isNaN(numVal)) {
-                                                    const newVal = Math.max(0, Math.min(1, numVal));
-                                                    setStats(prev => ({ ...prev, cleanSheets: newVal }));
-                                                }
-                                            }}
-                                            onFocus={(e) => e.target.select()}
-                                            inputProps={{ style: { textAlign: 'center' } }}
-                                            sx={{
-                                                width: { xs: 96, md: 180 },
-                                                '& .MuiOutlinedInput-root': {
-                                                    color: '#fff',
-                                                    '& fieldset': { borderColor: '#d9d9d9' },
-                                                    '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                    '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                                },
-                                                '& .MuiInputBase-input': {
-                                                    fontSize: { xs: '1rem', md: '1.25rem' },
-                                                    fontWeight: 600,
-                                                    py: 0.75,
-                                                },
-                                                '& input[type=number]': {
-                                                    MozAppearance: 'textfield'
-                                                },
-                                                '& input[type=number]::-webkit-outer-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                },
-                                                '& input[type=number]::-webkit-inner-spin-button': {
-                                                    WebkitAppearance: 'none',
-                                                    margin: 0
-                                                }
-                                            }}
-                                        />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                            Clean Sheet
-                                        </Typography>
-                                    </Box>
-                                </>
+                                {/* Assists Row */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                    <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
+                                    <TextField
+                                        type="text"
+                                        value={stats.assists}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '') {
+                                                setStats(prev => ({ ...prev, assists: 0 }));
+                                                return;
+                                            }
+                                            // Only allow numbers
+                                            if (!/^\d+$/.test(val)) return;
+
+                                            const numVal = parseInt(val, 10);
+                                            if (!isNaN(numVal)) {
+                                                const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                                setStats(prev => ({ ...prev, assists: newVal }));
+                                            }
+                                        }}
+                                        onFocus={(e) => e.target.select()}
+                                        inputProps={{ style: { textAlign: 'center' } }}
+                                        sx={{
+                                            width: { xs: 96, md: 180 },
+                                            '& .MuiOutlinedInput-root': {
+                                                color: '#fff',
+                                                '& fieldset': { borderColor: '#d9d9d9' },
+                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                            },
+                                            '& .MuiInputBase-input': {
+                                                fontSize: { xs: '1rem', md: '1.25rem' },
+                                                fontWeight: 600,
+                                                py: 0.75,
+                                            },
+                                            '& input[type=number]': {
+                                                MozAppearance: 'textfield'
+                                            },
+                                            '& input[type=number]::-webkit-outer-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            },
+                                            '& input[type=number]::-webkit-inner-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            }
+                                        }}
+                                    />
+                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                        Assists
+                                    </Typography>
+                                </Box>
+
+                                {/* Clean Sheet Row */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
+                                    <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
+                                    <TextField
+                                        type="text"
+                                        value={stats.cleanSheets}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '') {
+                                                setStats(prev => ({ ...prev, cleanSheets: 0 }));
+                                                return;
+                                            }
+                                            // Only allow numbers
+                                            if (!/^\d+$/.test(val)) return;
+
+                                            const numVal = parseInt(val, 10);
+                                            if (!isNaN(numVal)) {
+                                                const newVal = Math.max(0, Math.min(1, numVal));
+                                                setStats(prev => ({ ...prev, cleanSheets: newVal }));
+                                            }
+                                        }}
+                                        onFocus={(e) => e.target.select()}
+                                        inputProps={{ style: { textAlign: 'center' } }}
+                                        sx={{
+                                            width: { xs: 96, md: 180 },
+                                            ml: { xs: 1.6, sm: 1.6, md: 0 },
+                                            '& .MuiOutlinedInput-root': {
+                                                color: '#fff',
+                                                '& fieldset': { borderColor: '#d9d9d9' },
+                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                            },
+                                            '& .MuiInputBase-input': {
+                                                fontSize: { xs: '1rem', md: '1.25rem' },
+                                                fontWeight: 600,
+                                                py: 0.75,
+                                            },
+                                            '& input[type=number]': {
+                                                MozAppearance: 'textfield'
+                                            },
+                                            '& input[type=number]::-webkit-outer-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            },
+                                            '& input[type=number]::-webkit-inner-spin-button': {
+                                                WebkitAppearance: 'none',
+                                                margin: 0
+                                            }
+                                        }}
+                                    />
+                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                        Clean Sheet
+                                    </Typography>
+                                </Box>
+                            </>
                             {/* ) : (
                                 <Typography variant="body2" sx={{ color: '#D1D5DB' }}>
                                     Stats submission is not available for this match.
@@ -3032,8 +3033,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         const isSelf = String(p.id) === currentUserId;
                                         console.log(`ًںژ¯ Player ${p.firstName} ${p.lastName} (${p.id}):`, { selected, votedForId, playerVotesForThisPlayer: playerVotes[p.id] });
                                         return (
-                                            <MenuItem 
-                                                key={p.id} 
+                                            <MenuItem
+                                                key={p.id}
                                                 value={p.id}
                                                 disabled={isSelf}
                                                 sx={{
@@ -3070,7 +3071,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                                         (Guest)
                                                     </Typography>
                                                 )}
-                                                     {selected && (
+                                                {selected && (
                                                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00C48C', border: '1px solid', borderColor: '#00C48C' }}>
                                                         <Check size={12} />
                                                     </Box>
@@ -3153,8 +3154,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         const selected = captainPicks.defence === p.id;
                                         const isSelf = String(p.id) === currentUserId;
                                         return (
-                                            <MenuItem 
-                                                key={p.id} 
+                                            <MenuItem
+                                                key={p.id}
                                                 value={p.id}
                                                 disabled={isSelf}
                                                 sx={{
@@ -3272,8 +3273,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         const selected = captainPicks.influence === p.id;
                                         const isSelf = String(p.id) === currentUserId;
                                         return (
-                                            <MenuItem 
-                                                key={p.id} 
+                                            <MenuItem
+                                                key={p.id}
                                                 value={p.id}
                                                 disabled={isSelf}
                                                 sx={{
@@ -4064,7 +4065,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 sx={{
                                     mt: 0.5,
                                     width: { xs: 72, sm: 80 },
-                                    border : '1px solid #fff',
+                                    border: '1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
                                         backgroundColor: '#262626',
                                         color: '#fff',
@@ -4168,7 +4169,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 sx={{
                                     mt: 0.5,
                                     width: { xs: 72, sm: 80 },
-                                    border :'1px solid #fff',
+                                    border: '1px solid #fff',
                                     '& .MuiOutlinedInput-root': {
                                         backgroundColor: '#262626',
                                         color: '#fff',
@@ -4364,9 +4365,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     </Typography>
                                 </Box>
                             </Box>
-                            <IconButton 
-                                onClick={onClose} 
-                                sx={{ 
+                            <IconButton
+                                onClick={onClose}
+                                sx={{
                                     color: 'black',
                                     backgroundColor: '#e6e6e6',
                                     borderRadius: 0,
@@ -4425,9 +4426,9 @@ const StatCounter = ({ label, value, onIncrement, onDecrement, icon, compact = f
             <Typography sx={{ ml: 1.5, fontWeight: 500, fontSize: compact ? '0.9rem' : '1rem', color: '#fff' }}>{label}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={onDecrement} size="small" sx={{ color: '#fff' , stroke: '#fff' }}><Remove /></IconButton>
+            <IconButton onClick={onDecrement} size="small" sx={{ color: '#fff', stroke: '#fff' }}><Remove /></IconButton>
             <Typography sx={{ mx: compact ? 1 : 2, fontWeight: 800, minWidth: '20px', textAlign: 'center', color: '#fff' }}>{value}</Typography>
-            <IconButton onClick={onIncrement} size="small" sx={{ color: '#fff' ,  stroke: '#fff' }}><Add /></IconButton>
+            <IconButton onClick={onIncrement} size="small" sx={{ color: '#fff', stroke: '#fff' }}><Add /></IconButton>
         </Box>
     </Box>
 );

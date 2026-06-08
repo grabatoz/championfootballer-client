@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -2051,8 +2051,9 @@ export default function CareerPage() {
                             borderRadius: 1,
                             border: '1px solid rgba(255,255,255,0.25)',
                             backgroundColor: '#1a1a1a',
-                            width: yearFilterButtonRef.current?.offsetWidth || 120,
-                            maxWidth: yearFilterButtonRef.current?.offsetWidth || 120,
+                            minWidth: yearFilterButtonRef.current?.offsetWidth || 120,
+                            width: 'max-content',
+                            maxWidth: '90vw',
                           }
                         }}
                         MenuListProps={{ sx: { py: 0 } }}
@@ -2173,8 +2174,9 @@ export default function CareerPage() {
                             borderRadius: 1,
                             border: '1px solid rgba(255,255,255,0.25)',
                             backgroundColor: '#1a1a1a',
-                            width: leagueFilterButtonRef.current?.offsetWidth || 120,
-                            maxWidth: leagueFilterButtonRef.current?.offsetWidth || 120,
+                            minWidth: leagueFilterButtonRef.current?.offsetWidth || 120,
+                            width: 'max-content',
+                            maxWidth: '90vw',
                           }
                         }}
                         MenuListProps={{ sx: { py: 0 } }}
@@ -2297,8 +2299,9 @@ export default function CareerPage() {
                             borderRadius: 1,
                             border: '1px solid rgba(255,255,255,0.25)',
                             backgroundColor: '#1a1a1a',
-                            width: seasonFilterButtonRef.current?.offsetWidth || 120,
-                            maxWidth: seasonFilterButtonRef.current?.offsetWidth || 120,
+                            minWidth: seasonFilterButtonRef.current?.offsetWidth || 120,
+                            width: 'max-content',
+                            maxWidth: '90vw',
                           }
                         }}
                         MenuListProps={{ sx: { py: 0 } }}
@@ -2940,8 +2943,8 @@ export default function CareerPage() {
                           <TableHead>
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Expected/Match' : 'Leage Average'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your Stats' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Average' : 'League Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -2993,8 +2996,8 @@ export default function CareerPage() {
                           <TableHead>
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'League Average'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your Stats' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Average' : 'League Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -3084,8 +3087,8 @@ export default function CareerPage() {
                           <TableHead>
                             <TableRow sx={{ backgroundColor: '#202124' }}>
                               <TableCell sx={{ width: { xs: '48%', md: '55%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>Metric</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your' : 'Your Stats'}</TableCell>
-                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Avg' : 'League Average'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '22%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'Your Stats' : 'Your Stats'}</TableCell>
+                              <TableCell align="center" sx={{ width: { xs: '30%', md: '22.5%' }, fontSize: { xs: 10, md: 11 }, fontWeight: 'bold', py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, lineHeight: 1.2 }}>{isMobile ? 'League Average' : 'League Average'}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
