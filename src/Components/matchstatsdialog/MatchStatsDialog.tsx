@@ -824,25 +824,32 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         await fetchSelectedLeagueMatches();
     }, [resolvedLeagueId, selectedLeagueIdForList, league?.id, league?.name, fetchSelectedLeagueMatches, selectedLeagueNameForList]);
 
-    const fetchLeagueAndMatchDetails = useCallback(async (silent: boolean = false, attempt: number = 0) => {
+    const fetchLeagueAndMatchDetails = useCallback(async (
+        silent: boolean = false,
+        attempt: number = 0,
+        overrideLeagueId?: string,
+        overrideMatchId?: string
+    ) => {
         try {
             if (!silent) setLoading(true);
-            if (!resolvedLeagueId || !resolvedMatchId) {
-                console.warn('MatchStatsDialog: missing ids, skipping details fetch', { resolvedLeagueId, resolvedMatchId });
+            const targetLeagueId = overrideLeagueId || resolvedLeagueId;
+            const targetMatchId = overrideMatchId || resolvedMatchId;
+            if (!targetLeagueId || !targetMatchId) {
+                console.warn('MatchStatsDialog: missing ids, skipping details fetch', { targetLeagueId, targetMatchId });
                 if (!silent) setLoading(false);
                 return;
             }
 
             // ًں”„ Add cache busting to ensure fresh data
             const cacheBuster = `?_t=${Date.now()}`;
-            console.log('ًں”„ Fetching match details with cache busting...', { resolvedLeagueId, resolvedMatchId });
+            console.log('ًں”„ Fetching match details with cache busting...', { targetLeagueId, targetMatchId });
 
             // 1) Try to get the match (first with league-bound endpoint, then fallback to /matches/:id)
-            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${resolvedLeagueId}/matches/${resolvedMatchId}${cacheBuster}`, {
+            let matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${targetLeagueId}/matches/${targetMatchId}${cacheBuster}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (matchResp.status === 404) {
-                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${resolvedMatchId}${cacheBuster}`, {
+                matchResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/matches/${targetMatchId}${cacheBuster}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
@@ -863,12 +870,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 console.warn('MatchStatsDialog: match fetch failed, attempting league matches fallback', { status: matchResp.status, raw, attempt });
                 if (attempt < 1) {
                     // Fallback: fetch matches list for league and pick latest
-                    const sorted = await getMatchesForLeague(resolvedLeagueId);
+                    const sorted = await getMatchesForLeague(targetLeagueId);
                     const chosen = sorted[0] || null;
-                    if (chosen && String(chosen.id) !== resolvedMatchId) {
+                    if (chosen && String(chosen.id) !== targetMatchId) {
                         console.log('MatchStatsDialog: fallback picked match', { chosenId: String(chosen.id) });
                         setCurrentMatchId(String(chosen.id));
-                        await fetchLeagueAndMatchDetails(true, attempt + 1);
+                        await fetchLeagueAndMatchDetails(true, attempt + 1, targetLeagueId, String(chosen.id));
                         return;
                     }
                 }
@@ -889,10 +896,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             setAwayGoalsInput(String(ag));
 
             // 2) Fetch league using a reliable id (prefer id from match if present)
-            const effectiveLeagueId = m.leagueId || resolvedLeagueId;
-            const leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${effectiveLeagueId}`, {
+            const effectiveLeagueId = m.leagueId || targetLeagueId;
+            const encodedLeagueId = encodeURIComponent(String(effectiveLeagueId));
+            let leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodedLeagueId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (leagueResp.status === 404 || leagueResp.status === 405) {
+                leagueResp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${encodedLeagueId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
             let leagueData: LeagueApiResponse | null = null;
             try {
                 leagueData = await leagueResp.json();
@@ -963,7 +976,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
             if (initialLeagueId) setCurrentLeagueId(String(initialLeagueId));
             if (initialMatchId) setCurrentMatchId(String(initialMatchId));
             if (token && (initialLeagueId || initialMatchId)) {
-                await fetchLeagueAndMatchDetails(true);
+                await fetchLeagueAndMatchDetails(
+                    true,
+                    0,
+                    initialLeagueId ? String(initialLeagueId) : undefined,
+                    initialMatchId ? String(initialMatchId) : undefined
+                );
             }
         };
         run();
@@ -1109,7 +1127,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                     setSelectedMatchForList(latest || null);
                     setSelectedLeagueHasNoMatches(false);
                     setCurrentMatchId(String(latest.id));
-                    await fetchLeagueAndMatchDetails(true);
+                    await fetchLeagueAndMatchDetails(true, 0, preferredId, String(latest.id));
                     setLoading(false);
                     return;
                 }
@@ -1219,7 +1237,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 if (latest && latest.id) {
                     setCurrentLeagueId(leagueId);
                     setCurrentMatchId(String(latest.id));
-                    await fetchLeagueAndMatchDetails(true);
+                    await fetchLeagueAndMatchDetails(true, 0, leagueId, String(latest.id));
                 } else {
                     // Set league id even if no match found
                     setCurrentLeagueId(leagueId);
@@ -1346,7 +1364,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                 setSelectedLeagueHasNoMatches(false);
                 setCurrentLeagueId(chosenLeagueId);
                 setCurrentMatchId(chosenMatchId);
-                await fetchLeagueAndMatchDetails(true);
+                await fetchLeagueAndMatchDetails(true, 0, chosenLeagueId, chosenMatchId);
                 setLoading(false);
             } catch (e) {
                 console.error('MatchStatsDialog: auto-select error', e);
@@ -3651,7 +3669,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         setSelectedLeagueHasNoMatches(false);
 
                                         setMatchesDialogOpen(false);
-                                        await fetchLeagueAndMatchDetails(true);
+                                        await fetchLeagueAndMatchDetails(true, 0, lid, mid);
                                     }}
                                     variant="outlined"
                                     sx={{

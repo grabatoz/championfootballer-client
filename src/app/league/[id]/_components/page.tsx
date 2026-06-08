@@ -1114,36 +1114,50 @@ export default function LeagueDetailPage() {
             if (seasonIdForRequest) {
                 params.set('seasonId', seasonIdForRequest);
             }
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const queryString = params.toString();
+            const encodedLeagueId = encodeURIComponent(leagueId);
+            const detailUrls = [
+                `${process.env.NEXT_PUBLIC_API_URL}/leagues/${encodedLeagueId}?${queryString}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${encodedLeagueId}?${queryString}`,
+            ];
 
-            if (!response.ok) {
-                let apiMessage = '';
-                try {
-                    const errorPayload = await response.json();
-                    const payloadRecord = (errorPayload && typeof errorPayload === 'object')
-                        ? (errorPayload as Record<string, unknown>)
-                        : {};
-                    apiMessage = String(
-                        payloadRecord.message ??
-                        payloadRecord.error ??
-                        payloadRecord.detail ??
-                        ''
-                    ).trim();
-                } catch {
-                    // ignore non-json responses
+            let data: Record<string, unknown> | null = null;
+            let lastStatus = 0;
+            let lastMessage = '';
+
+            for (const url of detailUrls) {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    cache: 'no-store',
+                });
+
+                const payloadUnknown: unknown = await response.json().catch(() => ({}));
+                const payloadRecord = isRecord(payloadUnknown) ? payloadUnknown : {};
+
+                if (response.ok && (payloadRecord.success !== false || payloadRecord.league)) {
+                    data = payloadRecord;
+                    break;
                 }
 
-                const status = response.status;
-                const messageNormalized = apiMessage.toLowerCase();
+                lastStatus = response.status;
+                const apiMessage = String(
+                    payloadRecord.message ??
+                    payloadRecord.error ??
+                    payloadRecord.detail ??
+                    ''
+                ).trim();
+                if (apiMessage) lastMessage = apiMessage;
+            }
+
+            if (!data) {
+                const messageNormalized = lastMessage.toLowerCase();
                 const looksLikeAccessIssue =
-                    status === 401 ||
-                    status === 403 ||
-                    status === 404 ||
+                    lastStatus === 401 ||
+                    lastStatus === 403 ||
+                    lastStatus === 404 ||
                     messageNormalized.includes('access') ||
                     messageNormalized.includes('not found');
 
@@ -1163,20 +1177,21 @@ export default function LeagueDetailPage() {
                     return;
                 }
 
-                throw new Error(apiMessage || `HTTP error! status: ${status}`);
+                throw new Error(lastMessage || `HTTP error! status: ${lastStatus}`);
             }
 
-            const data = await response.json();
             console.log('League details fetched successfully from API', data);
-            if (data.success) {
+            const leaguePayload = data.league;
+            if (data.success !== false && leaguePayload && typeof leaguePayload === 'object') {
+                const fetchedLeague = leaguePayload as League & { seasons?: unknown[] };
                 setError(null);
-                console.log('Fresh League Data Received:', data.league);
-                console.log('Total Matches:', data.league.matches?.length || 0);
-                console.log('Total Members:', data.league.members?.length || 0);
-                console.log('Members:', data.league.members?.map((m: User) => `${m.firstName} ${m.lastName}`));
-                console.log('Seasons:', data.league.seasons);
-                if (Array.isArray(data.league.seasons)) {
-                    data.league.seasons.forEach((seasonUnknown: unknown, i: number) => {
+                console.log('Fresh League Data Received:', fetchedLeague);
+                console.log('Total Matches:', fetchedLeague.matches?.length || 0);
+                console.log('Total Members:', fetchedLeague.members?.length || 0);
+                console.log('Members:', fetchedLeague.members?.map((m: User) => `${m.firstName} ${m.lastName}`));
+                console.log('Seasons:', fetchedLeague.seasons);
+                if (Array.isArray(fetchedLeague.seasons)) {
+                    fetchedLeague.seasons.forEach((seasonUnknown: unknown, i: number) => {
                         const seasonRecord = (seasonUnknown && typeof seasonUnknown === 'object')
                             ? (seasonUnknown as Record<string, unknown>)
                             : {};
@@ -1195,14 +1210,14 @@ export default function LeagueDetailPage() {
                         });
                     });
                 }
-                if (data.league.matches) {
-                    data.league.matches.forEach((match: Match, index: number) => {
+                if (fetchedLeague.matches) {
+                    fetchedLeague.matches.forEach((match: Match, index: number) => {
                         console.log(`  Match ${index + 1}: ${match.homeTeamName} vs ${match.awayTeamName} | Status: ${match.status}`);
                     });
                 }
-                setLeague(data.league);
+                setLeague(fetchedLeague);
                 try {
-                    const preferredId = String((data.league as Record<string, unknown>)?.id || leagueId || '').trim();
+                    const preferredId = String((fetchedLeague as unknown as Record<string, unknown>)?.id || leagueId || '').trim();
                     if (preferredId) {
                         localStorage.setItem('preferredLeagueId', preferredId);
                     }
@@ -1211,7 +1226,7 @@ export default function LeagueDetailPage() {
                 }
                 console.log('League state updated successfully');
             } else {
-                const apiMessage = String(data.message || '').trim();
+                const apiMessage = String(data.message || data.error || '').trim();
                 const normalizedMessage = apiMessage.toLowerCase();
                 const looksLikeAccessIssue =
                     normalizedMessage.includes('access') ||
@@ -1977,40 +1992,24 @@ export default function LeagueDetailPage() {
         if (selectedLeagueId !== leagueId) {
             // Reset season selection so the new league shows all its matches
             setSelectedSeasonId(null);
-
-            // Fetch the new league data first, then update URL and state
-            try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${selectedLeagueId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.league) {
-                        // Update league data first
-                        setLeague(data.league);
-                        setError(null);
-                        try {
-                            localStorage.setItem('preferredLeagueId', String(selectedLeagueId));
-                        } catch {
-                            // ignore localStorage errors
-                        }
-
-                        // Keep user on the same tab when switching leagues
-                        const tabToKeep = encodeURIComponent(section);
-                        router.replace(`/league/${selectedLeagueId}?tab=${tabToKeep}`, { scroll: false });
-                    } else {
-                        setError('Failed to load league data');
-                    }
-                } else {
-                    setError('Failed to load league data');
-                }
-            } catch (error) {
-                console.error('Error fetching league:', error);
-                setError('Failed to load league data');
+            const nextLeague = allLeagues.find((leagueItem) => String(leagueItem.id) === String(selectedLeagueId));
+            if (nextLeague) {
+                setLeague(nextLeague);
+            } else {
+                setLeague(null);
             }
+            setError(null);
+            try {
+                localStorage.setItem('preferredLeagueId', String(selectedLeagueId));
+                localStorage.removeItem(`preferredSeasonId_${selectedLeagueId}`);
+                localStorage.removeItem('preferredSeasonId');
+            } catch {
+                // ignore localStorage errors
+            }
+
+            // Keep user on the same tab when switching leagues.
+            const tabToKeep = encodeURIComponent(section);
+            router.replace(`/league/${encodeURIComponent(selectedLeagueId)}?tab=${tabToKeep}`, { scroll: false });
         }
         handleLeaguesDropdownClose();
     };
