@@ -2491,7 +2491,7 @@ export default function GlobalTrophyRoom() {
       {/* Full-Width Header Section */}
       <Box sx={{
         mt: 0,
-        mb: { xs: 1.5, sm: 4 },
+        mb: { xs: 1.5, sm: 4, md: 2 },
       }}>
         {/* Orange top border */}
         {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}
@@ -2522,7 +2522,7 @@ export default function GlobalTrophyRoom() {
               letterSpacing: '0px',
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
               pt: { xs: 1, md: 2 },
-              pb: { xs: 3, md: 6 },
+              pb: { xs: 3, md: 3 },
             }}
           >
             {filter === 'my' && user

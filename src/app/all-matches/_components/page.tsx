@@ -2103,7 +2103,7 @@ export default function AllMatches() {
                 </Button> */}
                 <Box
                     sx={{
-                        mb: { xs: 1.5, md: 5 },
+                        mb: { xs: 1.5, md: 2 },
                         bgcolor: '#0E0E0E',
                         px: { xs: 1, sm: 2, md: 3 },
                         py: { xs: 1.5, md: 2.5 },
@@ -2157,7 +2157,7 @@ export default function AllMatches() {
                         flexDirection: { xs: 'column', sm: 'row' },
                         rowGap: 2.25,
                         columnGap: 2,
-                        mb: { xs: 3, md: 5 },
+                        mb: { xs: 3, md: 3 },
                         px: { xs: 0.5, sm: 1.5, md: 2 },
                         maxWidth: '1200px',
                         mx: 'auto',
