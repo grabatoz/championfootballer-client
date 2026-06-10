@@ -441,9 +441,16 @@ input:-webkit-autofill:active {
 }
 
 /* Hover states for freeze pane columns */
-.league-row:hover .league-table-sticky-rank,
-.league-row:hover .league-table-sticky-name {
-  background-color: inherit;
+.league-row.bg-table-row-even:hover,
+.league-row.bg-table-row-even:hover .league-table-sticky-rank,
+.league-row.bg-table-row-even:hover .league-table-sticky-name {
+  background-color: #444444 !important;
+}
+
+.league-row.bg-table-row-odd:hover,
+.league-row.bg-table-row-odd:hover .league-table-sticky-rank,
+.league-row.bg-table-row-odd:hover .league-table-sticky-name {
+  background-color: #383838 !important;
 }
 
 /* Responsive tweaks for league table (keep layout, shrink type on small screens) */
@@ -2919,6 +2926,7 @@ input:-webkit-autofill:active {
   left: 0 !important;
   z-index: 10 !important;
   background-color: inherit !important;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .league-table-sticky-name {
@@ -2926,4 +2934,5 @@ input:-webkit-autofill:active {
   left: 50px !important;
   z-index: 9 !important;
   background-color: inherit !important;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
