@@ -2731,10 +2731,10 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
+              position: { xs: 'absolute', lg: 'static' },
+              left: { xs: '50%', lg: 'auto' },
+              top: { xs: '50%', lg: 'auto' },
+              transform: { xs: 'translate(-50%, -50%)', lg: 'none' },
               zIndex: 1,
             }}
           >

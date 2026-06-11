@@ -1364,7 +1364,7 @@ export default function AllMatches() {
         return [...filteredMatches].sort(compareMatchesDesc);
     }, [filteredMatches]);
 
-    const isMember = league && league.members && user && league.members.some((m: User) => m.id === user.id);
+    const isMember = (league && (league.userRole === 'MEMBER' || league.userRole === 'ADMIN')) || (league && league.members && user && league.members.some((m: User) => m.id === user.id));
     // const isAdmin = league && league.administrators && user && league.administrators.some((a: User) => a.id === user.id);
 
     // Replace handleLeagueSelect to only update state and close the menu
@@ -1385,7 +1385,7 @@ export default function AllMatches() {
             return;
         }
 
-        const isLeagueAdmin = league.administrators?.some((admin) => String(admin.id) === String(user?.id));
+        const isLeagueAdmin = league.userRole === 'ADMIN' || league.administrators?.some((admin) => String(admin.id) === String(user?.id));
         if (!isLeagueAdmin) {
             toast.error('Only league admins can create matches.');
             return;
@@ -2021,32 +2021,21 @@ export default function AllMatches() {
                     transition: all 0.2s ease;
                 }
             `}</style>
-            <Container>
-
-                {/* <Button
-                    startIcon={<ArrowLeft />}
-                    onClick={handleBackToDashboard}
-                    sx={{
-                        mb: 2, color: 'white', backgroundColor: '#1f673b',
-                        '&:hover': { backgroundColor: '#388e3c' },
-                    }}
-                >
-                    Back to Dashboard
-                </Button> */}
+            <PageHeader
+                title="Matches"
+                fullBleed={false}
+                sx={{ mb: 4 }}
+            >
                 <Box
-                    sx={{
-                        mb: { xs: 1.5, md: 2 },
-                        bgcolor: '#0E0E0E',
-                        px: { xs: 1, sm: 2, md: 3 },
-                        py: { xs: 1.5, md: 2.5 },
-                        borderRadius: 0,
-                        minHeight: { xs: 'auto', md: 'auto' },
-                        width: '100vw',
-                        position: 'relative',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                    }}
-                >
+                        sx={{
+                            mb: { xs: 1.5, md: 2 },
+                            bgcolor: '#0E0E0E',
+                            px: { xs: 1, sm: 2, md: 3 },
+                            py: { xs: 1.5, md: 2.5 },
+                            borderRadius: 0,
+                            minHeight: { xs: 'auto', md: 'auto' },
+                        }}
+                    >
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
@@ -2651,6 +2640,8 @@ export default function AllMatches() {
                         </Box>
                     </Box>
                 </Box>
+            </PageHeader>
+            <Container>
                 {/* Match Cards */}
                 <Box sx={{
                     px: 0,
@@ -2735,7 +2726,8 @@ export default function AllMatches() {
                         sortedMatches.map((match, idx) => {
                             const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
                             const leagueForMatch = leagues.find(l => l.id === match.leagueId);
-                            const isAdmin = leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
+                            const isAdmin = leagueForMatch?.userRole === 'ADMIN' || leagueForMatch?.administrators?.some(admin => admin.id === user?.id);
+                            const isMember = leagueForMatch?.userRole === 'MEMBER' || leagueForMatch?.userRole === 'ADMIN' || !!leagueForMatch?.members?.some(m => m.id === user?.id);
                             const isCompleted = isResultLikeStatus(match.status);
                             const matchSeasonActiveForStats = isMatchSeasonActiveForStats(match);
                             const matchNumber = getNumericIndex(match) ?? (idx + 1);
