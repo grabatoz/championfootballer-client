@@ -10,6 +10,7 @@ import {
   Select,
   Menu,
   MenuItem,
+  ListItemIcon,
   FormControl,
   OutlinedInput,
   List,
@@ -21,6 +22,7 @@ import {
   CircularProgress,
   Divider,
 } from '@mui/material';
+import { Trophy, ChevronDown } from 'lucide-react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
@@ -1214,7 +1216,7 @@ const AllPlayersPage = () => {
                   sx={{
                     height: isMobile ? '34px' : '39px',
                     pl: isMobile ? '7px' : '12px',
-                    pr: isMobile ? '20px' : '29px',
+                    pr: isMobile ? '7px' : '12px',
                     backgroundColor: 'transparent',
                     color: '#fff',
                     border: '1.5px solid #e56a16',
@@ -1232,9 +1234,13 @@ const AllPlayersPage = () => {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     userSelect: 'none',
+                    justifyContent: 'space-between',
                   }}
                 >
-                  {selectedLeagueLabel}
+                  <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mr: 1 }}>
+                    {selectedLeagueLabel}
+                  </Box>
+                  {/* <ChevronDown size={isMobile ? 12 : 16} style={{ flexShrink: 0, color: '#9CA3AF' }} /> */}
                 </Box>
                 <Menu
                   anchorEl={leagueMenuAnchor}
@@ -1242,47 +1248,143 @@ const AllPlayersPage = () => {
                   onClose={handleLeagueMenuClose}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  PaperProps={{
+                  marginThreshold={0}
+                  MenuListProps={{
                     sx: {
-                      mt: 0.6,
-                      minWidth: isDesktop ? 220 : leagueMenuAnchor?.offsetWidth || 150,
-                      width: isDesktop ? 'max-content' : 'min(92vw, 340px)',
-                      maxWidth: 'min(92vw, 360px)',
-                      maxHeight: 260,
+                      maxHeight: { xs: 260, sm: 320 },
                       overflowY: 'auto',
                       overflowX: 'hidden',
-                      bgcolor: 'rgba(15,15,15,0.94)',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 1.5,
-                      '&::-webkit-scrollbar': { width: 6 },
-                      '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.35)', borderRadius: 999 },
+                      scrollbarWidth: 'thin',
+                      '&::-webkit-scrollbar': {
+                        width: '8px',
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: 'rgba(255,255,255,0.08)',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: 'rgba(255,255,255,0.35)',
+                        borderRadius: '999px',
+                      },
                     },
+                  }}
+                  PaperProps={{
+                    sx: {
+                      p: 0.5,
+                      mt: 1,
+                      minWidth: leagueMenuAnchor?.offsetWidth || 150,
+                      width: 'max-content',
+                      maxWidth: { xs: '92vw', sm: 'none' },
+                      bgcolor: 'rgba(15,15,15,0.92)',
+                      color: '#E5E7EB',
+                      borderRadius: 2.5,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                      overflow: 'hidden',
+                    }
                   }}
                 >
                   <MenuItem
-                    selected={selectedLeague === 'all'}
                     onClick={() => handleLeagueMenuSelect('all')}
-                    sx={{ fontSize: isMobile ? '13px' : '15px', whiteSpace: 'nowrap' }}
+                    sx={{
+                      borderRadius: 1.5,
+                      mx: 0.5,
+                      my: 0.25,
+                      py: 1.25,
+                      px: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      color: '#E5E7EB',
+                      transition: 'all 0.2s ease',
+                      background: selectedLeague === 'all' ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                      border: selectedLeague === 'all' ? '1px solid rgba(3,136,227,0.35)' : 'none',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                      },
+                    }}
                   >
-                    All Leagues
-                  </MenuItem>
-                  {filteredLeagues.map((leagueOption) => (
-                    <MenuItem
-                      key={leagueOption.id}
-                      selected={selectedLeague === leagueOption.id}
-                      onClick={() => handleLeagueMenuSelect(leagueOption.id)}
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <Trophy size={16} color={selectedLeague === 'all' ? '#FFFFFF' : '#9CA3AF'} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="All Leagues"
                       sx={{
-                        fontSize: isMobile ? '13px' : '15px',
-                        maxWidth: '100%',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        '& .MuiListItemText-primary': {
+                          fontSize: '0.95rem',
+                          fontWeight: selectedLeague === 'all' ? 700 : 500,
+                          letterSpacing: 0.2,
+                          color: selectedLeague === 'all' ? '#FFFFFF' : '#E5E7EB'
+                        }
                       }}
-                    >
-                      {leagueOption.name}
-                    </MenuItem>
-                  ))}
+                    />
+                  </MenuItem>
+                  {[...filteredLeagues].sort((a, b) => {
+                    const an = (a?.name ?? '').toString().trim().toLowerCase();
+                    const bn = (b?.name ?? '').toString().trim().toLowerCase();
+                    if (an < bn) return -1;
+                    if (an > bn) return 1;
+                    return String(a.id).localeCompare(String(b.id));
+                  }).map((leagueOption) => {
+                    const isActive = selectedLeague === leagueOption.id;
+                    return (
+                      <MenuItem
+                        key={leagueOption.id}
+                        onClick={() => handleLeagueMenuSelect(leagueOption.id)}
+                        sx={{
+                          borderRadius: 1.5,
+                          mx: 0.5,
+                          my: 0.25,
+                          py: 1.25,
+                          px: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          color: '#E5E7EB',
+                          transition: 'all 0.2s ease',
+                          background: isActive ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                          border: isActive ? '1px solid rgba(3,136,227,0.35)' : 'none',
+                          '&:hover': {
+                            transform: 'translateY(-1px)',
+                            background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={leagueOption.name}
+                          sx={{
+                            '& .MuiListItemText-primary': {
+                              fontSize: '0.95rem',
+                              fontWeight: isActive ? 700 : 500,
+                              letterSpacing: 0.2,
+                              color: isActive ? '#FFFFFF' : '#E5E7EB'
+                            }
+                          }}
+                        />
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box
+                            sx={{
+                              px: 1,
+                              py: 0.25,
+                              bgcolor: leagueOption.isAdmin ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                              color: leagueOption.isAdmin ? '#1F2937' : '#FFFFFF',
+                              borderRadius: '9999px',
+                              fontSize: 10,
+                              fontWeight: 700,
+                              letterSpacing: 0.3,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {leagueOption.isAdmin ? 'Admin' : 'Member'}
+                          </Box>
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Menu>
               </div>
 

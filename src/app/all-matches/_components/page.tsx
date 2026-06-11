@@ -138,6 +138,7 @@ interface League {
     createdAt?: string;
     status?: string;
     maxGames?: number;
+    userRole?: 'ADMIN' | 'MEMBER';
 }
 
 interface SeasonOption {
@@ -435,101 +436,113 @@ export default function AllMatches() {
     
     // Persist selection key - same as home page
     const PREFERRED_LEAGUE_KEY = 'preferredLeagueId';
-    // Helper: determine if a league is completed (exclude from dropdown)
+    const completedStatusTokens = React.useMemo(
+        () => new Set([
+            'completed',
+            'complete',
+            'finished',
+            'ended',
+            'result_published',
+            'result_uploaded',
+            'result_complete',
+            'result_finished',
+            'result_ended',
+            'result_done',
+            'closed',
+        ]),
+        []
+    );
+
+    // Helper: determine if a league is completed (kept in sync with All Leagues card logic)
     const leagueIsCompleted = useCallback((l: League): boolean => {
-        // Prefer backend-computed season-based completion status
-        if (l?.computedStatus?.isCompleted === true) return true;
-        if (l?.archived === true) return true;
-
-        // If there are any missing items (e.g., pending stats), do NOT treat as completed
-        const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-        if (missingArr.length > 0) return false;
-
-        // If we have counters, prefer them to decide completion:
-        // require matchesPlayed >= maxGames when maxGames is provided (> 0)
-        const toNum = (v: unknown): number | undefined => {
-            const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-            return Number.isFinite(n) ? n : undefined;
+        const withFlags = l as League & {
+            isComplete?: boolean;
+            isCompleted?: boolean;
+            archived?: boolean;
+            seasons?: Array<{
+                isActive?: boolean;
+                archived?: boolean;
+                status?: unknown;
+            }>;
         };
-        const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-        const playedFromList = undefined; // not available reliably here
-        const played = playedFromComputed ?? playedFromList;
-        const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
 
-        // Ported logic from All Leagues: derive completion from matches list when available
-        if (Array.isArray(l.matches)) {
-            const matches = l.matches ?? [];
-            const completedCount = matches.reduce((acc, m) => {
-                const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-                const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-                const endedByFlag = m.active === false;
-                const endedByEnd = Boolean(m.end);
-                return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-            }, 0);
-            if (typeof maxG === 'number' && maxG > 0) {
-                if (completedCount < maxG) return false; // not complete yet
-                // completed by matches threshold -> consider complete (missing already checked above)
-                return true;
-            }
-        }
+        const status = String(l?.status || '').toLowerCase().trim();
+        if (completedStatusTokens.has(status)) return true;
 
-        if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-            if (played < maxG) {
-                // Even if backend flags it completed/locked, do NOT treat as completed until maxGames reached
-                return false;
-            }
-            // Counters meet threshold and missing is empty -> complete
+        if (
+            l?.computedStatus?.isComplete === true ||
+            l?.computedStatus?.isCompleted === true ||
+            l?.computedStatus?.locked === true ||
+            withFlags.isComplete === true ||
+            withFlags.isCompleted === true ||
+            l?.isLocked === true
+        ) {
             return true;
         }
 
-        // Primary: explicit completion flags coming from backend
-        if (l?.computedStatus?.isComplete === true) return true;
-        if (l?.computedStatus?.locked === true) return true;
-        if (l?.isComplete === true) return true;
-        if (l?.isCompleted === true) return true;
-        if (l?.isLocked === true) return true;
+        // Season-level fallback kept in sync with All Leagues.
+        const seasons = Array.isArray(withFlags.seasons) ? withFlags.seasons : [];
+        if (seasons.length > 0) {
+            const seasonDoneTokens = new Set([
+                'completed',
+                'complete',
+                'finished',
+                'ended',
+                'locked',
+                'archived',
+                'result_published',
+                'result_uploaded',
+                'result_complete',
+                'result_finished',
+                'result_ended',
+                'result_done',
+            ]);
+            const hasActiveSeason = seasons.some((s) => s?.isActive === true && s?.archived !== true);
+            const hasArchivedOrCompletedSeason = seasons.some((s) => {
+                if (!s) return false;
+                if (s.archived === true) return true;
+                const st = typeof s.status === 'string' ? s.status.toLowerCase().trim() : '';
+                return seasonDoneTokens.has(st);
+            });
+            if (!hasActiveSeason && hasArchivedOrCompletedSeason) return true;
+        }
 
-        // Backward-compat: infer completion from status/active when flags are absent
-        const sRaw = (l?.status ?? '').toString();
-        const s = sRaw.trim().toUpperCase();
-        const completionStatuses = new Set([
-            'RESULT_PUBLISHED',
-            'RESULT_UPLOADED',
-            'RESULT_COMPLETE',
-            'RESULT_FINISHED',
-            'RESULT_ENDED',
-            'RESULT_DONE',
-            'COMPLETED'
-        ]);
-        if (completionStatuses.has(s)) return true;
-        if (typeof l?.active === 'boolean' && l.active === false) return true;
         return false;
-    }, []);
+    }, [completedStatusTokens]);
 
     const fetchLeagues = useCallback(async () => {
+        if (!token) return;
+
         try {
-            // 🚀 Use optimizedFetch with 3-minute cache for auth status
-            const data = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/auth/status`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&_t=${Date.now()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
-                cacheTTL: 180000 // 3 minutes TTL
+                cache: 'no-store',
             });
+
+            if (!response.ok) {
+                setLeagues([]);
+                return;
+            }
+
+            const data = await response.json();
+
             if (data.success && data.user) {
                 // Get admin league IDs
                 const adminLeaguesArr = (data.user.adminLeagues || data.user.administeredLeagues || []) as Array<{ id?: string | number }>;
-                // const adminLeagueIds = new Set<string>(
-                //     adminLeaguesArr
-                //         .map((l) => String(l?.id))
-                //         .filter((id) => id !== 'undefined')
-                // );
+                const adminLeagueIds = new Set<string>(
+                    adminLeaguesArr
+                        .map((l) => String(l?.id))
+                        .filter((id) => id !== 'undefined')
+                );
 
                 // Get member league IDs
-                // const memberLeagueIds = new Set<string>(
-                //     ((data.user.leagues || []) as Array<{ id?: string | number }>)
-                //         .map((l) => String(l?.id))
-                //         .filter((id) => id !== 'undefined')
-                // );
+                const memberLeagueIds = new Set<string>(
+                    ((data.user.leagues || []) as Array<{ id?: string | number }>)
+                        .map((l) => String(l?.id))
+                        .filter((id) => id !== 'undefined')
+                );
 
                 // Combine joined and managed leagues
                 const userLeagues = [
@@ -546,107 +559,41 @@ export default function AllMatches() {
                     }
                 });
 
-                // Fetch computed status for all leagues in one request (avoids GET /leagues/:id/status 405)
-                const statusMap = new Map<string, LeagueComputedStatus>();
-                try {
-                    const statusPayload = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues`, {
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        cacheTTL: 180000 // 3 minutes
-                    });
-                    if (statusPayload?.success && Array.isArray(statusPayload.leagues)) {
-                        statusPayload.leagues.forEach((l: any) => {
-                            const id = String(l?.id ?? '');
-                            if (!id) return;
-                            if (l?.computedStatus) {
-                                statusMap.set(id, l.computedStatus as LeagueComputedStatus);
-                            }
-                        });
-                    }
-                } catch { }
+                // Convert to League type with role assignment (no extra API calls)
+                const simpleLeagues: League[] = Array.from(uniqueLeaguesMap.values()).map((l: any) => {
+                    const leagueId = String(l.id);
+                    const role: 'ADMIN' | 'MEMBER' | undefined = adminLeagueIds.has(leagueId)
+                        ? 'ADMIN'
+                        : (memberLeagueIds.has(leagueId) ? 'MEMBER' : undefined);
 
+                    return {
+                        ...l,
+                        id: leagueId,
+                        name: l.name || '',
+                        inviteCode: '',
+                        createdAt: l.createdAt || '',
+                        members: [],
+                        administrators: [],
+                        matches: l.matches || [],
+                        active: l.active ?? true,
+                        maxGames: l.maxGames || 20,
+                        showPoints: true,
+                        userRole: role,
+                        isComplete: l.isComplete,
+                        isCompleted: l.isCompleted,
+                        isLocked: l.isLocked,
+                        status: l.status,
+                    } as League;
+                });
 
-                // Fetch detailed info for all leagues to get administrators, members, and computed status
-                const detailedLeagues = await Promise.all(
-                    Array.from(uniqueLeaguesMap.values()).map(async (league) => {
-                        try {
-                            const leagueId = String((league as { id?: string | number }).id);
-
-                            // Use optimizedFetch with 5-minute cache for league details
-                            const leagueResponse = await optimizedFetch<any>(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}?includeMatches=0`, {
-                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                cacheTTL: 300000 // 5 minutes
-                            });
-
-                            let matchesFromDetails: Match[] | undefined = undefined;
-                            let maxGamesFromDetails: number | undefined = undefined;
-                            let enrichedLeague = { ...league };
-
-                            // optimizedFetch returns JSON directly
-                            if (leagueResponse?.success && leagueResponse?.league) {
-                                enrichedLeague = {
-                                    ...league,
-                                    administrators: leagueResponse.league.administrators,
-                                    members: leagueResponse.league.members
-                                    };
-                                    const rawMatches = leagueResponse.league.matches as unknown;
-                                    if (Array.isArray(rawMatches)) {
-                                        matchesFromDetails = rawMatches as Match[];
-                                    }
-                                    if (typeof leagueResponse.league.maxGames === 'number') {
-                                        maxGamesFromDetails = leagueResponse.league.maxGames as number;
-                                    }
-                            }
-
-                            const statusFromUserLeagues = statusMap.get(leagueId);
-                            if (statusFromUserLeagues) {
-                                const raw = statusFromUserLeagues as Record<string, unknown>;
-                                const toNum = (v: unknown): number | undefined => {
-                                    const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-                                    return Number.isFinite(n) ? n : undefined;
-                                };
-                                const matchesPlayed = toNum(
-                                    raw?.matchesPlayed ?? raw?.gamesPlayed ?? raw?.played ?? raw?.completedMatches ?? raw?.totalPlayed
-                                );
-                                const maxGames = toNum(
-                                    raw?.maxGames ?? raw?.allowedGames ?? raw?.totalGames ?? raw?.totalMaxGames
-                                );
-                                const locked = raw?.locked === true;
-                                const isComplete = raw?.isComplete === true || raw?.isCompleted === true;
-                                const missingRaw = raw?.missing as unknown;
-                                const missing = Array.isArray(missingRaw) ? missingRaw : [];
-                                const computed: LeagueComputedStatus = {
-                                    ...(raw as LeagueComputedStatus),
-                                    matchesPlayed,
-                                    gamesPlayed: matchesPlayed,
-                                    maxGames,
-                                    locked,
-                                    isComplete,
-                                    missing,
-                                };
-                                return {
-                                    ...enrichedLeague,
-                                    computedStatus: computed,
-                                    isLocked: computed?.locked === true,
-                                    maxGames: maxGames ?? maxGamesFromDetails,
-                                    matches: matchesFromDetails,
-                                } as League;
-                            }
-
-                            return enrichedLeague as League;
-                        } catch (error) {
-                            console.error(`Error fetching details for league ${(league as { id?: string | number }).id}:`, error);
-                            return league as League;
-                        }
-                    })
-                );
-
-                // Show only visible leagues (active + non-archived + not completed)
-                const activeLeagues = detailedLeagues.filter(
-                    (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
+                // Keep leagues visible for switching, including inactive ones.
+                // Only hide archived/completed leagues.
+                const visibleLeagues = simpleLeagues.filter(
+                    (l) => l.archived !== true && !leagueIsCompleted(l)
                 );
 
                 // Sort alphabetically by name
-                activeLeagues.sort((a, b) => {
+                visibleLeagues.sort((a, b) => {
                     const an = (a?.name ?? '').toString().trim().toLowerCase();
                     const bn = (b?.name ?? '').toString().trim().toLowerCase();
                     if (an < bn) return -1;
@@ -654,28 +601,13 @@ export default function AllMatches() {
                     return String(a.id).localeCompare(String(b.id));
                 });
 
-                setLeagues(activeLeagues);
-
-                // Debug log
-                try {
-                    if (typeof window !== 'undefined' && detailedLeagues.length) {
-                        console.group('[All Matches] League completion check');
-                        console.log('Total leagues:', detailedLeagues.length);
-                        console.log('Active (not completed):', activeLeagues.length);
-                        console.table(detailedLeagues.map(l => ({
-                            id: l?.id,
-                            name: l?.name,
-                            isComplete: Boolean(l?.isComplete),
-                            locked: Boolean(l?.computedStatus?.locked || l?.isLocked),
-                            matchesPlayed: l?.computedStatus?.matchesPlayed ?? null,
-                            maxGames: l?.computedStatus?.maxGames ?? l?.maxGames ?? null,
-                        })));
-                        console.groupEnd();
-                    }
-                } catch {}
+                setLeagues(visibleLeagues);
+            } else {
+                setLeagues([]);
             }
         } catch (error) {
             console.error('Error fetching leagues:', error);
+            setLeagues([]);
         } finally {
             setLoading(false);
         }
@@ -2288,40 +2220,103 @@ export default function AllMatches() {
 
                             {/* League Filter */}
                             <div className={`filter-select-wrapper${leaguesDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                            {isDesktop ? (
-                                <select
-                                    className="filter-select"
-                                    value={selectedLeague || 'all'}
-                                    onChange={(e) => handleLeagueSelect(e.target.value)}
-                                    onMouseDown={() => setLeaguesDropdownOpen(true)}
-                                    onBlur={() => setTimeout(() => setLeaguesDropdownOpen(false), 100)}
+                                <button
+                                    ref={leagueFilterButtonRef}
+                                    type="button"
+                                    onClick={() => {
+                                        if (!noLeagues) {
+                                            setLeaguesDropdownOpen((prev) => !prev);
+                                        }
+                                    }}
                                     disabled={noLeagues}
                                     style={{
-                                        height: '39px',
-                                        padding: '0 29px 0 12px',
+                                        height: isDesktop ? '39px' : '34px',
+                                        padding: isDesktop ? '0 29px 0 12px' : '0 20px 0 7px',
                                         marginLeft: 0,
                                         backgroundColor: 'transparent',
                                         color: '#fff',
                                         border: '1.5px solid #e56a16',
                                         borderRadius: '24px',
-                                        fontSize: '17px',
+                                        fontSize: isDesktop ? '17px' : '11px',
                                         cursor: noLeagues ? 'not-allowed' : 'pointer',
                                         outline: 'none',
                                         width: '100%',
-                                        display: 'block',
-                                        boxSizing: 'border-box',
                                         opacity: noLeagues ? 0.6 : 1,
-                                        appearance: 'none',
-                                        WebkitAppearance: 'none',
-                                        MozAppearance: 'none',
-                                        fontWeight: 400,
+                                        fontWeight: isDesktop ? 400 : 600,
+                                        textAlign: 'left',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                    }}
+                                >
+                                    <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mr: 1 }}>
+                                        {selectedLeague && selectedLeague !== 'all'
+                                            ? (formatLeagueName(sortedLeagues.find((l) => l.id === selectedLeague)?.name || '') || 'Select League')
+                                            : 'Select League'}
+                                    </Box>
+                                    {/* <ChevronDown size={isDesktop ? 16 : 12} style={{ flexShrink: 0, color: '#9CA3AF' }} /> */}
+                                </button>
+                                <Menu
+                                    anchorEl={leagueFilterButtonRef.current}
+                                    open={leaguesDropdownOpen && !noLeagues}
+                                    onClose={() => setLeaguesDropdownOpen(false)}
+                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                    marginThreshold={0}
+                                    MenuListProps={{
+                                        sx: {
+                                            maxHeight: { xs: 260, sm: 320 },
+                                            overflowY: 'auto',
+                                            overflowX: 'hidden',
+                                            scrollbarWidth: 'thin',
+                                            '&::-webkit-scrollbar': {
+                                                width: '8px',
+                                            },
+                                            '&::-webkit-scrollbar-track': {
+                                                background: 'rgba(255,255,255,0.08)',
+                                            },
+                                            '&::-webkit-scrollbar-thumb': {
+                                                background: 'rgba(255,255,255,0.35)',
+                                                borderRadius: '999px',
+                                            },
+                                        },
+                                    }}
+                                    PaperProps={{
+                                        sx: {
+                                            p: 0.5,
+                                            mt: 1,
+                                            minWidth: leagueFilterButtonRef.current?.offsetWidth || 150,
+                                            width: 'max-content',
+                                            maxWidth: { xs: '92vw', sm: 'none' },
+                                            bgcolor: 'rgba(15,15,15,0.92)',
+                                            color: '#E5E7EB',
+                                            borderRadius: 2.5,
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            backdropFilter: 'blur(10px)',
+                                            boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                                            overflow: 'hidden',
+                                        }
                                     }}
                                 >
                                     {selectedLeague === 'all' && (
-                                        <option value="all" disabled style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>Select League</option>
+                                        <MenuItem
+                                            disabled
+                                            sx={{
+                                                borderRadius: 1.5,
+                                                mx: 0.5,
+                                                my: 0.25,
+                                                py: 1.25,
+                                                px: 1.5,
+                                                color: '#9CA3AF',
+                                                fontSize: '0.95rem',
+                                                opacity: 0.7
+                                            }}
+                                        >
+                                            Select League
+                                        </MenuItem>
                                     )}
                                     {[...sortedLeagues].sort((a, b) => {
                                         const an = (a?.name ?? '').toString().trim().toLowerCase();
@@ -2329,109 +2324,71 @@ export default function AllMatches() {
                                         if (an < bn) return -1;
                                         if (an > bn) return 1;
                                         return String(a.id).localeCompare(String(b.id));
-                                    }).map((leagueItem) => (
-                                        <option key={leagueItem.id} value={leagueItem.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                                            {formatLeagueName(leagueItem.name)}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <>
-                                    <button
-                                        ref={leagueFilterButtonRef}
-                                        type="button"
-                                        onClick={() => {
-                                            if (!noLeagues) {
-                                                setLeaguesDropdownOpen((prev) => !prev);
-                                            }
-                                        }}
-                                        disabled={noLeagues}
-                                        style={{
-                                            height: '34px',
-                                            padding: '0 20px 0 7px',
-                                            marginLeft: 0,
-                                            backgroundColor: 'transparent',
-                                            color: '#fff',
-                                            border: '1.5px solid #e56a16',
-                                            borderRadius: '24px',
-                                            fontSize: '11px',
-                                            cursor: noLeagues ? 'not-allowed' : 'pointer',
-                                            outline: 'none',
-                                            width: '100%',
-                                            opacity: noLeagues ? 0.6 : 1,
-                                            fontWeight: 600,
-                                            textAlign: 'left',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {selectedLeague && selectedLeague !== 'all'
-                                            ? (formatLeagueName(sortedLeagues.find((l) => l.id === selectedLeague)?.name || '') || 'Select League')
-                                            : 'Select League'}
-                                    </button>
-                                    <Menu
-                                        anchorEl={leagueFilterButtonRef.current}
-                                        open={leaguesDropdownOpen && !noLeagues}
-                                        onClose={() => setLeaguesDropdownOpen(false)}
-                                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                                        PaperProps={{
-                                            sx: {
-                                                mt: 0.5,
-                                                borderRadius: 1,
-                                                border: '1px solid rgba(255,255,255,0.25)',
-                                                backgroundColor: '#1a1a1a',
-                                                minWidth: leagueFilterButtonRef.current?.offsetWidth || 148,
-                                                width: 'max-content',
-                                                maxWidth: '90vw',
-                                            }
-                                        }}
-                                        MenuListProps={{ sx: { py: 0 } }}
-                                    >
-                                        {selectedLeague === 'all' && (
-                                            <MenuItem
-                                                disabled
-                                                sx={{
-                                                    color: 'rgba(255,255,255,0.4)',
-                                                    fontSize: 13,
-                                                    minHeight: 34,
-                                                }}
-                                            >
-                                                Select League
-                                            </MenuItem>
-                                        )}
-                                        {[...sortedLeagues].sort((a, b) => {
-                                            const an = (a?.name ?? '').toString().trim().toLowerCase();
-                                            const bn = (b?.name ?? '').toString().trim().toLowerCase();
-                                            if (an < bn) return -1;
-                                            if (an > bn) return 1;
-                                            return String(a.id).localeCompare(String(b.id));
-                                        }).map((leagueItem) => (
+                                    }).map((leagueItem) => {
+                                        const isActive = selectedLeague === leagueItem.id;
+                                        return (
                                             <MenuItem
                                                 key={leagueItem.id}
-                                                selected={selectedLeague === leagueItem.id}
                                                 onClick={() => {
                                                     handleLeagueSelect(leagueItem.id);
                                                     setLeaguesDropdownOpen(false);
                                                 }}
                                                 sx={{
-                                                    color: '#fff',
-                                                    fontSize: 13,
-                                                    minHeight: 34,
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    '&.Mui-selected': { backgroundColor: '#2b66bd' },
-                                                    '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                                                    borderRadius: 1.5,
+                                                    mx: 0.5,
+                                                    my: 0.25,
+                                                    py: 1.25,
+                                                    px: 1.5,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                    color: '#E5E7EB',
+                                                    transition: 'all 0.2s ease',
+                                                    background: isActive ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                                                    border: isActive ? '1px solid rgba(3,136,227,0.35)' : 'none',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                        background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                                                    },
                                                 }}
                                             >
-                                                {formatLeagueName(leagueItem.name)}
+                                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                                    <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                                                </ListItemIcon>
+                                                <ListItemText
+                                                    primary={leagueItem.name}
+                                                    sx={{
+                                                        '& .MuiListItemText-primary': {
+                                                            fontSize: '0.95rem',
+                                                            fontWeight: isActive ? 700 : 500,
+                                                            letterSpacing: 0.2,
+                                                            color: isActive ? '#FFFFFF' : '#E5E7EB'
+                                                        }
+                                                    }}
+                                                />
+                                                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    {leagueItem.userRole && (
+                                                        <Box
+                                                            sx={{
+                                                                px: 1,
+                                                                py: 0.25,
+                                                                bgcolor: leagueItem.userRole === 'ADMIN' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                                                                color: leagueItem.userRole === 'ADMIN' ? '#1F2937' : '#FFFFFF',
+                                                                borderRadius: '9999px',
+                                                                fontSize: 10,
+                                                                fontWeight: 700,
+                                                                letterSpacing: 0.3,
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            {leagueItem.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                                                        </Box>
+                                                    )}
+                                                </Box>
                                             </MenuItem>
-                                        ))}
-                                    </Menu>
-                                </>
-                            )}
+                                        );
+                                    })}
+                                </Menu>
                             </div>
 
                             {/* Season Filter */}

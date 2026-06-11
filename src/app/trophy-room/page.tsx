@@ -12,7 +12,7 @@ import ShieldImg from '@/Components/images/shield.png';
 import DarkHorseImg from '@/Components/images/darkhourse.png';
 import Image, { StaticImageData } from 'next/image';
 import { useAuth } from '@/lib/hooks';
-import { Trophy } from 'lucide-react';
+import { Trophy, ChevronDown } from 'lucide-react';
 import HatTrickBadge from '@/Components/images/brown.svg'
 import AssistMaestroBadge from '@/Components/images/brown.svg'
 import StarPerformerBadge from '@/Components/images/brown.svg'
@@ -29,6 +29,8 @@ import {
   IconButton,
   Divider,
   Stack,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ShareIcon from '@mui/icons-material/Share';
@@ -115,6 +117,7 @@ interface League {
   // Season information
   seasons?: Season[];
   activeSeasonId?: string;
+  userRole?: 'ADMIN' | 'MEMBER';
 }
 
 interface PlayerStats {
@@ -1589,57 +1592,79 @@ export default function GlobalTrophyRoom() {
     };
   }, []);
 
-  // Helper: determine if a league is completed (season-aware)
+  const completedStatusTokens = React.useMemo(
+    () => new Set([
+      'completed',
+      'complete',
+      'finished',
+      'ended',
+      'result_published',
+      'result_uploaded',
+      'result_complete',
+      'result_finished',
+      'result_ended',
+      'result_done',
+      'closed',
+    ]),
+    []
+  );
+
+  // Helper: determine if a league is completed (kept in sync with All Leagues card logic)
   const leagueIsCompleted = React.useCallback((l: League): boolean => {
-    // Prefer backend-computed season-based completion status
-    if (l?.computedStatus?.isCompleted === true) return true;
-    if (l?.archived === true) return true;
-
-    const missingArr = Array.isArray(l?.computedStatus?.missing) ? l.computedStatus!.missing! : [];
-    if (missingArr.length > 0) return false;
-
-    const toNum = (v: unknown): number | undefined => {
-      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
-      return Number.isFinite(n) ? n : undefined;
+    const withFlags = l as League & {
+      isComplete?: boolean;
+      isCompleted?: boolean;
+      archived?: boolean;
+      seasons?: Array<{
+        isActive?: boolean;
+        archived?: boolean;
+        status?: unknown;
+      }>;
     };
-    const playedFromComputed = toNum(l?.computedStatus?.matchesPlayed) ?? toNum(l?.computedStatus?.gamesPlayed);
-    const played = playedFromComputed;
-    const maxG = toNum(l?.computedStatus?.maxGames) ?? toNum(l?.maxGames);
 
-    if (Array.isArray(l.matches)) {
-      const matches = l.matches ?? [];
-      const completedCount = matches.reduce((acc, m) => {
-        const status = typeof m.status === 'string' ? m.status.toLowerCase() : '';
-        const endedByStatus = status === 'completed' || status === 'finished' || status === 'ended';
-        const endedByFlag = m.active === false;
-        const endedByEnd = Boolean(m.end);
-        return acc + (endedByStatus || endedByFlag || endedByEnd ? 1 : 0);
-      }, 0);
-      if (typeof maxG === 'number' && maxG > 0) {
-        if (completedCount < maxG) return false;
-        return true;
-      }
-    }
+    const status = String(l?.status || '').toLowerCase().trim();
+    if (completedStatusTokens.has(status)) return true;
 
-    if (typeof maxG === 'number' && maxG > 0 && typeof played === 'number') {
-      if (played < maxG) return false;
+    if (
+      l?.computedStatus?.isComplete === true ||
+      l?.computedStatus?.isCompleted === true ||
+      l?.computedStatus?.locked === true ||
+      withFlags.isComplete === true ||
+      withFlags.isCompleted === true ||
+      l?.isLocked === true
+    ) {
       return true;
     }
 
-    if (l?.computedStatus?.isComplete === true) return true;
-    if (l?.computedStatus?.locked === true) return true;
-    if (l?.isComplete === true) return true;
-    if (l?.isCompleted === true) return true;
-    if (l?.isLocked === true) return true;
+    // Season-level fallback kept in sync with All Leagues.
+    const seasons = Array.isArray(withFlags.seasons) ? withFlags.seasons : [];
+    if (seasons.length > 0) {
+      const seasonDoneTokens = new Set([
+        'completed',
+        'complete',
+        'finished',
+        'ended',
+        'locked',
+        'archived',
+        'result_published',
+        'result_uploaded',
+        'result_complete',
+        'result_finished',
+        'result_ended',
+        'result_done',
+      ]);
+      const hasActiveSeason = seasons.some((s: any) => s?.isActive === true && s?.archived !== true);
+      const hasArchivedOrCompletedSeason = seasons.some((s: any) => {
+        if (!s) return false;
+        if (s.archived === true) return true;
+        const st = typeof s.status === 'string' ? s.status.toLowerCase().trim() : '';
+        return seasonDoneTokens.has(st);
+      });
+      if (!hasActiveSeason && hasArchivedOrCompletedSeason) return true;
+    }
 
-    const sRaw = (l?.status ?? '').toString();
-    const s = sRaw.trim().toUpperCase();
-    const completionStatuses = new Set(['RESULT_PUBLISHED', 'RESULT_UPLOADED', 'RESULT_COMPLETE', 'RESULT_FINISHED', 'RESULT_ENDED', 'RESULT_DONE', 'COMPLETED']);
-    if (completionStatuses.has(s)) return true;
-    if (isInactiveOrArchivedStatus(sRaw)) return true;
-    if (typeof l?.active === 'boolean' && l.active === false) return true;
     return false;
-  }, []);
+  }, [completedStatusTokens]);
 
   // Quick-view modal state
   const [openQuickView, setOpenQuickView] = useState(false);
@@ -1796,12 +1821,13 @@ export default function GlobalTrophyRoom() {
             return {
               ...league,
               isAdmin,
+              userRole: isAdmin ? 'ADMIN' : 'MEMBER',
             } as League;
           });
 
-          // Show only visible leagues (active + non-archived + not completed)
+          // Show only visible leagues (non-archived + not completed, same as league detail page)
           const activeLeagues = enrichedLeagues.filter(
-            (l) => l.active !== false && l.archived !== true && !isInactiveOrArchivedStatus(l.status) && !leagueIsCompleted(l)
+            (l) => l.archived !== true && !leagueIsCompleted(l)
           );
 
           // Sort alphabetically
@@ -2723,127 +2749,158 @@ export default function GlobalTrophyRoom() {
 
                 {/* League Filter */}
                 <div className={`filter-select-wrapper${leagueDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                {isDesktop ? (
-                  <select
-                    className="filter-select"
-                    value={selectedLeagueSelectValue || ''}
-                    onChange={(e) => handleLeagueSelect(e.target.value)}
-                    onMouseDown={() => setLeagueDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setLeagueDropdownOpen(false), 100)}
+                  <button
+                    ref={leagueFilterButtonRef}
+                    type="button"
+                    onClick={() => {
+                      if (filteredLeagues.length > 0) {
+                        setLeagueDropdownOpen((prev) => !prev);
+                      }
+                    }}
                     disabled={filteredLeagues.length === 0}
                     style={{
-                      height: '39px',
-                      padding: '0 29px 0 12px',
+                      height: isDesktop ? '39px' : '34px',
+                      padding: isDesktop ? '0 29px 0 12px' : '0 20px 0 7px',
                       marginLeft: 0,
                       backgroundColor: 'transparent',
                       color: '#fff',
                       border: '1.5px solid #e56a16',
                       borderRadius: '24px',
-                      fontSize: '17px',
+                      fontSize: isDesktop ? '17px' : '11px',
                       cursor: filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
                       outline: 'none',
                       width: '100%',
-                      display: 'block',
-                      boxSizing: 'border-box',
                       opacity: filteredLeagues.length === 0 ? 0.6 : 1,
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      fontWeight: 400,
+                      fontWeight: isDesktop ? 400 : 600,
+                      textAlign: 'left',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    {filteredLeagues.length === 0 ? (
-                      <option value="" disabled style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>No Leagues</option>
-                    ) : (
-                      filteredLeagues.map((leagueItem) => (
-                        <option key={leagueItem.id} value={String(leagueItem.id)} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                          {leagueItem.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                ) : (
-                  <>
-                    <button
-                      ref={leagueFilterButtonRef}
-                      type="button"
-                      onClick={() => {
-                        if (filteredLeagues.length > 0) {
-                          setLeagueDropdownOpen((prev) => !prev);
-                        }
-                      }}
-                      disabled={filteredLeagues.length === 0}
-                      style={{
-                        height: '34px',
-                        padding: '0 20px 0 7px',
-                        marginLeft: 0,
-                        backgroundColor: 'transparent',
-                        color: '#fff',
-                        border: '1.5px solid #e56a16',
-                        borderRadius: '24px',
-                        fontSize: '11px',
-                        cursor: filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
-                        outline: 'none',
-                        width: '100%',
-                        opacity: filteredLeagues.length === 0 ? 0.6 : 1,
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
+                    <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mr: 1 }}>
                       {selectedLeagueSelectValue
                         ? (filteredLeagues.find((l) => String(l.id) === String(selectedLeagueSelectValue))?.name || 'Select League')
                         : 'Select League'}
-                    </button>
-                    <Menu
-                      anchorEl={leagueFilterButtonRef.current}
-                      open={leagueDropdownOpen && filteredLeagues.length > 0}
-                      onClose={() => setLeagueDropdownOpen(false)}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                      PaperProps={{
-                        sx: {
-                          mt: 0.5,
-                          borderRadius: 1,
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          backgroundColor: '#1a1a1a',
-                          minWidth: leagueFilterButtonRef.current?.offsetWidth || 148,
-                          width: 'max-content',
-                          maxWidth: '90vw',
-                        }
-                      }}
-                      MenuListProps={{ sx: { py: 0 } }}
-                    >
-                      {filteredLeagues.map((leagueItem) => (
+                    </Box>
+                    {/* <ChevronDown size={isDesktop ? 16 : 12} style={{ flexShrink: 0, color: '#9CA3AF' }} /> */}
+                  </button>
+                  <Menu
+                    anchorEl={leagueFilterButtonRef.current}
+                    open={leagueDropdownOpen && filteredLeagues.length > 0}
+                    onClose={() => setLeagueDropdownOpen(false)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                    marginThreshold={0}
+                    MenuListProps={{
+                      sx: {
+                        maxHeight: { xs: 260, sm: 320 },
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        scrollbarWidth: 'thin',
+                        '&::-webkit-scrollbar': {
+                          width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          background: 'rgba(255,255,255,0.08)',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(255,255,255,0.35)',
+                          borderRadius: '999px',
+                        },
+                      },
+                    }}
+                    PaperProps={{
+                      sx: {
+                        p: 0.5,
+                        mt: 1,
+                        minWidth: leagueFilterButtonRef.current?.offsetWidth || 150,
+                        width: 'max-content',
+                        maxWidth: { xs: '92vw', sm: 'none' },
+                        bgcolor: 'rgba(15,15,15,0.92)',
+                        color: '#E5E7EB',
+                        borderRadius: 2.5,
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03)',
+                        overflow: 'hidden',
+                      }
+                    }}
+                  >
+                    {[...filteredLeagues].sort((a, b) => {
+                      const an = (a?.name ?? '').toString().trim().toLowerCase();
+                      const bn = (b?.name ?? '').toString().trim().toLowerCase();
+                      if (an < bn) return -1;
+                      if (an > bn) return 1;
+                      return String(a.id).localeCompare(String(b.id));
+                    }).map((leagueItem) => {
+                      const isActive = String(selectedLeagueSelectValue) === String(leagueItem.id);
+                      return (
                         <MenuItem
                           key={leagueItem.id}
-                          selected={String(selectedLeagueSelectValue) === String(leagueItem.id)}
                           onClick={() => {
                             handleLeagueSelect(leagueItem.id);
                             setLeagueDropdownOpen(false);
                           }}
                           sx={{
-                            color: '#fff',
-                            fontSize: 13,
-                            minHeight: 34,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            '&.Mui-selected': { backgroundColor: '#2b66bd' },
-                            '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            borderRadius: 1.5,
+                            mx: 0.5,
+                            my: 0.25,
+                            py: 1.25,
+                            px: 1.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            color: '#E5E7EB',
+                            transition: 'all 0.2s ease',
+                            background: isActive ? 'linear-gradient(90deg, rgba(3,136,227,0.25) 0%, rgba(3,136,227,0.10) 100%)' : 'transparent',
+                            border: isActive ? '1px solid rgba(3,136,227,0.35)' : 'none',
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                              background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+                            },
                           }}
                         >
-                          {leagueItem.name}
+                          <ListItemIcon sx={{ minWidth: 36 }}>
+                            <Trophy size={16} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={leagueItem.name}
+                            sx={{
+                              '& .MuiListItemText-primary': {
+                                fontSize: '0.95rem',
+                                fontWeight: isActive ? 700 : 500,
+                                letterSpacing: 0.2,
+                                color: isActive ? '#FFFFFF' : '#E5E7EB'
+                              }
+                            }}
+                          />
+                          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {leagueItem.userRole && (
+                              <Box
+                                sx={{
+                                  px: 1,
+                                  py: 0.25,
+                                  bgcolor: leagueItem.userRole === 'ADMIN' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                                  color: leagueItem.userRole === 'ADMIN' ? '#1F2937' : '#FFFFFF',
+                                  borderRadius: '9999px',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  letterSpacing: 0.3,
+                                  textTransform: 'uppercase',
+                                }}
+                              >
+                                {leagueItem.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                              </Box>
+                            )}
+                          </Box>
                         </MenuItem>
-                      ))}
-                    </Menu>
-                  </>
-                )}
+                      );
+                    })}
+                  </Menu>
                 </div>
 
                 {/* Season Filter */}
