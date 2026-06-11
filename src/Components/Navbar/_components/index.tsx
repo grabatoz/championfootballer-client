@@ -4357,7 +4357,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                 bgcolor: '#242424'
               }}>
-                <Table stickyHeader aria-label="point scoring rules table" sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid #333' } }}>
+                <Table stickyHeader aria-label="point scoring rules table" sx={{ borderCollapse: 'separate', '& .MuiTableCell-root': { borderBottom: '1px solid #333' } }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{
@@ -4372,6 +4372,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                         left: 0,
                         zIndex: 4,
                         boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
+                        borderRight: '1.5px solid rgba(255,255,255,0.15)',
                         minWidth: { xs: '120px', md: '160px' },
                         maxWidth: { xs: '120px', md: '160px' },
                       }}>Action</TableCell>
@@ -4404,6 +4405,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             zIndex: 2,
                             bgcolor: rowBg,
                             boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                            borderRight: '1.5px solid rgba(255,255,255,0.15)',
                             transition: 'background-color 0.15s',
                             minWidth: { xs: '120px', md: '160px' },
                             maxWidth: { xs: '120px', md: '160px' },
@@ -4499,6 +4501,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             zIndex: 2,
                             bgcolor: rowBg,
                             boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
+                            borderRight: '1.5px solid rgba(255,255,255,0.15)',
                             transition: 'background-color 0.2s',
                             minWidth: { xs: '120px', md: '160px' },
                             maxWidth: { xs: '120px', md: '160px' },
