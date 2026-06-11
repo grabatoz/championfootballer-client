@@ -1842,7 +1842,7 @@ export default function PlayerStatsPage() {
                 }}>
                     {/* Centered Title */}
                     <Box sx={{
-                        display: 'flex',
+                        display: { xs: 'none', md: 'flex' },
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1870,6 +1870,7 @@ export default function PlayerStatsPage() {
                     {/* Orange divider under header */}
                     <Box
                         sx={{
+                            display: { xs: 'none', md: 'block' },
                             height: 'var(--header-divider-height)',
                             bgcolor: 'var(--header-divider-color)',
                             mt: { xs: 2, md: 4.5 },
@@ -2100,15 +2101,15 @@ export default function PlayerStatsPage() {
                         <Box
                             sx={{
                                 display: { xs: 'grid', md: 'flex' },
-                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
-                                alignItems: 'center',
-                                justifyContent: { xs: 'stretch', md: 'flex-end' },
-                                columnGap: { xs: 0.25, md: 0.50 },
-                                rowGap: { xs: 0.25, md: 0.50 },
+                                gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', md: 'none' },
+                                gap: 0.5,
+                                flexWrap: 'nowrap',
+                                justifyContent: { xs: 'center', md: 'flex-end' },
                                 width: { xs: '100%', md: 'auto' },
-                                maxWidth: { xs: 340, sm: 520, md: 'none' },
-                                mx: { xs: 'auto', md: 0 },
-                                flexWrap: { xs: 'wrap', md: 'nowrap' },
+                                overflowX: { xs: 'visible', md: 'visible' },
+                                '&::-webkit-scrollbar': { display: 'none' },
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
                             }}
                         >
                             {/* Year Filter */}
@@ -2156,13 +2157,13 @@ export default function PlayerStatsPage() {
                                         onClick={() => setYearDropdownOpen((prev) => !prev)}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: 'pointer',
                                             outline: 'none',
                                             width: '100%',
@@ -2263,13 +2264,13 @@ export default function PlayerStatsPage() {
                                         onClick={() => setLeagueDropdownOpen((prev) => !prev)}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: 'pointer',
                                             outline: 'none',
                                             width: '100%',
@@ -2404,13 +2405,13 @@ export default function PlayerStatsPage() {
                                         disabled={leagueId === 'all'}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: leagueId === 'all' ? 'not-allowed' : 'pointer',
                                             outline: 'none',
                                             width: '100%',

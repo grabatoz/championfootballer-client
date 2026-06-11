@@ -2511,7 +2511,7 @@ export default function GlobalTrophyRoom() {
             variant="h3"
             className="all-leagues-heading"
             sx={{
-              display: { xs: 'none', md: 'block' },
+              display: 'block',
               color: 'white',
               fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
               fontWeight: 700,
@@ -2532,7 +2532,7 @@ export default function GlobalTrophyRoom() {
 
           {/* Orange divider */}
           <Box sx={{
-            display: { xs: 'none', md: 'block' },
+            display: 'block',
             height: 'var(--header-divider-height)',
             bgcolor: 'var(--header-divider-color)',
             width: '100vw',
@@ -2601,15 +2601,15 @@ export default function GlobalTrophyRoom() {
               <Box
                 sx={{
                   display: { xs: 'grid', md: 'flex' },
-                  gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
-                  alignItems: 'center',
-                  justifyContent: { xs: 'stretch', md: 'flex-end' },
-                  columnGap: { xs: 2.0, md: 0.50 },
-                  rowGap: { xs: 2.0, md: 0.50 },
+                  gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', md: 'none' },
+                  gap: 0.5,
+                  flexWrap: 'nowrap',
+                  justifyContent: { xs: 'center', md: 'flex-end' },
                   width: { xs: '100%', md: 'auto' },
-                  maxWidth: { xs: 340, sm: 520, md: 'none' },
-                  mx: { xs: 'auto', md: 0 },
-                  flexWrap: { xs: 'wrap', md: 'nowrap' },
+                  overflowX: { xs: 'visible', md: 'visible' },
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
                 }}
               >
                 {/* Year Filter */}
@@ -2656,13 +2656,13 @@ export default function GlobalTrophyRoom() {
                       onClick={() => setYearDropdownOpen((prev) => !prev)}
                       style={{
                         height: '34px',
-                        padding: '0 30px 0 10px',
+                        padding: '0 20px 0 7px',
                         marginLeft: 0,
                         backgroundColor: 'transparent',
                         color: '#fff',
                         border: '1.5px solid #e56a16',
                         borderRadius: '24px',
-                        fontSize: '13px',
+                        fontSize: '11px',
                         cursor: 'pointer',
                         outline: 'none',
                         width: '100%',
@@ -2778,13 +2778,13 @@ export default function GlobalTrophyRoom() {
                       disabled={filteredLeagues.length === 0}
                       style={{
                         height: '34px',
-                        padding: '0 30px 0 10px',
+                        padding: '0 20px 0 7px',
                         marginLeft: 0,
                         backgroundColor: 'transparent',
                         color: '#fff',
                         border: '1.5px solid #e56a16',
                         borderRadius: '24px',
-                        fontSize: '13px',
+                        fontSize: '11px',
                         cursor: filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
                         outline: 'none',
                         width: '100%',
@@ -2907,13 +2907,13 @@ export default function GlobalTrophyRoom() {
                       disabled={!selectedLeagueId || selectedLeagueId === 'all'}
                       style={{
                         height: '34px',
-                        padding: '0 30px 0 10px',
+                        padding: '0 20px 0 7px',
                         marginLeft: 0,
                         backgroundColor: 'transparent',
                         color: '#fff',
                         border: '1.5px solid #e56a16',
                         borderRadius: '24px',
-                        fontSize: '13px',
+                        fontSize: '11px',
                         cursor: (!selectedLeagueId || selectedLeagueId === 'all') ? 'not-allowed' : 'pointer',
                         outline: 'none',
                         width: '100%',
@@ -3007,9 +3007,10 @@ export default function GlobalTrophyRoom() {
                     borderRadius: 6,
                     borderColor: 'rgba(255,255,255,0.3)',
                     borderWidth: '3px',
-                    px: 2.5,
+                    px: { xs: 0.5, sm: 2.5 },
                     py: 1,
                     width: { xs: '100%', sm: 'auto' },
+                    fontSize: { xs: '11px', md: 'inherit' },
                     fontWeight: 'bold',
                     textTransform: 'none',
                     '&:hover': {

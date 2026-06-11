@@ -2115,40 +2115,6 @@ export default function AllMatches() {
                         transform: 'translateX(-50%)',
                     }}
                 >
-                    {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 } }}> */}
-                    <Typography variant="h3" sx={{
-                        display: { xs: 'none', md: 'block' },
-                        mb: { xs: 4, md: 4.5 },
-                        mt:{xs: 1.25, md: 3},
-                        color: 'white',
-                        // fontFamily: 'Arial Black, Arial, sans-serif',
-                        fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
-                        fontWeight: '600',
-                        fontSize: { xs: '32px', sm: '42px', md: '56px' },
-                        textAlign: 'center',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}
-                        className='all-leagues-heading'
-                    >
-                        MATCHES
-                    </Typography>
-
-                    <Box
-                        sx={{
-                            display: { xs: 'none', md: 'block' },
-                            width: '100vw',
-                            position: 'relative',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            height: 'var(--header-divider-height)',
-                            background: 'var(--header-divider-color)',
-                            mb: { xs: 2, md: 2.5 },
-                        }}
-                    />
-
-                    {/* </Box> */}
                     {/* Create/Join League Section */}
                     <Box sx={{
                         display: 'flex',
@@ -2202,15 +2168,15 @@ export default function AllMatches() {
                         <Box
                             sx={{
                                 display: { xs: 'grid', md: 'flex' },
-                                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(2, minmax(0, 1fr))' },
-                                alignItems: 'center',
-                                justifyContent: { xs: 'stretch', md: 'flex-end' },
-                                columnGap: { xs: 2.0, md: 0.50 },
-                                rowGap: { xs: 2.0, md: 0.50 },
+                                gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', md: 'none' },
+                                gap: 0.5,
+                                flexWrap: 'nowrap',
+                                justifyContent: { xs: 'center', md: 'flex-end' },
                                 width: { xs: '100%', md: 'auto' },
-                                maxWidth: { xs: 340, sm: 520, md: 'none' },
-                                mx: { xs: 'auto', md: 0 },
-                                flexWrap: { xs: 'wrap', md: 'nowrap' },
+                                overflowX: { xs: 'visible', md: 'visible' },
+                                '&::-webkit-scrollbar': { display: 'none' },
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
                             }}
                         >
                             {/* Year Filter */}
@@ -2255,13 +2221,13 @@ export default function AllMatches() {
                                         onClick={() => setYearDropdownOpen((prev) => !prev)}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: 'pointer',
                                             outline: 'none',
                                             width: '100%',
@@ -2382,13 +2348,13 @@ export default function AllMatches() {
                                         disabled={noLeagues}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: noLeagues ? 'not-allowed' : 'pointer',
                                             outline: 'none',
                                             width: '100%',
@@ -2529,13 +2495,13 @@ export default function AllMatches() {
                                         disabled={selectedLeague === 'all' || seasonsLoading}
                                         style={{
                                             height: '34px',
-                                            padding: '0 30px 0 10px',
+                                            padding: '0 20px 0 7px',
                                             marginLeft: 0,
                                             backgroundColor: 'transparent',
                                             color: '#fff',
                                             border: '1.5px solid #e56a16',
                                             borderRadius: '24px',
-                                            fontSize: '13px',
+                                            fontSize: '11px',
                                             cursor: (selectedLeague === 'all' || seasonsLoading) ? 'not-allowed' : 'pointer',
                                             outline: 'none',
                                             width: '100%',

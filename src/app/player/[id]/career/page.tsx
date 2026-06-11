@@ -1928,54 +1928,7 @@ export default function CareerPage() {
               boxShadow: 'none',
               minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
             }}>
-              {/* Centered Title */}
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                px: { xs: 1.5, sm: 2.5, md: 0 },
-                // pt: { xs: 2, md: 2 },
-                pb: 2,
-              }}>
-                <Typography
-                  variant="h2"
-                  component="h1"
-                  sx={{
-                    fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
-                    fontWeight: 700,
-                    fontStyle: 'normal',
-                    color: '#fff',
-                    fontSize: isLongDashboardTitle
-                      ? { xs: '22px', sm: '30px', md: '42px' }
-                      : { xs: '26px', sm: '36px', md: '50px' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0rem',
-                    lineHeight: { xs: 1.1, md: 1.05 },
-                    textAlign: 'center',
-                    maxWidth: { xs: '92vw', sm: '88vw', md: '100%' },
-                    whiteSpace: 'normal',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'break-word',
-                    display: '-webkit-box',
-                    WebkitLineClamp: { xs: 2, sm: 2, md: 1 },
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {dashboardTitle}
-                </Typography>
-              </Box>
 
-              {/* Orange divider under header */}
-              <Box
-                sx={{
-                  height: 'var(--header-divider-height)',
-                  bgcolor: 'var(--header-divider-color)',
-                  mt: { xs: 2, sm: 4, md: 6.3 },
-                  width: '100%',
-                }}
-              />
 
               {/* Filters Section */}
               <Box sx={{
@@ -1995,7 +1948,7 @@ export default function CareerPage() {
                     display: { xs: 'grid', md: 'flex' },
                     gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', md: 'none' },
                     gap: 0.5,
-                    flexWrap: { xs: 'nowrap', md: 'wrap' },
+                    flexWrap: 'nowrap',
                     justifyContent: 'center',
                     width: { xs: '100%', md: 'auto' },
                     overflowX: { xs: 'visible', md: 'visible' },

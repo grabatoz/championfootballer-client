@@ -1696,6 +1696,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
 
             const data = await response.json();
             if (data.success) {
+                if (voteData.votedForId !== null) {
+                    toast.success('MOMT player voted');
+                }
                 // Update leaderboard cache for MOTM votes
                 if (data.updatedStats) {
                     Object.entries(data.updatedStats).forEach(([metric, value]) => {
