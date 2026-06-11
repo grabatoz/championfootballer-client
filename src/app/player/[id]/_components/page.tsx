@@ -1127,6 +1127,41 @@ export default function PlayerStatsPage() {
         [xpStatusTier.cardColor]
     );
 
+    // Header XP Overrides where max XP is 25,000 and GOAT status is reached at 25,000 XP
+    const PAGE_XP_MAX_POINTS = 25000;
+    
+    const PAGE_XP_TIERS = useMemo(() => [
+        ...XP_TIERS.filter((t) => t.minXP < PAGE_XP_MAX_POINTS),
+        {
+            level: 6,
+            title: 'GOAT',
+            minXP: PAGE_XP_MAX_POINTS,
+            maxXP: Infinity,
+            cardColor: '#F1C40F',
+            starColor: '#A67C00',
+            description: 'Feared by opponents and cemented in history as one of the greatest of all time.',
+            isGoat: true,
+        }
+    ], []);
+
+    const pageXpStatusTier = useMemo(() => {
+        const safeXP = Number.isFinite(xp) ? xp : 0;
+        return PAGE_XP_TIERS.find((tier) => safeXP >= tier.minXP && safeXP < tier.maxXP) || PAGE_XP_TIERS[0];
+    }, [xp, PAGE_XP_TIERS]);
+
+    const pageXpProgressToMax = useMemo(() => {
+        const safeXp = Number.isFinite(xp) ? Math.max(0, xp) : 0;
+        const cappedXp = Math.min(PAGE_XP_MAX_POINTS, safeXp);
+        const rawPercent = (cappedXp / PAGE_XP_MAX_POINTS) * 100;
+        if (rawPercent <= 0) return 0;
+        if (rawPercent >= 100) return 100;
+        return Math.max(1, Math.round(rawPercent));
+    }, [xp]);
+
+    const pageXpStatusTextColor = useMemo(() => {
+        return getReadableTextColor(pageXpStatusTier.cardColor);
+    }, [pageXpStatusTier.cardColor]);
+
     // Compute season-wise stats for modal
     type SeasonStats = {
         seasonId: string;
@@ -2562,7 +2597,7 @@ export default function PlayerStatsPage() {
                                         {playerPositionType}
                                     </Typography>
                                     <Box sx={{ fontSize: isMobile ? 28 : 35 }}>
-                                        <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} />
+                                        <XPStarMilestoneCard height={isMobile ? 28 : 35} width={isMobile ? 28 : 35} xp={xp} colorOverride={pageXpStatusTier.starColor} />
                                     </Box>
                                 </Box>
                             </Box>
@@ -2598,8 +2633,8 @@ export default function PlayerStatsPage() {
                                         {xpLoading ? '...' : xp.toLocaleString()}
                                     </Paper>
                                     <Paper sx={{ 
-                                        bgcolor: xpStatusTier.cardColor, 
-                                        color: xpStatusTextColor, 
+                                        bgcolor: pageXpStatusTier.cardColor, 
+                                        color: pageXpStatusTextColor, 
                                         pl: { xs: 1, md: 1.5 },
                                         pr: { xs: 2, sm: 4, md: 10 },
                                         py: { xs: 0.6, md: 0.9 },
@@ -2612,9 +2647,9 @@ export default function PlayerStatsPage() {
                                     }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                                             <Typography sx={{ fontSize: { xs: 12, sm: 14, md: 16 }, fontWeight: 700, lineHeight: 1 }}>
-                                                {xpStatusTier.title}
+                                                {pageXpStatusTier.title}
                                             </Typography>
-                                            {xpStatusTier.isGoat && (
+                                            {pageXpStatusTier.isGoat && (
                                                 <Box sx={{ position: 'relative', width: { xs: 18, sm: 20 }, height: { xs: 18, sm: 20 }, flexShrink: 0 }}>
                                                     <Image src={GoatImg} alt="GOAT tier" fill sizes="20px" style={{ objectFit: 'contain' }} />
                                                 </Box>
@@ -2625,17 +2660,17 @@ export default function PlayerStatsPage() {
                                 {/* Progress bar */}
                                 <Box sx={{ width: '100%', display: 'flex', height: 6, borderRadius: 0, overflow: 'hidden', mt: 1 }}>
                                     <Box sx={{ 
-                                        bgcolor: xpStatusTier.cardColor, 
-                                        width: `${xpProgressToMax}%`, 
+                                        bgcolor: pageXpStatusTier.cardColor, 
+                                        width: `${pageXpProgressToMax}%`, 
                                         height: '100%',
                                         transition: 'width 0.3s ease'
                                     }} />
-                                    <Box sx={{ bgcolor: '#555', width: `${100 - xpProgressToMax}%`, height: '100%' }} />
+                                    <Box sx={{ bgcolor: '#555', width: `${100 - pageXpProgressToMax}%`, height: '100%' }} />
                                 </Box>
                                 <Typography sx={{ color: '#a8a8a8', fontSize: 11, mt: 0.5, fontWeight: 500 }}>
                                     {xpLoading
-                                        ? `0 / ${XP_STATUS_MAX_POINTS.toLocaleString()} XP`
-                                        : `${Math.max(0, xp).toLocaleString()} / ${XP_STATUS_MAX_POINTS.toLocaleString()} XP (${xpProgressToMax}%)`}
+                                        ? `0 / ${PAGE_XP_MAX_POINTS.toLocaleString()} XP`
+                                        : `${Math.max(0, xp).toLocaleString()} / ${PAGE_XP_MAX_POINTS.toLocaleString()} XP (${pageXpProgressToMax}%)`}
                                 </Typography>
                                 {/* {!xpLoading && nextXpStatusTier && (
                                     <Typography sx={{ 
