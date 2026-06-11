@@ -577,7 +577,9 @@ export default function LeaderBoardPage() {
                   </Box>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>{player.name}</Typography>
-                    <Typography variant="body2">Position: {player.positionType}</Typography>
+                    {(player.positionType && player.positionType.toLowerCase() !== 'player' && player.positionType !== '-') && (
+                      <Typography variant="body2">Position: {player.positionType}</Typography>
+                    )}
                     <Typography variant="body2">{metrics.find(m => m.key === selectedMetric)?.label}: <b>{player.value}</b></Typography>
                   </Box>
                 </Paper>

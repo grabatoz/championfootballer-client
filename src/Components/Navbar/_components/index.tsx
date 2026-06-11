@@ -4373,8 +4373,8 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                         zIndex: 4,
                         boxShadow: '8px 0 12px -12px rgba(0,0,0,0.45)',
                         borderRight: '1.5px solid rgba(255,255,255,0.15)',
-                        minWidth: { xs: '120px', md: '160px' },
-                        maxWidth: { xs: '120px', md: '160px' },
+                        minWidth: { xs: '145px', md: '170px' },
+                        maxWidth: { xs: '145px', md: '170px' },
                       }}>Action</TableCell>
                       <TableCell sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>League Point Scoring Description</TableCell>
                       <TableCell align="center" sx={{ bgcolor: '#2b2b2b !important', color: '#00a896 !important', fontWeight: 800, fontFamily: 'var(--font-woodford-bourne-pro)', fontSize: { xs: '0.85rem', md: '0.95rem' }, py: 2, whiteSpace: 'nowrap' }}>Winning Team</TableCell>
@@ -4407,16 +4407,17 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                             boxShadow: '8px 0 12px -12px rgba(0,0,0,0.62)',
                             borderRight: '1.5px solid rgba(255,255,255,0.15)',
                             transition: 'background-color 0.15s',
-                            minWidth: { xs: '120px', md: '160px' },
-                            maxWidth: { xs: '120px', md: '160px' },
+                            minWidth: { xs: '145px', md: '170px' },
+                            maxWidth: { xs: '145px', md: '170px' },
                             whiteSpace: 'normal',
-                            wordBreak: 'break-word',
+                            wordBreak: 'normal',
+                            overflowWrap: 'break-word',
                             '.MuiTableRow-root:hover &': {
                               bgcolor: '#2c2c2c',
                               boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
                             },
                           }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1.5 } }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 24 }}>{getRowIcon(row.action)}</Box>
                               <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', fontFamily: 'var(--font-woodford-bourne-pro)' }}>{row.action}</Typography>
                             </Box>
@@ -4587,7 +4588,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 {[
                   { level: 1, title: 'Rookie', range: '0 - 500', desc: 'Building your way to football dominance, all the way to Champion Footballer', color: '#B0B0B0', label: 'Cool Gray' },
                   { level: 2, title: 'Rising Star', range: '500 - 2,500', desc: 'Rising in prominence with every performance', color: '#4AA3FF', label: 'Sky Blue' },
-                  { level: 3, title: 'Baller', range: '2,500 - 5,000', desc: "A force on the field that can't be ignored", color: '#00a896', label: 'CF Green' },
+                  { level: 3, title: 'Baller', range: '2,500 - 5,000', desc: "A force on the field that can't be ignored", color: '#00a896', label: 'Green' },
                   { level: 4, title: 'Pro', range: '5,000 - 15,000', desc: 'High mastery and control over the matches, consistently excelling and asserting dominance in your position', color: '#9B59B6', label: 'Purple' },
                   { level: 5, title: 'Elite', range: '15,000 - 25,000', desc: 'Regarded as an elite player by peers, known for unwavering talent and a relentless winning mentality', color: '#3448FF', label: 'Royal Blue' },
                   { level: 6, title: 'Champion Footballer', range: '25,000 - 50,000', desc: 'Attaining coveted status as a benchmark of excellence. A true icon of the game, respected by peers and feared by opponents', color: '#E74C3C', label: 'Crimson' },

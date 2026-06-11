@@ -1648,9 +1648,7 @@ export default function PlayerStatsPage() {
         leagueId && leagueId !== 'all'
             ? leaguesForYear.find((l: LeagueWithMatchesTyped) => sameId(l.id, leagueId))?.name || 'Current League'
             : leaguesForYear[0]?.name || 'Current League';
-    const historyXpLabel = activeTab !== 'history' && leagueId && leagueId !== 'all'
-        ? 'Highest XP Points Received In A League (Selected League)'
-        : 'Highest XP Points Received In A League';
+    const historyXpLabel = 'Highest XP Points Received In A League';
 
     const playerName = fullPlayerData?.player?.name || 'Player';
     // const playerShirt = fullPlayerData?.player?.shirtNo || '';

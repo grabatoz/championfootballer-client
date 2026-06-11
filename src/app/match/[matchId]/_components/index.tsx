@@ -7,6 +7,9 @@ import { Groups, Edit, Close } from "@mui/icons-material";
 import GoalsIcon from '@/Components/images/goal.png';
 import AssistIcon from '@/Components/images/Assist.png';
 import CleanSheetIcon from '@/Components/images/cleansheet.png';
+import MOMTIcon from '@/Components/images/momt.png';
+import DefImpIcon from '@/Components/images/defimp.png';
+import MentalityIcon from '@/Components/images/metality.png';
 import { useAuth } from '@/lib/hooks';
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
@@ -1162,15 +1165,31 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               fontWeight: '500',
                               fontSize: { xs: 14, sm: 13, md: 16 },
                               textAlign: 'center',
-                              textTransform: 'uppercase'
-                            }}>Goals</Box>
+                              textTransform: 'uppercase',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Goals</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="Goals">
+                                <img src={GoalsIcon.src} alt="G" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
+                            </Box>
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
                               fontSize: { xs: 14, sm: 13, md: 16 },
                               textAlign: 'center',
-                              textTransform: 'uppercase'
-                            }}>Assists</Box>
+                              textTransform: 'uppercase',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Assists</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="Assists">
+                                <img src={AssistIcon.src} alt="A" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
+                            </Box>
                             <Box
                               sx={{
                                 color: 'white',
@@ -1178,11 +1197,17 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                                 fontSize: { xs: 14, sm: 12, md: 16 },
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
-                                textTransform: 'uppercase'
+                                textTransform: 'uppercase',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
                               }}
                               title="Clean Sheets"
                             >
-                              Clean Sheets
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Clean Sheets</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="Clean Sheets">
+                                <img src={CleanSheetIcon.src} alt="CS" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
                             </Box>
                             <Box sx={{
                               color: 'white',
@@ -1190,24 +1215,48 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                               fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
-                              textTransform: 'uppercase'
-                            }}>MOTM Votes</Box>
+                              textTransform: 'uppercase',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>MOTM Votes</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="MOTM Votes">
+                                <img src={MOMTIcon.src} alt="MOTM" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
+                            </Box>
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
                               fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
-                              textTransform: 'uppercase'
-                            }}>Def Imp Votes</Box>
+                              textTransform: 'uppercase',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Def Imp Votes</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="Defensive Impact Votes">
+                                <img src={DefImpIcon.src} alt="DI" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
+                            </Box>
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',
                               fontSize: { xs: 14, sm: 12, md: 16 },
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
-                              textTransform: 'uppercase'
-                            }}>+ Mentality</Box>
+                              textTransform: 'uppercase',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>+ Mentality</Box>
+                              <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center' }} title="Mentality Votes">
+                                <img src={MentalityIcon.src} alt="M" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                              </Box>
+                            </Box>
                             <Box sx={{
                               color: 'white',
                               fontWeight: '500',

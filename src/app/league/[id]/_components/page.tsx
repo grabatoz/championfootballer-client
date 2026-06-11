@@ -6847,17 +6847,19 @@ export default function LeagueDetailPage() {
                                                                             >
                                                                                 {player.name}
                                                                             </Typography>
-                                                                            <Typography
-                                                                                sx={{
-                                                                                    color: '#ffff',
-                                                                                    fontSize: '0.65rem',
-                                                                                    fontWeight: 300,
-                                                                                    lineHeight: 1.1,
-                                                                                    mt: 0,
-                                                                                }}
-                                                                            >
-                                                                                {player.positionType || 'Player'}
-                                                                            </Typography>
+                                                                            {(player.positionType && player.positionType.toLowerCase() !== 'player' && player.positionType !== '-') && (
+                                                                                <Typography
+                                                                                    sx={{
+                                                                                        color: '#ffff',
+                                                                                        fontSize: '0.65rem',
+                                                                                        fontWeight: 300,
+                                                                                        lineHeight: 1.1,
+                                                                                        mt: 0,
+                                                                                    }}
+                                                                                >
+                                                                                    {player.positionType}
+                                                                                </Typography>
+                                                                            )}
                                                                         </Box>
 
                                                                         {/* Value */}

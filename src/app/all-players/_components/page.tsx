@@ -1208,40 +1208,34 @@ const AllPlayersPage = () => {
 
               {/* League Filter */}
               <div className={`filter-select-wrapper${leagueMenuOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                <Box
+                <button
                   onClick={handleLeagueMenuOpen}
-                  role="button"
-                  aria-haspopup="menu"
-                  aria-expanded={leagueMenuOpen ? 'true' : undefined}
-                  sx={{
-                    height: isMobile ? '34px' : '39px',
-                    pl: isMobile ? '7px' : '12px',
-                    pr: isMobile ? '7px' : '12px',
+                  type="button"
+                  disabled={noLeagues || filteredLeagues.length === 0}
+                  style={{
+                    height: isDesktop ? '39px' : '34px',
+                    padding: isDesktop ? '0 28px 0 12px' : '0 20px 0 7px',
+                    marginLeft: 0,
                     backgroundColor: 'transparent',
                     color: '#fff',
                     border: '1.5px solid #e56a16',
                     borderRadius: '24px',
-                    fontSize: isMobile ? '11px' : '17px',
+                    fontSize: isDesktop ? '17px' : '11px',
                     cursor: noLeagues || filteredLeagues.length === 0 ? 'not-allowed' : 'pointer',
+                    outline: 'none',
                     width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
                     boxSizing: 'border-box',
                     opacity: noLeagues || filteredLeagues.length === 0 ? 0.6 : 1,
-                    fontWeight: 400,
+                    fontWeight: isDesktop ? 400 : 600,
                     fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
-                    whiteSpace: 'nowrap',
+                    textAlign: 'left',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    userSelect: 'none',
-                    justifyContent: 'space-between',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mr: 1 }}>
-                    {selectedLeagueLabel}
-                  </Box>
-                  {/* <ChevronDown size={isMobile ? 12 : 16} style={{ flexShrink: 0, color: '#9CA3AF' }} /> */}
-                </Box>
+                  {selectedLeagueLabel}
+                </button>
                 <Menu
                   anchorEl={leagueMenuAnchor}
                   open={leagueMenuOpen}
