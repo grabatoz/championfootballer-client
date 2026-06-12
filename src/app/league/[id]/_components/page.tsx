@@ -689,8 +689,8 @@ export default function LeagueDetailPage() {
         const members = league?.members ? [...league.members] : [];
 
         members.sort((a: User, b: User) => {
-            const xpA = getLeagueXpForMember(a?.id, a?.xp);
-            const xpB = getLeagueXpForMember(b?.id, b?.xp);
+            const xpA = a?.xp ?? 0;
+            const xpB = b?.xp ?? 0;
 
             if (xpB !== xpA) return xpB - xpA;
 
@@ -700,7 +700,7 @@ export default function LeagueDetailPage() {
         });
 
         return members;
-    }, [league?.members, getLeagueXpForMember]);
+    }, [league?.members]);
     const filteredMembersForTable = useMemo(() => {
         if (selectedMemberPosition === 'all') return sortedMembersForTable;
         return sortedMembersForTable.filter((member: User) =>
@@ -4845,7 +4845,7 @@ export default function LeagueDetailPage() {
                                                                 {/* XP Points column */}
                                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 5.5 }, textAlign: 'center' }}>
                                                                     <Typography className="league-table-row-text" sx={{ fontWeight: 'bold', fontSize: { xs: 13, sm: 16 }, color: '#fff', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
-                                                                        {getLeagueXpForMember(member.id, member.xp).toLocaleString()}
+                                                                        {(member.xp ?? 0).toLocaleString()}
                                                                     </Typography>
                                                                 </Box>
                                                             </ListItem>
