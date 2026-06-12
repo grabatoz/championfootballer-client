@@ -3799,6 +3799,7 @@ export default function LeagueDetailPage() {
                 },
                 skills,
                 xp: scopedXP,
+                profileXP: Number(fullPlayer?.xp ?? fullPlayer?.totalXP ?? fullPlayer?.totalXp ?? data.profileXP ?? data.player?.xp ?? 0),
                 cleanSheets: Number(matchStats?.cleanSheets ?? data.cleanSheets ?? 0),
                 motmCount: Number(data.motmCount ?? 0),
                 defensiveImpact: Number(matchStats?.defensiveImpact ?? data.defensiveImpact ?? 0),
@@ -7489,7 +7490,7 @@ export default function LeagueDetailPage() {
                                     const playerCardProps = {
                                         name: fullName,
                                         number: getShirtNumber(p),
-                                        points: Number(quickView.xp ?? 0),
+                                        points: Number(quickView.profileXP ?? quickView.xp ?? 0),
                                         stats: {
                                             DRI: String(quickView.skills?.dribbling ?? 0),
                                             SHO: String(quickView.skills?.shooting ?? 0),

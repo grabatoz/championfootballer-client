@@ -466,7 +466,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                     const playerCardProps = {
                       name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
                       number: getShirtNumber(p),
-                      points: Number(quickView.xp ?? 0),
+                      points: Number(quickView.profileXP ?? quickView.xp ?? 0),
                       stats: {
                         DRI: String(quickView.skills?.dribbling ?? 0),
                         SHO: String(quickView.skills?.shooting ?? 0),
