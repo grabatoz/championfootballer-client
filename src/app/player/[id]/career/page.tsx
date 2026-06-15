@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -22,10 +22,14 @@ import {
   MenuItem,
   FormControl,
   SelectChangeEvent,
-  // Avatar
+  Avatar,
+  TextField
 } from '@mui/material';
+import Image from 'next/image';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import SearchIcon from '@/Components/images/searchicon.png';
+import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
@@ -216,6 +220,26 @@ const sortSeasonsLatestFirst = (seasonList: SeasonInfo[]): SeasonInfo[] =>
 
 const sameId = (a: unknown, b: unknown): boolean =>
   String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+function resolveProfileImageUrl(value: string | null | undefined): string | null {
+    const raw = String(value ?? '').trim();
+    if (!raw || raw === 'null' || raw === 'undefined') return null;
+
+    if (
+        raw.startsWith('http://') ||
+        raw.startsWith('https://') ||
+        raw.startsWith('//') ||
+        raw.startsWith('data:') ||
+        raw.startsWith('blob:')
+    ) {
+        return raw;
+    }
+
+    const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+    if (!apiBase) return raw.startsWith('/') ? raw : `/${raw}`;
+
+    return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
+}
 
 const isSeasonExplicitlyDeclined = (season: SeasonInfo): boolean => {
   const statusTokens = [
@@ -791,6 +815,150 @@ export default function CareerPage() {
   const [yearMenuOpen, setYearMenuOpen] = useState(false);
   const [leagueMenuOpen, setLeagueMenuOpen] = useState(false);
   const [seasonMenuOpen, setSeasonMenuOpen] = useState(false);
+
+  // --- Search Bar State (similar to stats page) ---
+  const [search, setSearch] = useState('');
+  const [showTeammatePanel, setShowTeammatePanel] = useState(false);
+  const [searchTriggered, setSearchTriggered] = useState(false);
+  const [teammates, setTeammates] = useState<any[]>([]);
+  const [teammatesLoading, setTeammatesLoading] = useState(false);
+  const searchWrapperRef = useRef<HTMLDivElement | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);
+  const lastFetchKeyRef = useRef<string>('');
+  const router = useRouter();
+
+  const normalizePlayer = useCallback((p: any): any => ({
+    id: p.id || p._id || p.userId || '',
+    firstName: p.firstName ?? p.fname,
+    lastName: p.lastName ?? p.lname,
+    name: p.name ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
+    avatar: resolveProfileImageUrl(p.avatar ?? p.profilePicture ?? p.avatarUrl ?? p.image) ?? undefined,
+    position: p.position ?? p.positionType,
+  }), []);
+
+  const fetchTeammates = useCallback(async () => {
+    if (!token) return;
+    if (!playerId) return;
+    const effectiveLeagueId = filters.leagueId || 'all';
+    const effectiveYear = filters.year || 'all';
+    const effectiveSeason = seasonFilter || 'all';
+    const leaguesFingerprint =
+      effectiveLeagueId === 'all'
+        ? (leaguesForYear || [])
+            .map((l) => String(l.id))
+            .sort()
+            .join(',')
+        : effectiveLeagueId;
+
+    const fetchKey = `${playerId}_${effectiveLeagueId}_${effectiveYear}_${effectiveSeason}_${leaguesFingerprint}`;
+    if (fetchKey === lastFetchKeyRef.current && teammates.length && searchTriggered) {
+      setShowTeammatePanel(true);
+      return;
+    }
+
+    if (fetchAbortRef.current) fetchAbortRef.current.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+
+    setTeammatesLoading(true);
+    setSearchTriggered(true);
+
+    try {
+      const fetchLeaguePlayers = async (targetLeagueId: string): Promise<any[]> => {
+        const params = new URLSearchParams();
+        params.set('leagueId', String(targetLeagueId));
+        if (effectiveSeason && effectiveSeason !== 'all') {
+          params.set('seasonId', String(effectiveSeason));
+        }
+        params.set('_t', String(Date.now()));
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/players/by-league?${params.toString()}`;
+        const res = await fetch(url, {
+          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        if (!res.ok) return [];
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) return [];
+        const json: any = await res.json();
+        if (Array.isArray(json)) return json;
+        if (json?.data && Array.isArray(json.data)) return json.data;
+        if (json?.players && Array.isArray(json.players)) return json.players;
+        return [];
+      };
+
+      const allPlayers = new Map<string, any>();
+      if (effectiveLeagueId === 'all') {
+        for (const league of leaguesForYear || []) {
+          try {
+            const leaguePlayers = await fetchLeaguePlayers(String(league.id));
+            leaguePlayers.forEach((player) => {
+              const id = String(player.id || player._id || player.userId || '').trim();
+              if (id && !allPlayers.has(id)) allPlayers.set(id, player);
+            });
+          } catch (err) {
+            console.log(`Failed to fetch players for league ${league.id}`, err);
+          }
+        }
+      } else {
+        const leaguePlayers = await fetchLeaguePlayers(String(effectiveLeagueId));
+        leaguePlayers.forEach((player) => {
+          const id = String(player.id || player._id || player.userId || '').trim();
+          if (id && !allPlayers.has(id)) allPlayers.set(id, player);
+        });
+      }
+
+      const mapped = Array.from(allPlayers.values())
+        .map(normalizePlayer)
+        .filter((p: any) => p.id && !sameId(p.id, playerId));
+
+      setTeammates(mapped);
+      lastFetchKeyRef.current = fetchKey;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        setTeammates([]);
+      }
+    } finally {
+      setTeammatesLoading(false);
+    }
+  }, [token, playerId, filters.leagueId, filters.year, seasonFilter, teammates.length, searchTriggered, leaguesForYear, normalizePlayer]);
+
+  // Close panel on outside click / ESC
+  useEffect(() => {
+    if (!showTeammatePanel) return;
+    const handleClick = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setShowTeammatePanel(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowTeammatePanel(false);
+    };
+    document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showTeammatePanel]);
+
+  // Reset teammate search cache whenever scope filters change.
+  useEffect(() => {
+    setSearch('');
+    setSearchTriggered(false);
+    setTeammates([]);
+    lastFetchKeyRef.current = '';
+  }, [filters.leagueId, filters.year, seasonFilter]);
+
+  const filteredTeammates = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return teammates;
+    return teammates.filter(p => {
+      const fullname = (p.name || `${p.firstName ?? ''} ${p.lastName ?? ''}`).toLowerCase();
+      return fullname.includes(q) || (p.position && p.position.toLowerCase().includes(q));
+    });
+  }, [search, teammates]);
 
   // Fetch seasons when a league is selected
   useEffect(() => {
@@ -1929,15 +2097,219 @@ export default function CareerPage() {
               {/* Filters Section */}
               <Box sx={{
                 display: 'flex',
-                flexDirection: 'row',
+                flexDirection: { xs: 'column', md: 'row' },
                 alignItems: 'center',
-                justifyContent: { xs: 'center', md: 'flex-end' },
-                gap: { xs: 2, md: 2 },
-                px: { xs: 1, md: 7 },
+                justifyContent: 'space-between',
+                gap: { xs: 2, md: 3 },
+                px: { xs: 2, md: 7 },
                 py: { xs: 1.5, md: 1.5 },
                 maxWidth: '1200px',
                 mx: 'auto',
               }}>
+                {/* Search Input */}
+                <Box
+                  ref={searchWrapperRef}
+                  sx={{
+                    width: { xs: '100%', md: 460 },
+                    minWidth: { md: 300 },
+                    maxWidth: { md: 480 },
+                    ml: { xs: 0, md: 0.8 },
+                    position: 'relative',
+                    zIndex: 1200,
+                    isolation: 'isolate',
+                  }}
+                >
+                  <TextField
+                    variant="outlined"
+                    placeholder="Search player name and hit enter..."
+                    value={search}
+                    onFocus={() => {
+                      setShowTeammatePanel(true);
+                      if (!searchTriggered && !teammatesLoading) {
+                        void fetchTeammates();
+                      }
+                    }}
+                    onClick={() => {
+                      setShowTeammatePanel(true);
+                      if (!searchTriggered && !teammatesLoading) {
+                        void fetchTeammates();
+                      }
+                    }}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      if (!showTeammatePanel) setShowTeammatePanel(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (!searchTriggered) void fetchTeammates();
+                        setShowTeammatePanel(true);
+                        return;
+                      }
+                      if (e.key === 'Escape') {
+                        setShowTeammatePanel(false);
+                      }
+                    }}
+                    sx={{
+                      width: { xs: '100%', md: '100%' },
+                      '& .MuiOutlinedInput-root': {
+                        height: { xs: 38, sm: 42 },
+                        color: 'white',
+                        backgroundColor: 'transparent',
+                        borderRadius: '3px',
+                        '& fieldset': { borderColor: '#e56a16', borderWidth: 1.5 },
+                        '&:hover fieldset': { borderColor: '#e56a16' },
+                        '&.Mui-focused fieldset': { borderColor: '#e56a16' }
+                      },
+                      '& .MuiInputBase-input': {
+                        color: 'white',
+                        fontSize: { xs: 14, sm: 16.5 },
+                        py: 0.5,
+                        '&::placeholder': { color: '#fff', opacity: 1 }
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <Box sx={{ mr: 3, ml: 0.5, display: 'flex', alignItems: 'center' }}>
+                          <Image src={SearchIcon} alt="Search" width={25} height={25} />
+                        </Box>
+                      ),
+                    }}
+                  />
+
+                  {showTeammatePanel && (
+                    <Paper
+                      elevation={6}
+                      sx={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        zIndex: 1300,
+                        mt: 0,
+                        maxHeight: 320,
+                        overflowY: 'auto',
+                        borderRadius: 2,
+                        background: '#1f1f1f',
+                        border: '1px solid rgba(255,255,255,0.25)',
+                        p: 1.25,
+                        '&::-webkit-scrollbar': { width: 6 },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(255,255,255,0.25)',
+                          borderRadius: 3
+                        },
+                      }}
+                    >
+                      <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 13, mb: 0.75 }}>
+                        {filters.leagueId === 'all' ? 'Players across selected leagues' : 'Players in selected league'}
+                      </Typography>
+
+                      {teammatesLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                          <CircularProgress size={22} />
+                        </Box>
+                      ) : !searchTriggered ? (
+                        <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                          Press Enter to search players you have played with.
+                        </Typography>
+                      ) : teammates.length === 0 ? (
+                        <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                          No player data found for this filter.
+                        </Typography>
+                      ) : filteredTeammates.length === 0 ? (
+                        <Typography className="empty-state-message" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                          This player name is not found in selected league filters.
+                        </Typography>
+                      ) : (
+                        <Grid container spacing={0.75}>
+                          {filteredTeammates.map((p) => {
+                            const displayName =
+                              p.name ||
+                              `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() ||
+                              'Player';
+                            const teammateAvatarSrc = resolveProfileImageUrl(p.avatar);
+
+                            return (
+                              <Grid item xs={12} key={p.id}>
+                                <Box
+                                  onClick={() => {
+                                    setShowTeammatePanel(false);
+                                    router.push(`/player/${p.id}/career`);
+                                  }}
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    p: 0.75,
+                                    borderRadius: 1.5,
+                                    cursor: 'pointer',
+                                    bgcolor: 'rgba(255,255,255,0.07)',
+                                    transition: 'background .2s',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' },
+                                  }}
+                                >
+                                  <Avatar
+                                    src={teammateAvatarSrc ?? undefined}
+                                    alt={displayName}
+                                    sx={{
+                                      width: 34,
+                                      height: 34,
+                                      border: '1px solid rgba(255,255,255,0.25)',
+                                      overflow: 'hidden',
+                                      flexShrink: 0,
+                                      bgcolor: teammateAvatarSrc ? 'transparent' : '#e56a16',
+                                      color: '#fff',
+                                      fontSize: 12,
+                                      fontWeight: 800,
+                                      textTransform: 'uppercase',
+                                      '& .MuiAvatar-img': {
+                                        width: '100% !important',
+                                        height: '100% !important',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                      },
+                                    }}
+                                  >
+                                    {!teammateAvatarSrc && getAvatarInitials({
+                                      name: displayName,
+                                      firstName: p.firstName,
+                                      lastName: p.lastName,
+                                    })}
+                                  </Avatar>
+
+                                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography
+                                      noWrap
+                                      sx={{
+                                        color: '#E5E7EB',
+                                        fontWeight: 700,
+                                        fontSize: 13,
+                                        lineHeight: 1.15,
+                                      }}
+                                    >
+                                      {displayName}
+                                    </Typography>
+                                    {p.position && (
+                                      <Typography
+                                        sx={{
+                                          color: '#9CA3AF',
+                                          fontSize: 11,
+                                          lineHeight: 1.1,
+                                        }}
+                                      >
+                                        {p.position}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Box>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      )}
+                    </Paper>
+                  )}
+                </Box>
+
                 {/* Filter Buttons */}
                 <Box
                   sx={{
@@ -2445,6 +2817,17 @@ export default function CareerPage() {
 
                     {/* Chart Title */}
                     <Box sx={{ textAlign: 'center', pt: 2, pb: 1 }}>
+                      {playerName && (
+                        <Typography sx={{
+                          fontSize: 16,
+                          fontWeight: 'bold',
+                          color: themeColors.primary,
+                          textTransform: 'uppercase',
+                          mb: 0.5
+                        }}>
+                          {playerName}
+                        </Typography>
+                      )}
                       <Typography sx={{
                         fontSize: 14,
                         fontWeight: 600,
@@ -2461,7 +2844,7 @@ export default function CareerPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
                           data={chartData.length > 0 ? chartData : performanceData}
-                          margin={{ top: 10, left: 10, right: 10, bottom: 30 }}
+                          margin={{ top: 10, left: 15, right: 15, bottom: 30 }}
                         >
                           <XAxis
                             dataKey="label"
@@ -2478,18 +2861,20 @@ export default function CareerPage() {
                             yAxisId="avg"
                             stroke={themeColors.textDim}
                             tick={{ fontSize: 10, fill: themeColors.textDim }}
-                            width={40}
+                            width={50}
                             tickLine={{ stroke: themeColors.border }}
                             axisLine={{ stroke: themeColors.border }}
+                            label={{ value: 'Total XP', angle: -90, position: 'insideLeft', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
                           />
                           <YAxis
                             yAxisId="cum"
                             orientation="right"
                             stroke={themeColors.textDim}
                             tick={{ fontSize: 10, fill: themeColors.textDim }}
-                            width={45}
+                            width={55}
                             tickLine={{ stroke: themeColors.border }}
                             axisLine={{ stroke: themeColors.border }}
+                            label={{ value: 'Cumulative XP', angle: 90, position: 'insideRight', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
                           />
                           <Tooltip
                             contentStyle={{
@@ -2904,23 +3289,24 @@ export default function CareerPage() {
                               const assistsPerMatch = totalMatches > 0 ? current.assists / totalMatches : 0;
                               const cleanSheetsPerMatch = totalMatches > 0 ? current.cleanSheets / totalMatches : 0;
                               const winRate = current.winRate;
+                              const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
 
                               return (
                                 <>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.goals)}</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(goalsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.goals)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.assists)}</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(assistsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.assists)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{toRoundedInt(current.cleanSheets)}</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(cleanSheetsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.cleanSheets)}</TableCell>
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
