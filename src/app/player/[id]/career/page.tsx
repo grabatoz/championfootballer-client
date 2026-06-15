@@ -1057,13 +1057,13 @@ export default function CareerPage() {
     const buildWeekly = (): PerformanceRow[] => {
       const map = new Map<string, PerformanceRow>();
       base.forEach(m => {
-        const weekEnd = dayjs(m.date).endOf('week'); // Sunday
-        const key = weekEnd.format('YYYY-MM-DD');
+        const matchDate = dayjs(m.date);
+        const key = matchDate.format('YYYY-MM-DD');
         if (!map.has(key)) {
           map.set(key, {
             key,
-            label: weekEnd.format('DD-MMM'),
-            year: weekEnd.format('YYYY'),
+            label: matchDate.format('DD-MMM YYYY'),
+            year: matchDate.format('YYYY'),
             matches: 0,
             totalPoints: 0,
             avgPoints: 0,
@@ -1075,29 +1075,7 @@ export default function CareerPage() {
         r.totalPoints += calcPoints(m.playerStats);
       });
 
-      // Fill gaps between first and last week
-      const keys = Array.from(map.keys()).sort();
-      const filled: PerformanceRow[] = [];
-      if (keys.length) {
-        let cur = dayjs(keys[0]);
-        const end = dayjs(keys[keys.length - 1]);
-        while (cur.isBefore(end) || cur.isSame(end)) {
-          const k = cur.format('YYYY-MM-DD');
-          if (!map.has(k)) {
-            map.set(k, {
-              key: k,
-              label: cur.format('DD-MMM'),
-              year: cur.format('YYYY'),
-              matches: 0,
-              totalPoints: 0,
-              avgPoints: 0,
-              cumulativePoints: 0
-            });
-          }
-          filled.push(map.get(k)!);
-          cur = cur.add(1, 'week');
-        }
-      }
+      const filled = Array.from(map.values());
 
       // Sort and calculate averages and cumulative
       filled.sort((a, b) => a.key.localeCompare(b.key));
@@ -1118,7 +1096,7 @@ export default function CareerPage() {
         if (!map.has(key)) {
           map.set(key, {
             key,
-            label: monthStart.format('MMM'),
+            label: monthStart.format('MMM YYYY'),
             year: monthStart.format('YYYY'),
             matches: 0,
             totalPoints: 0,
@@ -1131,29 +1109,7 @@ export default function CareerPage() {
         r.totalPoints += calcPoints(m.playerStats);
       });
 
-      // Fill missing months between first and last month
-      const keys = Array.from(map.keys()).sort();
-      const filled: PerformanceRow[] = [];
-      if (keys.length) {
-        let cur = dayjs(keys[0] + '-01');
-        const end = dayjs(keys[keys.length - 1] + '-01');
-        while (cur.isBefore(end) || cur.isSame(end)) {
-          const k = cur.format('YYYY-MM');
-          if (!map.has(k)) {
-            map.set(k, {
-              key: k,
-              label: cur.format('MMM'),
-              year: cur.format('YYYY'),
-              matches: 0,
-              totalPoints: 0,
-              avgPoints: 0,
-              cumulativePoints: 0
-            });
-          }
-          filled.push(map.get(k)!);
-          cur = cur.add(1, 'month');
-        }
-      }
+      const filled = Array.from(map.values());
 
       // Sort and calculate averages and cumulative
       filled.sort((a, b) => a.key.localeCompare(b.key));
@@ -1928,6 +1884,46 @@ export default function CareerPage() {
               boxShadow: 'none',
               minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
             }}>
+              {/* Centered Title */}
+              <Box sx={{
+                display: { xs: 'none', md: 'flex' },
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pt: { xs: 1, md: 2 },
+                pb: 2,
+              }}>
+                <Typography
+                  variant="h2"
+                  component="h1"
+                  sx={{
+                    fontWeight: 700,
+                    color: '#fff',
+                    fontSize: { xs: '32px', sm: '42px', md: '55px' },
+                    textTransform: 'uppercase',
+                    letterSpacing: 0,
+                    textAlign: 'center',
+                    fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
+                    lineHeight: '100%',
+                  }}
+                >
+                  {dashboardTitle}
+                </Typography>
+              </Box>
+
+              {/* Orange divider under header */}
+              <Box
+                sx={{
+                  display: { xs: 'none', md: 'block' },
+                  height: 'var(--header-divider-height)',
+                  bgcolor: 'var(--header-divider-color)',
+                  mt: { xs: 2, md: 4.5 },
+                  width: '100vw',
+                  position: 'relative',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                }}
+              />
 
 
               {/* Filters Section */}
@@ -2508,7 +2504,7 @@ export default function CareerPage() {
                               const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
                               const n = typeof name === 'string' ? name : String(name ?? '');
                               const period = groupMode === 'monthly' ? 'Month' : 'Week';
-                              if (n.includes('Avg')) return [v, `Avg Points Per ${period}`];
+                              if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points Per ${period}`];
                               if (n.includes('Cumulative')) return [v, `Cumulative XP (${period}ly)`];
                               return [v, n];
                             }}
@@ -2517,9 +2513,9 @@ export default function CareerPage() {
                           {/* Bars for average points - Green/Teal */}
                           <Bar
                             yAxisId="avg"
-                            dataKey="avgPoints"
+                            dataKey="totalPoints"
                             fill={themeColors.chartBar}
-                            name={groupMode === 'monthly' ? 'Avg Points/Month' : 'Avg Points/Week'}
+                            name={groupMode === 'monthly' ? 'Total XP Points/Month' : 'Total XP Points/Week'}
                             maxBarSize={35}
                             radius={[3, 3, 0, 0]}
                           />
@@ -2552,7 +2548,7 @@ export default function CareerPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
                         <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                          {groupMode === 'monthly' ? 'Average XP Points Per Month' : 'Average XP Points Per Week'}
+                          {groupMode === 'monthly' ? 'Total XP Points ' : 'Total XP Points'}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

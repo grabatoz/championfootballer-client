@@ -230,7 +230,7 @@ export default function FetchAuthMonitor() {
               localStorage.removeItem("userData");
               
               // Redirect to login page
-              window.location.href = "/login?expired=1";
+              window.location.href = "/?expired=1";
             }
           } catch (e) {
             console.error("[FetchAuthMonitor] Error clearing auth state on 401:", e);
