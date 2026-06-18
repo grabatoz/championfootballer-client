@@ -55,6 +55,7 @@ import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLo
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
 import PlayerCardLoadingSkeleton from '@/Components/loading/PlayerCardLoadingSkeleton';
+import { isRegisteredPlayerRecord } from '@/lib/playerIdentity';
 import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
@@ -2479,6 +2480,8 @@ export default function LeagueDetailPage() {
                 console.log('✅ Players from matches:', filteredMembers.length);
             }
         }
+
+        filteredMembers = filteredMembers.filter(isRegisteredPlayerRecord);
 
         console.log('✅ Final filtered members:', filteredMembers.length, filteredMembers.map(m => `${m.firstName} ${m.lastName}`));
 
@@ -6312,7 +6315,8 @@ export default function LeagueDetailPage() {
                                                                 lastName,
                                                             });
                                                             const isEven = index % 2 === 0;
-
+                                                            // const isCurrentUser = String(player.id) === String(user?.id || '');
+// ${isCurrentUser ? 'league-row-current-user' : ''}
                                                             return (
                                                                 <div
                                                                     key={player.id}

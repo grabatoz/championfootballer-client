@@ -1,0 +1,20 @@
+
+> championfootballer@0.1.0 dev
+> next dev --turbopack --hostname 127.0.0.1 --port 3000
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+Creating turbopack project {
+  dir: 'C:\\Users\\tech solutionor\\Desktop\\latest work on champion\\championfootballer-client',
+  testMode: true
+}
+ ✓ Compiled middleware in 491ms
+ ✓ Ready in 4.6s
+ ○ Compiling / ...
+ ✓ Compiled / in 14.4s

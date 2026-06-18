@@ -253,6 +253,20 @@ const normalizeHomeSeason = (season: unknown): Record<string, unknown> | null =>
   };
 };
 
+const getHomeLeagueSeasonRecords = (league: LeagueWithComputed): HomeSeason[] => {
+  const seasons = Array.isArray(league.seasons) ? league.seasons : [];
+  const computedSeasons = Array.isArray(league.computedStatus?.seasons)
+    ? (league.computedStatus?.seasons as HomeSeason[])
+    : [];
+  return [...seasons, ...computedSeasons]
+    .map(normalizeHomeSeason)
+    .filter((season): season is HomeSeason => Boolean(season));
+};
+
+const homeLeagueHasRunningSeason = (league: LeagueWithComputed): boolean => {
+  return getHomeLeagueSeasonRecords(league).some(isHomeActiveSeason);
+};
+
 const dedupeHomeSeasons = (seasons: HomeSeason[]): HomeSeason[] => {
   const map = new Map<string, HomeSeason>();
   seasons.forEach((season) => {
@@ -265,18 +279,6 @@ const dedupeHomeSeasons = (seasons: HomeSeason[]): HomeSeason[] => {
   return Array.from(map.values());
 };
 
-const parseHomeLeagueSeasonName = (name: string | undefined | null): { baseName: string; seasonNumber: number } | null => {
-  const trimmed = String(name ?? '').trim();
-  const match = trimmed.match(/^season\s*(\d+)\s+(.+)$/i);
-  if (!match) return null;
-
-  const seasonNumber = Number(match[1]);
-  const baseName = match[2]?.trim();
-  if (!Number.isFinite(seasonNumber) || seasonNumber <= 0 || !baseName) return null;
-
-  return { baseName, seasonNumber };
-};
-
 const cleanHomeLeagueDisplayName = (name: string | undefined | null): string => {
   return String(name ?? '')
     .trim()
@@ -284,10 +286,28 @@ const cleanHomeLeagueDisplayName = (name: string | undefined | null): string => 
     .replace(/\s+/g, ' ');
 };
 
-const getHomeLeagueBaseKey = (name: string | undefined | null): string => {
-  return cleanHomeLeagueDisplayName(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+const getHomeUserDisplayName = (user: (Partial<User> & {
+  name?: unknown;
+  fullName?: unknown;
+  displayName?: unknown;
+  username?: unknown;
+}) | null | undefined): string => {
+  if (!user) return 'Player Name';
+  const record = user as Record<string, unknown>;
+  const first = String(record.firstName ?? '').trim();
+  const last = String(record.lastName ?? '').trim();
+  const fullFromParts = `${first} ${last}`.trim();
+  if (fullFromParts) return fullFromParts;
+
+  const candidates = [record.fullName, record.displayName, record.name, record.username];
+  for (const candidate of candidates) {
+    const value = String(candidate ?? '').trim();
+    if (value) return value;
+  }
+
+  const email = String(record.email ?? '').trim();
+  if (email && email.includes('@')) return email.split('@')[0];
+  return 'Player Name';
 };
 
 const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, onAdminStatusChange }: { refreshKey?: number; createdLeague?: League | null; currentUserId?: string | number; onAdminStatusChange?: (isAdmin: boolean) => void }) => {
@@ -433,6 +453,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
   // Helper: determine if a league is completed (exclude from dropdown)
   const leagueIsCompleted = (l: LeagueWithComputed): boolean => {
+    if (homeLeagueHasRunningSeason(l)) return false;
+
     // Prefer backend-computed season-based completion status
     if (l?.computedStatus?.isCompleted === true) return true;
 
@@ -499,6 +521,13 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     if (completionStatuses.has(s)) return true;
     if (typeof l?.active === 'boolean' && l.active === false) return true;
     return false;
+  };
+
+  const shouldShowLeagueInDropdown = (l: LeagueWithComputed): boolean => {
+    if (l.archived === true) return false;
+    if (homeLeagueHasRunningSeason(l)) return true;
+    if (l.active === true) return !leagueIsCompleted(l);
+    return !leagueIsCompleted(l);
   };
 
   // Helper to compare leagues by most recent change
@@ -718,8 +747,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     return formatLeagueName(name);
   };
   const getDisplayLeagueName = (league?: LeagueWithComputed | null) => {
-    const parsed = parseHomeLeagueSeasonName(league?.name);
-    return formatLeagueName(cleanHomeLeagueDisplayName(parsed?.baseName || league?.name || ''));
+    return formatLeagueName(league?.name || '');
   };
   const getDisplaySeasonNumber = (league?: LeagueWithComputed | null, season?: unknown) => {
     const fromSeason = readHomeSeasonNumber(season);
@@ -755,11 +783,20 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         if (!(data?.success && data?.user)) return;
 
         // Extract and merge XP + skills from primary /auth/status call
-        const xp = data?.user?.xp;
-        const skills = data?.user?.skills;
+        const userRecord = (data?.user && typeof data.user === 'object')
+          ? (data.user as Record<string, unknown>)
+          : {};
+        const xp = userRecord.xp;
+        const skills = userRecord.skills;
         const mergePayload: Record<string, unknown> = {};
         if (typeof xp === 'number') mergePayload.xp = xp;
         if (skills && typeof skills === 'object') mergePayload.skills = skills;
+        ['firstName', 'lastName', 'email', 'position', 'positionType', 'style', 'preferredFoot', 'profilePicture'].forEach((key) => {
+          const value = userRecord[key];
+          if (typeof value === 'string') mergePayload[key] = value;
+        });
+        const shirtNumber = userRecord.shirtNumber;
+        if (typeof shirtNumber === 'string' || typeof shirtNumber === 'number') mergePayload.shirtNumber = shirtNumber;
         if (Object.keys(mergePayload).length > 0) {
           dispatch(mergeUser(mergePayload));
         }
@@ -842,18 +879,20 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
           const combinedList = optimisticCreatedLeague
             ? [...minimalList, optimisticCreatedLeague]
             : minimalList;
+          const visibleList = combinedList.filter(shouldShowLeagueInDropdown);
+          const selectionList = visibleList.length > 0 ? visibleList : combinedList;
 
           setSelectedLeague((prev) => {
             if (prev) {
-              const existing = combinedList.find((leagueItem) => String(leagueItem.id) === String(prev.id));
+              const existing = selectionList.find((leagueItem) => String(leagueItem.id) === String(prev.id));
               if (existing) return existing;
             }
 
             const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-            const preferred = storedId ? combinedList.find(l => String(l.id) === String(storedId)) || null : null;
+            const preferred = storedId ? selectionList.find(l => String(l.id) === String(storedId)) || null : null;
             if (preferred) return preferred;
 
-            const latest = [...combinedList].sort((a, b) => timeOf(b) - timeOf(a))[0];
+            const latest = [...selectionList].sort((a, b) => timeOf(b) - timeOf(a))[0];
             return latest || null;
           });
         }
@@ -1155,12 +1194,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
       if (minimal.length) {
         setUserLeagues((prev) => prev.length ? prev : minimal);
+        const visible = minimal.filter(shouldShowLeagueInDropdown);
+        const selectionList = visible.length > 0 ? visible : minimal;
         const storedId = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_LEAGUE_KEY) : null;
-        const preferred = storedId ? minimal.find(l => String(l.id) === String(storedId)) || null : null;
+        const preferred = storedId ? selectionList.find(l => String(l.id) === String(storedId)) || null : null;
         if (preferred) {
           setSelectedLeague((prev) => prev ?? preferred);
         } else {
-          const latest = [...minimal].sort((a, b) => timeOf(b) - timeOf(a))[0];
+          const latest = [...selectionList].sort((a, b) => timeOf(b) - timeOf(a))[0];
           if (latest) setSelectedLeague((prev) => prev ?? latest);
         }
       }
@@ -1214,9 +1255,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
   useEffect(() => {
     try {
       if (!userLeagues?.length) return;
-      const visible = userLeagues.filter(
-        (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
-      );
+      const visible = userLeagues.filter(shouldShowLeagueInDropdown);
       console.log('[Home] leagues total:', userLeagues.length, 'visible (not completed):', visible.length);
     } catch { }
   }, [userLeagues]);
@@ -1226,9 +1265,7 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
     if (!userLeagues?.length) return [];
     // Only show ACTIVE & INCOMPLETE leagues in the dropdown
     // Inactive leagues (completed / archived / admin-deactivated) go to Leagues page
-    const visible = userLeagues.filter(
-      (l) => l.active !== false && l.archived !== true && !leagueIsCompleted(l)
-    );
+    const visible = userLeagues.filter(shouldShowLeagueInDropdown);
     // Sort alphabetically by name (A -> Z)
     const arr = [...visible].sort((a, b) => {
       const an = (a?.name ?? '').toString().trim().toLowerCase();
@@ -1243,19 +1280,11 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
 
   const leagueDropdownOptions = React.useMemo(() => {
     const rawOptions = sortedUserLeagues.flatMap((league) => {
-      const parsedLeagueName = parseHomeLeagueSeasonName(league.name);
-      const baseLeagueName = formatLeagueName(parsedLeagueName?.baseName || league.name);
-      const baseLeagueKey = getHomeLeagueBaseKey(baseLeagueName);
+      const displayLeagueName = formatLeagueName(league.name);
       const normalizedSeasons = Array.isArray(league.seasons)
         ? dedupeHomeSeasons(league.seasons.map(normalizeHomeSeason).filter((season): season is Record<string, unknown> => Boolean(season)))
         : [];
-      const activeSeasons = normalizedSeasons
-        .filter(isHomeActiveSeason)
-        .filter((season) => {
-          const parsedSeasonName = parseHomeLeagueSeasonName(String(season.name || ''));
-          if (!parsedSeasonName) return true;
-          return getHomeLeagueBaseKey(parsedSeasonName.baseName) === baseLeagueKey;
-        });
+      const activeSeasons = normalizedSeasons.filter(isHomeActiveSeason);
 
       if (activeSeasons.length > 0) {
         const sortedSeasons = [...activeSeasons].sort((a, b) => readHomeSeasonNumber(a) - readHomeSeasonNumber(b));
@@ -1267,9 +1296,8 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
             league,
             seasonId,
             seasonNumber,
-            baseLeagueName,
             seasonLabel: `Season ${seasonNumber || 1}`,
-            label: baseLeagueName,
+            label: displayLeagueName,
           };
         });
       }
@@ -1279,17 +1307,14 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
         league,
         seasonId: '',
         seasonNumber: 0,
-        baseLeagueName,
         seasonLabel: '',
-        label: baseLeagueName,
+        label: displayLeagueName,
       }];
     });
 
     const seen = new Set<string>();
     return rawOptions.filter((option) => {
-      const baseKey = getHomeLeagueBaseKey(option.baseLeagueName || option.label);
-      const seasonKey = option.seasonNumber > 0 ? `season-${option.seasonNumber}` : `league-${option.league.id}`;
-      const key = `${baseKey}:${seasonKey}`;
+      const key = `${option.league.id}:${option.seasonId || `season-${option.seasonNumber || 0}`}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -1998,6 +2023,7 @@ export default function PlayerDashboard() {
     defensiveImpact: 0
   });
   const [statsLoading, setStatsLoading] = useState(false);
+  const userDisplayName = getHomeUserDisplayName(user);
 
   const [, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
@@ -2464,7 +2490,7 @@ export default function PlayerDashboard() {
             // backgroundColor: 'red',
           }}>
             <PlayerCard
-              name={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Player Name'}
+              name={userDisplayName}
               number={user?.shirtNumber || '00'}
               points={user?.xp || 0}
               height="100%"
@@ -2523,7 +2549,7 @@ export default function PlayerDashboard() {
                   fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
                 }}>Welcome,</Typography>
                 <Typography sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.2rem' }, fontWeight: 550, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
-                  {user?.firstName}
+                  {userDisplayName}
                 </Typography>
               </Box>
 

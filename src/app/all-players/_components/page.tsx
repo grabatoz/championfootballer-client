@@ -36,6 +36,7 @@ import Image from 'next/image';
 import SearchIcon from '@/Components/images/searchicon.png';
 import TableGraphIcon from '@/Components/images/tablegrapicon.png';
 import AllPlayersLoadingSkeleton from '@/Components/loading/AllPlayersLoadingSkeleton';
+import { isGuestPlayerRecord, isRegisteredPlayerRecord } from '@/lib/playerIdentity';
 
 // Lazy load CloseButton
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -247,6 +248,18 @@ const AllPlayersPage = () => {
       const y = getYearFromDateLike(dateStr);
       if (y) years.add(y);
     }
+    (league.matches || []).forEach((match) => {
+      [
+        match.date,
+        match.startDate,
+        match.scheduledAt,
+        match.createdAt,
+        match.updatedAt,
+      ].forEach((dateLike) => {
+        const y = getYearFromDateLike(dateLike);
+        if (y) years.add(y);
+      });
+    });
     return Array.from(years);
   }, [getYearFromDateLike]);
 
@@ -295,6 +308,21 @@ const AllPlayersPage = () => {
     const firstName = pickString(['firstName', 'first_name']);
     const lastName = pickString(['lastName', 'last_name']);
     const fullName = pickString(['name']) || `${firstName} ${lastName}`.trim();
+    const identityRecord: Record<string, unknown> = {
+      id,
+      firstName,
+      lastName,
+      name: fullName,
+      provider: from('provider'),
+      isGuest: from('isGuest'),
+      guestId: from('guestId'),
+      type: from('type'),
+      role: from('role'),
+    };
+    const email = from('email');
+    if (email !== undefined) identityRecord.email = email;
+    if (isGuestPlayerRecord(identityRecord)) return null;
+    if ('email' in identityRecord && !isRegisteredPlayerRecord(identityRecord)) return null;
     const profilePictureRaw =
       from('profilePicture') ??
       from('avatar') ??
@@ -779,7 +807,7 @@ const AllPlayersPage = () => {
     }
   }, [error]);
 
-  const sourcePlayers = selectedLeague === 'all' ? playedWithPlayers : leaguePlayers;
+  const sourcePlayers = (selectedLeague === 'all' ? playedWithPlayers : leaguePlayers).filter(isRegisteredPlayerRecord);
 
   function getPlayerName(player: Player): string {
     const full = (player.name || '').trim();

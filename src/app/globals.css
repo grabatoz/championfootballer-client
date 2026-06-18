@@ -453,6 +453,19 @@ input:-webkit-autofill:active {
   background-color: #383838 !important;
 }
 
+.league-row-current-user,
+.league-row-current-user .league-table-sticky-rank,
+.league-row-current-user .league-table-sticky-name {
+  background-color: rgba(0, 167, 127, 0.28) !important;
+  box-shadow: inset 4px 0 0 #00c48c;
+}
+
+.league-row-current-user:hover,
+.league-row-current-user:hover .league-table-sticky-rank,
+.league-row-current-user:hover .league-table-sticky-name {
+  background-color: rgba(0, 167, 127, 0.38) !important;
+}
+
 /* Responsive tweaks for league table (keep layout, shrink type on small screens) */
 @media (max-width: 900px) {
   .league-header-text {

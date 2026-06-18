@@ -40,6 +40,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useAuth } from '@/lib/useAuth';
 import Cookies from 'js-cookie';
 import { getAuthToken } from '@/lib/tokenManager';
+import { playerAPI } from '@/lib/api';
 import CloseButton from '@/Components/CloseButton';
 import PlayerCareerLoadingSkeleton from '@/Components/loading/PlayerCareerLoadingSkeleton';
 // import api from '@/lib/api'; // Adjust the import based on your project structure
@@ -149,6 +150,8 @@ interface LeagueWithMatches {
 }
 interface PlayerStatsData {
   leagues?: LeagueWithMatches[];
+  years?: Array<number | string>;
+  allYears?: Array<number | string>;
 }
 
 const isLeagueActiveForFilter = (l: LeagueWithMatches): boolean => {
@@ -347,6 +350,8 @@ type LeagueMetricValues = {
   defensiveImpactVotes: number;
   impact: number;
 };
+
+type CardLeagueScope = 'all' | 'current';
 
 // ---------- DYNAMIC RECHARTS ----------
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
@@ -548,12 +553,15 @@ const resolveLeagueAverageFromPayload = (payload: unknown): LeagueMetricValues =
   if (!payload || typeof payload !== 'object') return createEmptyLeagueMetrics();
   const record = payload as Record<string, unknown>;
 
+  const fromLeagueAverage = normalizeLeagueMetrics(record.leagueAvg);
+  if (fromLeagueAverage) return fromLeagueAverage;
+
   // Client formula: average each player's per-match metric, then divide by player count.
   // Example: (player1 xG 0.8 + player2 xG 0.5) / 2 = 0.65.
   const fromPlayers = averageLeagueMetricsFromPlayerMap(record.players);
   if (fromPlayers) return fromPlayers;
 
-  return normalizeLeagueMetrics(record.leagueAvg) || createEmptyLeagueMetrics();
+  return createEmptyLeagueMetrics();
 };
 
 const formatStatDecimal = (value: number, suffix = ''): string => {
@@ -609,14 +617,15 @@ export default function CareerPage() {
       : [];
     if (list.length === 0) return [];
 
-    const fallbackYear = (() => {
-      const years = list
-        .flatMap((l) => (Array.isArray(l.matches) ? (l.matches as LeagueMatch[]) : []))
-        .map((m) => dayjs(m.date).year());
-      return years.length ? Math.max(...years) : dayjs().year();
-    })();
+    if (!filters.year || filters.year === 'all') {
+      return list.filter(
+        (l) =>
+          isLeagueActiveForFilter(l) &&
+          Array.isArray(l.matches)
+      );
+    }
 
-    const effectiveYear = filters.year && filters.year !== 'all' ? String(filters.year) : String(fallbackYear);
+    const effectiveYear = String(filters.year);
     return list.filter(
       (l) =>
         isLeagueActiveForFilter(l) &&
@@ -645,6 +654,7 @@ export default function CareerPage() {
   const leaguesFromRedux = useSelector((state: RootState) => state.playerStats.data?.leagues) as LeagueWithMatches[] | undefined;
   const [availableLeagues, setAvailableLeagues] = useState<LeagueWithMatches[]>([]);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [careerData, setCareerData] = useState<PlayerStatsData | null>(null);
 
   // Initialize filters from URL params on mount
   useEffect(() => {
@@ -680,18 +690,34 @@ export default function CareerPage() {
     return source.filter((league) => String(league?.id || '').trim() !== '');
   }, [leaguesFromRedux, data?.leagues]);
 
-  const averageTargetLeagueIds = useMemo(() => {
+  const allAverageLeagues = useMemo(() => {
+    const source = Array.isArray(careerData?.leagues) && careerData.leagues.length > 0
+      ? (careerData.leagues as LeagueWithMatches[])
+      : averageLeagues;
+    return source.filter((league) => String(league?.id || '').trim() !== '');
+  }, [careerData?.leagues, averageLeagues]);
+
+  const allAverageTargetLeagueIds = useMemo(() => {
+    return Array.from(
+      new Set(allAverageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean))
+    );
+  }, [allAverageLeagues]);
+
+  const currentAverageTargetLeagueIds = useMemo(() => {
     const selectedLeagueId =
       filters.leagueId && filters.leagueId !== 'all'
         ? String(filters.leagueId).trim()
-        : (urlLeagueId ? String(urlLeagueId).trim() : '');
+        : '';
 
     if (selectedLeagueId) return [selectedLeagueId];
+    return allAverageTargetLeagueIds;
+  }, [filters.leagueId, allAverageTargetLeagueIds]);
 
+  const averageFetchLeagueIds = useMemo(() => {
     return Array.from(
-      new Set(averageLeagues.map((league) => String(league.id || '').trim()).filter(Boolean))
+      new Set([...allAverageTargetLeagueIds, ...currentAverageTargetLeagueIds])
     );
-  }, [averageLeagues, filters.leagueId, urlLeagueId]);
+  }, [allAverageTargetLeagueIds, currentAverageTargetLeagueIds]);
 
   const loading = !data;
 
@@ -699,6 +725,28 @@ export default function CareerPage() {
     if (!playerId || authLoading) return;
     dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
   }, [playerId, dispatch, filters.leagueId, filters.year, authLoading, refreshNonce]);
+
+  useEffect(() => {
+    if (!playerId || authLoading) {
+      if (!playerId) setCareerData(null);
+      return;
+    }
+
+    let cancelled = false;
+    playerAPI
+      .getPlayerStats(String(playerId), 'all', 'all')
+      .then((res) => {
+        if (cancelled) return;
+        setCareerData(res.success && res.data ? (res.data as PlayerStatsData) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setCareerData(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [playerId, authLoading, token, refreshNonce]);
 
   useEffect(() => {
     if (!playerId) return;
@@ -737,6 +785,16 @@ export default function CareerPage() {
       .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
       .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
   }, [data]);
+
+  const allLeagueMatches: LeagueMatch[] = useMemo(() => {
+    const canUseVisibleDataAsAll =
+      (!filters.leagueId || filters.leagueId === 'all') &&
+      (!filters.year || filters.year === 'all');
+    const source = careerData || (canUseVisibleDataAsAll ? data : null);
+    return (source?.leagues || [])
+      .flatMap((l: LeagueWithMatches) => (l.matches || []).map((m) => ({ ...m, leagueId: l.id } as LeagueMatch)))
+      .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+  }, [careerData, data, filters.leagueId, filters.year]);
 
   // Match-scoped season data is used only as a fallback when season API is unavailable.
   const playerSeasonIdsForSelectedLeague = useMemo(() => {
@@ -818,6 +876,7 @@ export default function CareerPage() {
 
   // --- Search Bar State (similar to stats page) ---
   const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showTeammatePanel, setShowTeammatePanel] = useState(false);
   const [searchTriggered, setSearchTriggered] = useState(false);
   const [teammates, setTeammates] = useState<any[]>([]);
@@ -946,19 +1005,20 @@ export default function CareerPage() {
   // Reset teammate search cache whenever scope filters change.
   useEffect(() => {
     setSearch('');
+    setSearchTerm('');
     setSearchTriggered(false);
     setTeammates([]);
     lastFetchKeyRef.current = '';
   }, [filters.leagueId, filters.year, seasonFilter]);
 
   const filteredTeammates = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = searchTerm.trim().toLowerCase();
     if (!q) return teammates;
     return teammates.filter(p => {
       const fullname = (p.name || `${p.firstName ?? ''} ${p.lastName ?? ''}`).toLowerCase();
       return fullname.includes(q) || (p.position && p.position.toLowerCase().includes(q));
     });
-  }, [search, teammates]);
+  }, [searchTerm, teammates]);
 
   // Fetch seasons when a league is selected
   useEffect(() => {
@@ -1063,9 +1123,7 @@ export default function CareerPage() {
     return () => { cancelled = true; };
   }, [filters.leagueId, token, playerSeasonIdFallbackForSelectedLeague, playerSeasonYearFallbackForSelectedLeague]);
 
-  // Matches filtered by selected league, year, and season (for "Your Stats")
-  const filteredMatches = useMemo(() => {
-    const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : sameId(m.leagueId, filters.leagueId);
+  const filterMatchesByYearAndSeason = useCallback((source: LeagueMatch[]): LeagueMatch[] => {
     const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
     const bySeason = (m: LeagueMatch) => {
       if (!seasonFilter || seasonFilter === 'all') return true;
@@ -1081,38 +1139,37 @@ export default function CareerPage() {
       }
       return true;
     };
-    return matches.filter(m => byLeague(m) && byYear(m) && bySeason(m));
-  }, [matches, filters.leagueId, filters.year, seasonFilter, availableSeasons]);
+    return source.filter(m => byYear(m) && bySeason(m));
+  }, [filters.year, seasonFilter, availableSeasons]);
 
-  // For chart cards: respect global year/season filters, while league is controlled by each card toggle.
-  const timeSeasonFilteredMatches = useMemo(() => {
-    const byYear = (m: LeagueMatch) => !filters.year || filters.year === 'all' ? true : dayjs(m.date).year().toString() === filters.year;
-    const bySeason = (m: LeagueMatch) => {
-      if (!seasonFilter || seasonFilter === 'all') return true;
-      if (m.seasonId) return sameId(m.seasonId, seasonFilter);
-      const selectedSeason = availableSeasons.find((s) => sameId(s.id, seasonFilter));
-      if (selectedSeason?.startDate) {
-        const matchDate = dayjs(m.date);
-        const start = dayjs(selectedSeason.startDate);
-        const end = selectedSeason.endDate ? dayjs(selectedSeason.endDate) : dayjs();
-        return matchDate.isAfter(start.subtract(1, 'day')) && matchDate.isBefore(end.add(1, 'day'));
-      }
-      return true;
-    };
-    return matches.filter((m) => byYear(m) && bySeason(m));
-  }, [matches, filters.year, seasonFilter, availableSeasons]);
+  const filterMatchesByYear = useCallback((source: LeagueMatch[]): LeagueMatch[] => {
+    if (!filters.year || filters.year === 'all') return source;
+    return source.filter((m) => dayjs(m.date).year().toString() === filters.year);
+  }, [filters.year]);
 
-  // ------------- Independent league filters per chart card -------------
-  const [chartLeague, setChartLeague] = useState<string>('all');
-  const [influenceLeague, setInfluenceLeague] = useState<string>('all');
-  const [winLossLeague, setWinLossLeague] = useState<string>('all');
+  // Matches filtered by selected league, year, and season (for "Current" and "Your Stats")
+  const filteredMatches = useMemo(() => {
+    const byLeague = (m: LeagueMatch) => !filters.leagueId || filters.leagueId === 'all' ? true : sameId(m.leagueId, filters.leagueId);
+    return filterMatchesByYearAndSeason(matches.filter(byLeague));
+  }, [matches, filters.leagueId, filterMatchesByYearAndSeason]);
+
+  // All leagues ignores the league-specific season filter; a selected season only belongs to one league.
+  const allLeagueFilteredMatches = useMemo(() => {
+    return filterMatchesByYear(allLeagueMatches);
+  }, [allLeagueMatches, filterMatchesByYear]);
+
+  // ------------- Independent scope filters per chart card -------------
+  // "all" ignores only the League filter. "current" follows League/Year/Season filters.
+  const [chartLeague, setChartLeague] = useState<CardLeagueScope>('all');
+  const [influenceLeague, setInfluenceLeague] = useState<CardLeagueScope>('all');
+  const [winLossLeague, setWinLossLeague] = useState<CardLeagueScope>('all');
 
   // ------------- League averages from backend (for influence radar) -------------
   const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
-    const targetLeagueIds = averageTargetLeagueIds;
+    const targetLeagueIds = averageFetchLeagueIds;
     const authToken = token || getAuthToken() || Cookies.get('token') || '';
     if (!authToken || targetLeagueIds.length === 0) return;
     const apiUrl = API_BASE_URL;
@@ -1166,47 +1223,50 @@ export default function CareerPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [token, averageTargetLeagueIds, filters.year, seasonFilter]);
+  }, [token, averageFetchLeagueIds, filters.year, seasonFilter]);
 
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
-    const selectedLeagueId = String(influenceLeague || '').trim().toLowerCase();
-    if (selectedLeagueId && selectedLeagueId !== 'all') {
+    const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
+    if (influenceLeague === 'current' && selectedLeagueId && selectedLeagueId !== 'all') {
       return leagueAvgCache[selectedLeagueId] || null;
     }
-    const scopedEntries = averageTargetLeagueIds
+    const targetLeagueIds = influenceLeague === 'all'
+      ? allAverageTargetLeagueIds
+      : currentAverageTargetLeagueIds;
+    const scopedEntries = targetLeagueIds
       .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
       .filter((entry): entry is LeagueMetricValues => Boolean(entry));
     return averageLeagueMetrics(scopedEntries);
-  }, [influenceLeague, leagueAvgCache, averageTargetLeagueIds]);
+  }, [influenceLeague, filters.leagueId, leagueAvgCache, allAverageTargetLeagueIds, currentAverageTargetLeagueIds]);
 
   const currentImpactLeagueAvg = useMemo(() => {
     const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
     if (selectedLeagueId && selectedLeagueId !== 'all') {
       return leagueAvgCache[selectedLeagueId] || null;
     }
-    const scopedEntries = averageTargetLeagueIds
+    const scopedEntries = currentAverageTargetLeagueIds
       .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
       .filter((entry): entry is LeagueMetricValues => Boolean(entry));
     return averageLeagueMetrics(scopedEntries);
-  }, [filters.leagueId, leagueAvgCache, averageTargetLeagueIds]);
+  }, [filters.leagueId, leagueAvgCache, currentAverageTargetLeagueIds]);
 
   // Locally filtered matches for each card (independent of global Redux league filter)
   const chartMatches = useMemo(() =>
     chartLeague === 'all'
-      ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, chartLeague)),
-    [timeSeasonFilteredMatches, chartLeague]);
+      ? allLeagueFilteredMatches
+      : filteredMatches,
+    [allLeagueFilteredMatches, filteredMatches, chartLeague]);
   const influenceMatches = useMemo(() =>
     influenceLeague === 'all'
-      ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, influenceLeague)),
-    [timeSeasonFilteredMatches, influenceLeague]);
+      ? allLeagueFilteredMatches
+      : filteredMatches,
+    [allLeagueFilteredMatches, filteredMatches, influenceLeague]);
   const winLossMatches = useMemo(() =>
     winLossLeague === 'all'
-      ? timeSeasonFilteredMatches
-      : timeSeasonFilteredMatches.filter((m) => sameId(m.leagueId, winLossLeague)),
-    [timeSeasonFilteredMatches, winLossLeague]);
+      ? allLeagueFilteredMatches
+      : filteredMatches,
+    [allLeagueFilteredMatches, filteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
   const [groupMode, setGroupMode] = useState<'weekly' | 'monthly'>('weekly');
@@ -1328,7 +1388,7 @@ export default function CareerPage() {
       Penalties: 0,
       'MOTM Votes': 0
     };
-    filteredMatches.forEach(m => {
+    influenceMatches.forEach(m => {
       const ps = m.playerStats || {};
       total.Goals += toStatNumber(ps.goals);
       total.Assists += toStatNumber(ps.assists);
@@ -1358,7 +1418,7 @@ export default function CareerPage() {
       value,
       scaled: Math.round((value / maxVal) * 100)
     }));
-  }, [filteredMatches, playerId]);
+  }, [influenceMatches]);
 
   // Compute top strengths as the most effective ways points are earned
   // We map player match stats into contribution buckets, then rank by scaled value
@@ -1385,7 +1445,7 @@ export default function CareerPage() {
 
   // --- Focus Area suggestion ---
   const focusSuggestion = useMemo(() => {
-    if (!filteredMatches.length || !influence.length) {
+    if (!influenceMatches.length || !influence.length) {
       return 'Play a few more games to unlock a personalized focus area.';
     }
     const actionMap: Record<string, string> = {
@@ -1410,7 +1470,7 @@ export default function CareerPage() {
     }
     const metricName = target.metric === 'MOTM Votes' ? 'MOTM votes' : target.metric.toLowerCase();
     return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
-  }, [filteredMatches.length, influence, strengths]);
+  }, [influenceMatches.length, influence, strengths]);
 
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
@@ -1888,12 +1948,20 @@ export default function CareerPage() {
   // Dynamic years: keep previous years from data and always include current/latest year
   const availableYears = useMemo(() => {
     const years = new Set<string>([dayjs().year().toString()]);
-    matches.forEach((m) => {
+    const addYear = (value: unknown) => {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric) && numeric >= 1900 && numeric <= 3000) {
+        years.add(String(Math.trunc(numeric)));
+      }
+    };
+    (data?.allYears || data?.years || []).forEach(addYear);
+    (careerData?.allYears || careerData?.years || []).forEach(addYear);
+    allLeagueMatches.forEach((m) => {
       const y = dayjs(m.date).year();
       if (Number.isFinite(y)) years.add(String(y));
     });
     return Array.from(years).sort((a, b) => Number(b) - Number(a));
-  }, [matches]);
+  }, [careerData?.allYears, careerData?.years, data?.allYears, data?.years, allLeagueMatches]);
 
   useEffect(() => {
     if (loading) return;
@@ -1918,21 +1986,6 @@ export default function CareerPage() {
       setPreferredLeagueId(localStorage.getItem('preferredLeagueId'));
     }
   }, []);
-  const preferredLeagueName = useMemo(() => {
-    if (!preferredLeagueId) return null;
-    const league = availableLeagues.find(l => sameId(l.id, preferredLeagueId));
-    return (league as LeagueWithMatches & { name?: string })?.name || null;
-  }, [preferredLeagueId, availableLeagues]);
-
-  const currentCardLeagueId = useMemo(() => {
-    const candidate =
-      filters.leagueId && filters.leagueId !== 'all'
-        ? filters.leagueId
-        : preferredLeagueId;
-    if (!candidate) return null;
-    return availableLeagues.some((l) => sameId(l.id, candidate)) ? candidate : null;
-  }, [filters.leagueId, preferredLeagueId, availableLeagues]);
-
   // If no league is passed in URL, auto-select preferredLeagueId on this page
   useEffect(() => {
     if (preferredAppliedRef.current) return;
@@ -1945,17 +1998,6 @@ export default function CareerPage() {
     }
     preferredAppliedRef.current = true;
   }, [urlLeagueId, preferredLeagueId, filters.leagueId, availableLeagues, dispatch]);
-
-  // Keep a manually selected "Current" toggle pointed at the active current league.
-  useEffect(() => {
-    const nextSelection = (previous: string) => (
-      previous === 'all' ? 'all' : (currentCardLeagueId || 'all')
-    );
-
-    setChartLeague(nextSelection);
-    setInfluenceLeague(nextSelection);
-    setWinLossLeague(nextSelection);
-  }, [currentCardLeagueId]);
 
   const selectedSeasonLabel = useMemo(() => {
     if (!seasonFilter || seasonFilter === 'all') return 'All Seasons';
@@ -1995,6 +2037,10 @@ export default function CareerPage() {
   };
 
   const handleLeagueFilterChange = (value: string) => {
+    if (value === 'all') {
+      setSeasonFilter('all');
+      setAvailableSeasons([]);
+    }
     dispatch(setLeagueFilter(value));
     setLeagueMenuOpen(false);
   };
@@ -2041,8 +2087,10 @@ export default function CareerPage() {
             mb: 4,
             width: '100%',
             maxWidth: '100%',
-            overflow: 'hidden',
+            overflow: 'visible',
             background: '#0e0e0e',
+            position: 'relative',
+            zIndex: 1400,
           }}>
             <Paper sx={{
               px: 0,
@@ -2051,6 +2099,7 @@ export default function CareerPage() {
               color: 'white',
               boxShadow: 'none',
               minHeight: { xs: 'var(--header-mobile-min-height)', md: 'auto' },
+              overflow: 'visible',
             }}>
               {/* Centered Title */}
               <Box sx={{
@@ -2105,17 +2154,20 @@ export default function CareerPage() {
                 py: { xs: 1.5, md: 1.5 },
                 maxWidth: '1200px',
                 mx: 'auto',
+                position: 'relative',
+                zIndex: 2,
               }}>
                 {/* Search Input */}
                 <Box
                   ref={searchWrapperRef}
                   sx={{
-                    width: { xs: '100%', md: 460 },
-                    minWidth: { md: 300 },
+                    flex: { xs: '1 1 100%', md: '1 1 360px' },
+                    width: { xs: '100%', md: 'auto' },
+                    minWidth: { xs: 0, md: 320 },
                     maxWidth: { md: 480 },
                     ml: { xs: 0, md: 0.8 },
                     position: 'relative',
-                    zIndex: 1200,
+                    zIndex: 1500,
                     isolation: 'isolate',
                   }}
                 >
@@ -2136,12 +2188,21 @@ export default function CareerPage() {
                       }
                     }}
                     onChange={(e) => {
-                      setSearch(e.target.value);
+                      const nextSearch = e.target.value;
+                      setSearch(nextSearch);
+                      setSearchTerm(nextSearch.trim());
+                      if (!nextSearch.trim()) {
+                        setSearchTerm('');
+                      }
                       if (!showTeammatePanel) setShowTeammatePanel(true);
+                      if (!searchTriggered && !teammatesLoading) {
+                        void fetchTeammates();
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        if (!searchTriggered) void fetchTeammates();
+                        setSearchTerm(search.trim());
+                        void fetchTeammates();
                         setShowTeammatePanel(true);
                         return;
                       }
@@ -2151,6 +2212,7 @@ export default function CareerPage() {
                     }}
                     sx={{
                       width: { xs: '100%', md: '100%' },
+                      minWidth: 0,
                       '& .MuiOutlinedInput-root': {
                         height: { xs: 38, sm: 42 },
                         color: 'white',
@@ -2164,12 +2226,15 @@ export default function CareerPage() {
                         color: 'white',
                         fontSize: { xs: 14, sm: 16.5 },
                         py: 0.5,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                         '&::placeholder': { color: '#fff', opacity: 1 }
                       }
                     }}
                     InputProps={{
                       startAdornment: (
-                        <Box sx={{ mr: 3, ml: 0.5, display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ mr: { xs: 1.25, sm: 1.75 }, ml: 0.5, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                           <Image src={SearchIcon} alt="Search" width={25} height={25} />
                         </Box>
                       ),
@@ -2181,13 +2246,16 @@ export default function CareerPage() {
                       elevation={6}
                       sx={{
                         position: 'absolute',
-                        top: '100%',
+                        top: 'calc(100% + 4px)',
                         left: 0,
                         right: 0,
-                        zIndex: 1300,
+                        zIndex: 1600,
                         mt: 0,
-                        maxHeight: 320,
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        maxHeight: { xs: 'min(42vh, 280px)', sm: 320 },
                         overflowY: 'auto',
+                        overflowX: 'hidden',
                         borderRadius: 2,
                         background: '#1f1f1f',
                         border: '1px solid rgba(255,255,255,0.25)',
@@ -2762,31 +2830,24 @@ export default function CareerPage() {
                         >
                           All Leagues
                         </Button>
-                        {(() => {
-                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                          if (!currentId || !currentName) return null;
-                          return (
-                            <Button
-                              size="small"
-                              sx={{
-                                background: chartLeague === currentId ? themeColors.primary : '#2a2a2a',
-                                color: themeColors.text,
-                                fontSize: 10,
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                px: 1.2,
-                                py: 0.4,
-                                borderRadius: 1,
-                                minWidth: 'auto',
-                                '&:hover': { background: chartLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                              }}
-                              onClick={() => setChartLeague(currentId)}
-                            >
-                              Current
-                            </Button>
-                          );
-                        })()}
+                        <Button
+                          size="small"
+                          sx={{
+                            background: chartLeague === 'current' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: chartLeague === 'current' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setChartLeague('current')}
+                        >
+                          Current
+                        </Button>
                       </Box>
 
                       {/* Right side - Time grouping toggles */}
@@ -2979,31 +3040,24 @@ export default function CareerPage() {
                         >
                           All Leagues
                         </Button>
-                        {(() => {
-                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                          if (!currentId || !currentName) return null;
-                          return (
-                            <Button
-                              size="small"
-                              sx={{
-                                background: influenceLeague === currentId ? themeColors.primary : '#2a2a2a',
-                                color: themeColors.text,
-                                fontSize: 10,
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                px: 1.2,
-                                py: 0.4,
-                                borderRadius: 1,
-                                minWidth: 'auto',
-                                '&:hover': { background: influenceLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                              }}
-                              onClick={() => setInfluenceLeague(currentId)}
-                            >
-                              Current
-                            </Button>
-                          );
-                        })()}
+                        <Button
+                          size="small"
+                          sx={{
+                            background: influenceLeague === 'current' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: influenceLeague === 'current' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setInfluenceLeague('current')}
+                        >
+                          Current
+                        </Button>
                       </Box>
 
                       <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
@@ -3138,31 +3192,24 @@ export default function CareerPage() {
                         >
                           All Leagues
                         </Button>
-                        {(() => {
-                          const currentId = (filters.leagueId && filters.leagueId !== 'all') ? filters.leagueId : preferredLeagueId;
-                          const currentName = (filters.leagueId && filters.leagueId !== 'all') ? selectedLeagueName : preferredLeagueName;
-                          if (!currentId || !currentName) return null;
-                          return (
-                            <Button
-                              size="small"
-                              sx={{
-                                background: winLossLeague === currentId ? themeColors.primary : '#2a2a2a',
-                                color: themeColors.text,
-                                fontSize: 10,
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                px: 1.2,
-                                py: 0.4,
-                                borderRadius: 1,
-                                minWidth: 'auto',
-                                '&:hover': { background: winLossLeague === currentId ? themeColors.primary : '#3a3a3a' }
-                              }}
-                              onClick={() => setWinLossLeague(currentId)}
-                            >
-                              Current
-                            </Button>
-                          );
-                        })()}
+                        <Button
+                          size="small"
+                          sx={{
+                            background: winLossLeague === 'current' ? themeColors.primary : '#2a2a2a',
+                            color: themeColors.text,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: 1,
+                            minWidth: 'auto',
+                            '&:hover': { background: winLossLeague === 'current' ? themeColors.primary : '#3a3a3a' }
+                          }}
+                          onClick={() => setWinLossLeague('current')}
+                        >
+                          Current
+                        </Button>
                       </Box>
 
                       <CardContent sx={{ p: 2, pt: 1, pb: 1 }}>
