@@ -1532,18 +1532,42 @@ export default function PlayerStatsPage() {
 
     const yearsOptions = useMemo(() => {
         const years = new Set<number>([dayjs().year()]);
-        const leaguesList = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? []);
+        const addYear = (value: unknown) => {
+            const numeric = Number(value);
+            if (Number.isFinite(numeric) && numeric >= 1900 && numeric <= 3000) {
+                years.add(Math.trunc(numeric));
+            }
+        };
+        const addYearsFromPayload = (payload: unknown) => {
+            const source = (payload || {}) as {
+                allYears?: unknown[];
+                years?: unknown[];
+                leagues?: LeagueWithMatchesTyped[];
+            };
 
-        leaguesList.forEach((league) => {
+            (source.allYears || []).forEach(addYear);
+            (source.years || []).forEach(addYear);
+            (source.leagues || []).forEach((league) => {
+                if (!hasMatches(league)) return;
+                (league.matches || []).forEach((m) => addYear(dayjs(m.date).year()));
+            });
+        };
+
+        // Prefer the unfiltered career payload so the Year dropdown never collapses
+        // to only the currently selected league's years.
+        addYearsFromPayload(careerData);
+        addYearsFromPayload(data);
+
+        const fallbackLeaguesList = ((data?.leagues as LeagueWithMatchesTyped[] | undefined) ?? []);
+        fallbackLeaguesList.forEach((league) => {
             if (!hasMatches(league)) return;
             (league.matches || []).forEach((m) => {
-                const y = dayjs(m.date).year();
-                if (Number.isFinite(y)) years.add(y);
+                addYear(dayjs(m.date).year());
             });
         });
 
         return ['all', ...Array.from(years).sort((a, b) => b - a).map(String)];
-    }, [data]);
+    }, [careerData, data]);
 
     // Helper: get latest league (by latest match date within the selected year)
     const getLatestLeagueIdForYear = (list: LeagueWithMatchesTyped[], y: string) => {
