@@ -637,9 +637,11 @@ export default function CareerPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const playerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const currentUserId = String(user?.id || '').trim();
+  const authUser = user as (typeof user & { userId?: string | number; user_id?: string | number; _id?: string | number });
+  const currentUserId = String(authUser?.id ?? authUser?.userId ?? authUser?.user_id ?? authUser?._id ?? '').trim();
   const routePlayerId = String(playerId || '').trim();
-  const canViewPersonalSections = Boolean(currentUserId && routePlayerId && currentUserId === routePlayerId);
+  const authTokenForVisibility = token || getAuthToken() || Cookies.get('token') || '';
+  const canViewPersonalSections = Boolean(routePlayerId && (currentUserId || authTokenForVisibility));
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -1443,35 +1445,6 @@ export default function CareerPage() {
     };
   }, [strengths]);
 
-  // --- Focus Area suggestion ---
-  const focusSuggestion = useMemo(() => {
-    if (!influenceMatches.length || !influence.length) {
-      return 'Play a few more games to unlock a personalized focus area.';
-    }
-    const actionMap: Record<string, string> = {
-      Goals: 'finishing',
-      Assists: 'key passes',
-      'Clean Sheets': 'defensive positioning',
-      Defence: 'defensive duels',
-      'MOTM Votes': 'match-defining moments',
-      Impact: 'overall influence',
-      'Free Kicks': 'set-piece accuracy',
-      Penalties: 'penalty conversion'
-    };
-    const threshold = strengths.some(s => s.scaled >= 75) ? 75 : 50;
-    const label = threshold === 75 ? 'top 25%' : 'top 50%';
-    const candidates = influence.filter(i => actionMap[i.metric] !== undefined);
-    let target = candidates
-      .filter(c => c.scaled < threshold)
-      .sort((a, b) => (threshold - b.scaled) - (threshold - a.scaled))[0];
-    if (!target) {
-      target = [...candidates].sort((a, b) => a.scaled - b.scaled)[0];
-      if (!target) return '';
-    }
-    const metricName = target.metric === 'MOTM Votes' ? 'MOTM votes' : target.metric.toLowerCase();
-    return `Increasing your ${actionMap[target.metric]} could elevate you to the ${label} for ${metricName}!`;
-  }, [influenceMatches.length, influence, strengths]);
-
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
     const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
@@ -1612,6 +1585,51 @@ export default function CareerPage() {
 
     return rows;
   }, [yourStats, currentImpactLeagueAvg]);
+
+  // --- Focus Area suggestion ---
+  const focusSuggestion = useMemo(() => {
+    if (!filteredMatches.length) {
+      return 'Play a few more games to unlock a personalized focus area.';
+    }
+
+    const focusCopy: Record<string, { action: string; metricName: string; verb: 'is' | 'are' }> = {
+      Goals: { action: 'finishing', metricName: 'goals', verb: 'are' },
+      Assists: { action: 'key passes', metricName: 'assists', verb: 'are' },
+      'Clean Sheets': { action: 'defensive positioning', metricName: 'clean sheets', verb: 'are' },
+      'MOTM Votes': { action: 'match-defining moments', metricName: 'MOTM votes', verb: 'are' },
+      'Defensive Impact Votes': { action: 'defensive impact', metricName: 'defensive impact votes', verb: 'are' },
+      'Game Contribution Index': { action: 'overall influence', metricName: 'game contribution index', verb: 'is' },
+    };
+
+    const comparableRows = leagueComparisonRows
+      .filter((row) => focusCopy[row.metric])
+      .filter((row) => row.metric !== 'Clean Sheets' || yourStats.cleanSheets > 0 || yourStats.matchesWithCleanSheets > 0)
+      .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0);
+
+    if (!comparableRows.length) {
+      return 'Your available stats are still building; play more matches to unlock a clearer focus area.';
+    }
+
+    const rowsWithGap = comparableRows.map((row) => {
+      const gap = toStatNumber(row.leagueAverage) - toStatNumber(row.yourTotal);
+      const gapRatio = gap / Math.max(Math.abs(toStatNumber(row.leagueAverage)), 1);
+      return { row, gap, gapRatio };
+    });
+
+    const target = rowsWithGap
+      .filter((item) => item.gap > 0)
+      .sort((a, b) => b.gapRatio - a.gapRatio || b.gap - a.gap)[0];
+
+    if (target) {
+      const copy = focusCopy[target.row.metric];
+      return `Focus on ${copy.action}: your ${copy.metricName} ${copy.verb} ${target.row.yourDisplay}; league average ${target.row.leagueDisplay}.`;
+    }
+
+    const strongest = rowsWithGap
+      .sort((a, b) => (b.row.yourTotal - b.row.leagueAverage) - (a.row.yourTotal - a.row.leagueAverage))[0];
+    const copy = focusCopy[strongest.row.metric];
+    return `Your ${copy.metricName} ${copy.verb} already above league average; keep building ${copy.action} to maintain that edge.`;
+  }, [filteredMatches.length, leagueComparisonRows, yourStats.cleanSheets, yourStats.matchesWithCleanSheets]);
 
   const topStrengthRows = useMemo(
     () => [...leagueComparisonRows]
