@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
@@ -2727,7 +2727,7 @@ export default function CareerPage() {
                               '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
                             }}
                           >
-                            {formatSeasonDisplayLabel(season)}{season.isActive ? ' (Active)' : ''}
+                            {formatSeasonDisplayLabel(season)}
                           </MenuItem>
                         ))}
                       </Menu>
