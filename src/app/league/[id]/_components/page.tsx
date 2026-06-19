@@ -4753,6 +4753,7 @@ export default function LeagueDetailPage() {
                                                                     '&:hover': { backgroundColor: rowBgColorHover },
                                                                     borderBottomLeftRadius: isLast ? '8px' : 0,
                                                                     borderBottomRightRadius: isLast ? '8px' : 0,
+                                                                    minHeight: { xs: '58px', sm: '72px' },
                                                                     // p: 2
                                                                 }}
                                                             >
@@ -4770,6 +4771,7 @@ export default function LeagueDetailPage() {
                                                                     zIndex: 2,
                                                                     backgroundColor: rowBgColor,
                                                                     transition: 'background-color 0.2s',
+                                                                    alignSelf: 'stretch',
                                                                     '.MuiListItem-root:hover &': {
                                                                         backgroundColor: rowBgColorHover,
                                                                     },
@@ -6321,13 +6323,13 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-0 font-bold text-white`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-0 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
-                                                                    <div className="text-center text-white font-bold league-table-sticky-rank">{index + 1}</div>
+                                                                    <div className="text-center text-white font-bold league-table-sticky-rank h-full flex items-center justify-center">{index + 1}</div>
 
                                                                     {/* Player Info */}
-                                                                    <div className="flex items-center gap-3 min-w-0 league-table-sticky-name transition-colors duration-150">
+                                                                    <div className="flex items-center gap-3 min-w-0 league-table-sticky-name transition-colors duration-150 h-full">
                                                                         <div
                                                                             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-bold text-xs"
                                                                             style={{
@@ -6349,7 +6351,9 @@ export default function LeagueDetailPage() {
                                                                                 <span className="text-white font-bold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <span className="league-player-pos league-table-row-text text-white/75 font-normal text-xs truncate block whitespace-nowrap">{posLabel}</span>
+                                                                            <Typography className="league-table-row-text" sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                                                                                {posLabel}
+                                                                            </Typography>
                                                                         </div>
                                                                     </div>
 
@@ -6382,7 +6386,7 @@ export default function LeagueDetailPage() {
                                                             );
                                                         })}
                                                     {tableData.length === 0 && (
-                                                        <div className="league-table-row-text grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[56px] min-h-[56px] px-4 py-0 bg-table-row-even font-bold text-white">
+                                                        <div className="league-table-row-text grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 bg-table-row-even font-bold text-white">
                                                             <div className="text-center text-white/80" style={{ gridColumn: '1 / -1' }}>
                                                                 No players found for this season.
                                                             </div>
