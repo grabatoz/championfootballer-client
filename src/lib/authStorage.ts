@@ -34,6 +34,9 @@ export interface BasicUser {
 
 export interface UserProfile {
   id: string;
+  userId?: string;
+  user_id?: string;
+  _id?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
@@ -84,15 +87,25 @@ interface AuthResult {
 const hasWindow = (): boolean => typeof window !== 'undefined';
 
 function persistAll(user: UserProfile, userData: UserDataShape, token: string): void {
+  // Standardize ID fields
+  const userIdValue = user.id || (user as any).userId || (user as any).user_id || (user as any)._id;
+  const standardizedUser: UserProfile = {
+    ...user,
+    id: userIdValue,
+    userId: userIdValue,
+    user_id: userIdValue,
+    _id: userIdValue
+  };
+
   console.log('💾 Saving auth data:', { 
-    userId: user.id, 
+    userId: userIdValue, 
     tokenLength: token?.length,
     tokenValid: token && token.split('.').length === 3 
   });
 
   // Exact keys you want in LS
   localStorage.setItem('isAuthenticated', 'true');
-  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(standardizedUser));
   localStorage.setItem('userData', JSON.stringify(userData));
   localStorage.setItem('token', token);
 
@@ -103,7 +116,7 @@ function persistAll(user: UserProfile, userData: UserDataShape, token: string): 
   // Backup bundle
   const authData: AuthData = {
     token,
-    user,
+    user: standardizedUser,
     userData,
     isAuthenticated: true,
     sessionExpiry: expiryDate.toISOString(),
@@ -196,6 +209,17 @@ export const authStorage = {
         });
       }
 
+      const standardizeUserProfile = (u: UserProfile): UserProfile => {
+        const uid = u.id || (u as any).userId || (u as any).user_id || (u as any)._id;
+        return {
+          ...u,
+          id: uid,
+          userId: uid,
+          user_id: uid,
+          _id: uid
+        };
+      };
+
       if (isAuthenticated === 'true' && user && userData) {
         let token = cookieToken;
 
@@ -216,7 +240,7 @@ export const authStorage = {
 
         return {
           token,
-          user: JSON.parse(user) as UserProfile,
+          user: standardizeUserProfile(JSON.parse(user) as UserProfile),
           userData: JSON.parse(userData) as UserDataShape,
           isAuthenticated: true,
           sessionExpiry: sessionExpiry || undefined,
@@ -232,7 +256,7 @@ export const authStorage = {
         }
         return {
           token: parsed.token,
-          user: parsed.user,
+          user: standardizeUserProfile(parsed.user),
           userData: parsed.userData,
           isAuthenticated: parsed.isAuthenticated,
           sessionExpiry: parsed.sessionExpiry,
@@ -248,7 +272,7 @@ export const authStorage = {
         }
         return {
           token: parsed.token,
-          user: parsed.user,
+          user: standardizeUserProfile(parsed.user),
           userData: parsed.userData,
           isAuthenticated: parsed.isAuthenticated,
           sessionExpiry: parsed.sessionExpiry,

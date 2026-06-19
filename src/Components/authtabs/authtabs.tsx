@@ -133,8 +133,12 @@ type SocialProviders = {
 
 // Helper to normalize User to UserProfile
 const normalizeUserForStorage = (user: User): UserProfile => {
+  const userIdValue = user.id || (user as any).userId || (user as any).user_id || (user as any)._id;
   return {
-    id: user.id,
+    id: userIdValue,
+    userId: userIdValue,
+    user_id: userIdValue,
+    _id: userIdValue,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,

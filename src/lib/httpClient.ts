@@ -40,7 +40,7 @@ export function getPerformanceMetrics() {
 }
 
 // Request timeout handler
-const DEFAULT_TIMEOUT = IS_PRODUCTION ? PRODUCTION_TIMEOUT : 10000;
+const DEFAULT_TIMEOUT = IS_PRODUCTION ? PRODUCTION_TIMEOUT : 30000;
 
 // DNS Prefetch for production
 if (DNS_PREFETCH_ENABLED) {
@@ -88,7 +88,8 @@ export async function optimizedFetch(
     const pending = pendingRequests.get(requestKey);
     if (pending && Date.now() - pending.timestamp < REQUEST_DEDUP_WINDOW) {
       console.log(`⚡ Deduped request: ${endpoint}`);
-      return pending.promise;
+      const response = await pending.promise;
+      return response.clone();
     }
   }
 
@@ -183,6 +184,9 @@ export async function optimizedFetch(
       console.log(`⚡ Fast request: ${endpoint} took ${duration.toFixed(0)}ms`);
     }
 
+    if (method === 'GET') {
+      return response.clone();
+    }
     return response;
   } catch (error) {
     const duration = performance.now() - startTime;

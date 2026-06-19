@@ -18,3 +18,13 @@ Creating turbopack project {
  ✓ Ready in 4.6s
  ○ Compiling / ...
  ✓ Compiled / in 14.4s
+ ✓ Compiled in 7.1s
+ ✓ Compiled in 436ms
+ ○ Compiling /player/[id] ...
+ ✓ Compiled /player/[id] in 7s
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 6.1s
+ GET /player/a60adc4b-9054-453f-bc5b-af02e06fb4fe 500 in 15162ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1383ms
+ GET /favicon.ico 200 in 2145ms

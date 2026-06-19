@@ -13,6 +13,7 @@ import type {
 } from '@/types/api';
 import { saveAuthSession, decodeJwt } from './auth';
 import { getAuthToken } from './tokenManager';
+import { optimizedFetch } from './httpClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -53,13 +54,9 @@ interface Player {
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<User>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await optimizedFetch('/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ user: credentials }),
-        credentials: 'include'
       });
 
       const data = await response.json();
@@ -83,13 +80,9 @@ export const authAPI = {
 
   register: async (credentials: RegisterCredentials): Promise<ApiResponse<User>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await optimizedFetch('/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ user: credentials }),
-        credentials: 'include'
       });
 
       const data = await response.json();
@@ -113,14 +106,9 @@ export const authAPI = {
 
   verifyRegistration: async (email: string, code: string): Promise<ApiResponse<User>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-registration`, {
+      const response = await optimizedFetch('/auth/verify-registration', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ email, code }),
-        credentials: 'include'
       });
 
       const data = await response.json();
@@ -142,12 +130,8 @@ export const authAPI = {
 
   resendVerification: async (email: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+      const response = await optimizedFetch('/auth/resend-verification', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ email }),
       });
 
@@ -166,12 +150,8 @@ export const authAPI = {
 
   resetPassword: async (email: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      const response = await optimizedFetch('/auth/reset-password', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ user: { email } }),
       });
 
@@ -191,12 +171,8 @@ export const authAPI = {
 
   verifyResetCode: async (email: string, code: string, newPassword: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-reset-code`, {
+      const response = await optimizedFetch('/auth/verify-reset-code', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ email, code, newPassword }),
       });
 
@@ -217,12 +193,8 @@ export const authAPI = {
 
   verifyOtp: async (email: string, code: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      const response = await optimizedFetch('/auth/verify-otp', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ email, code }),
       });
 
@@ -255,13 +227,10 @@ export const authAPI = {
         tokenStart: token.substring(0, 10)
       });
 
-      const response = await fetch(`${API_BASE_URL}/auth/data`, {
+      const response = await optimizedFetch('/auth/data', {
         headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include',
+        }
       });
 
       // Check for token refresh
@@ -285,30 +254,24 @@ export const authAPI = {
 
   logout: async (token?: string | null) => {
     try {
-      let headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+      let headers: HeadersInit = {};
 
       if (typeof token === 'string' && token && token !== 'undefined' && token !== 'null') {
         headers = {
-          ...headers,
           'Authorization': `Bearer ${token}`,
         };
       }
 
-      let response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      let response = await optimizedFetch('/auth/logout', {
         method: 'POST',
         headers,
-        credentials: 'include',
       });
 
       // Backward compatibility for older servers that only support GET.
       if (!response.ok && (response.status === 404 || response.status === 405)) {
-        response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        response = await optimizedFetch('/auth/logout', {
           method: 'GET',
           headers,
-          credentials: 'include',
         });
       }
 
@@ -356,13 +319,11 @@ export const authAPI = {
 
       console.log('📤 Sending checkAuth request with token');
 
-      const response = await fetch(`${API_BASE_URL}/auth/data`, {
+      const response = await optimizedFetch('/auth/data', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
+        }
       });
 
       // Check for token refresh
@@ -386,7 +347,7 @@ export const authAPI = {
       console.error('❌ checkAuth error:', error);
       return {
         success: false,
-        message:'Authentication check failed',
+        message: 'Authentication check failed',
         error: error instanceof Error ? error.message : 'Authentication check failed'
       };
     }
@@ -409,7 +370,7 @@ export const leagueAPI = {
       }
 
       console.log('📤 Fetching leagues with token');
-      const response = await fetch(`${API_BASE_URL}/leagues`, {
+      const response = await optimizedFetch('/leagues', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -432,22 +393,32 @@ export const leagueAPI = {
   },
 
   createLeague: async (token: string, leagueData: CreateLeagueDTO) => {
-    const response = await fetch(`${API_BASE_URL}/leagues`, {
+    const response = await optimizedFetch('/leagues', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(leagueData),
     });
-    return response.json();
+    const data = await response.json();
+    if (response.ok) {
+      if (typeof window !== 'undefined') {
+        const leagueId = data?.league?.id || data?.id;
+        window.dispatchEvent(new CustomEvent('league-created', { 
+          detail: { league: data?.league || data, id: leagueId } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: leagueId } 
+        }));
+      }
+    }
+    return data;
   },
 
   joinLeague: async (token: string, inviteCode: string) => {
-    const response = await fetch(`${API_BASE_URL}/leagues/join`, {
+    const response = await optimizedFetch('/leagues/join', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ inviteCode }),
@@ -455,6 +426,15 @@ export const leagueAPI = {
     const data = await response.json();
     if (!response.ok) {
       return { success: false, message: data?.message || 'Failed to join league' };
+    }
+    if (typeof window !== 'undefined') {
+      const leagueId = data?.league?.id || data?.id;
+      window.dispatchEvent(new CustomEvent('league-updated', { 
+        detail: { league: data?.league || data, id: leagueId } 
+      }));
+      window.dispatchEvent(new CustomEvent('data-mutated', { 
+        detail: { resourceType: 'league', resourceId: leagueId } 
+      }));
     }
     return data;
   },
@@ -475,7 +455,7 @@ export const matchAPI = {
         };
       }
 
-      const response = await fetch(`${API_BASE_URL}/matches`, {
+      const response = await optimizedFetch('/matches', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -506,33 +486,55 @@ export const matchAPI = {
   },
 
   createMatch: async (token: string, matchData: CreateMatchDTO) => {
-    const response = await fetch(`${API_BASE_URL}/matches`, {
+    const response = await optimizedFetch('/matches', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(matchData),
     });
-    return response.json();
+    const data = await response.json();
+    if (response.ok) {
+      if (typeof window !== 'undefined') {
+        const matchId = data?.match?.id || data?.id;
+        window.dispatchEvent(new CustomEvent('match-created', { 
+          detail: { match: data?.match || data, id: matchId, leagueId: matchData.leagueId } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'match', resourceId: matchId } 
+        }));
+      }
+    }
+    return data;
   },
 
   updateMatch: async (token: string, matchId: string, matchData: UpdateMatchDTO) => {
-    const response = await fetch(`${API_BASE_URL}/matches/${matchId}`, {
+    const response = await optimizedFetch(`/matches/${matchId}`, {
       method: 'PUT',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(matchData),
     });
-    return response.json();
+    const data = await response.json();
+    if (response.ok) {
+      if (typeof window !== 'undefined') {
+        const updatedMatch = data?.match || data;
+        window.dispatchEvent(new CustomEvent('match-updated', { 
+          detail: { match: updatedMatch, matchId } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'match', resourceId: matchId } 
+        }));
+      }
+    }
+    return data;
   },
 
   getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile/leagues`, {
+      const response = await optimizedFetch('/profile/leagues', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -554,36 +556,13 @@ export const matchAPI = {
     }
   },
 
-  // getMatches: async (): Promise<ApiResponse<Match[]>> => {
-  //   try {
-  //     const token = Cookies.get('token');
-  //     const response = await fetch(`${API_BASE_URL}/profile/matches`, {
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`
-  //       }
-  //     });
-
-  //     const data = await response.json();
-  //     return {
-  //       success: response.ok,
-  //       data: data.matches,
-  //       error: data.error
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       error: error instanceof Error ? error.message : 'Failed to fetch matches'
-  //     };
-  //   }
-  // },
-
   updateProfilePicture: async (imageFile: File): Promise<ApiResponse<User>> => {
     try {
       const token = Cookies.get('token');
       const formData = new FormData();
       formData.append('profilePicture', imageFile);
 
-      const response = await fetch(`${API_BASE_URL}/profile/picture`, {
+      const response = await optimizedFetch('/profile/picture', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -592,6 +571,13 @@ export const matchAPI = {
       });
 
       const data = await response.json();
+      if (response.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('data-mutated', { 
+            detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+          }));
+        }
+      }
       return {
         success: response.ok,
         data: data.user,
@@ -611,9 +597,8 @@ export const matchAPI = {
 // Users API Functions
 export const usersAPI = {
   getUserProfile: async (token: string, userId: string) => {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    const response = await optimizedFetch(`/users/${userId}`, {
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
     });
@@ -621,15 +606,22 @@ export const usersAPI = {
   },
 
   updateUserProfile: async (token: string, userId: string, userData: Partial<User>) => {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    const response = await optimizedFetch(`/users/${userId}`, {
       method: 'PUT',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(userData),
     });
-    return response.json();
+    const data = await response.json();
+    if (response.ok) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'user', resourceId: userId } 
+        }));
+      }
+    }
+    return data;
   },
 };
 
@@ -657,7 +649,7 @@ export const profileAPI = {
         };
       }
 
-      const response = await fetch(`${API_BASE_URL}/profile`, {
+      const response = await optimizedFetch('/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -696,16 +688,22 @@ export const profileAPI = {
   }): Promise<ApiResponse<User>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile`, {
+      const response = await optimizedFetch('/profile', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(userData)
       });
 
       const data = await response.json();
+      if (response.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('data-mutated', { 
+            detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+          }));
+        }
+      }
       return {
         success: response.ok,
         data: data.user,
@@ -731,16 +729,22 @@ export const profileAPI = {
   }): Promise<ApiResponse<User>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile/skills`, {
+      const response = await optimizedFetch('/profile/skills', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ skills })
       });
 
       const data = await response.json();
+      if (response.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('data-mutated', { 
+            detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+          }));
+        }
+      }
       return {
         success: response.ok,
         data: data.user,
@@ -759,7 +763,7 @@ export const profileAPI = {
   getStatistics: async (): Promise<ApiResponse<Statistics>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile/statistics`, {
+      const response = await optimizedFetch('/profile/statistics', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -784,7 +788,7 @@ export const profileAPI = {
   getLeagues: async (): Promise<ApiResponse<League[]>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile/leagues`, {
+      const response = await optimizedFetch('/profile/leagues', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -809,7 +813,7 @@ export const profileAPI = {
   getMatches: async (): Promise<ApiResponse<Match[]>> => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch(`${API_BASE_URL}/profile/matches`, {
+      const response = await optimizedFetch('/profile/matches', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -837,7 +841,7 @@ export const profileAPI = {
       const formData = new FormData();
       formData.append('profilePicture', imageFile);
 
-      const response = await fetch(`${API_BASE_URL}/profile/picture`, {
+      const response = await optimizedFetch('/profile/picture', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -846,6 +850,13 @@ export const profileAPI = {
       });
 
       const data = await response.json();
+      if (response.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('data-mutated', { 
+            detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+          }));
+        }
+      }
       return {
         success: response.ok,
         data: data.user,
@@ -894,17 +905,14 @@ interface UpdateProfileData {
 }
 
 export const updateProfile = async ( token: string , updateData: UpdateProfileData) => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  
   // Debug logging
   console.log('🔍 updateProfile called with data:', updateData);
   console.log('🔍 positionType value:', updateData.positionType);
   console.log('🔍 Full updateData object:', JSON.stringify(updateData, null, 2));
   
-  const response = await fetch(`${apiUrl}/profile`, {
+  const response = await optimizedFetch('/profile', {
     method: "PATCH",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(updateData),
@@ -916,22 +924,35 @@ export const updateProfile = async ( token: string , updateData: UpdateProfileDa
   } catch {
     data = { message: 'Invalid server response' };
   }
+  if (response.ok) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('data-mutated', { 
+        detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+      }));
+    }
+  }
   return { ok: response.ok, data };
 };
 
 export async function deleteProfile(token: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
+  const res = await optimizedFetch('/profile', {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
     },
   });
+  if (res.ok) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('data-mutated', { 
+        detail: { resourceType: 'user' } 
+      }));
+    }
+  }
   return res.ok;
 }
 
 export async function deleteProfilePicture(token: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  const res = await fetch(`${apiUrl}/profile/picture`, {
+  const res = await optimizedFetch('/profile/picture', {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -942,6 +963,13 @@ export async function deleteProfilePicture(token: string) {
     data = await res.json();
   } catch {
     data = { message: 'Invalid server response' };
+  }
+  if (res.ok) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('data-mutated', { 
+        detail: { resourceType: 'user', resourceId: data?.user?.id || data?.id } 
+      }));
+    }
   }
   return { ok: res.ok, data };
 }
@@ -968,9 +996,8 @@ interface PlayerDetails {
 export const playerAPI = {
   getPlayedWith: async (token: string, leagueId?: string): Promise<ApiResponse<Player[]>> => {
     try {
-      const url = new URL(`${API_BASE_URL}/players/played-with`);
-      if (leagueId && leagueId !== 'all') url.searchParams.set('leagueId', leagueId);
-      const response = await fetch(url.toString(), {
+      const search = leagueId && leagueId !== 'all' ? `?leagueId=${leagueId}` : '';
+      const response = await optimizedFetch(`/players/played-with${search}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -992,9 +1019,7 @@ export const playerAPI = {
   // Fetch members of a league even if they haven't played any match
   getLeagueMembers: async (token: string, leagueId: string): Promise<ApiResponse<Player[]>> => {
     try {
-      const url = new URL(`${API_BASE_URL}/players/by-league`);
-      url.searchParams.set('leagueId', leagueId);
-      const response = await fetch(url.toString(), {
+      const response = await optimizedFetch(`/players/by-league?leagueId=${leagueId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -1016,11 +1041,10 @@ export const playerAPI = {
           _t: String(Date.now())
         });
         // Use the new comprehensive profile endpoint
-        const response = await fetch(`${API_BASE_URL}/players/${playerId}/profile?${params.toString()}`, {
+        const response = await optimizedFetch(`/players/${playerId}/profile?${params.toString()}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
-            },
-            cache: 'no-store'
+            }
         });
 
         if (!response.ok) {
@@ -1042,8 +1066,8 @@ export const playerAPI = {
       const params = new URLSearchParams();
       if (leagueId) params.append('leagueId', leagueId);
       if (year) params.append('year', year);
-      const url = `${API_BASE_URL}/players/${playerId}/xp?${params.toString()}`;
-      const res = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      const url = `/players/${playerId}/xp?${params.toString()}`;
+      const res = await optimizedFetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
       
       // Check if response is JSON before parsing
       if (!res.ok) {
@@ -1078,10 +1102,9 @@ export const playerAPI = {
       if (year && year !== 'all') params.append('year', year);
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
       params.append('_t', String(Date.now()));
-      const url = `${API_BASE_URL}/players/${playerId}/trophies?${params.toString()}`;
-      const res = await fetch(url, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        cache: 'no-store'
+      const url = `/players/${playerId}/trophies?${params.toString()}`;
+      const res = await optimizedFetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
       if (!res.ok) {
@@ -1115,10 +1138,9 @@ export const playerAPI = {
       if (year && year !== 'all') params.append('year', year);
       if (seasonId && seasonId !== 'all') params.append('seasonId', seasonId);
       params.append('_t', String(Date.now()));
-      const url = `${API_BASE_URL}/players/${playerId}/history-records?${params.toString()}`;
-      const res = await fetch(url, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        cache: 'no-store'
+      const url = `/players/${playerId}/history-records?${params.toString()}`;
+      const res = await optimizedFetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
       if (!res.ok) {
@@ -1151,13 +1173,20 @@ export const achievementsAPI = {
     try {
       const token = Cookies.get('token');
       if (!token) return { success: false, message: 'Not authenticated' };
-      const res = await fetch(`${API_BASE_URL}/users/me/achievements/award`, {
+      const res = await optimizedFetch('/users/me/achievements/award', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok || !json?.success) {
         return { success: false, message: json?.message || 'Failed to award achievements' };
+      }
+      if (res.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('data-mutated', { 
+            detail: { resourceType: 'user' } 
+          }));
+        }
       }
       return { success: true, totalXP: Number(json.totalXP) || 0, achievements: json.achievements };
     } catch (e) {
@@ -1390,8 +1419,8 @@ export async function fetchWorldRanking(params: { mode?: 'avg'|'total'; playerId
   // Always request fresh on non-local to avoid stale caches after new players are saved
   const isLocal = typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
   if (!isLocal) search.set('fresh', '1');
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/world-ranking?${search.toString()}`;
-  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  const url = `/world-ranking?${search.toString()}`;
+  const res = await optimizedFetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if(!res.ok) throw new Error('Failed world ranking');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw: any = await res.json();

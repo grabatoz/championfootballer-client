@@ -2537,7 +2537,7 @@ export default function GlobalTrophyRoom() {
             variant="h3"
             className="all-leagues-heading"
             sx={{
-              display: 'block',
+              display: { xs: 'none', sm: 'block' },
               color: 'white',
               fontFamily: 'var(--font-oswald), "Oswald", sans-serif !important',
               fontWeight: 700,
@@ -2558,7 +2558,7 @@ export default function GlobalTrophyRoom() {
 
           {/* Orange divider */}
           <Box sx={{
-            display: 'block',
+            display: { xs: 'none', sm: 'block' },
             height: 'var(--header-divider-height)',
             bgcolor: 'var(--header-divider-color)',
             width: '100vw',
@@ -2640,111 +2640,111 @@ export default function GlobalTrophyRoom() {
               >
                 {/* Year Filter */}
                 <div className={`filter-select-wrapper${yearDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                {isDesktop ? (
-                  <select
-                    className="filter-select"
-                    value={selectedYear || 'all'}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    onMouseDown={() => setYearDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
-                    style={{
-                      height: '39px',
-                      padding: '0 28px 0 12px',
-                      marginLeft: 0,
-                      backgroundColor: 'transparent',
-                      color: '#fff',
-                      border: '1.5px solid #e56a16',
-                      borderRadius: '24px',
-                      fontSize: '17px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      width: '100%',
-                      display: 'block',
-                      boxSizing: 'border-box',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      fontWeight: 400,
-                    }}
-                  >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
-                    {yearOptions.map((year) => (
-                      <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <>
-                    <button
-                      ref={yearFilterButtonRef}
-                      type="button"
-                      onClick={() => setYearDropdownOpen((prev) => !prev)}
+                  {isDesktop ? (
+                    <select
+                      className="filter-select"
+                      value={selectedYear || 'all'}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      onMouseDown={() => setYearDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setYearDropdownOpen(false), 100)}
                       style={{
-                        height: '34px',
-                        padding: '0 20px 0 7px',
+                        height: '39px',
+                        padding: '0 28px 0 12px',
                         marginLeft: 0,
                         backgroundColor: 'transparent',
                         color: '#fff',
                         border: '1.5px solid #e56a16',
                         borderRadius: '24px',
-                        fontSize: '11px',
+                        fontSize: '17px',
                         cursor: 'pointer',
                         outline: 'none',
                         width: '100%',
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        display: 'block',
+                        boxSizing: 'border-box',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        fontWeight: 400,
                       }}
                     >
-                      {selectedYear && selectedYear !== 'all' ? selectedYear : 'All Years'}
-                    </button>
-                    <Menu
-                      anchorEl={yearFilterButtonRef.current}
-                      open={yearDropdownOpen}
-                      onClose={() => setYearDropdownOpen(false)}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                      PaperProps={{
-                        sx: {
-                          mt: 0.5,
-                          borderRadius: 1,
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          backgroundColor: '#1a1a1a',
-                          minWidth: yearFilterButtonRef.current?.offsetWidth || 148,
-                          width: 'max-content',
-                          maxWidth: '90vw',
-                        }
-                      }}
-                      MenuListProps={{ sx: { py: 0 } }}
-                    >
-                      {['all', ...yearOptions].map((value) => (
-                        <MenuItem
-                          key={value}
-                          selected={(selectedYear || 'all') === value}
-                          onClick={() => {
-                            setSelectedYear(value);
-                            setYearDropdownOpen(false);
-                          }}
-                          sx={{
-                            color: '#fff',
-                            fontSize: 13,
-                            minHeight: 34,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            '&.Mui-selected': { backgroundColor: '#2b66bd' },
-                            '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
-                          }}
-                        >
-                          {value === 'all' ? 'All Years' : value}
-                        </MenuItem>
+                      <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Years</option>
+                      {yearOptions.map((year) => (
+                        <option key={year} value={year} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                          {year}
+                        </option>
                       ))}
-                    </Menu>
-                  </>
-                )}
+                    </select>
+                  ) : (
+                    <>
+                      <button
+                        ref={yearFilterButtonRef}
+                        type="button"
+                        onClick={() => setYearDropdownOpen((prev) => !prev)}
+                        style={{
+                          height: '34px',
+                          padding: '0 20px 0 7px',
+                          marginLeft: 0,
+                          backgroundColor: 'transparent',
+                          color: '#fff',
+                          border: '1.5px solid #e56a16',
+                          borderRadius: '24px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          width: '100%',
+                          fontWeight: 600,
+                          textAlign: 'left',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {selectedYear && selectedYear !== 'all' ? selectedYear : 'All Years'}
+                      </button>
+                      <Menu
+                        anchorEl={yearFilterButtonRef.current}
+                        open={yearDropdownOpen}
+                        onClose={() => setYearDropdownOpen(false)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{
+                          sx: {
+                            mt: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#1a1a1a',
+                            minWidth: yearFilterButtonRef.current?.offsetWidth || 148,
+                            width: 'max-content',
+                            maxWidth: '90vw',
+                          }
+                        }}
+                        MenuListProps={{ sx: { py: 0 } }}
+                      >
+                        {['all', ...yearOptions].map((value) => (
+                          <MenuItem
+                            key={value}
+                            selected={(selectedYear || 'all') === value}
+                            onClick={() => {
+                              setSelectedYear(value);
+                              setYearDropdownOpen(false);
+                            }}
+                            sx={{
+                              color: '#fff',
+                              fontSize: 13,
+                              minHeight: 34,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                              '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            }}
+                          >
+                            {value === 'all' ? 'All Years' : value}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  )}
                 </div>
 
                 {/* League Filter */}
@@ -2905,131 +2905,110 @@ export default function GlobalTrophyRoom() {
 
                 {/* Season Filter */}
                 <div className={`filter-select-wrapper${seasonDropdownOpen ? ' open' : ''}`} style={{ width: isDesktop ? 150 : '100%' }}>
-                {isDesktop ? (
-                  <select
-                    className="filter-select"
-                    value={selectedSeasonSelectValue}
-                    onChange={(e) => {
-                      handleSeasonSelect(e.target.value);
-                      setSeasonDropdownOpen(false);
-                    }}
-                    onMouseDown={() => {
-                      if (selectedLeagueId && selectedLeagueId !== 'all') {
-                        setSeasonDropdownOpen(true);
-                      }
-                    }}
-                    onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
-                    disabled={!selectedLeagueId || selectedLeagueId === 'all'}
-                    style={{
-                      height: '39px',
-                      padding: '0 29px 0 12px',
-                      marginLeft: 0,
-                      backgroundColor: 'transparent',
-                      color: '#fff',
-                      border: '1.5px solid #e56a16',
-                      borderRadius: '24px',
-                      fontSize: '17px',
-                      cursor: (!selectedLeagueId || selectedLeagueId === 'all') ? 'not-allowed' : 'pointer',
-                      outline: 'none',
-                      width: '100%',
-                      display: 'block',
-                      boxSizing: 'border-box',
-                      opacity: (!selectedLeagueId || selectedLeagueId === 'all') ? 0.6 : 1,
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      fontWeight: 400,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
-                    {availableSeasons.map((season) => (
-                      <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
-                        {season.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <>
-                    <button
-                      ref={seasonFilterButtonRef}
-                      type="button"
-                      onClick={() => {
+                  {isDesktop ? (
+                    <select
+                      className="filter-select"
+                      value={selectedSeasonSelectValue}
+                      onChange={(e) => {
+                        handleSeasonSelect(e.target.value);
+                        setSeasonDropdownOpen(false);
+                      }}
+                      onMouseDown={() => {
                         if (selectedLeagueId && selectedLeagueId !== 'all') {
-                          setSeasonDropdownOpen((prev) => !prev);
+                          setSeasonDropdownOpen(true);
                         }
                       }}
+                      onBlur={() => setTimeout(() => setSeasonDropdownOpen(false), 100)}
                       disabled={!selectedLeagueId || selectedLeagueId === 'all'}
                       style={{
-                        height: '34px',
-                        padding: '0 20px 0 7px',
+                        height: '39px',
+                        padding: '0 29px 0 12px',
                         marginLeft: 0,
                         backgroundColor: 'transparent',
                         color: '#fff',
                         border: '1.5px solid #e56a16',
                         borderRadius: '24px',
-                        fontSize: '11px',
+                        fontSize: '17px',
                         cursor: (!selectedLeagueId || selectedLeagueId === 'all') ? 'not-allowed' : 'pointer',
                         outline: 'none',
                         width: '100%',
+                        display: 'block',
+                        boxSizing: 'border-box',
                         opacity: (!selectedLeagueId || selectedLeagueId === 'all') ? 0.6 : 1,
-                        fontWeight: 600,
-                        textAlign: 'left',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        fontWeight: 400,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {selectedSeasonSelectValue === 'all'
-                        ? 'All Seasons'
-                        : (availableSeasons.find((s) => String(s.id) === String(selectedSeasonSelectValue))?.name || 'All Seasons')}
-                    </button>
-                    <Menu
-                      anchorEl={seasonFilterButtonRef.current}
-                      open={seasonDropdownOpen && selectedLeagueId !== 'all'}
-                      onClose={() => setSeasonDropdownOpen(false)}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                      PaperProps={{
-                        sx: {
-                          mt: 0.5,
-                          borderRadius: 1,
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          backgroundColor: '#1a1a1a',
-                          minWidth: seasonFilterButtonRef.current?.offsetWidth || 148,
-                          width: 'max-content',
-                          maxWidth: '90vw',
-                        }
-                      }}
-                      MenuListProps={{ sx: { py: 0 } }}
-                    >
-                      <MenuItem
-                        selected={selectedSeasonSelectValue === 'all'}
+                      <option value="all" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>All Seasons</option>
+                      {availableSeasons.map((season) => (
+                        <option key={season.id} value={season.id} style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+                          {season.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <>
+                      <button
+                        ref={seasonFilterButtonRef}
+                        type="button"
                         onClick={() => {
-                          handleSeasonSelect('all');
-                          setSeasonDropdownOpen(false);
+                          if (selectedLeagueId && selectedLeagueId !== 'all') {
+                            setSeasonDropdownOpen((prev) => !prev);
+                          }
                         }}
-                        sx={{
+                        disabled={!selectedLeagueId || selectedLeagueId === 'all'}
+                        style={{
+                          height: '34px',
+                          padding: '0 20px 0 7px',
+                          marginLeft: 0,
+                          backgroundColor: 'transparent',
                           color: '#fff',
-                          fontSize: 13,
-                          minHeight: 34,
-                          whiteSpace: 'nowrap',
+                          border: '1.5px solid #e56a16',
+                          borderRadius: '24px',
+                          fontSize: '11px',
+                          cursor: (!selectedLeagueId || selectedLeagueId === 'all') ? 'not-allowed' : 'pointer',
+                          outline: 'none',
+                          width: '100%',
+                          opacity: (!selectedLeagueId || selectedLeagueId === 'all') ? 0.6 : 1,
+                          fontWeight: 600,
+                          textAlign: 'left',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          '&.Mui-selected': { backgroundColor: '#2b66bd' },
-                          '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        All Seasons
-                      </MenuItem>
-                      {availableSeasons.map((season) => (
+                        {selectedSeasonSelectValue === 'all'
+                          ? 'All Seasons'
+                          : (availableSeasons.find((s) => String(s.id) === String(selectedSeasonSelectValue))?.name || 'All Seasons')}
+                      </button>
+                      <Menu
+                        anchorEl={seasonFilterButtonRef.current}
+                        open={seasonDropdownOpen && selectedLeagueId !== 'all'}
+                        onClose={() => setSeasonDropdownOpen(false)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{
+                          sx: {
+                            mt: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            backgroundColor: '#1a1a1a',
+                            minWidth: seasonFilterButtonRef.current?.offsetWidth || 148,
+                            width: 'max-content',
+                            maxWidth: '90vw',
+                          }
+                        }}
+                        MenuListProps={{ sx: { py: 0 } }}
+                      >
                         <MenuItem
-                          key={season.id}
-                          selected={String(selectedSeasonSelectValue) === String(season.id)}
+                          selected={selectedSeasonSelectValue === 'all'}
                           onClick={() => {
-                            handleSeasonSelect(season.id);
+                            handleSeasonSelect('all');
                             setSeasonDropdownOpen(false);
                           }}
                           sx={{
@@ -3043,12 +3022,33 @@ export default function GlobalTrophyRoom() {
                             '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
                           }}
                         >
-                          {season.name}
+                          All Seasons
                         </MenuItem>
-                      ))}
-                    </Menu>
-                  </>
-                )}
+                        {availableSeasons.map((season) => (
+                          <MenuItem
+                            key={season.id}
+                            selected={String(selectedSeasonSelectValue) === String(season.id)}
+                            onClick={() => {
+                              handleSeasonSelect(season.id);
+                              setSeasonDropdownOpen(false);
+                            }}
+                            sx={{
+                              color: '#fff',
+                              fontSize: 13,
+                              minHeight: 34,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              '&.Mui-selected': { backgroundColor: '#2b66bd' },
+                              '&.Mui-selected:hover': { backgroundColor: '#2b66bd' },
+                            }}
+                          >
+                            {season.name}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  )}
                 </div>
 
                 <Button

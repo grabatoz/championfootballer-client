@@ -405,6 +405,17 @@ export const leagueAPI = {
       
       console.log('🗑️ League caches cleared after creation');
       
+      // Dispatch events for real-time synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('league-created', { 
+          detail: { league: data.league, id: data.league.id } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: data.league.id } 
+        }));
+        console.log('📢 league-created and data-mutated events dispatched');
+      }
+      
       return { success: true, data: data.league, message: 'League created successfully' };
     } catch (error) {
       return {
@@ -443,6 +454,17 @@ export const leagueAPI = {
       
       console.log('🗑️ League caches cleared after join');
       
+      // Dispatch events for real-time synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('league-updated', { 
+          detail: { id } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: id } 
+        }));
+        console.log('📢 league-updated and data-mutated events dispatched (join)');
+      }
+      
       return { success: true, data, message: 'Joined league successfully' };
     } catch (error) {
       return {
@@ -469,6 +491,17 @@ export const leagueAPI = {
       
       console.log('🗑️ League caches cleared after join with code');
       
+      // Dispatch events for real-time synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('league-updated', { 
+          detail: { league: data.league, id: data.league.id } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: data.league.id } 
+        }));
+        console.log('📢 league-updated and data-mutated events dispatched (joinWithCode)');
+      }
+      
       return { success: true, data: data.league, message: 'Joined league successfully' };
     } catch (error) {
       return {
@@ -493,6 +526,17 @@ export const leagueAPI = {
       }
       
       console.log('🗑️ League caches cleared after leave');
+      
+      // Dispatch events for real-time synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('league-updated', { 
+          detail: { id } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: id } 
+        }));
+        console.log('📢 league-updated and data-mutated events dispatched (leave)');
+      }
       
       return { success: true, data, message: 'Left league successfully' };
     } catch (error) {
@@ -523,6 +567,17 @@ export const leagueAPI = {
       }
       
       console.log('🗑️ All league & match caches cleared after deletion');
+      
+      // Dispatch events for real-time synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('league-deleted', { 
+          detail: { id } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'league', resourceId: id } 
+        }));
+        console.log('📢 league-deleted and data-mutated events dispatched');
+      }
       
       return { success: true, data, message: 'League deleted successfully' };
     } catch (error) {
@@ -656,6 +711,16 @@ export const matchAPI = {
       
       // Invalidate vote cache
       fastCache.delete(`match_votes_${matchId}`);
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vote-updated', { 
+          detail: { matchId } 
+        }));
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'match', resourceId: matchId } 
+        }));
+        console.log('📢 vote-updated and data-mutated events dispatched');
+      }
       
       return { success: true, data, message: 'Vote cast successfully' };
     } catch (error) {
@@ -819,6 +884,13 @@ export const dreamTeamAPI = {
       fastCache.delete('dream_team_all');
       fastCache.delete(`dream_team_${dreamTeam.leagueId}`);
       
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'team', resourceId: dreamTeam.leagueId } 
+        }));
+        console.log('📢 data-mutated event dispatched (dream team create)');
+      }
+      
       return { success: true, data, message: 'Dream team created successfully' };
     } catch (error) {
       return {
@@ -859,6 +931,13 @@ export const dreamTeamAPI = {
         fastCache.delete(`dream_team_${dreamTeam.leagueId}`);
       }
       
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'team', resourceId: dreamTeam.leagueId || null } 
+        }));
+        console.log('📢 data-mutated event dispatched (dream team update)');
+      }
+      
       return { success: true, data, message: 'Dream team updated successfully' };
     } catch (error) {
       return {
@@ -873,6 +952,14 @@ export const dreamTeamAPI = {
     try {
       const data = await quickFetch<{ success: boolean; message: string }>(`/dream-team/${dreamTeamId}`, { method: 'DELETE' });
       fastCache.delete('dream_team_all');
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-mutated', { 
+          detail: { resourceType: 'team' } 
+        }));
+        console.log('📢 data-mutated event dispatched (dream team delete)');
+      }
+      
       return { success: true, data, message: 'Dream team deleted successfully' };
     } catch (error) {
       return {

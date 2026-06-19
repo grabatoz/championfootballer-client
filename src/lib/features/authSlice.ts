@@ -107,9 +107,13 @@ const clearClientAuthArtifacts = (): void => {
 const normalizeUserForStorage = (user: User): UserProfile => {
   // Type assertion to access potentially missing properties
   const userWithImage = user as User & { image?: string };
+  const userIdValue = user.id || (user as any).userId || (user as any).user_id || (user as any)._id;
   
   return {
-    id: user.id,
+    id: userIdValue,
+    userId: userIdValue,
+    user_id: userIdValue,
+    _id: userIdValue,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
@@ -234,21 +238,36 @@ export const checkAuth = createAsyncThunk<ApiResponse<User>>("auth/check", async
       error: "Session expired",
     }
   }
-  const response = await authAPI.checkAuth()
 
-  if (response.success && response.data) {
-    const userData = normalizeUserData(response.data)
+  try {
+    const response = await authAPI.checkAuth()
 
-    // Get token from cookies or localStorage
-    const token = Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token")
-    if (token) {
-      // Normalize user before saving
-      const normalizedUser = normalizeUserForStorage(response.data)
-      authStorage.saveAuthExact(normalizedUser, userData, token)
+    if (response.success && response.data) {
+      const userData = normalizeUserData(response.data)
+
+      // Get token from cookies or localStorage
+      const token = Cookies.get("token") || Cookies.get("auth_token") || localStorage.getItem("token")
+      if (token) {
+        // Normalize user before saving
+        const normalizedUser = normalizeUserForStorage(response.data)
+        authStorage.saveAuthExact(normalizedUser, userData, token)
+      }
     }
-  }
 
-  return response
+    return response
+  } catch (error) {
+    // Check if we can recover state from offline cache
+    const cachedAuth = authStorage.getAuth();
+    if (cachedAuth && cachedAuth.user) {
+      console.warn('[REDUX AUTH] Backend check failed, falling back to cached user');
+      return {
+        success: true,
+        data: cachedAuth.user as unknown as User,
+        message: "Restored from offline cache"
+      };
+    }
+    throw error;
+  }
 })
 
 export const logout = createAsyncThunk<{ success: boolean }>("auth/logout", async () => {
