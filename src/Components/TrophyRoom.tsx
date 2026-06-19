@@ -478,7 +478,7 @@ export default function TrophyRoom({ leagueId }: { leagueId: string }) {
                       foot: getPreferredFoot(p),
                       profileImage: getProfileImage(p),
                       shirtIcon: '',
-                      position: posToShort(p.position),
+                      position: p.position ?? '',
                     } as const;
                     return <PlayerCard {...playerCardProps} disableImagePopup />;
                   })()}
