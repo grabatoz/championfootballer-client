@@ -6349,7 +6349,7 @@ export default function LeagueDetailPage() {
                                                                                 <span className="text-white font-bold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <span className="league-table-row-text text-white/90 font-semibold text-xs truncate block whitespace-nowrap">{posLabel}</span>
+                                                                            <span className="league-player-pos league-table-row-text text-white/75 font-normal text-xs truncate block whitespace-nowrap">{posLabel}</span>
                                                                         </div>
                                                                     </div>
 

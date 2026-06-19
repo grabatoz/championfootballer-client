@@ -163,9 +163,12 @@ const StyledTextField = styled(TextField)(() => ({
     '&:hover fieldset': { borderColor: themeColors.primary },
     '&.Mui-focused': { borderColor: themeColors.primary },
     '&.Mui-focused fieldset': { borderColor: themeColors.primary },
-    '& input, & textarea': {
+    '& input, & textarea, & select': {
       color: themeColors.text,
       background: "transparent"
+    },
+    '& .MuiSelect-select': {
+      color: themeColors.text,
     },
     // Reduced overall control height
     minHeight: 44
@@ -1319,18 +1322,16 @@ const PlayerProfileCard = () => {
                               }}
                               fullWidth
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
-                              SelectProps={{
-                                native: true,
-                              }}
+                              SelectProps={{ MenuProps: selectMenuProps }}
                               disabled={!selectedProfileCountryCode || profileCitiesAndStates.length === 0}
                             >
-                              <option value="" disabled style={{ backgroundColor: themeColors.surfaceAlt, color: themeColors.text }}>
-                                {selectedProfileCountryCode ? "Select city/state" : "Select country first"}
-                              </option>
+                              <MenuItem value="" disabled sx={{ color: '#aaa' }}>
+                                {selectedProfileCountryCode ? 'Select city/state' : 'Select country first'}
+                              </MenuItem>
                               {profileCitiesAndStates.map((name) => (
-                                <option key={name} value={name} style={{ backgroundColor: themeColors.surfaceAlt, color: themeColors.text }}>
+                                <MenuItem key={name} value={name} sx={{ color: '#fff' }}>
                                   {name}
-                                </option>
+                                </MenuItem>
                               ))}
                             </StyledTextField>
                           </Grid>

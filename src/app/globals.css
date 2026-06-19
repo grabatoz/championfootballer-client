@@ -364,6 +364,15 @@ input:-webkit-autofill:active {
   font-size: 18px !important;
 }
 
+/* Position label under player name: same font as table, not bold, smaller */
+.league-player-pos {
+  font-family: var(--font-woodford-bourne-pro), Arial, Helvetica, sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 0.7rem !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.2px;
+}
+
 /* Standings table: sticky columns + responsive behavior */
 .league-standings-table {
   min-width: 980px;

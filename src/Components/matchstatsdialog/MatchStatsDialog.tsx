@@ -2765,171 +2765,143 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             </Typography>
                             {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mb: 1 }} /> */}
 
-                            {/* {showInlineStats && (isAdmin || (isMatchWithinLastTwo && isUserAssignedToTeam)) ? ( */}
-                            <>
+                            {/* Stats rows - grid layout so columns align perfectly */}
+                            <Box sx={{
+                                display: 'grid',
+                                gridTemplateColumns: 'auto 1fr auto',
+                                rowGap: { xs: 1.25, md: 2 },
+                                columnGap: { xs: 1, md: 2 },
+                                alignItems: 'center',
+                            }}>
                                 {/* Goals Row */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                    <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                    <TextField
-                                        type="text"
-                                        value={stats.goals}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '') {
-                                                setStats(prev => ({ ...prev, goals: 0 }));
-                                                return;
-                                            }
-                                            // Only allow numbers
-                                            if (!/^\d+$/.test(val)) return;
+                                <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
+                                <TextField
+                                    type="text"
+                                    value={stats.goals}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setStats(prev => ({ ...prev, goals: 0 }));
+                                            return;
+                                        }
+                                        // Only allow numbers
+                                        if (!/^\d+$/.test(val)) return;
 
-                                            const numVal = parseInt(val, 10);
-                                            if (!isNaN(numVal)) {
-                                                const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
-                                                setStats(prev => ({ ...prev, goals: newVal }));
-                                            }
-                                        }}
-                                        onFocus={(e) => e.target.select()}
-                                        inputProps={{ style: { textAlign: 'center' } }}
-                                        sx={{
-                                            width: { xs: 96, md: 180 },
-                                            '& .MuiOutlinedInput-root': {
-                                                color: '#fff',
-                                                '& fieldset': { borderColor: '#d9d9d9' },
-                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                            },
-                                            '& .MuiInputBase-input': {
-                                                fontSize: { xs: '1rem', md: '1.25rem' },
-                                                fontWeight: 600,
-                                                py: 0.75,
-                                            },
-                                            '& input[type=number]': {
-                                                MozAppearance: 'textfield'
-                                            },
-                                            '& input[type=number]::-webkit-outer-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            },
-                                            '& input[type=number]::-webkit-inner-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            }
-                                        }}
-                                    />
-                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                        Goals
-                                    </Typography>
-                                </Box>
+                                        const numVal = parseInt(val, 10);
+                                        if (!isNaN(numVal)) {
+                                            const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                            setStats(prev => ({ ...prev, goals: newVal }));
+                                        }
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            color: '#fff',
+                                            '& fieldset': { borderColor: '#d9d9d9' },
+                                            '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                            '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                        },
+                                        '& .MuiInputBase-input': {
+                                            fontSize: { xs: '1rem', md: '1.25rem' },
+                                            fontWeight: 600,
+                                            py: 0.75,
+                                        },
+                                        '& input[type=number]': { MozAppearance: 'textfield' },
+                                        '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                        '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                    }}
+                                />
+                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
+                                    Goals
+                                </Typography>
 
                                 {/* Assists Row */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                    <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                    <TextField
-                                        type="text"
-                                        value={stats.assists}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '') {
-                                                setStats(prev => ({ ...prev, assists: 0 }));
-                                                return;
-                                            }
-                                            // Only allow numbers
-                                            if (!/^\d+$/.test(val)) return;
+                                <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
+                                <TextField
+                                    type="text"
+                                    value={stats.assists}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setStats(prev => ({ ...prev, assists: 0 }));
+                                            return;
+                                        }
+                                        // Only allow numbers
+                                        if (!/^\d+$/.test(val)) return;
 
-                                            const numVal = parseInt(val, 10);
-                                            if (!isNaN(numVal)) {
-                                                const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
-                                                setStats(prev => ({ ...prev, assists: newVal }));
-                                            }
-                                        }}
-                                        onFocus={(e) => e.target.select()}
-                                        inputProps={{ style: { textAlign: 'center' } }}
-                                        sx={{
-                                            width: { xs: 96, md: 180 },
-                                            '& .MuiOutlinedInput-root': {
-                                                color: '#fff',
-                                                '& fieldset': { borderColor: '#d9d9d9' },
-                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                            },
-                                            '& .MuiInputBase-input': {
-                                                fontSize: { xs: '1rem', md: '1.25rem' },
-                                                fontWeight: 600,
-                                                py: 0.75,
-                                            },
-                                            '& input[type=number]': {
-                                                MozAppearance: 'textfield'
-                                            },
-                                            '& input[type=number]::-webkit-outer-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            },
-                                            '& input[type=number]::-webkit-inner-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            }
-                                        }}
-                                    />
-                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                        Assists
-                                    </Typography>
-                                </Box>
+                                        const numVal = parseInt(val, 10);
+                                        if (!isNaN(numVal)) {
+                                            const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
+                                            setStats(prev => ({ ...prev, assists: newVal }));
+                                        }
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            color: '#fff',
+                                            '& fieldset': { borderColor: '#d9d9d9' },
+                                            '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                            '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                        },
+                                        '& .MuiInputBase-input': {
+                                            fontSize: { xs: '1rem', md: '1.25rem' },
+                                            fontWeight: 600,
+                                            py: 0.75,
+                                        },
+                                        '& input[type=number]': { MozAppearance: 'textfield' },
+                                        '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                        '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                    }}
+                                />
+                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
+                                    Assists
+                                </Typography>
 
                                 {/* Clean Sheet Row */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-start' }, gap: { xs: 1, md: 2 } }}>
-                                    <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48 }} />
-                                    <TextField
-                                        type="text"
-                                        value={stats.cleanSheets}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '') {
-                                                setStats(prev => ({ ...prev, cleanSheets: 0 }));
-                                                return;
-                                            }
-                                            // Only allow numbers
-                                            if (!/^\d+$/.test(val)) return;
+                                <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
+                                <TextField
+                                    type="text"
+                                    value={stats.cleanSheets}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setStats(prev => ({ ...prev, cleanSheets: 0 }));
+                                            return;
+                                        }
+                                        // Only allow numbers
+                                        if (!/^\d+$/.test(val)) return;
 
-                                            const numVal = parseInt(val, 10);
-                                            if (!isNaN(numVal)) {
-                                                const newVal = Math.max(0, Math.min(1, numVal));
-                                                setStats(prev => ({ ...prev, cleanSheets: newVal }));
-                                            }
-                                        }}
-                                        onFocus={(e) => e.target.select()}
-                                        inputProps={{ style: { textAlign: 'center' } }}
-                                        sx={{
-                                            width: { xs: 96, md: 180 },
-                                            ml: { xs: 1.6, sm: 1.6, md: 0 },
-                                            '& .MuiOutlinedInput-root': {
-                                                color: '#fff',
-                                                '& fieldset': { borderColor: '#d9d9d9' },
-                                                '&:hover fieldset': { borderColor: '#d9d9d9' },
-                                                '&.Mui-focused fieldset': { borderColor: '#00C48C' },
-                                            },
-                                            '& .MuiInputBase-input': {
-                                                fontSize: { xs: '1rem', md: '1.25rem' },
-                                                fontWeight: 600,
-                                                py: 0.75,
-                                            },
-                                            '& input[type=number]': {
-                                                MozAppearance: 'textfield'
-                                            },
-                                            '& input[type=number]::-webkit-outer-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            },
-                                            '& input[type=number]::-webkit-inner-spin-button': {
-                                                WebkitAppearance: 'none',
-                                                margin: 0
-                                            }
-                                        }}
-                                    />
-                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', minWidth: { xs: 68, md: 0 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                        Clean Sheet
-                                    </Typography>
-                                </Box>
-                            </>
+                                        const numVal = parseInt(val, 10);
+                                        if (!isNaN(numVal)) {
+                                            const newVal = Math.max(0, Math.min(1, numVal));
+                                            setStats(prev => ({ ...prev, cleanSheets: newVal }));
+                                        }
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            color: '#fff',
+                                            '& fieldset': { borderColor: '#d9d9d9' },
+                                            '&:hover fieldset': { borderColor: '#d9d9d9' },
+                                            '&.Mui-focused fieldset': { borderColor: '#00C48C' },
+                                        },
+                                        '& .MuiInputBase-input': {
+                                            fontSize: { xs: '1rem', md: '1.25rem' },
+                                            fontWeight: 600,
+                                            py: 0.75,
+                                        },
+                                        '& input[type=number]': { MozAppearance: 'textfield' },
+                                        '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                        '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                                    }}
+                                />
+                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
+                                    Clean Sheet
+                                </Typography>
+                            </Box>
                             {/* ) : (
                                 <Typography variant="body2" sx={{ color: '#D1D5DB' }}>
                                     Stats submission is not available for this match.

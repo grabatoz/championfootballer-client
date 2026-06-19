@@ -2566,7 +2566,7 @@ export default function AllMatches() {
                         justifyContent: 'center',
                         alignItems: 'center',
                         mt: { xs: 2, md: 3 },
-                        mb: 4
+                        mb: { xs: 1.5, md: 4 }
                     }}>
                         <Box sx={{
                             display: 'flex',
