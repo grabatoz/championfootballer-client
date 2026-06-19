@@ -55,7 +55,7 @@ import EditMatchPopupLoadingSkeleton from '@/Components/loading/EditMatchPopupLo
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import MatchResultLoadingSkeleton from '@/Components/loading/MatchResultLoadingSkeleton';
 import PlayerCardLoadingSkeleton from '@/Components/loading/PlayerCardLoadingSkeleton';
-import { isRegisteredPlayerRecord } from '@/lib/playerIdentity';
+import { isRegisteredPlayerRecord, getPositionShortForm } from '@/lib/playerIdentity';
 import PLAYERIMAGE from '@/Components/images/players.png'
 import HomeTeamImage from '@/Components/images/hometeamshirt.png'
 import AwayTeamImage from '@/Components/images/awayteamshirt.png'
@@ -634,9 +634,9 @@ export default function LeagueDetailPage() {
     }, [userLeagueXP]);
     const getMemberPositionLabel = useCallback((member: User): string => {
         const fromPosition = (member.position ?? '').toString().trim();
-        if (fromPosition) return fromPosition;
+        if (fromPosition) return getPositionShortForm(fromPosition);
         const fromPositionType = String((member as unknown as { positionType?: unknown })?.positionType ?? '').trim();
-        if (fromPositionType) return fromPositionType;
+        if (fromPositionType) return getPositionShortForm(fromPositionType);
         return '-';
     }, []);
     const normalizeToWorldRankingPosition = useCallback((positionLabel: string): string => {
@@ -6291,8 +6291,8 @@ export default function LeagueDetailPage() {
                                                             const useXpScoring = filteredLeague?.showPoints === true;
                                                             const xpPts = useXpScoring ? (player.xp ?? 0) : points;
 
-                                                            const posLabel = (league?.members || []).find(m => String(m.id) === String(player.id))?.position || '-';
                                                             const member = (league?.members || []).find(m => String(m.id) === String(player.id));
+                                                            const posLabel = member ? getMemberPositionLabel(member) : '-';
                                                             const playerWithOptionalImage = player as TableData & {
                                                                 imageUrl?: string;
                                                                 profileImage?: string;

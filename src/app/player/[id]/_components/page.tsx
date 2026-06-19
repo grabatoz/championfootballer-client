@@ -48,6 +48,7 @@ import SearchIcon from '@/Components/images/searchicon.png';
 import XPStarMilestoneCard, { XP_TIERS, getXPTier } from '@/Components/XPStarMilestoneCard';
 import PlayerProfileLoadingSkeleton from '@/Components/loading/PlayerProfileLoadingSkeleton';
 import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
+import { getPositionShortForm } from '@/lib/playerIdentity';
 
 // Lazy load heavy components
 const CloseButton = dynamic(() => import('@/Components/CloseButton'), {
@@ -2237,7 +2238,7 @@ export default function PlayerStatsPage() {
                                                                             lineHeight: 1.1,
                                                                         }}
                                                                     >
-                                                                        {p.position}
+                                                                        {getPositionShortForm(p.position)}
                                                                     </Typography>
                                                                 )}
                                                             </Box>

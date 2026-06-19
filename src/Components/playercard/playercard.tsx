@@ -19,6 +19,7 @@ import { cacheManager } from "@/lib/cacheManager"
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/hooks';
 import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
+import { getPositionShortForm } from '@/lib/playerIdentity';
 
 // const fallback = '/assets/cflogo2.png';
 
@@ -50,44 +51,7 @@ function getLevelInfo(points: number) {
   return LEVELS.find(lvl => points >= lvl.min && points < lvl.max) || LEVELS[LEVELS.length - 1];
 }
 
-// Function to convert position to short form
-function getPositionShortForm(position: string): string {
-  if (!position || !position.trim()) return '-';
-  // First try to extract from parentheses
-  const match = position.match(/\(([^)]+)\)/);
-  if (match) {
-    return match[1]; // Return the text inside parentheses
-  }
-  
-  // If no parentheses, check for common position patterns
-  const positionMap: Record<string, string> = {
-    'Center-Back (CB)': 'CB',
-    'Right-Back (RB)': 'RB',
-    'Left-Back (LB)': 'LB',
-    'Right Wing-back (RWB)': 'RWB',
-    'Left Wing-back (LWB)': 'LWB',
-    'Central Midfielder (CM)': 'CM',
-    'Defensive Midfielder (CDM)': 'CDM',
-    'Attacking Midfielder (CAM)': 'CAM',
-    'Right Midfielder (RM)': 'RM',
-    'Left Midfielder (LM)': 'LM',
-    'Striker (ST)': 'ST',
-    'Center Forward (CF)': 'CF',
-    'Right Forward (RF)': 'RF',
-    'Left Forward (LF)': 'LF',
-    'Right Winger (RW)': 'RW',
-    'Left Winger (LW)': 'LW',
-    'goalkeeper': 'GK',
-  };
-  
-  const lowerPosition = position.toLowerCase();
-  if (positionMap[lowerPosition]) {
-    return positionMap[lowerPosition];
-  }
-  
-  // Final fallback: return first 3 characters in uppercase
-  return position.toUpperCase().substring(0, 3);
-}
+
 
 // Function to calculate average skill (simple mean, 0–99 clamp)
 function calculateAverageSkill(stats: {

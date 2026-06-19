@@ -7,7 +7,7 @@ import { Country } from 'country-state-city';
 import { useAuth } from '@/lib/hooks';
 import WorldRankingLoadingSkeleton from '@/Components/loading/WorldRankingLoadingSkeleton';
 import { getXPTier } from '@/Components/XPStarMilestoneCard';
-import { isRegisteredPlayerRecord } from '@/lib/playerIdentity';
+import { isRegisteredPlayerRecord, getPositionShortForm } from '@/lib/playerIdentity';
 
 interface Filters { mode: 'total' | 'avg'; year?: string; positionType?: string; country?: string; }
 type SortKey = 'rank' | 'name' | 'matches' | 'avgXP' | 'totalXP';
@@ -723,7 +723,7 @@ export default function WorldRankingTable() {
                           {p.name}
                         </Link>
                       </TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.position || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{getPositionShortForm(p.position)}</TableCell>
                       <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.country || '-'}</TableCell>
                       <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, textAlign: 'center' }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
                       <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8, textAlign: 'center' }}>

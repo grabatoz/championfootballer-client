@@ -29,6 +29,7 @@ import BulbImg from '@/Components/images/bulb.png';
 import UndoImg from '@/Components/images/undo.png';
 import ViewTeamPopupLoadingSkeleton from '@/Components/loading/ViewTeamPopupLoadingSkeleton';
 import { useAuth } from '@/lib/hooks';
+import { getPositionShortForm } from '@/lib/playerIdentity';
 import Awayimgcf from '@/Components/images/awayteamshirt.png'
 import Homeimgcf from '@/Components/images/hometeamshirt.png'
 
@@ -1762,7 +1763,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
                       )}
                     </Box>
-                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm(p.position)}</Typography>
                   </Box>
                 );
               })}
@@ -1785,7 +1786,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
                       )}
                     </Box>
-                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {p.position}</Typography>
+                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm(p.position)}</Typography>
                   </Box>
                 );
               })}

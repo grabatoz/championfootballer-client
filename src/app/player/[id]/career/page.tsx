@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
@@ -30,6 +30,7 @@ import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import SearchIcon from '@/Components/images/searchicon.png';
 import { getAvatarBackgroundColor, getAvatarInitials } from '@/lib/avatarInitials';
+import { getPositionShortForm } from '@/lib/playerIdentity';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { fetchPlayerStats, setLeagueFilter, setYearFilter } from '@/lib/features/playerStatsSlice';
@@ -2382,7 +2383,7 @@ export default function CareerPage() {
                                           lineHeight: 1.1,
                                         }}
                                       >
-                                        {p.position}
+                                        {getPositionShortForm(p.position)}
                                       </Typography>
                                     )}
                                   </Box>
