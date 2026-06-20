@@ -3383,19 +3383,15 @@ export default function CareerPage() {
                             {(() => {
                               const current = yourStats;
                               const totalMatches = current.n;
-                              const expectedGoalsPerMatch = current.goals > 0 ? totalMatches / current.goals : 0;
-                              const expectedAssistsPerMatch = current.assists > 0 ? totalMatches / current.assists : 0;
-                              const expectedCleanSheetsPerMatch = current.cleanSheets > 0 ? totalMatches / current.cleanSheets : 0;
+                              const expectedGoalsPerMatch = totalMatches > 0 ? current.goals / totalMatches : 0;
+                              const expectedAssistsPerMatch = totalMatches > 0 ? current.assists / totalMatches : 0;
+                              const expectedCleanSheetsPerMatch = totalMatches > 0 ? current.cleanSheets / totalMatches : 0;
                               const winRate = current.winRate;
                               const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
 
-                              const leagueExpectedGoals = leagueAverage.expectedGoals !== undefined ? leagueAverage.expectedGoals : leagueAverage.goals;
-                              const leagueExpectedAssists = leagueAverage.expectedAssists !== undefined ? leagueAverage.expectedAssists : leagueAverage.assists;
-                              const leagueExpectedCleanSheets = leagueAverage.expectedCleanSheets !== undefined ? leagueAverage.expectedCleanSheets : leagueAverage.cleanSheets;
-
-                              const leagueExpectedGoalsMatches = leagueExpectedGoals > 0 ? 1 / leagueExpectedGoals : 0;
-                              const leagueExpectedAssistsMatches = leagueExpectedAssists > 0 ? 1 / leagueExpectedAssists : 0;
-                              const leagueExpectedCleanSheetsMatches = leagueExpectedCleanSheets > 0 ? 1 / leagueExpectedCleanSheets : 0;
+                              const leagueExpectedGoalsMatches = leagueAverage.expectedGoals !== undefined ? leagueAverage.expectedGoals : leagueAverage.goals;
+                              const leagueExpectedAssistsMatches = leagueAverage.expectedAssists !== undefined ? leagueAverage.expectedAssists : leagueAverage.assists;
+                              const leagueExpectedCleanSheetsMatches = leagueAverage.expectedCleanSheets !== undefined ? leagueAverage.expectedCleanSheets : leagueAverage.cleanSheets;
 
                               return (
                                 <>
