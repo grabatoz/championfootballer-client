@@ -350,6 +350,9 @@ type LeagueMetricValues = {
   motmVotes: number;
   defensiveImpactVotes: number;
   impact: number;
+  expectedGoals?: number;
+  expectedAssists?: number;
+  expectedCleanSheets?: number;
 };
 
 type CardLeagueScope = 'all' | 'current';
@@ -503,23 +506,26 @@ const createEmptyLeagueMetrics = (): LeagueMetricValues => ({
   motmVotes: 0,
   defensiveImpactVotes: 0,
   impact: 0,
+  expectedGoals: 0,
+  expectedAssists: 0,
+  expectedCleanSheets: 0,
 });
 
 const averageLeagueMetrics = (entries: Array<LeagueMetricValues | null | undefined>): LeagueMetricValues | null => {
-  const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact'];
+  const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact', 'expectedGoals', 'expectedAssists', 'expectedCleanSheets'];
   const validEntries = entries.filter((entry): entry is LeagueMetricValues => Boolean(entry));
   if (validEntries.length === 0) return null;
 
   const totals = createEmptyLeagueMetrics();
   validEntries.forEach((entry) => {
     metricKeys.forEach((key) => {
-      totals[key] += toStatNumber(entry[key]);
+      totals[key] = (totals[key] || 0) + toStatNumber(entry[key]);
     });
   });
 
   const count = validEntries.length;
   return metricKeys.reduce((acc, key) => {
-    acc[key] = Number((totals[key] / count).toFixed(2));
+    acc[key] = Number(((totals[key] || 0) / count).toFixed(2));
     return acc;
   }, createEmptyLeagueMetrics());
 };
@@ -535,6 +541,9 @@ const normalizeLeagueMetrics = (entry: unknown): LeagueMetricValues | null => {
     motmVotes: toStatNumber(record.motmVotes),
     defensiveImpactVotes: toStatNumber(record.defensiveImpactVotes),
     impact: toStatNumber(record.impact),
+    expectedGoals: toStatNumber(record.expectedGoals),
+    expectedAssists: toStatNumber(record.expectedAssists),
+    expectedCleanSheets: toStatNumber(record.expectedCleanSheets),
   };
 };
 
@@ -1543,38 +1552,38 @@ export default function CareerPage() {
     const rows = [
       {
         metric: 'Goals',
-        yourTotal: yourStats.goals / matchCount,
-        yourDisplay: formatStatDecimal(yourStats.goals / matchCount),
-        leagueAverage: toStatNumber(leagueAverage.goals),
-        leagueDisplay: formatStatDecimal(leagueAverage.goals),
+        yourTotal: yourStats.goals,
+        yourDisplay: String(yourStats.goals),
+        leagueAverage: toStatNumber(leagueAverage.goals) * matchCount,
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.goals) * matchCount),
       },
       {
         metric: 'Assists',
-        yourTotal: yourStats.assists / matchCount,
-        yourDisplay: formatStatDecimal(yourStats.assists / matchCount),
-        leagueAverage: toStatNumber(leagueAverage.assists),
-        leagueDisplay: formatStatDecimal(leagueAverage.assists),
+        yourTotal: yourStats.assists,
+        yourDisplay: String(yourStats.assists),
+        leagueAverage: toStatNumber(leagueAverage.assists) * matchCount,
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.assists) * matchCount),
       },
       {
         metric: 'Clean Sheets',
-        yourTotal: yourStats.cleanSheets / matchCount,
-        yourDisplay: formatStatDecimal(yourStats.cleanSheets / matchCount),
-        leagueAverage: toStatNumber(leagueAverage.cleanSheets),
-        leagueDisplay: formatStatDecimal(leagueAverage.cleanSheets),
+        yourTotal: yourStats.cleanSheets,
+        yourDisplay: String(yourStats.cleanSheets),
+        leagueAverage: toStatNumber(leagueAverage.cleanSheets) * matchCount,
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.cleanSheets) * matchCount),
       },
       {
         metric: 'MOTM Votes',
-        yourTotal: yourStats.motmVotes / matchCount,
-        yourDisplay: formatStatDecimal(yourStats.motmVotes / matchCount),
-        leagueAverage: toStatNumber(leagueAverage.motmVotes),
-        leagueDisplay: formatStatDecimal(leagueAverage.motmVotes),
+        yourTotal: yourStats.motmVotes,
+        yourDisplay: String(yourStats.motmVotes),
+        leagueAverage: toStatNumber(leagueAverage.motmVotes) * matchCount,
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.motmVotes) * matchCount),
       },
       {
         metric: 'Defensive Impact Votes',
-        yourTotal: yourStats.defensiveImpactVotes / matchCount,
-        yourDisplay: formatStatDecimal(yourStats.defensiveImpactVotes / matchCount),
-        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes),
-        leagueDisplay: formatStatDecimal(leagueAverage.defensiveImpactVotes),
+        yourTotal: yourStats.defensiveImpactVotes,
+        yourDisplay: String(yourStats.defensiveImpactVotes),
+        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes) * matchCount,
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.defensiveImpactVotes) * matchCount),
       },
       {
         metric: 'Game Contribution Index',
@@ -3374,28 +3383,32 @@ export default function CareerPage() {
                             {(() => {
                               const current = yourStats;
                               const totalMatches = current.n;
-                              const goalsPerMatch = totalMatches > 0 ? current.goals / totalMatches : 0;
-                              const assistsPerMatch = totalMatches > 0 ? current.assists / totalMatches : 0;
-                              const cleanSheetsPerMatch = totalMatches > 0 ? current.cleanSheets / totalMatches : 0;
+                              const expectedGoalsPerMatch = totalMatches > 0 ? (current.matchesWithGoals || 0) / totalMatches : 0;
+                              const expectedAssistsPerMatch = totalMatches > 0 ? (current.matchesWithAssists || 0) / totalMatches : 0;
+                              const expectedCleanSheetsPerMatch = totalMatches > 0 ? (current.matchesWithCleanSheets || 0) / totalMatches : 0;
                               const winRate = current.winRate;
                               const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
+
+                              const leagueExpectedGoals = leagueAverage.expectedGoals !== undefined ? leagueAverage.expectedGoals : leagueAverage.goals;
+                              const leagueExpectedAssists = leagueAverage.expectedAssists !== undefined ? leagueAverage.expectedAssists : leagueAverage.assists;
+                              const leagueExpectedCleanSheets = leagueAverage.expectedCleanSheets !== undefined ? leagueAverage.expectedCleanSheets : leagueAverage.cleanSheets;
 
                               return (
                                 <>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(goalsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.goals)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedGoalsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedGoals)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(assistsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.assists)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedAssistsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedAssists)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(cleanSheetsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueAverage.cleanSheets)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedCleanSheetsPerMatch)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedCleanSheets)}</TableCell>
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
