@@ -1163,9 +1163,9 @@ export default function CareerPage() {
 
   // ------------- Independent scope filters per chart card -------------
   // "all" ignores only the League filter. "current" follows League/Year/Season filters.
-  const [chartLeague, setChartLeague] = useState<CardLeagueScope>('all');
-  const [influenceLeague, setInfluenceLeague] = useState<CardLeagueScope>('all');
-  const [winLossLeague, setWinLossLeague] = useState<CardLeagueScope>('all');
+  const [chartLeague, setChartLeague] = useState<CardLeagueScope>('current');
+  const [influenceLeague, setInfluenceLeague] = useState<CardLeagueScope>('current');
+  const [winLossLeague, setWinLossLeague] = useState<CardLeagueScope>('current');
 
   // ------------- League averages from backend (for influence radar) -------------
   const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
@@ -1538,46 +1538,47 @@ export default function CareerPage() {
   // One consistent comparison model used by IMPACT + Top Strengths
   const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
     const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
+    const matchCount = Math.max(yourStats.n || 0, 1);
 
     const rows = [
       {
         metric: 'Goals',
-        yourTotal: toRoundedInt(yourStats.goals),
-        yourDisplay: String(toRoundedInt(yourStats.goals)),
+        yourTotal: yourStats.goals / matchCount,
+        yourDisplay: formatStatDecimal(yourStats.goals / matchCount),
         leagueAverage: toStatNumber(leagueAverage.goals),
         leagueDisplay: formatStatDecimal(leagueAverage.goals),
       },
       {
         metric: 'Assists',
-        yourTotal: toRoundedInt(yourStats.assists),
-        yourDisplay: String(toRoundedInt(yourStats.assists)),
+        yourTotal: yourStats.assists / matchCount,
+        yourDisplay: formatStatDecimal(yourStats.assists / matchCount),
         leagueAverage: toStatNumber(leagueAverage.assists),
         leagueDisplay: formatStatDecimal(leagueAverage.assists),
       },
       {
         metric: 'Clean Sheets',
-        yourTotal: toRoundedInt(yourStats.cleanSheets),
-        yourDisplay: String(toRoundedInt(yourStats.cleanSheets)),
+        yourTotal: yourStats.cleanSheets / matchCount,
+        yourDisplay: formatStatDecimal(yourStats.cleanSheets / matchCount),
         leagueAverage: toStatNumber(leagueAverage.cleanSheets),
         leagueDisplay: formatStatDecimal(leagueAverage.cleanSheets),
       },
       {
         metric: 'MOTM Votes',
-        yourTotal: toRoundedInt(yourStats.motmVotes),
-        yourDisplay: String(toRoundedInt(yourStats.motmVotes)),
+        yourTotal: yourStats.motmVotes / matchCount,
+        yourDisplay: formatStatDecimal(yourStats.motmVotes / matchCount),
         leagueAverage: toStatNumber(leagueAverage.motmVotes),
         leagueDisplay: formatStatDecimal(leagueAverage.motmVotes),
       },
       {
         metric: 'Defensive Impact Votes',
-        yourTotal: toRoundedInt(yourStats.defensiveImpactVotes),
-        yourDisplay: String(toRoundedInt(yourStats.defensiveImpactVotes)),
+        yourTotal: yourStats.defensiveImpactVotes / matchCount,
+        yourDisplay: formatStatDecimal(yourStats.defensiveImpactVotes / matchCount),
         leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes),
         leagueDisplay: formatStatDecimal(leagueAverage.defensiveImpactVotes),
       },
       {
         metric: 'Game Contribution Index',
-        yourTotal: toRoundedInt(yourStats.impactAvg),
+        yourTotal: toStatNumber(yourStats.impactAvg),
         yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
         leagueAverage: toStatNumber(leagueAverage.impact),
         leagueDisplay: formatStatDecimal(leagueAverage.impact, '%'),
@@ -1618,7 +1619,7 @@ export default function CareerPage() {
     });
 
     const target = rowsWithGap
-      .filter((item) => item.gap > 0)
+      .filter((item) => item.gap > 0 && item.row.leagueDisplay !== item.row.yourDisplay)
       .sort((a, b) => b.gapRatio - a.gapRatio || b.gap - a.gap)[0];
 
     if (target) {
@@ -1729,12 +1730,16 @@ export default function CareerPage() {
 
     const displayName = playerName || 'Player';
     const metrics = Object.keys(playerTotals) as Array<keyof typeof playerTotals>;
+    const n = influenceMatches.length;
 
-    return metrics.map(metric => ({
-      metric,
-      [displayName]: toRoundedInt(playerTotals[metric]),
-      'League Avg': Math.round(leagueAvg[metric as keyof typeof leagueAvg])
-    }));
+    return metrics.map(metric => {
+      const lAvg = toStatNumber(leagueAvg[metric as keyof typeof leagueAvg]);
+      return {
+        metric,
+        [displayName]: toRoundedInt(playerTotals[metric]),
+        'League Avg': Math.round(lAvg * n)
+      };
+    });
   }, [influenceMatches, playerName, currentInfluenceLeagueAvg]);
 
   // Calculate actual win/loss/draw data from backend matches
@@ -1759,13 +1764,31 @@ export default function CareerPage() {
         { name: 'Draw', value: 0, color: '#ff4bd2', fill: '#ff4bd2' },
       ];
     }
-    const winPercent = Math.round((wins / total) * 100);
-    const drawPercent = Math.round((draws / total) * 100);
-    const lossPercent = 100 - winPercent - drawPercent;
+    // Largest-remainder method for accurate percentage rounding that sums to exactly 100
+    const rawWin = (wins / total) * 100;
+    const rawLoss = (losses / total) * 100;
+    const rawDraw = (draws / total) * 100;
+    let floorWin = Math.floor(rawWin);
+    let floorLoss = Math.floor(rawLoss);
+    let floorDraw = Math.floor(rawDraw);
+    let remainder = 100 - floorWin - floorLoss - floorDraw;
+    // Distribute remainder to entries with largest fractional parts
+    const fracs = [
+      { key: 'win', frac: rawWin - floorWin },
+      { key: 'loss', frac: rawLoss - floorLoss },
+      { key: 'draw', frac: rawDraw - floorDraw },
+    ].sort((a, b) => b.frac - a.frac);
+    for (const f of fracs) {
+      if (remainder <= 0) break;
+      if (f.key === 'win') floorWin += 1;
+      else if (f.key === 'loss') floorLoss += 1;
+      else floorDraw += 1;
+      remainder -= 1;
+    }
     return [
-      { name: 'Win', value: winPercent, color: '#15b57a', fill: '#15b57a' },
-      { name: 'Loss', value: lossPercent, color: '#d22f2f', fill: '#d22f2f' },
-      { name: 'Draw', value: drawPercent, color: '#ff4bd2', fill: '#ff4bd2' },
+      { name: 'Win', value: floorWin, color: '#15b57a', fill: '#15b57a' },
+      { name: 'Loss', value: floorLoss, color: '#d22f2f', fill: '#d22f2f' },
+      { name: 'Draw', value: floorDraw, color: '#ff4bd2', fill: '#ff4bd2' },
     ];
   }, [winLossMatches, playerId]);
 
@@ -3119,15 +3142,15 @@ export default function CareerPage() {
                                 domain={[0, 'dataMax + 1']}
                               />
 
-                              {/* Player Data - Cyan */}
+                              {/* Player Data - Pink for clear visual distinction */}
                               <Radar
                                 name={playerName || 'Player'}
                                 dataKey={playerName || 'Player'}
-                                stroke={themeColors.cyan}
-                                fill={themeColors.cyan}
+                                stroke={themeColors.pink}
+                                fill={themeColors.pink}
                                 fillOpacity={0.2}
                                 strokeWidth={2}
-                                dot={{ r: 2, fill: themeColors.cyan }}
+                                dot={{ r: 2, fill: themeColors.pink }}
                               />
 
                               {/* League Average - Teal */}
@@ -3164,7 +3187,7 @@ export default function CareerPage() {
                         borderTop: `1px solid ${themeColors.border}`,
                       }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.cyan, borderRadius: 1 }} />
+                          <Box sx={{ width: 10, height: 3, backgroundColor: themeColors.pink, borderRadius: 1 }} />
                           <Typography sx={{ fontSize: 10, color: themeColors.textDim }}>
                             {playerName || 'Player'}
                           </Typography>
