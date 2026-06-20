@@ -3383,9 +3383,9 @@ export default function CareerPage() {
                             {(() => {
                               const current = yourStats;
                               const totalMatches = current.n;
-                              const expectedGoalsPerMatch = totalMatches > 0 ? (current.matchesWithGoals || 0) / totalMatches : 0;
-                              const expectedAssistsPerMatch = totalMatches > 0 ? (current.matchesWithAssists || 0) / totalMatches : 0;
-                              const expectedCleanSheetsPerMatch = totalMatches > 0 ? (current.matchesWithCleanSheets || 0) / totalMatches : 0;
+                              const expectedGoalsPerMatch = current.goals > 0 ? totalMatches / current.goals : 0;
+                              const expectedAssistsPerMatch = current.assists > 0 ? totalMatches / current.assists : 0;
+                              const expectedCleanSheetsPerMatch = current.cleanSheets > 0 ? totalMatches / current.cleanSheets : 0;
                               const winRate = current.winRate;
                               const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
 
@@ -3393,22 +3393,26 @@ export default function CareerPage() {
                               const leagueExpectedAssists = leagueAverage.expectedAssists !== undefined ? leagueAverage.expectedAssists : leagueAverage.assists;
                               const leagueExpectedCleanSheets = leagueAverage.expectedCleanSheets !== undefined ? leagueAverage.expectedCleanSheets : leagueAverage.cleanSheets;
 
+                              const leagueExpectedGoalsMatches = leagueExpectedGoals > 0 ? 1 / leagueExpectedGoals : 0;
+                              const leagueExpectedAssistsMatches = leagueExpectedAssists > 0 ? 1 / leagueExpectedAssists : 0;
+                              const leagueExpectedCleanSheetsMatches = leagueExpectedCleanSheets > 0 ? 1 / leagueExpectedCleanSheets : 0;
+
                               return (
                                 <>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to score a goal (xG)</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedGoalsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedGoals)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedGoalsMatches)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to assist a goal (xA)</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedAssistsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedAssists)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedAssistsMatches)}</TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>Expected to keep Clean Sheet (xCS)</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(expectedCleanSheetsPerMatch)}</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedCleanSheets)}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{formatStatDecimal(leagueExpectedCleanSheetsMatches)}</TableCell>
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
