@@ -2877,6 +2877,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                   open={openProfileMenu}
                   onClose={handleProfileMenuClose}
                   TransitionComponent={SlideFade}
+                  sx={{ zIndex: 9999 }}
                   PaperProps={{
                     sx: {
                       p: 0.5,
@@ -3141,6 +3142,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
         open={openNotifications}
         anchorEl={notificationAnchor}
         onClose={handleNotificationClose}
+        sx={{ zIndex: 9999 }}
         anchorOrigin={{
           vertical: 'bottom',
           horizontal: 'right',
