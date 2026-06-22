@@ -163,12 +163,26 @@ const StyledTextField = styled(TextField)(() => ({
     '&:hover fieldset': { borderColor: themeColors.primary },
     '&.Mui-focused': { borderColor: themeColors.primary },
     '&.Mui-focused fieldset': { borderColor: themeColors.primary },
+    '&.Mui-disabled': {
+      color: "#ffffff !important",
+      opacity: "1 !important",
+      WebkitTextFillColor: "#ffffff !important"
+    },
     '& input, & textarea, & select': {
       color: themeColors.text,
       background: "transparent"
     },
     '& .MuiSelect-select': {
-      color: themeColors.text,
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
+    },
+    '& .MuiSelect-select.Mui-disabled': {
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
+    },
+    '& .MuiOutlinedInput-input.Mui-disabled': {
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
     },
     // Reduced overall control height
     minHeight: 44
@@ -1294,13 +1308,13 @@ const PlayerProfileCard = () => {
                                   setPhoneCountryCode(matchedCountry.isoCode)
                                 }
                               }}
-                              placeholder="Select country"
+                              placeholder="Select a Country/Region"
                               fullWidth
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
-                              SelectProps={{ MenuProps: selectMenuProps }}
+                              SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
                             >
                               <MenuItem value="" disabled>
-                                Select country
+                                Select a Country/Region
                               </MenuItem>
                               {profileCountries.map((c) => (
                                 <MenuItem key={c.isoCode} value={c.isoCode}>
@@ -1322,11 +1336,11 @@ const PlayerProfileCard = () => {
                               }}
                               fullWidth
                               sx={{ mb: 1, '& .MuiSelect-icon': { color: '#fff' } }}
-                              SelectProps={{ MenuProps: selectMenuProps }}
+                              SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
                               disabled={!selectedProfileCountryCode || profileCitiesAndStates.length === 0}
                             >
                               <MenuItem value="" disabled sx={{ color: '#aaa' }}>
-                                {selectedProfileCountryCode ? 'Select city/state' : 'Select country first'}
+                                {selectedProfileCountryCode ? 'Select a City/State' : 'Select a Country/Region first'}
                               </MenuItem>
                               {profileCitiesAndStates.map((name) => (
                                 <MenuItem key={name} value={name} sx={{ color: '#fff' }}>

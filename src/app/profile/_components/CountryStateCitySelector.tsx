@@ -43,9 +43,26 @@ const StyledTextField = styled(TextField)(() => ({
     '&:hover fieldset': { borderColor: themeColors.primary },
     '&.Mui-focused': { borderColor: themeColors.primary },
     '&.Mui-focused fieldset': { borderColor: themeColors.primary },
-    '& input, & textarea': {
+    '&.Mui-disabled': {
+      color: "#ffffff !important",
+      opacity: "1 !important",
+      WebkitTextFillColor: "#ffffff !important"
+    },
+    '& input, & textarea, & select': {
       color: themeColors.text,
       background: "transparent"
+    },
+    '& .MuiSelect-select': {
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
+    },
+    '& .MuiSelect-select.Mui-disabled': {
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
+    },
+    '& .MuiOutlinedInput-input.Mui-disabled': {
+      color: "#ffffff !important",
+      WebkitTextFillColor: "#ffffff !important",
     },
     minHeight: 44
   },
@@ -128,10 +145,10 @@ export default function CountryStateCitySelector({
             select
             value={selectedCountryCode}
             onChange={(e) => handleCountryChange(e.target.value)}
-            placeholder="Select Country"
+            placeholder="Select a Country/Region"
             SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
-            <MenuItem value="" disabled>Select Country</MenuItem>
+            <MenuItem value="" disabled>Select a Country/Region</MenuItem>
             {countries.map(c => (
               <MenuItem key={c.isoCode} value={c.isoCode}>{c.name}</MenuItem>
             ))}
@@ -145,10 +162,10 @@ export default function CountryStateCitySelector({
             select
             value={selectedStateCode}
             onChange={(e) => handleStateChange(e.target.value)}
-            placeholder="Select State"
+            placeholder="Select a State"
             SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
-            <MenuItem value="" disabled>{states.length ? 'Select State' : 'No states available'}</MenuItem>
+            <MenuItem value="" disabled>{states.length ? 'Select a State' : 'No states available'}</MenuItem>
             {states.map(s => (
               <MenuItem key={s.isoCode} value={s.isoCode}>{s.name}</MenuItem>
             ))}
@@ -162,10 +179,10 @@ export default function CountryStateCitySelector({
             select
             value={city}
             onChange={(e) => onCityChange(e.target.value)}
-            placeholder="Select City"
+            placeholder="Select a City/State"
             SelectProps={{ displayEmpty: true, MenuProps: selectMenuProps }}
           >
-            <MenuItem value="" disabled>Select City</MenuItem>
+            <MenuItem value="" disabled>Select a City/State</MenuItem>
             {(cities ?? []).map(ci => (
               <MenuItem key={`${ci.name}-${ci.latitude}-${ci.longitude}`} value={ci.name}>{ci.name}</MenuItem>
             ))}
