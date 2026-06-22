@@ -6350,7 +6350,7 @@ export default function LeagueDetailPage() {
                                                                                 <span className="text-white font-bold truncate uppercase block">{formatPlayerCardStyleName(firstName, lastName)}</span>
                                                                                 {player.isAdmin && <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />}
                                                                             </div>
-                                                                            <Typography className="league-table-row-text" sx={{ fontSize: { xs: 10, sm: 12 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                                                                            <Typography className="league-player-pos" sx={{ fontSize: { xs: 14, sm: 14 }, color: 'rgba(255,255,255,0.6)', mt: 0.25, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                                 {posLabel}
                                                                             </Typography>
                                                                         </div>
