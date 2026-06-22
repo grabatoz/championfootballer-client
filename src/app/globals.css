@@ -204,7 +204,7 @@ input:-webkit-autofill:active {
 /* League Table Theme (matches screenshot styling) */
 :root {
   /* Tuned to match provided screenshot */
-  --league-table-header-bg: #1C1C1C;
+  --league-table-header-bg: #dddddd;
   /* Header bar + columns header */
   --league-table-row-even-bg: #383838;
   /* First row */
@@ -254,8 +254,13 @@ input:-webkit-autofill:active {
 /* Header row label styling + spacing */
 .league-header-row {
   line-height: 1.25;
-  padding-top: 14px !important;
-  padding-bottom: 14px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+.league-mobile-result-font .league-header-row .league-table-heading,
+.league-header-row .league-table-heading {
+  color: #000000 !important;
 }
 
 /* Data rows spacing to match screenshot */
@@ -379,13 +384,13 @@ input:-webkit-autofill:active {
   box-shadow: 8px 0 12px -12px rgba(0, 0, 0, 0.35);
 }
 
-.league-standings-row.bg-table-row-even:hover > :nth-child(1),
-.league-standings-row.bg-table-row-even:hover > :nth-child(2) {
+.league-standings-row.bg-table-row-even:hover> :nth-child(1),
+.league-standings-row.bg-table-row-even:hover> :nth-child(2) {
   background-color: #424242 !important;
 }
 
-.league-standings-row.bg-table-row-odd:hover > :nth-child(1),
-.league-standings-row.bg-table-row-odd:hover > :nth-child(2) {
+.league-standings-row.bg-table-row-odd:hover> :nth-child(1),
+.league-standings-row.bg-table-row-odd:hover> :nth-child(2) {
   background-color: #353535 !important;
 }
 
@@ -437,14 +442,14 @@ input:-webkit-autofill:active {
 .league-row-current-user,
 .league-row-current-user .league-table-sticky-rank,
 .league-row-current-user .league-table-sticky-name {
-  background-color: rgba(0, 167, 127, 0.28) !important;
+  background-color: #114a3e !important;
   box-shadow: inset 4px 0 0 #00c48c;
 }
 
 .league-row-current-user:hover,
 .league-row-current-user:hover .league-table-sticky-rank,
 .league-row-current-user:hover .league-table-sticky-name {
-  background-color: rgba(0, 167, 127, 0.38) !important;
+  background-color: #165b4c !important;
 }
 
 /* Responsive tweaks for league table (keep layout, shrink type on small screens) */

@@ -573,7 +573,7 @@ export default function WorldRankingTable() {
       </Box>
 
       {/* ────────── TABLE ────────── */}
-      <Box sx={{ px: { xs: 1, md: 4 }, mt: { xs: 2, md: 3 }, pb: 6, maxWidth: 1220, mx: 'auto' }}>
+      <Box sx={{ px: { xs: 2.5, sm: 3, md: 4 }, mt: { xs: 2, md: 3 }, pb: 6, maxWidth: 1220, mx: 'auto' }}>
         <Box sx={{
           bgcolor: '#242424',
           borderRadius: 2,
@@ -685,8 +685,8 @@ export default function WorldRankingTable() {
               <TableBody>
                 {filtered.map((p, idx) => {
                   const isMe = user?.id === p.id;
-                  const rowBg = isMe ? 'rgba(0, 167, 127, 0.22)' : (idx % 2 === 0 ? '#242424' : '#1e1e1e');
-                  const rowHoverBg = isMe ? 'rgba(0, 167, 127, 0.32)' : '#2c2c2c';
+                  const rowBg = isMe ? '#114a3e' : (idx % 2 === 0 ? '#242424' : '#1e1e1e');
+                  const rowHoverBg = isMe ? '#165b4c' : '#2c2c2c';
                   return (
                     <TableRow
                       key={p.id}

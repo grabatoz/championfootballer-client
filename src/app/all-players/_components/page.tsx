@@ -1629,12 +1629,12 @@ const AllPlayersPage = () => {
                 position: 'sticky',
                 top: 0,
                 zIndex: 12,
-                py: 2,
+                py: 1.5,
                 pl: 0,
                 pr: { xs: 2, sm: 3 },
-                backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                backgroundColor: '#dddddd',
                 // borderRadius: '8px 8px 0 0',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                borderBottom: '1px solid rgba(0,0,0,0.12)'
               }}>
                 {/* All Positions */}
                 <Box
@@ -1654,10 +1654,10 @@ const AllPlayersPage = () => {
                     position: 'sticky',
                     left: 0,
                     zIndex: 3,
-                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                    backgroundColor: '#dddddd',
                     boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                   }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
                   </Typography>
                   <Box
@@ -1667,7 +1667,7 @@ const AllPlayersPage = () => {
                       height: 0,
                       borderLeft: '6px solid transparent',
                       borderRight: '6px solid transparent',
-                      borderTop: '8px solid #fff',
+                      borderTop: '8px solid #000000',
                       transform: allPositionsMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                       transformOrigin: 'center',
                       transition: 'transform 0.3s ease',
@@ -1721,7 +1721,7 @@ const AllPlayersPage = () => {
                   display: 'block',
                   textAlign: 'center'
                 }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     PLAYING STYLE
                   </Typography>
                 </Box>
@@ -1731,14 +1731,14 @@ const AllPlayersPage = () => {
 
                 {/* View Stats */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     VIEW STATS
                   </Typography>
                 </Box>
 
                 {/* XP Points */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#fff', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                     <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
                   </Typography>
                 </Box>

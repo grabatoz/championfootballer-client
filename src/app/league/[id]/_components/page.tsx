@@ -4602,8 +4602,8 @@ export default function LeagueDetailPage() {
                                                 zIndex: 12,
                                                 pl: 0,
                                                 pr: { xs: 2, sm: 3 },
-                                                backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                backgroundColor: '#dddddd',
+                                                borderBottom: '1px solid rgba(0,0,0,0.12)',
                                                 borderTopLeftRadius: '8px',
                                                 borderTopRightRadius: '8px',
                                             }}>
@@ -4625,10 +4625,10 @@ export default function LeagueDetailPage() {
                                                         position: 'sticky',
                                                         left: 0,
                                                         zIndex: 3,
-                                                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                                                        backgroundColor: '#dddddd',
                                                         borderTopLeftRadius: '8px',
                                                     }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#fff', textAlign: 'left !important' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
                                                         {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
                                                     </Typography>
                                                     <Box
@@ -4638,7 +4638,7 @@ export default function LeagueDetailPage() {
                                                             height: 0,
                                                             borderLeft: '6px solid transparent',
                                                             borderRight: '6px solid transparent',
-                                                            borderTop: '8px solid #fff',
+                                                            borderTop: '8px solid #000000',
                                                             transform: memberPositionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                                                             transformOrigin: 'center',
                                                             transition: 'transform 0.3s ease',
@@ -4692,7 +4692,7 @@ export default function LeagueDetailPage() {
                                                     display: 'block',
                                                     textAlign: 'center'
                                                 }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#000000' }}>
                                                         PLAYING STYLE
                                                     </Typography>
                                                 </Box>
@@ -4702,14 +4702,14 @@ export default function LeagueDetailPage() {
 
                                                 {/* View Stats Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#fff' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#000000' }}>
                                                         VIEW STATS
                                                     </Typography>
                                                 </Box>
 
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                                                    <Typography className="league-table-heading league-table-heading-no-transform" sx={{ color: '#fff' }}>
+                                                    <Typography className="league-table-heading league-table-heading-no-transform" sx={{ color: '#000000' }}>
                                                         xpPTS
                                                     </Typography>
                                                 </Box>
@@ -6244,7 +6244,7 @@ export default function LeagueDetailPage() {
                                             </div> */}
 
                                                 <>
-                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-white league-header-row league-header-inset font-bold sticky top-0 z-20">
+                                                    <div className="grid mt-0 grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-black league-header-row league-header-inset font-bold sticky top-0 z-20">
                                                         <div className="text-center league-table-heading league-table-sticky-rank">#</div>
                                                         <div className="pl-[52px] league-table-heading league-table-heading-left league-table-sticky-name">NAME</div>
                                                         <div className="text-center league-table-heading">MOTM</div>
@@ -6317,13 +6317,12 @@ export default function LeagueDetailPage() {
                                                                 lastName,
                                                             });
                                                             const isEven = index % 2 === 0;
-                                                            // const isCurrentUser = String(player.id) === String(user?.id || '');
-// ${isCurrentUser ? 'league-row-current-user' : ''}
+                                                            const isCurrentUser = String(player.id) === String(user?.id || '');
                                                             return (
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} league-row league-row-inset mb-0 font-bold text-white`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} ${isCurrentUser ? 'league-row-current-user' : ''} league-row league-row-inset mb-0 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-white font-bold league-table-sticky-rank h-full flex items-center justify-center">{index + 1}</div>
