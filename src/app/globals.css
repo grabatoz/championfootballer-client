@@ -443,7 +443,6 @@ input:-webkit-autofill:active {
 .league-row-current-user .league-table-sticky-rank,
 .league-row-current-user .league-table-sticky-name {
   background-color: #114a3e !important;
-  box-shadow: inset 4px 0 0 #00c48c;
 }
 
 .league-row-current-user:hover,
