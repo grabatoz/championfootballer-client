@@ -962,10 +962,32 @@ export default function PlayerStatsPage() {
         };
     }, [playerId, triggerPlayerStatsRefresh]);
 
+    // Reset careerData when refreshNonce or playerId changes to force a fresh fetch
+    useEffect(() => {
+        setCareerData(null);
+    }, [playerId, refreshNonce]);
+
+    // Sync careerData with redux stats data when no filter is active
+    useEffect(() => {
+        if (leagueId === 'all' && year === 'all' && data) {
+            setCareerData(data as unknown as RootState['playerStats']['data']);
+        }
+    }, [data, leagueId, year]);
+
     // Always keep an unfiltered snapshot for Career Stats (all leagues, all years).
     useEffect(() => {
         if (!playerId) {
             setCareerData(null);
+            return;
+        }
+
+        // Skip separate API request if no filter is active, as data already has all stats
+        if (leagueId === 'all' && year === 'all') {
+            return;
+        }
+
+        // Skip separate API request if careerData is already populated
+        if (careerData) {
             return;
         }
 
@@ -985,7 +1007,7 @@ export default function PlayerStatsPage() {
         return () => {
             cancelled = true;
         };
-    }, [playerId, token, refreshNonce]);
+    }, [playerId, token, refreshNonce, leagueId, year, careerData]);
 
     // Awards flattening
     const allTrophyAwards: AllTrophyAward[] = useMemo(() => {

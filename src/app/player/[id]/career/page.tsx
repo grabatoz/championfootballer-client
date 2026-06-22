@@ -699,14 +699,22 @@ export default function CareerPage() {
     const source = leaguesFromRedux && leaguesFromRedux.length > 0
       ? leaguesFromRedux
       : ((data?.leagues || []) as LeagueWithMatches[]);
-    return source.filter((league) => String(league?.id || '').trim() !== '');
+    return source.filter((league) => 
+      String(league?.id || '').trim() !== '' && 
+      Array.isArray(league.matches) && 
+      league.matches.length > 0
+    );
   }, [leaguesFromRedux, data?.leagues]);
 
   const allAverageLeagues = useMemo(() => {
     const source = Array.isArray(careerData?.leagues) && careerData.leagues.length > 0
       ? (careerData.leagues as LeagueWithMatches[])
       : averageLeagues;
-    return source.filter((league) => String(league?.id || '').trim() !== '');
+    return source.filter((league) => 
+      String(league?.id || '').trim() !== '' && 
+      Array.isArray(league.matches) && 
+      league.matches.length > 0
+    );
   }, [careerData?.leagues, averageLeagues]);
 
   const allAverageTargetLeagueIds = useMemo(() => {
@@ -738,9 +746,31 @@ export default function CareerPage() {
     dispatch(fetchPlayerStats({ playerId, leagueId: filters.leagueId, year: filters.year }));
   }, [playerId, dispatch, filters.leagueId, filters.year, authLoading, refreshNonce]);
 
+  // Reset careerData when refreshNonce or playerId changes to force a fresh fetch
+  useEffect(() => {
+    setCareerData(null);
+  }, [playerId, refreshNonce]);
+
+  // Sync careerData with redux stats data when no filter is active
+  useEffect(() => {
+    if (filters.leagueId === 'all' && filters.year === 'all' && data) {
+      setCareerData(data);
+    }
+  }, [data, filters.leagueId, filters.year]);
+
   useEffect(() => {
     if (!playerId || authLoading) {
       if (!playerId) setCareerData(null);
+      return;
+    }
+
+    // Skip separate API request if no filter is active, as data already has all stats
+    if (filters.leagueId === 'all' && filters.year === 'all') {
+      return;
+    }
+
+    // Skip separate API request if careerData is already populated
+    if (careerData) {
       return;
     }
 
@@ -758,7 +788,7 @@ export default function CareerPage() {
     return () => {
       cancelled = true;
     };
-  }, [playerId, authLoading, token, refreshNonce]);
+  }, [playerId, authLoading, token, refreshNonce, filters.leagueId, filters.year, careerData]);
 
   useEffect(() => {
     if (!playerId) return;

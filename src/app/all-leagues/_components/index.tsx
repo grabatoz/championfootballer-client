@@ -46,12 +46,14 @@ type LeagueStatus = {
   maxGames?: number;
   totals?: LeagueStatusTotals;
   missing?: LeagueStatusMissing;
+  seasons?: any[];
 };
 
 // Local UI type to carry backend-computed status
 type LeagueWithStatus = League & {
   computedStatus?: LeagueStatus;
   isLocked?: boolean;
+  seasons?: Season[];
 };
 
 // Helper function to format league name
@@ -213,6 +215,19 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     currentTeams: num('currentTeams'),
     status: normalizeLeagueStatus(raw['status']),
     computedStatus,
+    seasons: (raw['seasons']
+      ? arr('seasons')
+      : (computedStatus?.seasons || []).map((s: any) => ({
+          id: s.seasonId || s.id,
+          name: s.seasonName || s.name,
+          seasonNumber: s.seasonNumber,
+          isActive: s.isActive,
+          maxGames: s.maxGames,
+          inviteCode: s.inviteCode || s.seasonInviteCode || '',
+          completedMatches: s.completedMatches,
+          isCompleted: s.isCompleted,
+        }))
+    ) as unknown as Season[],
     isLocked:
       (typeof isLockedRaw === 'boolean' && isLockedRaw)
       || (typeof lockedRaw === 'boolean' && lockedRaw)
@@ -926,6 +941,7 @@ interface Season {
   showPoints?: boolean; // CF Advance Point Scoring per season
   members?: User[];
   players?: User[];
+  status?: string;
 }
 
 type MatchWithSeason = Match & {
@@ -2398,7 +2414,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
               </Button>
             </>
           )}
-          {canManageLeagueSettings && (
+          {/* {canManageLeagueSettings && (
             <Button
               variant="outlined"
               onClick={() => setArchivedSeasonsOpen(true)}
@@ -2413,7 +2429,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
             >
               Archived Seasons ({archivedSeasons.length})
             </Button>
-          )}
+          )} */}
           {/* <Button
             variant="outlined"
             onClick={openArchivedMatchesDialog}
@@ -4253,6 +4269,39 @@ function AllLeagues() {
     }
   };
 
+  const handleOpenAdminSettings = async (league: League) => {
+    setLoadingMembers(true);
+    try {
+      const bust = Date.now();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.status === 403) {
+        setLeagues(prev => prev.filter(l => String(l.id) !== String(league.id)));
+        setAdminSettingsLeague(null);
+        setOpenAdminSettings(false);
+        toast.error("You don't have access to this league anymore");
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        const normalized = normalizeLeagueFromPayload(data.league);
+        if (normalized) {
+          setAdminSettingsLeague(normalized);
+          setOpenAdminSettings(true);
+        }
+      } else {
+        toast.error(data.message || 'Failed to fetch league details');
+      }
+    } catch {
+      toast.error('Failed to fetch league details');
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
   const removeMemberFromLeague = async (
     leagueId: string | number,
     memberId: string
@@ -5716,9 +5765,8 @@ function AllLeagues() {
                         e.stopPropagation();
                         const isAdmin = (league.adminId || league.administrators?.[0]?.id) === (user?.id || '')
                         if (isAdmin) {
-                          // Open standalone settings dialog for admins
-                          setAdminSettingsLeague(league)
-                          setOpenAdminSettings(true)
+                          // Open standalone settings dialog for admins after loading details
+                          void handleOpenAdminSettings(league);
                         } else {
                           handleOpenMembers(league)
                         }
