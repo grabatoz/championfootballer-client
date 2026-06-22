@@ -3412,8 +3412,8 @@ export default function CareerPage() {
                                   </TableRow>
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>-</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>-</TableCell>
                                   </TableRow>
                                 </>
                               );
