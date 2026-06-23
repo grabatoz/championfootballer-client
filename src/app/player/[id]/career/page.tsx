@@ -84,6 +84,7 @@ const AUTO_SWITCH_THRESHOLD = 26;
 
 // ---------- TYPES ----------
 interface PlayerMatchStats {
+  id?: string;
   goals?: number;
   assists?: number;
   cleanSheets?: number;
@@ -226,23 +227,23 @@ const sameId = (a: unknown, b: unknown): boolean =>
   String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
 function resolveProfileImageUrl(value: string | null | undefined): string | null {
-    const raw = String(value ?? '').trim();
-    if (!raw || raw === 'null' || raw === 'undefined') return null;
+  const raw = String(value ?? '').trim();
+  if (!raw || raw === 'null' || raw === 'undefined') return null;
 
-    if (
-        raw.startsWith('http://') ||
-        raw.startsWith('https://') ||
-        raw.startsWith('//') ||
-        raw.startsWith('data:') ||
-        raw.startsWith('blob:')
-    ) {
-        return raw;
-    }
+  if (
+    raw.startsWith('http://') ||
+    raw.startsWith('https://') ||
+    raw.startsWith('//') ||
+    raw.startsWith('data:') ||
+    raw.startsWith('blob:')
+  ) {
+    return raw;
+  }
 
-    const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
-    if (!apiBase) return raw.startsWith('/') ? raw : `/${raw}`;
+  const apiBase = String(process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+  if (!apiBase) return raw.startsWith('/') ? raw : `/${raw}`;
 
-    return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  return `${apiBase}${raw.startsWith('/') ? '' : '/'}${raw}`;
 }
 
 const isSeasonExplicitlyDeclined = (season: SeasonInfo): boolean => {
@@ -353,6 +354,7 @@ type LeagueMetricValues = {
   expectedGoals?: number;
   expectedAssists?: number;
   expectedCleanSheets?: number;
+  winRate?: number;
 };
 
 type CardLeagueScope = 'all' | 'current';
@@ -544,6 +546,7 @@ const normalizeLeagueMetrics = (entry: unknown): LeagueMetricValues | null => {
     expectedGoals: toStatNumber(record.expectedGoals),
     expectedAssists: toStatNumber(record.expectedAssists),
     expectedCleanSheets: toStatNumber(record.expectedCleanSheets),
+    winRate: record.winRate !== undefined ? toStatNumber(record.winRate) : undefined,
   };
 };
 
@@ -561,13 +564,68 @@ const averageLeagueMetricsFromPlayerMap = (players: unknown): LeagueMetricValues
 
 const resolveLeagueAverageFromPayload = (payload: unknown): LeagueMetricValues => {
   if (!payload || typeof payload !== 'object') return createEmptyLeagueMetrics();
-  const record = payload as Record<string, unknown>;
+  const record = payload as Record<string, any>;
 
+  const totalPlayers = toStatNumber(record.totalPlayers) || 1;
+  const totals = record.leagueTotals;
+  const avg = record.leagueAvg || {};
+  
+  if (totals && typeof totals === 'object') {
+    const totalMatches = Math.max(toStatNumber(totals.matches), 1);
+    return {
+      goals: toStatNumber(totals.goals) / totalPlayers,
+      assists: toStatNumber(totals.assists) / totalPlayers,
+      cleanSheets: toStatNumber(totals.cleanSheets) / totalPlayers,
+      defence: toStatNumber(totals.defence) / totalPlayers,
+      motmVotes: toStatNumber(totals.motmVotes) / totalPlayers,
+      defensiveImpactVotes: toStatNumber(totals.defensiveImpactVotes) / totalPlayers,
+      impact: toStatNumber(avg.impact),
+      expectedGoals: toStatNumber(totals.goals) / totalMatches,
+      expectedAssists: toStatNumber(totals.assists) / totalMatches,
+      expectedCleanSheets: toStatNumber(totals.cleanSheets) / totalMatches,
+      winRate: totals.wins !== undefined ? (toStatNumber(totals.wins) / totalMatches) * 100 : avg.winRate,
+    };
+  }
+
+  // Fallback 1: Calculate from record.playerTotals
+  if (record.playerTotals && typeof record.playerTotals === 'object') {
+    const playersTotalsList = Object.values(record.playerTotals);
+    const count = playersTotalsList.length || 1;
+    const sum = createEmptyLeagueMetrics();
+    let totalMatches = 0;
+    let totalWins = 0;
+    playersTotalsList.forEach((pt: any) => {
+      if (!pt) return;
+      sum.goals += toStatNumber(pt.goals);
+      sum.assists += toStatNumber(pt.assists);
+      sum.cleanSheets += toStatNumber(pt.cleanSheets);
+      sum.defence += toStatNumber(pt.defence);
+      sum.motmVotes += toStatNumber(pt.motmVotes);
+      sum.defensiveImpactVotes += toStatNumber(pt.defensiveImpactVotes);
+      sum.impact += toStatNumber(pt.impact);
+      totalMatches += toStatNumber(pt.matches);
+      totalWins += toStatNumber(pt.wins || 0);
+    });
+    const finalMatches = Math.max(totalMatches, 1);
+    return {
+      goals: sum.goals / count,
+      assists: sum.assists / count,
+      cleanSheets: sum.cleanSheets / count,
+      defence: sum.defence / count,
+      motmVotes: sum.motmVotes / count,
+      defensiveImpactVotes: sum.defensiveImpactVotes / count,
+      impact: avg.impact !== undefined ? toStatNumber(avg.impact) : sum.impact / count,
+      expectedGoals: sum.goals / finalMatches,
+      expectedAssists: sum.assists / finalMatches,
+      expectedCleanSheets: sum.cleanSheets / finalMatches,
+      winRate: (totalWins / finalMatches) * 100,
+    };
+  }
+
+  // Fallback 2: Legacy per-match logic
   const fromLeagueAverage = normalizeLeagueMetrics(record.leagueAvg);
   if (fromLeagueAverage) return fromLeagueAverage;
 
-  // Client formula: average each player's per-match metric, then divide by player count.
-  // Example: (player1 xG 0.8 + player2 xG 0.5) / 2 = 0.65.
   const fromPlayers = averageLeagueMetricsFromPlayerMap(record.players);
   if (fromPlayers) return fromPlayers;
 
@@ -651,7 +709,7 @@ export default function CareerPage() {
   const currentUserId = String(authUser?.id ?? authUser?.userId ?? authUser?.user_id ?? authUser?._id ?? '').trim();
   const routePlayerId = String(playerId || '').trim();
   const authTokenForVisibility = token || getAuthToken() || Cookies.get('token') || '';
-  const canViewPersonalSections = Boolean(routePlayerId && (currentUserId || authTokenForVisibility));
+  const canViewPersonalSections = Boolean(routePlayerId && currentUserId && routePlayerId.toLowerCase() === currentUserId.toLowerCase());
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -699,9 +757,9 @@ export default function CareerPage() {
     const source = leaguesFromRedux && leaguesFromRedux.length > 0
       ? leaguesFromRedux
       : ((data?.leagues || []) as LeagueWithMatches[]);
-    return source.filter((league) => 
-      String(league?.id || '').trim() !== '' && 
-      Array.isArray(league.matches) && 
+    return source.filter((league) =>
+      String(league?.id || '').trim() !== '' &&
+      Array.isArray(league.matches) &&
       league.matches.length > 0
     );
   }, [leaguesFromRedux, data?.leagues]);
@@ -710,9 +768,9 @@ export default function CareerPage() {
     const source = Array.isArray(careerData?.leagues) && careerData.leagues.length > 0
       ? (careerData.leagues as LeagueWithMatches[])
       : averageLeagues;
-    return source.filter((league) => 
-      String(league?.id || '').trim() !== '' && 
-      Array.isArray(league.matches) && 
+    return source.filter((league) =>
+      String(league?.id || '').trim() !== '' &&
+      Array.isArray(league.matches) &&
       league.matches.length > 0
     );
   }, [careerData?.leagues, averageLeagues]);
@@ -946,9 +1004,9 @@ export default function CareerPage() {
     const leaguesFingerprint =
       effectiveLeagueId === 'all'
         ? (leaguesForYear || [])
-            .map((l) => String(l.id))
-            .sort()
-            .join(',')
+          .map((l) => String(l.id))
+          .sort()
+          .join(',')
         : effectiveLeagueId;
 
     const fetchKey = `${playerId}_${effectiveLeagueId}_${effectiveYear}_${effectiveSeason}_${leaguesFingerprint}`;
@@ -1299,16 +1357,15 @@ export default function CareerPage() {
       ? allLeagueFilteredMatches
       : filteredMatches,
     [allLeagueFilteredMatches, filteredMatches, chartLeague]);
-  const influenceMatches = useMemo(() =>
-    influenceLeague === 'all'
-      ? allLeagueFilteredMatches
-      : filteredMatches,
-    [allLeagueFilteredMatches, filteredMatches, influenceLeague]);
-  const winLossMatches = useMemo(() =>
-    winLossLeague === 'all'
-      ? allLeagueFilteredMatches
-      : filteredMatches,
-    [allLeagueFilteredMatches, filteredMatches, winLossLeague]);
+  const influenceMatches = useMemo(() => {
+    const base = influenceLeague === 'all' ? allLeagueMatches : filteredMatches;
+    return base.filter(m => !!m.playerStats && !!m.playerStats.id);
+  }, [allLeagueMatches, filteredMatches, influenceLeague]);
+
+  const winLossMatches = useMemo(() => {
+    const base = winLossLeague === 'all' ? allLeagueMatches : filteredMatches;
+    return base.filter(m => !!m.playerStats && !!m.playerStats.id);
+  }, [allLeagueMatches, filteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
   const [groupMode, setGroupMode] = useState<'weekly' | 'monthly'>('weekly');
@@ -1485,7 +1542,9 @@ export default function CareerPage() {
 
   // --- Last 10 vs Previous 10 for Impact section (FIXED) ---
   const lastPrev10 = useMemo(() => {
-    const played = [...filteredMatches].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+    const played = filteredMatches
+      .filter(m => !!m.playerStats && !!m.playerStats.id)
+      .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
     const last10 = played.slice(-10);
     const prev10 = played.slice(-20, -10);
 
@@ -1531,7 +1590,7 @@ export default function CareerPage() {
 
   // Aggregated stats for current filters ("Your Stats") - ALL filtered matches
   const yourStats = useMemo(() => {
-    const arr = filteredMatches;
+    const arr = filteredMatches.filter(m => !!m.playerStats && !!m.playerStats.id);
     const sum = (a: LeagueMatch[], pick: (ps: PlayerMatchStats) => number) => a.reduce((s, m) => s + pick(m.playerStats || {}), 0);
     const count = (a: LeagueMatch[], pred: (ps: PlayerMatchStats) => boolean) => a.reduce((s, m) => s + (pred(m.playerStats || {}) ? 1 : 0), 0);
 
@@ -1575,43 +1634,42 @@ export default function CareerPage() {
   // One consistent comparison model used by IMPACT + Top Strengths
   const leagueComparisonRows = useMemo<LeagueComparisonRow[]>(() => {
     const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
-    const matchCount = Math.max(yourStats.n || 0, 1);
 
     const rows = [
       {
         metric: 'Goals',
         yourTotal: yourStats.goals,
         yourDisplay: String(yourStats.goals),
-        leagueAverage: toStatNumber(leagueAverage.goals) * matchCount,
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.goals) * matchCount),
+        leagueAverage: toStatNumber(leagueAverage.goals),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.goals)),
       },
       {
         metric: 'Assists',
         yourTotal: yourStats.assists,
         yourDisplay: String(yourStats.assists),
-        leagueAverage: toStatNumber(leagueAverage.assists) * matchCount,
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.assists) * matchCount),
+        leagueAverage: toStatNumber(leagueAverage.assists),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.assists)),
       },
       {
         metric: 'Clean Sheets',
         yourTotal: yourStats.cleanSheets,
         yourDisplay: String(yourStats.cleanSheets),
-        leagueAverage: toStatNumber(leagueAverage.cleanSheets) * matchCount,
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.cleanSheets) * matchCount),
+        leagueAverage: toStatNumber(leagueAverage.cleanSheets),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.cleanSheets)),
       },
       {
         metric: 'MOTM Votes',
         yourTotal: yourStats.motmVotes,
         yourDisplay: String(yourStats.motmVotes),
-        leagueAverage: toStatNumber(leagueAverage.motmVotes) * matchCount,
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.motmVotes) * matchCount),
+        leagueAverage: toStatNumber(leagueAverage.motmVotes),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.motmVotes)),
       },
       {
         metric: 'Defensive Impact Votes',
         yourTotal: yourStats.defensiveImpactVotes,
         yourDisplay: String(yourStats.defensiveImpactVotes),
-        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes) * matchCount,
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.defensiveImpactVotes) * matchCount),
+        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.defensiveImpactVotes)),
       },
       {
         metric: 'Game Contribution Index',
@@ -1774,7 +1832,7 @@ export default function CareerPage() {
       return {
         metric,
         [displayName]: toRoundedInt(playerTotals[metric]),
-        'League Avg': Math.round(lAvg * n)
+        'League Avg': Math.round(lAvg * 10) / 10
       };
     });
   }, [influenceMatches, playerName, currentInfluenceLeagueAvg]);
@@ -3002,171 +3060,171 @@ export default function CareerPage() {
                           px: 2,
                         }}
                       >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                          data={chartData.length > 0 ? chartData : performanceData}
-                          margin={{ top: 10, left: 15, right: 15, bottom: groupMode === 'monthly' ? 40 : 50 }}
-                        >
-                          <XAxis
-                            dataKey="label"
-                            tick={(props: any) => {
-                              const { x, y, payload, index, width: axisWidth } = props;
-                              const activeData = chartData.length > 0 ? chartData : performanceData;
-                              const currentItem = activeData[index];
-                              if (!currentItem) return <g></g>;
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            data={chartData.length > 0 ? chartData : performanceData}
+                            margin={{ top: 10, left: 15, right: 15, bottom: groupMode === 'monthly' ? 40 : 50 }}
+                          >
+                            <XAxis
+                              dataKey="label"
+                              tick={(props: any) => {
+                                const { x, y, payload, index, width: axisWidth } = props;
+                                const activeData = chartData.length > 0 ? chartData : performanceData;
+                                const currentItem = activeData[index];
+                                if (!currentItem) return <g></g>;
 
-                              const currentYear = currentItem.year;
+                                const currentYear = currentItem.year;
 
-                              let yearStartIndex = index;
-                              while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
-                                yearStartIndex--;
-                              }
-                              let yearEndIndex = index;
-                              while (yearEndIndex < activeData.length - 1 && activeData[yearEndIndex + 1].year === currentYear) {
-                                yearEndIndex++;
-                              }
-                              const isYearCenter = index === Math.floor((yearStartIndex + yearEndIndex) / 2);
-                              
-                              const count = activeData.length;
-                              const widthVal = axisWidth || 800;
-                              const step = count > 1 ? widthVal / count : widthVal;
-                              const halfStep = step / 2;
+                                let yearStartIndex = index;
+                                while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
+                                  yearStartIndex--;
+                                }
+                                let yearEndIndex = index;
+                                while (yearEndIndex < activeData.length - 1 && activeData[yearEndIndex + 1].year === currentYear) {
+                                  yearEndIndex++;
+                                }
+                                const isYearCenter = index === Math.floor((yearStartIndex + yearEndIndex) / 2);
 
-                              const drawLeftVertical = index === yearStartIndex;
-                              const drawRightVertical = index === yearEndIndex;
+                                const count = activeData.length;
+                                const widthVal = axisWidth || 800;
+                                const step = count > 1 ? widthVal / count : widthVal;
+                                const halfStep = step / 2;
 
-                              const lineLeft = drawLeftVertical ? -halfStep + 3 : -halfStep;
-                              const lineRight = drawRightVertical ? halfStep - 3 : halfStep;
+                                const drawLeftVertical = index === yearStartIndex;
+                                const drawRightVertical = index === yearEndIndex;
 
-                              const lineY = 32;
-                              const tickHeight = 6;
+                                const lineLeft = drawLeftVertical ? -halfStep + 3 : -halfStep;
+                                const lineRight = drawRightVertical ? halfStep - 3 : halfStep;
 
-                              return (
-                                <g transform={`translate(${x},${y})`}>
-                                  <text
-                                    x={0}
-                                    y={0}
-                                    dx={-5}
-                                    dy={5}
-                                    textAnchor="end"
-                                    fill={themeColors.textDim}
-                                    fontSize={10}
-                                    transform="rotate(-90)"
-                                  >
-                                    {payload.value}
-                                  </text>
+                                const lineY = 32;
+                                const tickHeight = 6;
 
-                                  {/* Bracket lines for year grouping */}
-                                  <line
-                                    x1={lineLeft}
-                                    y1={lineY}
-                                    x2={lineRight}
-                                    y2={lineY}
-                                    stroke="rgba(255, 255, 255, 0.35)"
-                                    strokeWidth={1}
-                                  />
-                                  {drawLeftVertical && (
+                                return (
+                                  <g transform={`translate(${x},${y})`}>
+                                    <text
+                                      x={0}
+                                      y={0}
+                                      dx={-5}
+                                      dy={5}
+                                      textAnchor="end"
+                                      fill={themeColors.textDim}
+                                      fontSize={10}
+                                      transform="rotate(-90)"
+                                    >
+                                      {payload.value}
+                                    </text>
+
+                                    {/* Bracket lines for year grouping */}
                                     <line
                                       x1={lineLeft}
                                       y1={lineY}
-                                      x2={lineLeft}
-                                      y2={lineY - tickHeight}
-                                      stroke="rgba(255, 255, 255, 0.35)"
-                                      strokeWidth={1}
-                                    />
-                                  )}
-                                  {drawRightVertical && (
-                                    <line
-                                      x1={lineRight}
-                                      y1={lineY}
                                       x2={lineRight}
-                                      y2={lineY - tickHeight}
+                                      y2={lineY}
                                       stroke="rgba(255, 255, 255, 0.35)"
                                       strokeWidth={1}
                                     />
-                                  )}
+                                    {drawLeftVertical && (
+                                      <line
+                                        x1={lineLeft}
+                                        y1={lineY}
+                                        x2={lineLeft}
+                                        y2={lineY - tickHeight}
+                                        stroke="rgba(255, 255, 255, 0.35)"
+                                        strokeWidth={1}
+                                      />
+                                    )}
+                                    {drawRightVertical && (
+                                      <line
+                                        x1={lineRight}
+                                        y1={lineY}
+                                        x2={lineRight}
+                                        y2={lineY - tickHeight}
+                                        stroke="rgba(255, 255, 255, 0.35)"
+                                        strokeWidth={1}
+                                      />
+                                    )}
 
-                                  {isYearCenter && (
-                                    <text
-                                      x={0}
-                                      y={lineY + 14}
-                                      textAnchor="middle"
-                                      fill={themeColors.textDim}
-                                      fontSize={11}
-                                      fontWeight="bold"
-                                    >
-                                      {currentYear}
-                                    </text>
-                                  )}
-                                </g>
-                              );
-                            }}
-                            interval={0}
-                            tickLine={{ stroke: themeColors.border }}
-                            axisLine={{ stroke: themeColors.border }}
-                          />
-                          <YAxis
-                            yAxisId="avg"
-                            stroke={themeColors.textDim}
-                            tick={{ fontSize: 10, fill: themeColors.textDim }}
-                            width={50}
-                            tickLine={{ stroke: themeColors.border }}
-                            axisLine={{ stroke: themeColors.border }}
-                            label={{ value: 'Total XP', angle: -90, position: 'insideLeft', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
-                          />
-                          <YAxis
-                            yAxisId="cum"
-                            orientation="right"
-                            stroke={themeColors.textDim}
-                            tick={{ fontSize: 10, fill: themeColors.textDim }}
-                            width={55}
-                            tickLine={{ stroke: themeColors.border }}
-                            axisLine={{ stroke: themeColors.border }}
-                            label={{ value: 'Cumulative XP', angle: 90, position: 'insideRight', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: themeColors.surfaceAlt,
-                              border: `1px solid ${themeColors.border}`,
-                              fontSize: 11,
-                              borderRadius: 4,
-                              color: themeColors.text
-                            }}
-                            labelStyle={{ fontWeight: 600, color: themeColors.text }}
-                            formatter={(value: unknown, name: unknown) => {
-                              const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-                              const n = typeof name === 'string' ? name : String(name ?? '');
-                              if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
-                              if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
-                              return [v, n];
-                            }}
-                          />
+                                    {isYearCenter && (
+                                      <text
+                                        x={0}
+                                        y={lineY + 14}
+                                        textAnchor="middle"
+                                        fill={themeColors.textDim}
+                                        fontSize={11}
+                                        fontWeight="bold"
+                                      >
+                                        {currentYear}
+                                      </text>
+                                    )}
+                                  </g>
+                                );
+                              }}
+                              interval={0}
+                              tickLine={{ stroke: themeColors.border }}
+                              axisLine={{ stroke: themeColors.border }}
+                            />
+                            <YAxis
+                              yAxisId="avg"
+                              stroke={themeColors.textDim}
+                              tick={{ fontSize: 10, fill: themeColors.textDim }}
+                              width={50}
+                              tickLine={{ stroke: themeColors.border }}
+                              axisLine={{ stroke: themeColors.border }}
+                              label={{ value: 'Total XP', angle: -90, position: 'insideLeft', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
+                            />
+                            <YAxis
+                              yAxisId="cum"
+                              orientation="right"
+                              stroke={themeColors.textDim}
+                              tick={{ fontSize: 10, fill: themeColors.textDim }}
+                              width={55}
+                              tickLine={{ stroke: themeColors.border }}
+                              axisLine={{ stroke: themeColors.border }}
+                              label={{ value: 'Cumulative XP', angle: 90, position: 'insideRight', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                background: themeColors.surfaceAlt,
+                                border: `1px solid ${themeColors.border}`,
+                                fontSize: 11,
+                                borderRadius: 4,
+                                color: themeColors.text
+                              }}
+                              labelStyle={{ fontWeight: 600, color: themeColors.text }}
+                              formatter={(value: unknown, name: unknown) => {
+                                const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
+                                const n = typeof name === 'string' ? name : String(name ?? '');
+                                if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
+                                if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
+                                return [v, n];
+                              }}
+                            />
 
-                          {/* Bars for average points - Green/Teal */}
-                          <Bar
-                            yAxisId="avg"
-                            dataKey="totalPoints"
-                            fill={themeColors.chartBar}
-                            name="Total XP Points"
-                            maxBarSize={35}
-                            radius={[3, 3, 0, 0]}
-                          />
+                            {/* Bars for average points - Green/Teal */}
+                            <Bar
+                              yAxisId="avg"
+                              dataKey="totalPoints"
+                              fill={themeColors.chartBar}
+                              name="Total XP Points"
+                              maxBarSize={35}
+                              radius={[3, 3, 0, 0]}
+                            />
 
-                          {/* Line for cumulative points - Magenta/Pink */}
-                          <Line
-                            yAxisId="cum"
-                            type="monotone"
-                            dataKey="cumulativePoints"
-                            name="Cumulative XP Points"
-                            stroke={themeColors.chartLine}
-                            strokeWidth={2}
-                            dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
-                            activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
-                          />
-                        </ComposedChart>
-                      </ResponsiveContainer>
+                            {/* Line for cumulative points - Magenta/Pink */}
+                            <Line
+                              yAxisId="cum"
+                              type="monotone"
+                              dataKey="cumulativePoints"
+                              name="Cumulative XP Points"
+                              stroke={themeColors.chartLine}
+                              strokeWidth={2}
+                              dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
+                              activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
-                  </Box>
 
                     {/* Legend */}
                     <Box sx={{
@@ -3549,7 +3607,9 @@ export default function CareerPage() {
                                   <TableRow sx={{ bgcolor: '#383a3e' }}>
                                     <TableCell sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>Win rate</TableCell>
                                     <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>{winRate.toFixed(0)}%</TableCell>
-                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>-</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: 11, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}`, bgcolor: '#383a3e' }}>
+                                      {leagueAverage.winRate !== undefined ? `${leagueAverage.winRate.toFixed(0)}%` : '-'}
+                                    </TableCell>
                                   </TableRow>
                                 </>
                               );
