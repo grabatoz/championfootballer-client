@@ -27,6 +27,7 @@ export interface League {
   active?: boolean;
   maxGames?: number;
   showPoints?: boolean;
+  memberCount?: number;
 }
 
 export interface Match {

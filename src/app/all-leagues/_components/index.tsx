@@ -208,25 +208,26 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     active: bool('active', true),
     maxGames: num('maxGames', 0) as number,
     showPoints: bool('showPoints', true),
-    adminId: str('adminId', undefined as unknown as string),
+    adminId: str('adminId', '') || (arr('administrators')?.[0] as any)?.id || '',
     description: str('description', undefined as unknown as string),
     location: str('location', undefined as unknown as string),
     maxTeams: num('maxTeams'),
     currentTeams: num('currentTeams'),
     status: normalizeLeagueStatus(raw['status']),
     computedStatus,
+    memberCount: num('memberCount'),
     seasons: (raw['seasons']
       ? arr('seasons')
       : (computedStatus?.seasons || []).map((s: any) => ({
-          id: s.seasonId || s.id,
-          name: s.seasonName || s.name,
-          seasonNumber: s.seasonNumber,
-          isActive: s.isActive,
-          maxGames: s.maxGames,
-          inviteCode: s.inviteCode || s.seasonInviteCode || '',
-          completedMatches: s.completedMatches,
-          isCompleted: s.isCompleted,
-        }))
+        id: s.seasonId || s.id,
+        name: s.seasonName || s.name,
+        seasonNumber: s.seasonNumber,
+        isActive: s.isActive,
+        maxGames: s.maxGames,
+        inviteCode: s.inviteCode || s.seasonInviteCode || '',
+        completedMatches: s.completedMatches,
+        isCompleted: s.isCompleted,
+      }))
     ) as unknown as Season[],
     isLocked:
       (typeof isLockedRaw === 'boolean' && isLockedRaw)
@@ -383,7 +384,7 @@ function LeagueMembersDialog({
 
   if (!league) return null
 
-  const isAdmin = league.adminId === currentUserId
+  const isAdmin = league.adminId === currentUserId || (league.administrators || []).some((a) => a.id === currentUserId)
   const memberCount = league.members?.length || 0
   const matchCount = league.matches?.length || 0
   const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
@@ -514,138 +515,8 @@ function LeagueMembersDialog({
           "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.2)", borderRadius: "3px" },
         }}
       >
-        {isAdmin ? (
-          <List sx={{ py: 0 }}>
-            {(league.members || []).map((member, index) => {
-              const memberName = `${member.firstName} ${member.lastName}`
-              const isLeagueAdmin = member.id === league.adminId
-              const isCurrentUser = member.id === currentUserId
-
-              return (
-                <Fade in={true} timeout={300 + index * 100} key={member.id}>
-                  <Box>
-                    <ListItem
-                      sx={{
-                        py: { xs: 2, sm: 2.5 },
-                        px: { xs: 2, sm: 3 },
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
-                        borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          bgcolor: "rgba(255,255,255,0.06)",
-                        },
-                      }}
-                    >
-                      <ListItemAvatar sx={{ minWidth: 56 }}>
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            width: { xs: 44, sm: 52 },
-                            height: { xs: 44, sm: 52 },
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                            background: 'transparent',
-                            // border: isCurrentUser ? '2px solid #e56a16' : '1px solid rgba(255,255,255,0.2)',
-                            // boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                          }}
-                        >
-                          <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              inset: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#000',
-                              fontWeight: 800,
-                              fontSize: { xs: 14, sm: 16 },
-                              lineHeight: 1,
-                              textShadow: '0 1px 2px rgba(255,255,255,0.3)',
-                            }}
-                          >
-                            {/* {member.shirtNumber || '0'} */}
-                          </Box>
-                        </Box>
-                      </ListItemAvatar>
-
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                color: "#E5E7EB",
-                                fontSize: { xs: 16, sm: 18 },
-                              }}
-                            >
-                              {memberName}
-                            </Typography>
-                            {isCurrentUser && (
-                              <Chip
-                                label="You"
-                                size="small"
-                                sx={{
-                                  bgcolor: "transparent",
-                                  color: "#e56a16",
-                                  border: '1px solid rgba(229,106,22,0.6)',
-                                  fontWeight: 600,
-                                  fontSize: 11,
-                                  height: 20,
-                                  borderRadius: '9999px',
-                                }}
-                              />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                            {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
-                            <Typography
-                              sx={{
-                                color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
-                                fontWeight: 500,
-                                fontSize: { xs: 13, sm: 14 },
-                              }}
-                            >
-                              {isLeagueAdmin ? "League Admin" : "Member"}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-
-                      {isAdmin && member.id !== currentUserId && (
-                        <Tooltip title={`Remove ${memberName}`} arrow>
-                          <IconButton
-                            onClick={() => handleRemoveMember(member.id, memberName)}
-                            sx={{
-                              color: "#ff6b6b",
-                              bgcolor: "rgba(255, 107, 107, 0.12)",
-                              "&:hover": {
-                                bgcolor: "rgba(255, 107, 107, 0.2)",
-                                transform: "scale(1.05)",
-                              },
-                              transition: "all 0.2s ease",
-                            }}
-                          >
-                            <Delete sx={{ fontSize: 20 }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </ListItem>
-                    {index < (league.members?.length || 0) - 1 && (
-                      <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
-                    )}
-                  </Box>
-                </Fade>
-              )
-            })}
-          </List>
-        ) : (
-          <Box sx={{ p: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {!isAdmin && (
+          <Box sx={{ p: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', gap: 2, pb: 1 }}>
             <Box
               sx={{
                 p: 2,
@@ -783,6 +654,126 @@ function LeagueMembersDialog({
             </Grid>
           </Box>
         )}
+
+        <Typography variant="subtitle2" sx={{ color: '#9CA3AF', px: { xs: 2, sm: 3 }, py: 1.5, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+          League Members
+        </Typography>
+        <List sx={{ py: 0 }}>
+          {(league.members || []).map((member, index) => {
+            const memberName = `${member.firstName} ${member.lastName}`
+            const isLeagueAdmin = member.id === league.adminId || (league.administrators || []).some(a => a.id === member.id)
+            const isCurrentUser = member.id === currentUserId
+
+            return (
+              <Fade in={true} timeout={300 + index * 100} key={member.id}>
+                <Box>
+                  <ListItem
+                    sx={{
+                      py: { xs: 2, sm: 2.5 },
+                      px: { xs: 2, sm: 3 },
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      bgcolor: isCurrentUser ? "rgba(255,255,255,0.06)" : "transparent",
+                      borderLeft: isCurrentUser ? "3px solid #e56a16" : "none",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(255,255,255,0.06)",
+                      },
+                    }}
+                  >
+                    <ListItemAvatar sx={{ minWidth: 56 }}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: { xs: 44, sm: 52 },
+                          height: { xs: 44, sm: 52 },
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          background: 'transparent',
+                        }}
+                      >
+                        <Image src={ShirtImg} alt="Shirt" fill style={{ objectFit: 'contain' }} />
+                      </Box>
+                    </ListItemAvatar>
+
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "#E5E7EB",
+                              fontSize: { xs: 16, sm: 18 },
+                            }}
+                          >
+                            {memberName}
+                          </Typography>
+                          {isCurrentUser && (
+                            <Chip
+                              label="You"
+                              size="small"
+                              sx={{
+                                bgcolor: "transparent",
+                                color: "#e56a16",
+                                border: '1px solid rgba(229,106,22,0.6)',
+                                fontWeight: 600,
+                                fontSize: 11,
+                                height: 20,
+                                borderRadius: '9999px',
+                              }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                          {isLeagueAdmin && <AdminPanelSettings sx={{ fontSize: 16, color: "#e56a16" }} />}
+                          <Typography
+                            sx={{
+                              color: isLeagueAdmin ? "#e56a16" : "#9CA3AF",
+                              fontWeight: 500,
+                              fontSize: { xs: 13, sm: 14 },
+                            }}
+                          >
+                            {isLeagueAdmin ? "League Admin" : "Member"}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+
+                    {isAdmin && member.id !== currentUserId && (
+                      <Tooltip title={`Remove ${memberName}`} arrow>
+                        <IconButton
+                          onClick={() => handleRemoveMember(member.id, memberName)}
+                          sx={{
+                            color: "#ff6b6b",
+                            bgcolor: "rgba(255, 107, 107, 0.12)",
+                            "&:hover": {
+                              bgcolor: "rgba(255, 107, 107, 0.2)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <Delete sx={{ fontSize: 20 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </ListItem>
+                  {index < (league.members?.length || 0) - 1 && (
+                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.08)", mx: 2 }} />
+                  )}
+                </Box>
+              </Fade>
+            )
+          })}
+          {(league.members || []).length === 0 && (
+            <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF', px: { xs: 2, sm: 3 }, py: 2 }}>
+              No members found in this league.
+            </Typography>
+          )}
+        </List>
       </DialogContent>
 
       {/* Footer */}
@@ -1582,6 +1573,22 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
     });
   }, [seasonMembers, currentUserId, isUserLeagueAdmin]);
 
+  // Sort all league members: Admins first, then current user, then by name
+  const sortedLeagueMembers = React.useMemo(() => {
+    const list = Array.isArray(league?.members) ? [...league.members] : [] as User[];
+    return list.sort((a, b) => {
+      const aAdmin = isUserLeagueAdmin(a.id) ? 1 : 0;
+      const bAdmin = isUserLeagueAdmin(b.id) ? 1 : 0;
+      if (aAdmin !== bAdmin) return bAdmin - aAdmin; // admins first
+      const aCur = a.id === currentUserId ? 1 : 0;
+      const bCur = b.id === currentUserId ? 1 : 0;
+      if (aCur !== bCur) return bCur - aCur; // current user next
+      const an = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+      const bn = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+      return an.localeCompare(bn);
+    });
+  }, [league?.members, currentUserId, isUserLeagueAdmin]);
+
   const currentUserInSelectedSeason = React.useMemo(
     () => sortedSeasonMembers.some((member) => String(member.id) === String(currentUserId)),
     [sortedSeasonMembers, currentUserId],
@@ -2178,7 +2185,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 Manage members
               </Typography>
               <List sx={{ py: 0 }}>
-                {sortedSeasonMembers.map((member: User, index: number) => {
+                {sortedLeagueMembers.map((member: User, index: number) => {
                   const memberName = `${member.firstName} ${member.lastName}`.trim()
                   const isLeagueAdmin = isUserLeagueAdmin(member.id)
                   const isCurrentUser = member.id === currentUserId
@@ -2257,15 +2264,15 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                           </Tooltip>
                         )}
                       </ListItem>
-                      {index < (sortedSeasonMembers?.length || 0) - 1 && (
+                      {index < (sortedLeagueMembers?.length || 0) - 1 && (
                         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', mx: 2 }} />
                       )}
                     </Box>
                   )
                 })}
-                {sortedSeasonMembers.length === 0 && (
+                {sortedLeagueMembers.length === 0 && (
                   <Typography className="empty-state-message" variant="body2" sx={{ color: '#9CA3AF', px: 2, py: 1 }}>
-                    No active members found in this selected season.
+                    No members found in this league.
                   </Typography>
                 )}
               </List>
@@ -2710,7 +2717,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.8 }}>
                               <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
-                                Players {league.members?.length || 0}
+                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
@@ -2961,23 +2968,28 @@ function AllLeagues() {
     if (selectedLeague) {
       const refreshedSelected = leagues.find((leagueItem) => String(leagueItem.id) === String(selectedLeague.id));
       if (refreshedSelected) {
-        const selectedSeasonCount = Array.isArray((selectedLeague as League & { seasons?: Season[] }).seasons)
-          ? ((selectedLeague as League & { seasons?: Season[] }).seasons as Season[]).length
-          : 0;
-        const refreshedSeasonCount = Array.isArray((refreshedSelected as LeagueWithStatus & { seasons?: Season[] }).seasons)
-          ? (((refreshedSelected as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).length)
-          : 0;
         const needsSelectedSync =
-          String(selectedLeague.updatedAt || '') !== String(refreshedSelected.updatedAt || '') ||
-          (selectedLeague.members?.length || 0) !== (refreshedSelected.members?.length || 0) ||
-          (selectedLeague.administrators?.length || 0) !== (refreshedSelected.administrators?.length || 0) ||
-          (selectedLeague.matches?.length || 0) !== (refreshedSelected.matches?.length || 0) ||
-          selectedSeasonCount !== refreshedSeasonCount;
+          String(selectedLeague.name || '') !== String(refreshedSelected.name || '') ||
+          Boolean(selectedLeague.active) !== Boolean(refreshedSelected.active) ||
+          String(selectedLeague.image || '') !== String(refreshedSelected.image || '') ||
+          (selectedLeague.members?.length || 0) !== (refreshedSelected.memberCount || 0);
 
         if (needsSelectedSync) {
           setSelectedLeague((prev) => {
             if (!prev || String(prev.id) !== String(refreshedSelected.id)) return prev;
-            return { ...prev, ...refreshedSelected };
+            return {
+              ...prev,
+              name: refreshedSelected.name,
+              active: refreshedSelected.active,
+              image: refreshedSelected.image,
+              memberCount: refreshedSelected.memberCount,
+              maxGames: refreshedSelected.maxGames,
+              status: refreshedSelected.status,
+              isComplete: (refreshedSelected as any).isComplete,
+              isCompleted: (refreshedSelected as any).isCompleted,
+              isLocked: refreshedSelected.isLocked,
+              computedStatus: refreshedSelected.computedStatus,
+            };
           });
         }
       }
@@ -2986,23 +2998,28 @@ function AllLeagues() {
     if (adminSettingsLeague) {
       const refreshedAdminLeague = leagues.find((leagueItem) => String(leagueItem.id) === String(adminSettingsLeague.id));
       if (refreshedAdminLeague) {
-        const adminSeasonCount = Array.isArray((adminSettingsLeague as League & { seasons?: Season[] }).seasons)
-          ? ((adminSettingsLeague as League & { seasons?: Season[] }).seasons as Season[]).length
-          : 0;
-        const refreshedAdminSeasonCount = Array.isArray((refreshedAdminLeague as LeagueWithStatus & { seasons?: Season[] }).seasons)
-          ? (((refreshedAdminLeague as LeagueWithStatus & { seasons?: Season[] }).seasons as Season[]).length)
-          : 0;
         const needsAdminSync =
-          String(adminSettingsLeague.updatedAt || '') !== String(refreshedAdminLeague.updatedAt || '') ||
-          (adminSettingsLeague.members?.length || 0) !== (refreshedAdminLeague.members?.length || 0) ||
-          (adminSettingsLeague.administrators?.length || 0) !== (refreshedAdminLeague.administrators?.length || 0) ||
-          (adminSettingsLeague.matches?.length || 0) !== (refreshedAdminLeague.matches?.length || 0) ||
-          adminSeasonCount !== refreshedAdminSeasonCount;
+          String(adminSettingsLeague.name || '') !== String(refreshedAdminLeague.name || '') ||
+          Boolean(adminSettingsLeague.active) !== Boolean(refreshedAdminLeague.active) ||
+          String(adminSettingsLeague.image || '') !== String(refreshedAdminLeague.image || '') ||
+          (adminSettingsLeague.members?.length || 0) !== (refreshedAdminLeague.memberCount || 0);
 
         if (needsAdminSync) {
           setAdminSettingsLeague((prev) => {
             if (!prev || String(prev.id) !== String(refreshedAdminLeague.id)) return prev;
-            return { ...prev, ...refreshedAdminLeague };
+            return {
+              ...prev,
+              name: refreshedAdminLeague.name,
+              active: refreshedAdminLeague.active,
+              image: refreshedAdminLeague.image,
+              memberCount: refreshedAdminLeague.memberCount,
+              maxGames: refreshedAdminLeague.maxGames,
+              status: refreshedAdminLeague.status,
+              isComplete: (refreshedAdminLeague as any).isComplete,
+              isCompleted: (refreshedAdminLeague as any).isCompleted,
+              isLocked: refreshedAdminLeague.isLocked,
+              computedStatus: refreshedAdminLeague.computedStatus,
+            };
           });
         }
       }
@@ -3444,211 +3461,45 @@ function AllLeagues() {
       console.log('Fetching all available leagues...');
       setLoading(true);
 
-      // First get the user's leagues from auth/status
-      const ts = Date.now();
-      const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/status?refresh=1&bust=${ts}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        cache: 'no-store',
-      });
+      const statusEndpoints = [
+        `${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
+      ];
 
-      if (authResponse.ok) {
-        const authData = await authResponse.json();
-        if (authData.success && authData.user) {
-          // Merge leagues from all known user keys + fallback list endpoint.
-          // This keeps completed/inactive leagues from disappearing after refresh when backend keying differs.
-          const authLeagueSources: unknown[] = [
-            ...(Array.isArray(authData.user.leagues) ? authData.user.leagues : []),
-            ...(Array.isArray(authData.user.adminLeagues) ? authData.user.adminLeagues : []),
-            ...(Array.isArray(authData.user.administeredLeagues) ? authData.user.administeredLeagues : []),
-            ...(Array.isArray(authData.user.managedLeagues) ? authData.user.managedLeagues : []),
-          ];
+      let leaguesData: any[] | null = null;
+      for (let i = 0; i < statusEndpoints.length; i += 1) {
+        try {
+          const statusResponse = await fetch(statusEndpoints[i], {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store',
+          });
 
-          let fallbackLeagueSources: unknown[] = [];
-          try {
-            const leaguesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues?refresh=1&bust=${Date.now()}`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-              cache: 'no-store',
-            });
-            if (leaguesResponse.ok) {
-              const leaguesPayloadUnknown: unknown = await leaguesResponse.json().catch(() => ({}));
-              const leaguesPayload = isRecord(leaguesPayloadUnknown)
-                ? leaguesPayloadUnknown as { success?: boolean; leagues?: unknown[] }
-                : {};
-              if (leaguesPayload.success !== false && Array.isArray(leaguesPayload.leagues)) {
-                fallbackLeagueSources = leaguesPayload.leagues;
-              }
-            }
-          } catch (err) {
-            console.warn('[Leagues] Fallback /leagues fetch failed:', err);
-          }
-
-          const mergedLeagues: League[] = [...authLeagueSources, ...fallbackLeagueSources]
-            .map((leaguePayload) => normalizeLeagueFromPayload(leaguePayload))
-            .filter((league): league is League => Boolean(league && league.id));
-
-          // Remove duplicates
-          const uniqueLeagues: League[] = Array.from(
-            new Map(mergedLeagues.map((league) => [String(league.id), league])).values()
-          );
-
-          type LeagueCompletionSnapshot = {
-            active?: boolean;
-            archived?: boolean;
-            status?: League['status'];
-            isComplete?: boolean;
-            isCompleted?: boolean;
-            isLocked?: boolean;
-            computedStatus?: LeagueStatus;
-          };
-
-          const applyCompletionSnapshot = (
-            source: LeagueWithStatus,
-            snapshot?: LeagueCompletionSnapshot
-          ): LeagueWithStatus => {
-            if (!snapshot) return source;
-            const next = {
-              ...source,
-            } as LeagueWithStatus & {
-              archived?: boolean;
-              isComplete?: boolean;
-              isCompleted?: boolean;
-            };
-            if (typeof snapshot.active === 'boolean') next.active = snapshot.active;
-            if (typeof snapshot.archived === 'boolean') next.archived = snapshot.archived;
-            if (snapshot.status) next.status = snapshot.status;
-            if (typeof snapshot.isLocked === 'boolean') next.isLocked = snapshot.isLocked;
-            if (typeof snapshot.isComplete === 'boolean') next.isComplete = snapshot.isComplete;
-            if (typeof snapshot.isCompleted === 'boolean') next.isCompleted = snapshot.isCompleted;
-            if (snapshot.computedStatus) {
-              next.computedStatus = {
-                ...(next.computedStatus || {}),
-                ...snapshot.computedStatus,
-              };
-            }
-            return next;
-          };
-
-          const completionSnapshotByLeagueId = new Map<string, LeagueCompletionSnapshot>();
-          try {
-            const statusEndpoints = [
-              `${process.env.NEXT_PUBLIC_API_URL}/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
-              `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/user-leagues?refresh=1&bust=${Date.now()}`,
-            ];
-
-            for (let i = 0; i < statusEndpoints.length; i += 1) {
-              const statusResponse = await fetch(statusEndpoints[i], {
-                headers: { 'Authorization': `Bearer ${token}` },
-                cache: 'no-store',
-              });
-
-              if (!statusResponse.ok) {
-                const shouldTryFallback = i === 0 && (statusResponse.status === 404 || statusResponse.status === 405);
-                if (shouldTryFallback) continue;
-                break;
-              }
-
-              const statusPayloadUnknown: unknown = await statusResponse.json().catch(() => ({}));
-              const statusPayload = isRecord(statusPayloadUnknown)
-                ? (statusPayloadUnknown as { success?: boolean; leagues?: unknown[] })
-                : {};
-              const statusLeagues = Array.isArray(statusPayload.leagues) ? statusPayload.leagues : [];
-
-              if (statusPayload.success === false || statusLeagues.length === 0) break;
-
-              statusLeagues.forEach((rawLeague) => {
-                if (!isRecord(rawLeague)) return;
-                const idValue = rawLeague.id;
-                if (!(typeof idValue === 'string' || typeof idValue === 'number')) return;
-                const id = String(idValue);
-                const computedStatus = normalizeLeagueComputedStatus(rawLeague.computedStatus);
-                const snapshot: LeagueCompletionSnapshot = {
-                  active: typeof rawLeague.active === 'boolean' ? rawLeague.active : undefined,
-                  archived: typeof rawLeague.archived === 'boolean' ? rawLeague.archived : undefined,
-                  status: normalizeLeagueStatus(rawLeague.status),
-                  isComplete:
-                    rawLeague.isComplete === true
-                    || computedStatus?.isComplete === true
-                    || computedStatus?.isCompleted === true
-                    || undefined,
-                  isCompleted:
-                    rawLeague.isCompleted === true
-                    || rawLeague.isComplete === true
-                    || computedStatus?.isCompleted === true
-                    || computedStatus?.isComplete === true
-                    || undefined,
-                  isLocked:
-                    rawLeague.isLocked === true
-                    || rawLeague.locked === true
-                    || computedStatus?.locked === true
-                    || undefined,
-                  computedStatus,
-                };
-
-                completionSnapshotByLeagueId.set(id, snapshot);
-              });
-
+          if (statusResponse.ok) {
+            const statusPayloadUnknown: unknown = await statusResponse.json().catch(() => ({}));
+            const statusPayload = isRecord(statusPayloadUnknown)
+              ? (statusPayloadUnknown as { success?: boolean; leagues?: unknown[] })
+              : {};
+            if (statusPayload.success !== false && Array.isArray(statusPayload.leagues)) {
+              leaguesData = statusPayload.leagues;
               break;
             }
-          } catch (statusError) {
-            console.warn('[Leagues] Failed to load user-leagues completion snapshot:', statusError);
           }
+        } catch (err) {
+          console.warn(`[Leagues] Fetch from ${statusEndpoints[i]} failed:`, err);
+        }
+      }
 
-          // Now fetch detailed information for each league
-          const detailedLeagues: Array<LeagueWithStatus | null> = await Promise.all(
-            uniqueLeagues.map(async (league: League): Promise<LeagueWithStatus | null> => {
-              const snapshot = completionSnapshotByLeagueId.get(String(league.id));
-              try {
-                const bust = Date.now();
-                // NOTE: Removed 'Cache-Control' and 'Pragma' custom request headers to avoid CORS preflight rejection
-                // Server must explicitly allow any non-simple headers in Access-Control-Allow-Headers; removing fixes the error you saw.
-                const leagueResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leagues/${league.id}?bust=${bust}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                });
+      if (leaguesData) {
+        const normalizedLeagues: League[] = leaguesData
+          .map((leaguePayload) => normalizeLeagueFromPayload(leaguePayload))
+          .filter((league): league is League => Boolean(league && league.id));
 
-                let enriched: LeagueWithStatus = applyCompletionSnapshot({ ...league }, snapshot);
-
-                // If access is forbidden now, drop this league from the list
-                if (leagueResponse.status === 403) {
-                  console.debug('[Leagues] Skipping league due to 403 (no access):', league.id);
-                  return null;
-                }
-
-                if (leagueResponse.ok) {
-                  const leagueData = await leagueResponse.json();
-                  if (leagueData.success) {
-                    enriched = {
-                      ...enriched,
-                      ...leagueData.league,
-                      members: leagueData.league.members || [],
-                      matches: leagueData.league.matches || [],
-                      administrators: leagueData.league.administrators || [],
-                    };
-                    enriched = applyCompletionSnapshot(enriched, snapshot);
-                  }
-                }
-
-                return enriched;
-              } catch (error) {
-                console.warn(`Failed to fetch details/status for league ${league.id}:`, error);
-                return applyCompletionSnapshot({ ...league } as LeagueWithStatus, snapshot);
-              }
-            })
-          );
-
-          const sortedLeagues = sortLeaguesByRecency(detailedLeagues.filter(Boolean) as LeagueWithStatus[]);
-          if (locallyDeletedLeagueIds.length > 0) {
-            const deletedIds = new Set(locallyDeletedLeagueIds.map((id) => String(id)));
-            setLeagues(sortedLeagues.filter((leagueItem) => !deletedIds.has(String(leagueItem.id))));
-          } else {
-            setLeagues(sortedLeagues);
-          }
-          console.log('Setting detailed leagues:', detailedLeagues);
-          console.log('Leagues archived status:', detailedLeagues.map((l) => {
-            const leagueWithArchived = l as (LeagueWithStatus & { archived?: boolean }) | null;
-            return { name: l?.name, archived: leagueWithArchived?.archived, active: l?.active };
-          }));
+        const sortedLeagues = sortLeaguesByRecency(normalizedLeagues as LeagueWithStatus[]);
+        if (locallyDeletedLeagueIds.length > 0) {
+          const deletedIds = new Set(locallyDeletedLeagueIds.map((id) => String(id)));
+          setLeagues(sortedLeagues.filter((leagueItem) => !deletedIds.has(String(leagueItem.id))));
+        } else {
+          setLeagues(sortedLeagues);
         }
       } else {
         console.error('Failed to fetch leagues');
@@ -4245,20 +4096,13 @@ function AllLeagues() {
 
       const data = await response.json();
       if (data.success) {
-        const admin = data.league.administrators?.[0];
-        setSelectedLeague({
-          ...league,
-          adminId: admin?.id,
-          members: (data.league.members || []).map((m: User) => ({
-            id: m.id,
-            firstName: m.firstName,
-            lastName: m.lastName,
-            profilePicture: m.profilePicture,
-            email: m.email,
-            // shirtNumber: m.shirtNumber,
-          })),
-        });
-        setOpenMembers(true);
+        const normalized = normalizeLeagueFromPayload(data.league);
+        if (normalized) {
+          setSelectedLeague(normalized);
+          setOpenMembers(true);
+        } else {
+          toast.error('Failed to parse league data');
+        }
       } else {
         toast.error(data.message || 'Failed to fetch league members');
       }
@@ -5560,7 +5404,7 @@ function AllLeagues() {
               p: 0.5,
               width: { xs: '90%', sm: 400, md: 500 }
             }}>
-            
+
               <Button
                 onClick={() => setCompletionTab('completed')}
                 sx={{
@@ -5581,7 +5425,7 @@ function AllLeagues() {
               >
                 Completed Leagues
               </Button>
-                <Button
+              <Button
                 onClick={() => setCompletionTab('live')}
                 sx={{
                   flex: 1,
@@ -5610,7 +5454,7 @@ function AllLeagues() {
           {loading ? (
             <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 , background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', }}>
+            <Box sx={{ textAlign: 'center', py: 4, background: 'linear-gradient(90deg, #767676 0%, #000000 100%)', }}>
               <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: { xs: '18px', md: '24px' } }}>No leagues found</Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '14px', md: '16px' } }}>
                 Create a new league or join an existing one to get started.
@@ -5859,23 +5703,23 @@ function AllLeagues() {
                               }}
                             >
                               {isCompleted ? (
-                              <Image
-                                src={league?.image || trofy}
-                                alt={`${league.name} icon`}
-                                fill
-                                priority
-                                sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
-                                style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
-                              />
+                                <Image
+                                  src={league?.image || trofy}
+                                  alt={`${league.name} icon`}
+                                  fill
+                                  priority
+                                  sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                  style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                />
                               ) : (
                                 <Image
-                                src={league?.image || trofyy}
-                                alt={`${league.name} icon`}
-                                fill
-                                priority
-                                sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
-                                style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
-                              />
+                                  src={league?.image || trofyy}
+                                  alt={`${league.name} icon`}
+                                  fill
+                                  priority
+                                  sizes="(max-width: 600px) 60px, (max-width: 900px) 80px, 100px"
+                                  style={{ objectFit: hasCustomLeagueImage ? 'cover' : 'contain' }}
+                                />
                               )}
                             </Box>
                           </Box>
@@ -5912,7 +5756,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Players {league.members?.length || 0}
+                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
                               </Typography>
                             </Box>
 
@@ -5964,7 +5808,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Players {league.members?.length || 0}
+                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
                               </Typography>
                             </Box>
 
@@ -6517,7 +6361,7 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Players {league.members?.length || 0}
+                                    Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
                                   </Typography>
                                 </Box>
 
@@ -6531,10 +6375,10 @@ function AllLeagues() {
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
                                     {(() => {
-                                  const d = league.createdAt ? new Date(league.createdAt) : null;
-                                  if (!d || isNaN(d.getTime())) return 'Date not available';
-                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-                                })()}
+                                      const d = league.createdAt ? new Date(league.createdAt) : null;
+                                      if (!d || isNaN(d.getTime())) return 'Date not available';
+                                      return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                    })()}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -6550,7 +6394,7 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Players {league.members?.length || 0}
+                                    Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
                                   </Typography>
                                 </Box>
 
@@ -6563,10 +6407,10 @@ function AllLeagues() {
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
                                     {(() => {
-                                  const d = league.createdAt ? new Date(league.createdAt) : null;
-                                  if (!d || isNaN(d.getTime())) return 'Date not available';
-                                  return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-                                })()}
+                                      const d = league.createdAt ? new Date(league.createdAt) : null;
+                                      if (!d || isNaN(d.getTime())) return 'Date not available';
+                                      return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                                    })()}
                                   </Typography>
                                 </Box>
                               </Box>

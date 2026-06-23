@@ -71,6 +71,7 @@ export interface League {
   currentTeams?: number;
   status?: 'active' | 'inactive' | 'completed';
   updatedAt?: string;
+  memberCount?: number;
 }
 
 export interface Match {
