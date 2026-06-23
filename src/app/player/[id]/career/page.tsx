@@ -2171,7 +2171,7 @@ export default function CareerPage() {
             overflow: 'visible',
             background: '#0e0e0e',
             position: 'relative',
-            zIndex: 1400,
+            // zIndex: 1400,
           }}>
             <Paper sx={{
               px: 0,
