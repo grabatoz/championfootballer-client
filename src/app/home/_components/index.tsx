@@ -1628,20 +1628,49 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                       }),
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                      <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} />
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '0.95rem',
-                            fontWeight: isActive ? 700 : 500,
-                            letterSpacing: 0.2,
-                            color: '#FFFFFF',
-                            lineHeight: 1.2
-                          }}
-                        >
-                          {option.label}
-                        </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+                      <Trophy size={18} color={isActive ? '#FFFFFF' : '#E7F6EF'} style={{ flexShrink: 0 }} />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                          <Typography
+                            noWrap
+                            sx={{
+                              fontSize: '0.95rem',
+                              fontWeight: isActive ? 700 : 500,
+                              letterSpacing: 0.2,
+                              color: '#FFFFFF',
+                              lineHeight: 1.2,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              flex: 1,
+                              minWidth: 0
+                            }}
+                          >
+                            {option.label}
+                          </Typography>
+                          {league.userRole && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                              <Box
+                                sx={{
+                                  px: 1,
+                                  py: 0.25,
+                                  borderRadius: '9999px',
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  letterSpacing: 0.4,
+                                  textTransform: 'uppercase',
+                                  bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
+                                  color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
+                                  border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
                         {option.seasonLabel && (
                           <Typography
                             sx={{
@@ -1658,28 +1687,6 @@ const LeagueSelectionComponent = ({ refreshKey, createdLeague, currentUserId, on
                         )}
                       </Box>
                     </Box>
-                    {/* Role pill on the right */}
-                    {league.userRole && (
-                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                        <Box
-                          sx={{
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: '9999px',
-                            fontSize: 10,
-                            fontWeight: 800,
-                            letterSpacing: 0.4,
-                            textTransform: 'uppercase',
-                            bgcolor: league.userRole === 'ADMIN' ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
-                            color: league.userRole === 'ADMIN' ? '#00A77F' : '#FFFFFF',
-                            border: league.userRole === 'ADMIN' ? '1px solid rgba(0,167,127,0.65)' : '1px solid rgba(255,255,255,0.35)',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {league.userRole === 'ADMIN' ? 'Admin' : 'Member'}
-                        </Box>
-                      </Box>
-                    )}
                   </MenuItem>
                 </Link>
               );
