@@ -1279,26 +1279,33 @@ export default function LeagueDetailPage() {
                 params.append('seasonId', selectedSeasonId);
             }
 
+            const url = `${process.env.NEXT_PUBLIC_API_URL}/dream-team?${params.toString()}`;
+            console.log('🔍 Fetching Dream Team from URL:', url);
+
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/dream-team?${params.toString()}`,
+                url,
                 {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }
             );
 
+            console.log('📡 Dream Team HTTP Status:', response.status, response.statusText);
+
             if (response.ok) {
                 const data = await response.json();
-                console.log('Dream Team API Response:', data);
+                console.log('✅ Dream Team API Response:', data);
                 if (data?.dreamTeam) {
-                    console.log('Dream Team Data:', data.dreamTeam);
-                    console.log('Forwards:', data.dreamTeam.forwards);
-                    console.log('Midfielders:', data.dreamTeam.midfielders);
-                    console.log('Defenders:', data.dreamTeam.defenders);
                     setDreamTeam(data.dreamTeam);
+                } else {
+                    console.warn('⚠️ Dream Team API Response did not contain dreamTeam field:', data);
                 }
+            } else {
+                console.error('❌ Dream Team API returned error status:', response.status);
+                const errorText = await response.text().catch(() => '');
+                console.error('❌ Error response body:', errorText);
             }
         } catch (error) {
-            console.error('Error fetching dream team:', error);
+            console.error('❌ Error fetching dream team:', error);
         } finally {
             setDreamTeamLoading(false);
         }
@@ -6053,59 +6060,37 @@ export default function LeagueDetailPage() {
 
                                                 {/* Overlay players */}
                                                 {(() => {
-                                                    // Get league members with their XP
-                                                    const leagueMembers = filteredLeague?.members || [];
+                                                    const playersToShow = [
+                                                        ...(dreamTeam?.goalkeeper || []),
+                                                        ...(dreamTeam?.defenders || []),
+                                                        ...(dreamTeam?.midfielders || []),
+                                                        ...(dreamTeam?.forwards || [])
+                                                    ].slice(0, 5);
 
-                                                    // Map members with their XP and sort by XP (highest first)
-                                                    const playersWithXP = leagueMembers.map(member => ({
-                                                        ...member,
-                                                        xp: getLeagueXpForMember(member.id, member.xp)
-                                                    })).sort((a, b) => b.xp - a.xp);
+                                                    const positions = [
+                                                        { left: { xs: '17%', sm: '17%', md: '35%' }, top: { xs: '70%', sm: '70%', md: '70%' } }, // Defender 1 (left)
+                                                        { left: { xs: '52%', sm: '52%', md: '52%' }, top: { xs: '79.5%', sm: '79.5%', md: '80%' } }, // Defender 2 (right)
+                                                        { left: { xs: '34%', sm: '34%', md: '44%' }, top: { xs: '65%', sm: '65%', md: '62%' } }, // Midfielder 1 (left)
+                                                        { left: { xs: '69%', sm: '69%', md: '63%' }, top: { xs: '73%', sm: '73%', md: '70%' } }, // Midfielder 2 (right)
+                                                        { left: { xs: '60%', sm: '60%', md: '55%' }, top: { xs: '63%', sm: '63%', md: '61%' } }, // Attacker (center)
+                                                    ];
 
-                                                    // Take top 5 players based on XP
-                                                    const playersToShow = playersWithXP.slice(0, 5);
-
-                                                    console.log('✅ Dream Team - Top 5 XP Players:', playersToShow.map(p => ({
-                                                        name: `${p?.firstName || ''} ${p?.lastName || ''}`.trim(),
-                                                        xp: p?.xp || 0,
-                                                        positionType: p?.positionType || 'N/A'
-                                                    })));
-
-                                                    // Define positions based on number of players (adjusted to stay inside pitch boundaries)
-                                                    const getPositions = (count: number) => {
-                                                        if (count === 1) {
-                                                            return [{ left: '55%', top: '68%' }];
-                                                        } else if (count === 2) {
-                                                            return [
-                                                                { left: '45%', top: '72%' },
-                                                                { left: '65%', top: '66%' },
-                                                            ];
-                                                        } else if (count === 3) {
-                                                            return [
-                                                                { left: '42%', top: '73%' },
-                                                                { left: '56%', top: '67%' },
-                                                                { left: '70%', top: '61%' },
-                                                            ];
-                                                        } else if (count === 4) {
-                                                            return [
-                                                                { left: '40%', top: '75%' },
-                                                                { left: '48%', top: '66%' },
-                                                                { left: '62%', top: '70%' },
-                                                                { left: '70%', top: '61%' },
-                                                            ];
-                                                        } else {
-                                                            // 5 players - 2-2-1 formation (inside pitch boundaries: 2 defenders, 2 midfielders, 1 attacker)
-                                                            return [
-                                                                { left: { xs: '17%', sm: '17%', md: '35%' }, top: { xs: '70%', sm: '70%', md: '70%' } }, // Defender 1 (left)
-                                                                { left: { xs: '52%', sm: '52%', md: '52%' }, top: { xs: '79.5%', sm: '79.5%', md: '80%' } }, // Defender 2 (right)
-                                                                { left: { xs: '34%', sm: '34%', md: '44%' }, top: { xs: '65%', sm: '65%', md: '62%' } }, // Midfielder 1 (left)
-                                                                { left: { xs: '69%', sm: '69%', md: '63%' }, top: { xs: '73%', sm: '73%', md: '70%' } }, // Midfielder 2 (right)
-                                                                { left: { xs: '60%', sm: '60%', md: '55%' }, top: { xs: '63%', sm: '63%', md: '61%' } }, // Attacker (center)
-                                                            ];
-                                                        }
-                                                    };
-
-                                                    const positions = getPositions(playersToShow.length);
+                                                    if (playersToShow.length === 0) {
+                                                        return (
+                                                            <Box sx={{
+                                                                position: 'absolute',
+                                                                top: '50%',
+                                                                left: '50%',
+                                                                transform: 'translate(-50%, -50%)',
+                                                                textAlign: 'center',
+                                                                zIndex: 2,
+                                                            }}>
+                                                                <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                                                                    No players in this Dream Team yet.
+                                                                </Typography>
+                                                            </Box>
+                                                        );
+                                                    }
 
                                                     return playersToShow.map((player, idx) => {
                                                         const pos = positions[idx];
@@ -6158,12 +6143,8 @@ export default function LeagueDetailPage() {
                                                                             fontSize: { xs: '9px', sm: '10px', md: '11px', lg: '12px', xl: '14px' },
                                                                             lineHeight: 1.2,
                                                                             textAlign: 'center',
-                                                                            // textShadow: '3px 3px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.8)',
                                                                             whiteSpace: 'nowrap',
-                                                                            // backgroundColor: 'rgba(0,0,0,0.6)',
                                                                             padding: { xs: '2px 6px', sm: '2px 8px', md: '3px 10px', xl: '4px 12px' },
-                                                                            // borderRadius: '6px',
-                                                                            // border: '1px solid rgba(255,255,255,0.2)',
                                                                         }}
                                                                     >
                                                                         {formatPlayerCardStyleName(player?.firstName, player?.lastName)}

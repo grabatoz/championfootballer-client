@@ -1316,7 +1316,7 @@ export default function CareerPage() {
 
   // ------------- AGGREGATION (supports forced modes) -------------
   const { performanceData, groupingType } = useMemo(() => {
-    const base = chartMatches;
+    const base = chartMatches.filter(m => !!m.playerStats && calcPoints(m.playerStats) > 0);
     if (!base.length) {
       return {
         performanceData: [] as PerformanceRow[],
@@ -1332,7 +1332,7 @@ export default function CareerPage() {
         if (!map.has(key)) {
           map.set(key, {
             key,
-            label: matchDate.format('DD-MMM YYYY'),
+            label: matchDate.format('DD-MMM'), // Adds 'Sat', 'Sun', etc.
             year: matchDate.format('YYYY'),
             matches: 0,
             totalPoints: 0,
@@ -1346,8 +1346,6 @@ export default function CareerPage() {
       });
 
       const filled = Array.from(map.values());
-
-      // Sort and calculate averages and cumulative
       filled.sort((a, b) => a.key.localeCompare(b.key));
       let cumulativeSum = 0;
       filled.forEach(r => {
@@ -1366,7 +1364,7 @@ export default function CareerPage() {
         if (!map.has(key)) {
           map.set(key, {
             key,
-            label: monthStart.format('MMM YYYY'),
+            label: monthStart.format('MMM'),
             year: monthStart.format('YYYY'),
             matches: 0,
             totalPoints: 0,
@@ -2982,20 +2980,128 @@ export default function CareerPage() {
                     </Box>
 
                     {/* Chart Container */}
-                    <Box sx={{ height: { xs: 250, sm: 280, md: 300 }, px: 2, pb: 1 }}>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        overflowX: 'auto',
+                        pb: 1,
+                        '&::-webkit-scrollbar': { height: 6 },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(255, 255, 255, 0.2)',
+                          borderRadius: 3,
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: '100%',
+                          minWidth: chartData.length > 0
+                            ? Math.max(100, chartData.length * 40)
+                            : (performanceData.length > 0 ? Math.max(100, performanceData.length * 40) : '100%'),
+                          height: { xs: 250, sm: 280, md: 300 },
+                          px: 2,
+                        }}
+                      >
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
                           data={chartData.length > 0 ? chartData : performanceData}
-                          margin={{ top: 10, left: 15, right: 15, bottom: 30 }}
+                          margin={{ top: 10, left: 15, right: 15, bottom: groupMode === 'monthly' ? 40 : 50 }}
                         >
                           <XAxis
                             dataKey="label"
-                            stroke={themeColors.textDim}
-                            tick={{ fontSize: 10, fill: themeColors.textDim }}
-                            interval="preserveStartEnd"
-                            tickMargin={8}
-                            angle={-30}
-                            textAnchor="end"
+                            tick={(props: any) => {
+                              const { x, y, payload, index, width: axisWidth } = props;
+                              const activeData = chartData.length > 0 ? chartData : performanceData;
+                              const currentItem = activeData[index];
+                              if (!currentItem) return <g></g>;
+
+                              const currentYear = currentItem.year;
+
+                              let yearStartIndex = index;
+                              while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
+                                yearStartIndex--;
+                              }
+                              let yearEndIndex = index;
+                              while (yearEndIndex < activeData.length - 1 && activeData[yearEndIndex + 1].year === currentYear) {
+                                yearEndIndex++;
+                              }
+                              const isYearCenter = index === Math.floor((yearStartIndex + yearEndIndex) / 2);
+                              
+                              const count = activeData.length;
+                              const widthVal = axisWidth || 800;
+                              const step = count > 1 ? widthVal / count : widthVal;
+                              const halfStep = step / 2;
+
+                              const drawLeftVertical = index === yearStartIndex;
+                              const drawRightVertical = index === yearEndIndex;
+
+                              const lineLeft = drawLeftVertical ? -halfStep + 3 : -halfStep;
+                              const lineRight = drawRightVertical ? halfStep - 3 : halfStep;
+
+                              const lineY = 32;
+                              const tickHeight = 6;
+
+                              return (
+                                <g transform={`translate(${x},${y})`}>
+                                  <text
+                                    x={0}
+                                    y={0}
+                                    dx={-5}
+                                    dy={5}
+                                    textAnchor="end"
+                                    fill={themeColors.textDim}
+                                    fontSize={10}
+                                    transform="rotate(-90)"
+                                  >
+                                    {payload.value}
+                                  </text>
+
+                                  {/* Bracket lines for year grouping */}
+                                  <line
+                                    x1={lineLeft}
+                                    y1={lineY}
+                                    x2={lineRight}
+                                    y2={lineY}
+                                    stroke="rgba(255, 255, 255, 0.35)"
+                                    strokeWidth={1}
+                                  />
+                                  {drawLeftVertical && (
+                                    <line
+                                      x1={lineLeft}
+                                      y1={lineY}
+                                      x2={lineLeft}
+                                      y2={lineY - tickHeight}
+                                      stroke="rgba(255, 255, 255, 0.35)"
+                                      strokeWidth={1}
+                                    />
+                                  )}
+                                  {drawRightVertical && (
+                                    <line
+                                      x1={lineRight}
+                                      y1={lineY}
+                                      x2={lineRight}
+                                      y2={lineY - tickHeight}
+                                      stroke="rgba(255, 255, 255, 0.35)"
+                                      strokeWidth={1}
+                                    />
+                                  )}
+
+                                  {isYearCenter && (
+                                    <text
+                                      x={0}
+                                      y={lineY + 14}
+                                      textAnchor="middle"
+                                      fill={themeColors.textDim}
+                                      fontSize={11}
+                                      fontWeight="bold"
+                                    >
+                                      {currentYear}
+                                    </text>
+                                  )}
+                                </g>
+                              );
+                            }}
+                            interval={0}
                             tickLine={{ stroke: themeColors.border }}
                             axisLine={{ stroke: themeColors.border }}
                           />
@@ -3030,9 +3136,8 @@ export default function CareerPage() {
                             formatter={(value: unknown, name: unknown) => {
                               const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
                               const n = typeof name === 'string' ? name : String(name ?? '');
-                              const period = groupMode === 'monthly' ? 'Month' : 'Week';
-                              if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points Per ${period}`];
-                              if (n.includes('Cumulative')) return [v, `Cumulative XP (${period}ly)`];
+                              if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
+                              if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
                               return [v, n];
                             }}
                           />
@@ -3042,7 +3147,7 @@ export default function CareerPage() {
                             yAxisId="avg"
                             dataKey="totalPoints"
                             fill={themeColors.chartBar}
-                            name={groupMode === 'monthly' ? 'Total XP Points/Month' : 'Total XP Points/Week'}
+                            name="Total XP Points"
                             maxBarSize={35}
                             radius={[3, 3, 0, 0]}
                           />
@@ -3052,7 +3157,7 @@ export default function CareerPage() {
                             yAxisId="cum"
                             type="monotone"
                             dataKey="cumulativePoints"
-                            name={groupMode === 'monthly' ? 'Cumulative XP (Monthly)' : 'Cumulative XP (Weekly)'}
+                            name="Cumulative XP Points"
                             stroke={themeColors.chartLine}
                             strokeWidth={2}
                             dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
@@ -3061,6 +3166,7 @@ export default function CareerPage() {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </Box>
+                  </Box>
 
                     {/* Legend */}
                     <Box sx={{
@@ -3075,13 +3181,13 @@ export default function CareerPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Box sx={{ width: 14, height: 10, borderRadius: 1, background: themeColors.chartBar }} />
                         <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                          {groupMode === 'monthly' ? 'Total XP Points ' : 'Total XP Points'}
+                          Total XP Points
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Box sx={{ width: 14, height: 3, borderRadius: 1, background: themeColors.chartLine }} />
                         <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
-                          {groupMode === 'monthly' ? 'Cumulative XP Points (Monthly)' : 'Cumulative XP Points (Weekly)'}
+                          Cumulative XP Points
                         </Typography>
                       </Box>
                     </Box>
