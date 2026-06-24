@@ -1282,6 +1282,7 @@ export default function CareerPage() {
 
   // ------------- League averages from backend (for influence radar) -------------
   const [leagueAvgCache, setLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
+  const [unfilteredLeagueAvgCache, setUnfilteredLeagueAvgCache] = useState<Record<string, LeagueMetricValues>>({});
 
   // Fetch league averages for each league the player is in
   useEffect(() => {
@@ -1291,11 +1292,13 @@ export default function CareerPage() {
     const apiUrl = API_BASE_URL;
     let cancelled = false;
 
-    const fetchAvg = async (leagueId: string) => {
+    const fetchAvg = async (leagueId: string, useFilters: boolean) => {
       try {
         const params = new URLSearchParams();
-        if (filters.year && filters.year !== 'all') params.set('year', String(filters.year));
-        if (seasonFilter && seasonFilter !== 'all') params.set('seasonId', String(seasonFilter));
+        if (useFilters) {
+          if (filters.year && filters.year !== 'all') params.set('year', String(filters.year));
+          if (seasonFilter && seasonFilter !== 'all') params.set('seasonId', String(seasonFilter));
+        }
         const endpoints = [
           `${apiUrl}/leagues/${leagueId}/player-averages?${params.toString()}`,
           `${apiUrl}/api/leagues/${leagueId}/player-averages?${params.toString()}`,
@@ -1331,10 +1334,18 @@ export default function CareerPage() {
 
     (async () => {
       await Promise.all(targetLeagueIds.map(async (leagueId) => {
-        const r = await fetchAvg(leagueId);
-        if (cancelled || !r) return;
-        const lid = r.leagueId.toLowerCase();
-        setLeagueAvgCache((prev) => ({ ...prev, [lid]: r.leagueAvg || createEmptyLeagueMetrics() }));
+        // Fetch filtered
+        const rFiltered = await fetchAvg(leagueId, true);
+        if (!cancelled && rFiltered) {
+          const lid = rFiltered.leagueId.toLowerCase();
+          setLeagueAvgCache((prev) => ({ ...prev, [lid]: rFiltered.leagueAvg || createEmptyLeagueMetrics() }));
+        }
+        // Fetch unfiltered
+        const rUnfiltered = await fetchAvg(leagueId, false);
+        if (!cancelled && rUnfiltered) {
+          const lid = rUnfiltered.leagueId.toLowerCase();
+          setUnfilteredLeagueAvgCache((prev) => ({ ...prev, [lid]: rUnfiltered.leagueAvg || createEmptyLeagueMetrics() }));
+        }
       }));
     })();
 
@@ -1344,17 +1355,23 @@ export default function CareerPage() {
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
     const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
-    if (influenceLeague === 'current' && selectedLeagueId && selectedLeagueId !== 'all') {
-      return leagueAvgCache[selectedLeagueId] || null;
+    
+    if (influenceLeague === 'all') {
+      const scopedEntries = allAverageTargetLeagueIds
+        .map((leagueId) => unfilteredLeagueAvgCache[String(leagueId).trim().toLowerCase()])
+        .filter((entry): entry is LeagueMetricValues => Boolean(entry));
+      return averageLeagueMetrics(scopedEntries);
+    } else {
+      // influenceLeague === 'current'
+      if (selectedLeagueId && selectedLeagueId !== 'all') {
+        return leagueAvgCache[selectedLeagueId] || null;
+      }
+      const scopedEntries = currentAverageTargetLeagueIds
+        .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
+        .filter((entry): entry is LeagueMetricValues => Boolean(entry));
+      return averageLeagueMetrics(scopedEntries);
     }
-    const targetLeagueIds = influenceLeague === 'all'
-      ? allAverageTargetLeagueIds
-      : currentAverageTargetLeagueIds;
-    const scopedEntries = targetLeagueIds
-      .map((leagueId) => leagueAvgCache[String(leagueId).trim().toLowerCase()])
-      .filter((entry): entry is LeagueMetricValues => Boolean(entry));
-    return averageLeagueMetrics(scopedEntries);
-  }, [influenceLeague, filters.leagueId, leagueAvgCache, allAverageTargetLeagueIds, currentAverageTargetLeagueIds]);
+  }, [influenceLeague, filters.leagueId, leagueAvgCache, unfilteredLeagueAvgCache, allAverageTargetLeagueIds, currentAverageTargetLeagueIds]);
 
   const currentImpactLeagueAvg = useMemo(() => {
     const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
@@ -1375,7 +1392,7 @@ export default function CareerPage() {
     [allLeagueFilteredMatches, filteredMatches, chartLeague]);
   const influenceMatches = useMemo(() => {
     const base = influenceLeague === 'all' ? allLeagueMatches : filteredMatches;
-    return base.filter(m => !!m.playerStats && !!m.playerStats.id);
+    return base.filter(m => !!m.playerStats);
   }, [allLeagueMatches, filteredMatches, influenceLeague]);
 
   const winLossMatches = useMemo(() => {
