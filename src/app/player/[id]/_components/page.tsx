@@ -3152,7 +3152,7 @@ export default function PlayerStatsPage() {
                                                 boxShadow: playerId ? '0 10px 22px rgba(0,0,0,0.45)' : '0 6px 16px rgba(0,0,0,0.35)',
                                                 borderColor: playerId ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.4)',
                                             },
-                                            '&:hover .perf-icon-box': { bgcolor: '#6e0000' },
+                                            '&:hover .perf-icon-box': { bgcolor: '#b71c1c' },
                                             '&:hover .perf-text-box': { bgcolor: playerId ? '#2f2f2f' : '#2b2b2b' },
                                             width: '100%',
                                             minWidth: 0,
@@ -3165,7 +3165,7 @@ export default function PlayerStatsPage() {
                                         }}
                                     >
                                         <Box className="perf-icon-box" sx={{
-                                            bgcolor: '#8B0000',
+                                            bgcolor: '#d32f2f',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -3254,7 +3254,7 @@ export default function PlayerStatsPage() {
                         <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'flex-start' }}>
                             <Grid item xs={4} sm={4} md>
                                 <StatItem
-                                    label="Matches"
+                                    label="Apps"
                                     value={displayedStatsMatches}
                                 />
                             </Grid>
