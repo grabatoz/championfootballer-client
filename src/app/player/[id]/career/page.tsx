@@ -355,6 +355,9 @@ type LeagueMetricValues = {
   expectedAssists?: number;
   expectedCleanSheets?: number;
   winRate?: number;
+  maxSingleGoals?: number;
+  maxSingleAssists?: number;
+  maxSingleMotmVotes?: number;
 };
 
 type CardLeagueScope = 'all' | 'current';
@@ -511,10 +514,17 @@ const createEmptyLeagueMetrics = (): LeagueMetricValues => ({
   expectedGoals: 0,
   expectedAssists: 0,
   expectedCleanSheets: 0,
+  maxSingleGoals: 0,
+  maxSingleAssists: 0,
+  maxSingleMotmVotes: 0,
 });
 
 const averageLeagueMetrics = (entries: Array<LeagueMetricValues | null | undefined>): LeagueMetricValues | null => {
-  const metricKeys: Array<keyof LeagueMetricValues> = ['goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact', 'expectedGoals', 'expectedAssists', 'expectedCleanSheets'];
+  const metricKeys: Array<keyof LeagueMetricValues> = [
+    'goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact', 
+    'expectedGoals', 'expectedAssists', 'expectedCleanSheets',
+    'maxSingleGoals', 'maxSingleAssists', 'maxSingleMotmVotes'
+  ];
   const validEntries = entries.filter((entry): entry is LeagueMetricValues => Boolean(entry));
   if (validEntries.length === 0) return null;
 
@@ -547,6 +557,9 @@ const normalizeLeagueMetrics = (entry: unknown): LeagueMetricValues | null => {
     expectedAssists: toStatNumber(record.expectedAssists),
     expectedCleanSheets: toStatNumber(record.expectedCleanSheets),
     winRate: record.winRate !== undefined ? toStatNumber(record.winRate) : undefined,
+    maxSingleGoals: record.maxSingleGoals !== undefined ? toStatNumber(record.maxSingleGoals) : undefined,
+    maxSingleAssists: record.maxSingleAssists !== undefined ? toStatNumber(record.maxSingleAssists) : undefined,
+    maxSingleMotmVotes: record.maxSingleMotmVotes !== undefined ? toStatNumber(record.maxSingleMotmVotes) : undefined,
   };
 };
 
@@ -584,6 +597,9 @@ const resolveLeagueAverageFromPayload = (payload: unknown): LeagueMetricValues =
       expectedAssists: toStatNumber(totals.assists) / totalMatches,
       expectedCleanSheets: toStatNumber(totals.cleanSheets) / totalMatches,
       winRate: totals.wins !== undefined ? (toStatNumber(totals.wins) / totalMatches) * 100 : avg.winRate,
+      maxSingleGoals: toStatNumber(avg.maxSingleGoals),
+      maxSingleAssists: toStatNumber(avg.maxSingleAssists),
+      maxSingleMotmVotes: toStatNumber(avg.maxSingleMotmVotes),
     };
   }
 
@@ -1364,7 +1380,7 @@ export default function CareerPage() {
 
   const winLossMatches = useMemo(() => {
     const base = winLossLeague === 'all' ? allLeagueMatches : filteredMatches;
-    return base.filter(m => !!m.playerStats && !!m.playerStats.id);
+    return base.filter(m => !!m.playerStats);
   }, [allLeagueMatches, filteredMatches, winLossLeague]);
 
   // ------------- NEW STATE (grouping + range) -------------
@@ -1728,13 +1744,46 @@ export default function CareerPage() {
     return `Your ${copy.metricName} ${copy.verb} already above league average; keep building ${copy.action} to maintain that edge.`;
   }, [filteredMatches.length, leagueComparisonRows, yourStats.cleanSheets, yourStats.matchesWithCleanSheets]);
 
-  const topStrengthRows = useMemo(
-    () => [...leagueComparisonRows]
+  // Player's maximum statistics in a single match
+  const playerMaxSingleMatchStats = useMemo(() => {
+    const playerMatches = filteredMatches.filter(m => !!m.playerStats && !!m.playerStats.id);
+    const goals = playerMatches.length > 0 ? Math.max(...playerMatches.map(m => toStatNumber(m.playerStats?.goals))) : 0;
+    const assists = playerMatches.length > 0 ? Math.max(...playerMatches.map(m => toStatNumber(m.playerStats?.assists))) : 0;
+    const motmVotes = playerMatches.length > 0 ? Math.max(...playerMatches.map(m => toStatNumber(m.playerStats?.motmVotes))) : 0;
+    return { goals, assists, motmVotes };
+  }, [filteredMatches]);
+
+  const topStrengthRows = useMemo<LeagueComparisonRow[]>(() => {
+    const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
+
+    const rows = [
+      {
+        metric: 'Assists',
+        yourTotal: playerMaxSingleMatchStats.assists,
+        yourDisplay: String(playerMaxSingleMatchStats.assists),
+        leagueAverage: toStatNumber(leagueAverage.maxSingleAssists),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleAssists)),
+      },
+      {
+        metric: 'Goals',
+        yourTotal: playerMaxSingleMatchStats.goals,
+        yourDisplay: String(playerMaxSingleMatchStats.goals),
+        leagueAverage: toStatNumber(leagueAverage.maxSingleGoals),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleGoals)),
+      },
+      {
+        metric: 'MOTM Votes',
+        yourTotal: playerMaxSingleMatchStats.motmVotes,
+        yourDisplay: String(playerMaxSingleMatchStats.motmVotes),
+        leagueAverage: toStatNumber(leagueAverage.maxSingleMotmVotes),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleMotmVotes)),
+      },
+    ];
+
+    return rows
       .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0)
-      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage)
-      .slice(0, 3),
-    [leagueComparisonRows]
-  );
+      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage);
+  }, [playerMaxSingleMatchStats, currentImpactLeagueAvg]);
 
   const topStrengthNote = useMemo(() => {
     if (!topStrengthRows.length) return '';
