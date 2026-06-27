@@ -209,6 +209,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     maxGames: num('maxGames', 0) as number,
     showPoints: bool('showPoints', true),
     adminId: str('adminId', '') || (arr('administrators')?.[0] as any)?.id || '',
+    adminName: str('adminName', ''),
     description: str('description', undefined as unknown as string),
     location: str('location', undefined as unknown as string),
     maxTeams: num('maxTeams'),
@@ -611,7 +612,7 @@ function LeagueMembersDialog({
               <Typography sx={{ color: '#9CA3AF', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 League Admin
               </Typography>
-              <Typography sx={{ color: '#E5E7EB', fontSize: 18, fontWeight: 700 }}>
+              <Typography component="div" sx={{ color: '#E5E7EB', fontSize: 18, fontWeight: 700 }}>
                 {leagueAdminName}
               </Typography>
             </Box>
@@ -2972,7 +2973,7 @@ function AllLeagues() {
           String(selectedLeague.name || '') !== String(refreshedSelected.name || '') ||
           Boolean(selectedLeague.active) !== Boolean(refreshedSelected.active) ||
           String(selectedLeague.image || '') !== String(refreshedSelected.image || '') ||
-          (selectedLeague.members?.length || 0) !== (refreshedSelected.memberCount || 0);
+          (selectedLeague.memberCount ?? selectedLeague.members?.length ?? 0) !== (refreshedSelected.memberCount || 0);
 
         if (needsSelectedSync) {
           setSelectedLeague((prev) => {
@@ -3002,7 +3003,7 @@ function AllLeagues() {
           String(adminSettingsLeague.name || '') !== String(refreshedAdminLeague.name || '') ||
           Boolean(adminSettingsLeague.active) !== Boolean(refreshedAdminLeague.active) ||
           String(adminSettingsLeague.image || '') !== String(refreshedAdminLeague.image || '') ||
-          (adminSettingsLeague.members?.length || 0) !== (refreshedAdminLeague.memberCount || 0);
+          (adminSettingsLeague.memberCount ?? adminSettingsLeague.members?.length ?? 0) !== (refreshedAdminLeague.memberCount || 0);
 
         if (needsAdminSync) {
           setAdminSettingsLeague((prev) => {
@@ -5497,6 +5498,15 @@ function AllLeagues() {
               ).trim();
               const inviteCodeDisplay = activeSeasonInviteCode || '-';
               const inviteShareText = `Join ${inviteContextLabel} with code: ${inviteCodeDisplay}`;
+
+              const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
+                || (league.administrators || []).find((a) => a.id === league.adminId)
+                || (league.administrators || [])[0];
+              const foundAdminName = leagueAdmin
+                ? `${leagueAdmin.firstName || ''} ${leagueAdmin.lastName || ''}`.trim()
+                : '';
+              const leagueAdminName = foundAdminName || (league as any).adminName || 'Not available';
+
               return (
                 <Box
                   key={league.id}
@@ -5942,6 +5952,19 @@ function AllLeagues() {
                               </Typography>
                             </Box>
 
+                            {/* League Admin Name */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AdminPanelSettings sx={{ fontSize: 18, color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)', flexShrink: 0 }} />
+                              <Typography component="div" sx={{
+                                color: isCompleted ? '#111827' : 'rgba(255,255,255,0.9)',
+                                fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
+                                fontWeight: 300,
+                                fontSize: { xs: '10px', sm: '16px' }
+                              }}>
+                                League Admin: {leagueAdminName}
+                              </Typography>
+                            </Box>
+
                             {canCreateSeason && (
                               <Button
                                 size="small"
@@ -6196,6 +6219,15 @@ function AllLeagues() {
                   const canManageArchivedLeague = isLeagueAdminForCurrentUser(league);
                   const hasCustomLeagueImage = typeof league?.image === 'string' && league.image.trim().length > 0;
                   const leagueActionLoading = archivedLeagueActionId === String(league.id);
+                  
+                  const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
+                    || (league.administrators || []).find((a) => a.id === league.adminId)
+                    || (league.administrators || [])[0];
+                  const foundAdminName = leagueAdmin
+                    ? `${leagueAdmin.firstName || ''} ${leagueAdmin.lastName || ''}`.trim()
+                    : '';
+                  const leagueAdminName = foundAdminName || (league as any).adminName || 'Not available';
+                  
                   return (
                     <Box
                       key={league.id}
@@ -6381,6 +6413,19 @@ function AllLeagues() {
                                     })()}
                                   </Typography>
                                 </Box>
+
+                                {/* League Admin Name */}
+                                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+                                  <AdminPanelSettings sx={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', flexShrink: 0 }} />
+                                  <Typography component="div" sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    League Admin: {leagueAdminName}
+                                  </Typography>
+                                </Box>
                               </Box>
                             </Grid>
 
@@ -6411,6 +6456,19 @@ function AllLeagues() {
                                       if (!d || isNaN(d.getTime())) return 'Date not available';
                                       return `Created At ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
                                     })()}
+                                  </Typography>
+                                </Box>
+
+                                {/* League Admin Name (Mobile) */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <AdminPanelSettings sx={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', flexShrink: 0 }} />
+                                  <Typography component="div" sx={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
+                                    fontWeight: 300,
+                                    fontSize: { xs: '10px', sm: '16px' }
+                                  }}>
+                                    League Admin: {leagueAdminName}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -6547,6 +6605,14 @@ function AllLeagues() {
                       const seasonMatches = (league.matches || []).filter((m) => String(m.seasonId || '') === String(season.id)).length;
                       const seasonPlayersCount = (season.members?.length || season.players?.length || 0);
                       const seasonActionLoading = archivedSeasonActionId === `${league.id}:${season.id}`;
+                      
+                      const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
+                        || (league.administrators || []).find((a) => a.id === league.adminId)
+                        || (league.administrators || [])[0];
+                      const foundAdminName = leagueAdmin
+                        ? `${leagueAdmin.firstName || ''} ${leagueAdmin.lastName || ''}`.trim()
+                        : '';
+                      const leagueAdminName = foundAdminName || (league as any).adminName || 'Not available';
 
                       return (
                         <Box
@@ -6694,6 +6760,19 @@ function AllLeagues() {
                                         fontSize: { xs: '10px', sm: '16px' }
                                       }}>
                                         Created At {new Date(seasonCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </Typography>
+                                    </Box>
+
+                                    {/* League Admin Name */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <AdminPanelSettings sx={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', flexShrink: 0 }} />
+                                      <Typography component="div" sx={{
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif',
+                                        fontWeight: 300,
+                                        fontSize: { xs: '10px', sm: '16px' }
+                                      }}>
+                                        League Admin: {leagueAdminName}
                                       </Typography>
                                     </Box>
                                   </Box>

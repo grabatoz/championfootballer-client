@@ -65,6 +65,7 @@ export interface League {
   maxGames: number;
   showPoints: boolean;
   adminId?: string;
+  adminName?: string | null;
   description?: string;
   location?: string;
   maxTeams?: number;
