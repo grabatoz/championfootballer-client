@@ -1416,7 +1416,7 @@ export default function CareerPage() {
 
   // ------------- AGGREGATION (supports forced modes) -------------
   const { performanceData, groupingType } = useMemo(() => {
-    const base = chartMatches.filter(m => !!m.playerStats && calcPoints(m.playerStats) > 0);
+    const base = chartMatches.filter(m => !!m.playerStats);
     if (!base.length) {
       return {
         performanceData: [] as PerformanceRow[],
@@ -1743,20 +1743,20 @@ export default function CareerPage() {
         leagueAverage: toStatNumber(leagueAverage.impact),
         leagueDisplay: formatStatDecimal(leagueAverage.impact, '%'),
       },
-      {
-        metric: 'Total Wins',
-        yourTotal: yourStats.wins,
-        yourDisplay: String(yourStats.wins),
-        leagueAverage: toStatNumber(leagueAverage.wins),
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.wins)),
-      },
-      {
-        metric: '% Win Influence Rate',
-        yourTotal: yourStats.winRate,
-        yourDisplay: `${toRoundedInt(yourStats.winRate)}%`,
-        leagueAverage: toStatNumber(leagueAverage.winRate),
-        leagueDisplay: `${toRoundedInt(toStatNumber(leagueAverage.winRate))}%`,
-      }
+      // {
+      //   metric: 'Total Wins',
+      //   yourTotal: yourStats.wins,
+      //   yourDisplay: String(yourStats.wins),
+      //   leagueAverage: toStatNumber(leagueAverage.wins),
+      //   leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.wins)),
+      // },
+      // {
+      //   metric: '% Win Influence Rate',
+      //   yourTotal: yourStats.winRate,
+      //   yourDisplay: `${toRoundedInt(yourStats.winRate)}%`,
+      //   leagueAverage: toStatNumber(leagueAverage.winRate),
+      //   leagueDisplay: `${toRoundedInt(toStatNumber(leagueAverage.winRate))}%`,
+      // }
     ];
 
     if (yourStats.captainMatchesCount > 0) {
@@ -1796,8 +1796,8 @@ export default function CareerPage() {
       'Clean Sheets': "Each game provides an opportunity to sharpen your defensive and goalkeeping skills. By focusing on these areas, you can help transform losses into wins.",
       'MOTM Votes': "To stand out even more, focus on delivering consistent performances in every match – keep it simple, effective, and stay confident in your approach.",
       'Captains Performance': "To enhance your leadership even further, continue delivering outstanding performances. Leading by example will inspire everyone to perform at their highest level.",
-      'Total Wins': "Keep enhancing your performances, and you'll start turning every opportunity into more victories for both yourself and your team",
-      '% Win Influence Rate': "To make an even greater impact on matches, maintain your focus throughout, keep your game simple, effective, and trust your instincts"
+      // 'Total Wins': "Keep enhancing your performances, and you'll start turning every opportunity into more victories for both yourself and your team",
+      // '% Win Influence Rate': "To make an even greater impact on matches, maintain your focus throughout, keep your game simple, effective, and trust your instincts"
     };
 
     const rawData = data as any;
