@@ -1847,41 +1847,197 @@ export default function CareerPage() {
     return { goals, assists, motmVotes };
   }, [filteredMatches]);
 
+  const averageCaptainWins = useMemo(() => {
+    const captainWins: Record<string, number> = {};
+    const allCaptains = new Set<string>();
+
+    filteredMatches.forEach((m) => {
+      if (m.homeCaptainId) allCaptains.add(String(m.homeCaptainId));
+      if (m.awayCaptainId) allCaptains.add(String(m.awayCaptainId));
+
+      let homeWon = false;
+      let awayWon = false;
+
+      if (m.homeTeamGoals != null && m.awayTeamGoals != null) {
+        if (Number(m.homeTeamGoals) > Number(m.awayTeamGoals)) homeWon = true;
+        else if (Number(m.awayTeamGoals) > Number(m.homeTeamGoals)) awayWon = true;
+      } else if (m.team1Score != null && m.team2Score != null) {
+        if (Number(m.team1Score) > Number(m.team2Score)) homeWon = true;
+        else if (Number(m.team2Score) > Number(m.team1Score)) awayWon = true;
+      } else {
+        const playerResult = resolveResultForPlayer(m, String(playerId || ''));
+        if (playerResult === 'W') {
+          const pid = String(playerId || '');
+          const isHomeFromList = (m.homeTeamUsers || []).some(u => String(u.id) === pid);
+          const isAwayFromList = (m.awayTeamUsers || []).some(u => String(u.id) === pid);
+          const isHome = isHomeFromList || (!isAwayFromList && String(m.homeTeamId || '') === pid);
+          if (isHome) homeWon = true;
+          else awayWon = true;
+        } else if (playerResult === 'L') {
+          const pid = String(playerId || '');
+          const isHomeFromList = (m.homeTeamUsers || []).some(u => String(u.id) === pid);
+          const isAwayFromList = (m.awayTeamUsers || []).some(u => String(u.id) === pid);
+          const isHome = isHomeFromList || (!isAwayFromList && String(m.homeTeamId || '') === pid);
+          if (isHome) awayWon = true;
+          else homeWon = true;
+        }
+      }
+
+      let winnerCaptainId: string | null = null;
+      if (homeWon && m.homeCaptainId) {
+        winnerCaptainId = String(m.homeCaptainId);
+      } else if (awayWon && m.awayCaptainId) {
+        winnerCaptainId = String(m.awayCaptainId);
+      }
+
+      if (winnerCaptainId) {
+        captainWins[winnerCaptainId] = (captainWins[winnerCaptainId] || 0) + 1;
+      }
+    });
+
+    let totalWins = 0;
+    allCaptains.forEach((cid) => {
+      totalWins += captainWins[cid] || 0;
+    });
+
+    return allCaptains.size > 0 ? totalWins / allCaptains.size : 0;
+  }, [filteredMatches, playerId]);
+
+  // Calculate actual captain wins count for the current player
+  const playerCaptainWinsCount = useMemo(() => {
+    const arr = filteredMatches.filter(m => !!m.playerStats && !!m.playerStats.id);
+    return arr.reduce((total, m) => {
+      const isHomeCaptain = String(m.homeCaptainId) === String(playerId);
+      const isAwayCaptain = String(m.awayCaptainId) === String(playerId);
+      if (isHomeCaptain || isAwayCaptain) {
+        const result = resolveResultForPlayer(m, String(playerId || ''));
+        if (result === 'W') {
+          return total + 1;
+        }
+      }
+      return total;
+    }, 0);
+  }, [filteredMatches, playerId]);
+
   const topStrengthRows = useMemo<LeagueComparisonRow[]>(() => {
     const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
 
-    const rows = [
+    // 1. Define all 8 potential strengths with their info
+    const allStrengths = [
       {
-        metric: 'Assists',
-        yourTotal: playerMaxSingleMatchStats.assists,
-        yourDisplay: String(playerMaxSingleMatchStats.assists),
-        leagueAverage: toStatNumber(leagueAverage.maxSingleAssists),
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleAssists)),
+        metric: '% Impact',
+        rank: 1,
+        yourTotal: toStatNumber(yourStats.impactAvg),
+        yourDisplay: `${toRoundedInt(yourStats.impactAvg)}%`,
+        leagueAverage: toStatNumber(leagueAverage.impact),
+        leagueDisplay: `${formatStatDecimal(leagueAverage.impact)}%`,
+        qualified: yourStats.n > 0 && toStatNumber(leagueAverage.impact) > 0 && yourStats.impactAvg >= 1.25 * toStatNumber(leagueAverage.impact),
+      },
+      {
+        metric: 'Wins',
+        rank: 2,
+        yourTotal: yourStats.wins,
+        yourDisplay: String(yourStats.wins),
+        leagueAverage: toStatNumber(leagueAverage.wins),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.wins)),
+        qualified: toStatNumber(leagueAverage.wins) > 0 && yourStats.wins >= 1.25 * toStatNumber(leagueAverage.wins),
+      },
+      {
+        metric: 'Captains Performance',
+        rank: 3,
+        yourTotal: playerCaptainWinsCount,
+        yourDisplay: String(playerCaptainWinsCount),
+        leagueAverage: averageCaptainWins,
+        leagueDisplay: formatStatDecimal(averageCaptainWins),
+        qualified: yourStats.captainMatchesCount > 0 && playerCaptainWinsCount > averageCaptainWins,
+      },
+      {
+        metric: 'Frequent Top Performer',
+        rank: 4,
+        yourTotal: yourStats.motmVotes,
+        yourDisplay: String(yourStats.motmVotes),
+        leagueAverage: toStatNumber(leagueAverage.motmVotes),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.motmVotes)),
+        qualified: toStatNumber(leagueAverage.motmVotes) > 0 && yourStats.motmVotes >= 1.25 * toStatNumber(leagueAverage.motmVotes),
+      },
+      {
+        metric: 'Individual Brilliances',
+        rank: 5,
+        yourTotal: yourStats.defensiveImpactVotes,
+        yourDisplay: String(yourStats.defensiveImpactVotes),
+        leagueAverage: toStatNumber(leagueAverage.defensiveImpactVotes),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.defensiveImpactVotes)),
+        qualified: yourStats.defensiveImpactVotes > 3,
+      },
+      {
+        metric: 'Clean Sheet',
+        rank: 6,
+        yourTotal: yourStats.cleanSheets,
+        yourDisplay: String(yourStats.cleanSheets),
+        leagueAverage: toStatNumber(leagueAverage.cleanSheets),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.cleanSheets)),
+        qualified: yourStats.cleanSheets > 0,
       },
       {
         metric: 'Goals',
-        yourTotal: playerMaxSingleMatchStats.goals,
-        yourDisplay: String(playerMaxSingleMatchStats.goals),
-        leagueAverage: toStatNumber(leagueAverage.maxSingleGoals),
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleGoals)),
+        rank: 7,
+        yourTotal: yourStats.goals,
+        yourDisplay: String(yourStats.goals),
+        leagueAverage: toStatNumber(leagueAverage.goals),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.goals)),
+        qualified: yourStats.goals > 0,
       },
       {
-        metric: 'MOTM Votes',
-        yourTotal: playerMaxSingleMatchStats.motmVotes,
-        yourDisplay: String(playerMaxSingleMatchStats.motmVotes),
-        leagueAverage: toStatNumber(leagueAverage.maxSingleMotmVotes),
-        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.maxSingleMotmVotes)),
+        metric: 'Assist',
+        rank: 7,
+        yourTotal: yourStats.assists,
+        yourDisplay: String(yourStats.assists),
+        leagueAverage: toStatNumber(leagueAverage.assists),
+        leagueDisplay: formatStatDecimal(toStatNumber(leagueAverage.assists)),
+        qualified: yourStats.assists > 0,
       },
     ];
 
-    return rows
-      .filter((row) => row.yourTotal > 0 || row.leagueAverage > 0)
-      .sort((a, b) => b.yourTotal - a.yourTotal || b.leagueAverage - a.leagueAverage);
-  }, [playerMaxSingleMatchStats, currentImpactLeagueAvg]);
+    // Filter to only qualified strengths
+    let qualified = allStrengths.filter(s => s.qualified);
+
+    // If none qualify, use a fallback: show metrics where player's value > 0
+    if (qualified.length === 0) {
+      qualified = allStrengths.filter(s => s.yourTotal > 0);
+    }
+
+    // Sort by rank ascending (1st is best, 7th is worst). Tie-breaker: player's value descending.
+    qualified.sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      return b.yourTotal - a.yourTotal;
+    });
+
+    // Select up to 3 best strengths
+    return qualified.slice(0, 3).map(s => ({
+      metric: s.metric,
+      yourTotal: s.yourTotal,
+      yourDisplay: s.yourDisplay,
+      leagueAverage: s.leagueAverage,
+      leagueDisplay: s.leagueDisplay,
+    }));
+  }, [yourStats, currentImpactLeagueAvg, averageCaptainWins, playerCaptainWinsCount]);
+
+  const strengthDescriptionMap: Record<string, string> = {
+    '% Impact': 'Match Impact: 25% or more above the league average.',
+    'Wins': 'Wins: 25% or more above the league average.',
+    'Captains Performance': 'Captains Performance: Surpassed the average wins of all captains in the league.',
+    'Frequent Top Performer': 'Frequent Top Performer: 25% or more MOTM votes than the league average.',
+    'Individual Brilliances': "Individual Brilliances: Received the captain's pick for outstanding performance more than 3 times.",
+    'Clean Sheet': 'Clean Sheet: Kept at least one clean sheet in matches.',
+    'Goals': 'Goals: Scored at least one goal in matches.',
+    'Assist': 'Assist: Made at least one assist in matches.',
+  };
 
   const topStrengthNote = useMemo(() => {
     if (!topStrengthRows.length) return '';
     const best = topStrengthRows[0];
+    const desc = strengthDescriptionMap[best.metric];
+    if (desc) return desc;
     return `${best.metric}: ${best.yourDisplay}; league average ${best.leagueDisplay}.`;
   }, [topStrengthRows]);
 
@@ -3876,21 +4032,29 @@ export default function CareerPage() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {topStrengthRows.map((row) => {
-                              return (
-                                <TableRow key={row.metric}>
-                                  <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.metric}</TableCell>
-                                  <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.yourDisplay}</TableCell>
-                                  <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                      <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: row.leagueAverage > 0 ? themeColors.text : themeColors.textDim }}>
-                                        {row.leagueDisplay}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                            {topStrengthRows.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={3} align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 2, color: themeColors.textDim, borderBottom: `1px solid ${themeColors.border}` }}>
+                                  No strengths identified yet. Play more matches to unlock your strengths.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              topStrengthRows.map((row) => {
+                                return (
+                                  <TableRow key={row.metric}>
+                                    <TableCell sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.metric}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: { xs: 10, md: 11 }, py: 0.8, color: themeColors.text, borderBottom: `1px solid ${themeColors.border}` }}>{row.yourDisplay}</TableCell>
+                                    <TableCell align="center" sx={{ py: 0.8, borderBottom: `1px solid ${themeColors.border}` }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                        <Typography sx={{ fontSize: { xs: 10, md: 11 }, color: row.leagueAverage > 0 ? themeColors.text : themeColors.textDim }}>
+                                          {row.leagueDisplay}
+                                        </Typography>
+                                      </Box>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
+                            )}
                           </TableBody>
                         </Table>
                         {topStrengthNote && (
