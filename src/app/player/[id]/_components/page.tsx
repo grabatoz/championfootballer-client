@@ -3460,8 +3460,29 @@ export default function PlayerStatsPage() {
                                             No rewards earned yet
                                         </Typography>
                                     ) : (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            {playerBadges.slice(0, 5).map((badge) => (
+                                        <Box sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1.5,
+                                            maxHeight: 156,
+                                            overflowY: 'auto',
+                                            pr: 1,
+                                            '&::-webkit-scrollbar': {
+                                                width: '6px',
+                                            },
+                                            '&::-webkit-scrollbar-track': {
+                                                background: 'rgba(255,255,255,0.05)',
+                                                borderRadius: '3px',
+                                            },
+                                            '&::-webkit-scrollbar-thumb': {
+                                                background: 'rgba(255,255,255,0.2)',
+                                                borderRadius: '3px',
+                                            },
+                                            '&::-webkit-scrollbar-thumb:hover': {
+                                                background: 'rgba(255,255,255,0.3)',
+                                            }
+                                        }}>
+                                            {playerBadges.map((badge) => (
                                                 <Box key={badge.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <Typography sx={{ color: '#ccc', fontSize: 13 }}>
                                                         {badge.count}x {badge.title}
