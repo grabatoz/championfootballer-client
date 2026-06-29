@@ -195,6 +195,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     isComplete?: boolean;
     isCompleted?: boolean;
     archived?: boolean;
+    totalMatchCount?: number;
   } = {
     id: String(idVal),
     name: str('name', 'My League'),
@@ -217,6 +218,8 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     status: normalizeLeagueStatus(raw['status']),
     computedStatus,
     memberCount: num('memberCount'),
+    totalMatchCount: typeof raw['totalMatchCount'] === 'number' ? raw['totalMatchCount']
+      : (typeof (computedStatus as any)?.totalMatchCount === 'number' ? (computedStatus as any).totalMatchCount : undefined),
     seasons: (raw['seasons']
       ? arr('seasons')
       : (computedStatus?.seasons || []).map((s: any) => ({
@@ -238,6 +241,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
     ...(typeof isCompletedRaw === 'boolean' ? { isCompleted: isCompletedRaw } : {}),
     ...(typeof archivedRaw === 'boolean' ? { archived: archivedRaw } : {}),
   };
+
 
   return normalized;
 };
@@ -5948,9 +5952,19 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Total Matches: {league.matches?.length || 0}
+                                Total Matches: {(() => {
+                                  const l = league as any;
+                                  // totalMatchCount = all matches (fixtures + completed) from server SQL COUNT
+                                  return l.totalMatchCount
+                                    ?? l.computedStatus?.totalMatchCount
+                                    ?? l.computedStatus?.matchesPlayed
+                                    ?? l.computedStatus?.gamesPlayed
+                                    ?? league.matches?.length
+                                    ?? 0;
+                                })()}
                               </Typography>
                             </Box>
+
 
                             {/* League Admin Name */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

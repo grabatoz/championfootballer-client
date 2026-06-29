@@ -3704,6 +3704,8 @@ export default function CareerPage() {
                               tickLine={{ stroke: themeColors.border }}
                               axisLine={{ stroke: themeColors.border }}
                               domain={[0, maxCumulativePoints]}
+                              tickCount={5}
+                              ticks={Array.from({ length: 5 }, (_, i) => Math.round((maxCumulativePoints / 4) * i))}
                               label={{ value: 'Cumulative XP', angle: 90, position: 'insideRight', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
                             />
                             {/* Dummy XAxis to reserve identical bottom spacing */}

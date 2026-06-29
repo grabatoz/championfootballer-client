@@ -1524,10 +1524,12 @@ export default function PlayerStatsPage() {
 
             const seasonName = seasonInfo?.name || `Season ${seasonNumber}`;
 
-            // Determine if season is finished: has endDate and endDate is in the past
+            // Determine if season is finished: isActive/active is false, or has endDate and endDate is in the past
             const seasonEndDate = seasonInfo?.endDate ? dayjs(seasonInfo.endDate) : null;
-            const isFinished = seasonEndDate ? seasonEndDate.valueOf() < dayjs().valueOf() : false;
-            const endDateFormatted = isFinished && seasonEndDate ? seasonEndDate.format('MMM YYYY') : '';
+            const isFinished = seasonInfo
+                ? (seasonInfo.isActive === false || seasonInfo.active === false || (seasonEndDate ? seasonEndDate.valueOf() < dayjs().valueOf() : false))
+                : false;
+            const endDateFormatted = seasonEndDate && seasonEndDate.isValid() ? seasonEndDate.format('MMM YYYY') : '';
 
             stats.push({
                 seasonId,
@@ -3854,7 +3856,7 @@ export default function PlayerStatsPage() {
                                                                     lineHeight: 1.3
                                                                 }}>
                                                                     {season.isFinished
-                                                                        ? `(${season.endDateFormatted})`
+                                                                        ? '(Finished)'
                                                                         : <span style={{ fontSize: 10 }}>(Not Finished)</span>
                                                                     }
                                                                 </Typography>
