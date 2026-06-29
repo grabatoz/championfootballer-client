@@ -2919,17 +2919,29 @@ export default function AllMatches() {
                                                     >
                                                         {(isAdmin || isMember) && (() => {
                                                             const isInMatch = match.homeTeamUsers?.some(u => String(u?.id) === String(user?.id)) || match.awayTeamUsers?.some(u => String(u?.id) === String(user?.id));
-                                                            const isDisabled =
-                                                                !league?.active ||
-                                                                match.archived ||
-                                                                !matchSeasonActiveForStats;
-                                                            const canUseAddStats = (isAdmin || !!isInMatch) && !isDisabled;
+                                                            const isCompleted = !league?.active || !matchSeasonActiveForStats;
                                                             return (
                                                             <Box
                                                                 onClick={() => {
                                                                     if (match.archived) return;
-                                                                    if (!isAdmin && !isInMatch) {
-                                                                        toast('You are not added to this match', {
+                                                                    if (isCompleted) {
+                                                                        toast('league is complete you are no able to add new stats. Please contact admin to update stats.', {
+                                                                            icon: '🏆',
+                                                                            duration: 5000,
+                                                                            style: {
+                                                                                background: '#EF4444',
+                                                                                color: '#fff',
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.95rem',
+                                                                                padding: '14px 20px',
+                                                                                borderRadius: '12px',
+                                                                                boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)',
+                                                                            },
+                                                                        });
+                                                                        return;
+                                                                    }
+                                                                    if (!isInMatch) {
+                                                                        toast('You are not added in this match.', {
                                                                             icon: '⚠️',
                                                                             duration: 4000,
                                                                             style: {
@@ -2944,17 +2956,14 @@ export default function AllMatches() {
                                                                         });
                                                                         return;
                                                                     }
-                                                                    if (canUseAddStats) {
-                                                                        setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true);
-                                                                    }
+                                                                    setSelectedMatchIdForDialog(match.id); setSelectedLeagueIdForDialog(String(match.leagueId)); setShouldShowAdminGoals(false); setMatchStatsOpen(true);
                                                                 }}
-                                                                sx={{ cursor: canUseAddStats ? 'pointer' : 'not-allowed', width: '100%' }}
+                                                                sx={{ cursor: 'pointer', width: '100%' }}
                                                             >
                                                             <Button
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
-                                                                disabled={!canUseAddStats}
-                                                                sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316', '&.Mui-disabled': { color: 'white' } }}
+                                                                sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316' }}
                                                             >
                                                                 Add Stats
                                                             </Button>

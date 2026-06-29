@@ -5722,15 +5722,28 @@ export default function LeagueDetailPage() {
                                                                             {(isAdmin || isMember) && (() => {
                                                                                 const isInMatch = match.homeTeamUsers?.some((u) => String(u?.id) === String(user?.id)) ||
                                                                                     match.awayTeamUsers?.some((u) => String(u?.id) === String(user?.id));
-                                                                                const isDisabled =
-                                                                                    !league?.active ||
-                                                                                    match.archived ||
-                                                                                    !matchSeasonActiveForStats;
+                                                                                const isCompleted = !league?.active || !matchSeasonActiveForStats;
                                                                                 return (
                                                                                     <Box
                                                                                         onClick={() => {
-                                                                                            if (!isAdmin && !isInMatch) {
-                                                                                                toast('You are not added to this match', {
+                                                                                            if (isCompleted) {
+                                                                                                toast('league is complete you are no able to add new stats. Please contact admin to update stats.', {
+                                                                                                    icon: '🏆',
+                                                                                                    duration: 5000,
+                                                                                                    style: {
+                                                                                                        background: '#EF4444',
+                                                                                                        color: '#fff',
+                                                                                                        fontWeight: 600,
+                                                                                                        fontSize: '0.95rem',
+                                                                                                        padding: '14px 20px',
+                                                                                                        borderRadius: '12px',
+                                                                                                        boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)',
+                                                                                                    },
+                                                                                                });
+                                                                                                return;
+                                                                                            }
+                                                                                            if (!isInMatch) {
+                                                                                                toast('You are not added in this match.', {
                                                                                                     icon: '⚠️',
                                                                                                     duration: 4000,
                                                                                                     style: {
@@ -5745,14 +5758,12 @@ export default function LeagueDetailPage() {
                                                                                                 });
                                                                                                 return;
                                                                                             }
-                                                                                            if (!isDisabled) {
-                                                                                                setSelectedMatchIdForDialog(match.id);
-                                                                                                setShouldShowAdminGoals(false);
-                                                                                                setMatchStatsOpen(true);
-                                                                                            }
+                                                                                            setSelectedMatchIdForDialog(match.id);
+                                                                                            setShouldShowAdminGoals(false);
+                                                                                            setMatchStatsOpen(true);
                                                                                         }}
                                                                                         sx={{
-                                                                                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                                                                            cursor: 'pointer',
                                                                                             width: '100%',
                                                                                             '&:hover .add-stats-btn': {
                                                                                                 backgroundColor: '#8E4B1C',
@@ -5763,12 +5774,11 @@ export default function LeagueDetailPage() {
                                                                                             className="add-stats-btn"
                                                                                             size="small"
                                                                                             startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
-                                                                                            disabled={isDisabled}
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
                                                                                                 border: '1.4px solid #F97316',
-                                                                                                '&.Mui-disabled': { color: 'white' },
+                                                                                                color: 'white',
                                                                                             }}
                                                                                         >
                                                                                             Add Stats

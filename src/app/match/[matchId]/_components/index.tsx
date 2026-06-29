@@ -575,12 +575,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
     return true;
   }, [match?.seasonId, seasonOptions, league?.seasons]);
 
-  useEffect(() => {
-    if (!currentMatchSeasonActive && adminEditMode) {
-      setAdminEditMode(false);
-    }
-  }, [currentMatchSeasonActive, adminEditMode]);
-
   const showGoals = match?.status === 'started' || match?.status === 'RESULT_PUBLISHED';
 
   const toApiPlayerId = (playerId: string): string =>
@@ -589,10 +583,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // Admin: open player stats editor
   const handleOpenPlayerEdit = async (player: User & { __team?: 'home' | 'away' }) => {
     if (!token || !matchId) return;
-    if (!currentMatchSeasonActive) {
-      toast.error('This season is inactive. Stats cannot be edited.');
-      return;
-    }
     setEditingPlayer(player);
     setEditStatsLoading(true);
     try {
@@ -624,10 +614,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
   // Admin: save player stats
   const handleSavePlayerStats = async () => {
     if (!editingPlayer || !token || !matchId) return;
-    if (!currentMatchSeasonActive) {
-      toast.error('This season is inactive. Stats cannot be edited.');
-      return;
-    }
     setEditStatsSaving(true);
     try {
       const apiPlayerId = toApiPlayerId(editingPlayer.id);
@@ -927,10 +913,6 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             {isAdmin && (
               <Box
                 onClick={() => {
-                  if (!currentMatchSeasonActive) {
-                    toast.error('This season is inactive. Stats cannot be edited.');
-                    return;
-                  }
                   setAdminEditMode(prev => {
                     const next = !prev;
                     if (next) {
@@ -945,9 +927,9 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  cursor: currentMatchSeasonActive ? 'pointer' : 'not-allowed',
-                  opacity: currentMatchSeasonActive ? 1 : 0.55,
-                  '&:hover': { opacity: currentMatchSeasonActive ? 0.8 : 0.55 },
+                  cursor: 'pointer',
+                  opacity: 1,
+                  '&:hover': { opacity: 0.8 },
                   // bgcolor: adminEditMode ? 'rgba(255,255,255,0.15)' : 'transparent',
                   px: 1.5,
                   py: 0.5,
