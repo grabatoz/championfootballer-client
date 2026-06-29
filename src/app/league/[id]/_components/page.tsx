@@ -5777,7 +5777,7 @@ export default function LeagueDetailPage() {
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
-                                                                                                border: '1.4px solid #F97316',
+                                                                                                border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
                                                                                                 color: 'white',
                                                                                             }}
                                                                                         >
@@ -5798,7 +5798,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: '1.4px solid #F97316',
+                                                                                    border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -5811,7 +5811,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: '1.4px solid #F97316',
+                                                                                    border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
                                                                                     '&.Mui-disabled': { color: 'white' },
                                                                                 }}
                                                                             >
@@ -6313,7 +6313,7 @@ export default function LeagueDetailPage() {
                                                                 <div
                                                                     key={player.id}
                                                                     onClick={(e) => { e.preventDefault(); if (league?.id) openQuickViewFromTable(String(league.id), String(player.id)); }}
-                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} ${isCurrentUser ? 'league-row-current-user' : ''} league-row league-row-inset mb-0 font-bold text-white`}
+                                                                    className={`league-table-row-text group grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[58px] min-h-[58px] sm:h-[72px] sm:min-h-[72px] px-4 py-0 cursor-pointer transition-colors hover:bg-muted/50 ${isEven ? 'bg-table-row-even' : 'bg-table-row-odd'} ${isCurrentUser ? 'league-row-current-user' : ''} league-row league-row-inset mb-0 font-bold text-white`}
                                                                 >
                                                                     {/* Rank */}
                                                                     <div className="text-center text-white font-bold league-table-sticky-rank h-full flex items-center justify-center">{index + 1}</div>
@@ -6376,7 +6376,7 @@ export default function LeagueDetailPage() {
                                                             );
                                                         })}
                                                     {tableData.length === 0 && (
-                                                        <div className="league-table-row-text grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[72px] min-h-[72px] px-4 py-0 bg-table-row-even font-bold text-white">
+                                                        <div className="league-table-row-text grid grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center h-[58px] min-h-[58px] sm:h-[72px] sm:min-h-[72px] px-4 py-0 bg-table-row-even font-bold text-white">
                                                             <div className="text-center text-white/80" style={{ gridColumn: '1 / -1' }}>
                                                                 No players found for this season.
                                                             </div>

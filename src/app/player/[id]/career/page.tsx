@@ -4262,16 +4262,16 @@ export default function CareerPage() {
                               mx: { xs: 1.2, md: 5 },
                               p: 2,
                               borderRadius: 1,
-                              background: 'linear-gradient(135deg, rgba(229,106,22,0.12) 0%, rgba(207,35,38,0.12) 100%)',
-                              border: '1px solid rgba(229,106,22,0.3)',
-                              borderLeft: `4px solid ${themeColors.primary}`,
+                              background: 'linear-gradient(135deg, rgba(76,175,80,0.12) 0%, rgba(76,175,80,0.06) 100%)',
+                              border: '1px solid rgba(76,175,80,0.3)',
+                              borderLeft: '4px solid #4CAF50',
                             }}
                           >
                             <Typography
                               sx={{
                                 fontSize: 10,
                                 fontWeight: 'bold',
-                                color: themeColors.primary,
+                                color: '#4CAF50',
                                 textTransform: 'uppercase',
                                 letterSpacing: 0.5,
                                 mb: 0.5,
@@ -4291,49 +4291,48 @@ export default function CareerPage() {
                             </Typography>
                           </Box>
                         )}
-                        {/* <Box sx={{ mt: 1, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
-                          <Typography sx={{ fontSize: 10.5 }}>
-                            Calculation data: Player: {playerName || playerId || 'Player'} | League: {selectedLeagueName || 'All Leagues'} | Season: {selectedSeasonLabel}
-                          </Typography>
-                          <Typography sx={{ fontSize: 10.5 }}>
-                            Average data: {currentImpactLeagueAvg
-                              ? leagueComparisonRows.map((row) => `${row.metric}: ${row.leagueDisplay}`).join(' | ')
-                              : 'Waiting for filtered league averages...'}
-                          </Typography>
-                        </Box> */}
                       </Grid>
                     </Grid>
                   </Box>
                 </GlassCard>
-
+ 
                 {/* FOCUS AREA Section (private: only when viewing your own dashboard) */}
                 {canViewPersonalSections && (
-                  <GlassCard sx={{ mb: 3, background: '#25262a' }}>
-                    {/* Orange Header */}
-                    <Box sx={{
-                      background: '#25262a',
-                      px: 2,
-                      py: 1,
-                      borderRadius: '8px 8px 0 0'
-                    }}>
-                      <Typography sx={{
-                        fontSize: 14,
+                  <Box
+                    sx={{
+                      mt: 3,
+                      mx: { xs: 1.2, md: 5 },
+                      p: 2,
+                      borderRadius: 1,
+                      background: 'linear-gradient(135deg, rgba(229,106,22,0.12) 0%, rgba(207,35,38,0.12) 100%)',
+                      border: '1px solid rgba(229,106,22,0.3)',
+                      borderLeft: `4px solid ${themeColors.primary}`,
+                      mb: 3,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 10,
                         fontWeight: 'bold',
-                        color: themeColors.text,
-                        pl: { xs: 1.5, md: 5 },
-                        pt: 1,
-                        textTransform: 'uppercase'
-                      }}>
-                        Focus Area
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ p: 2 }}>
-                      <Typography sx={{ fontSize: 12, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
-                        {focusSuggestion}
-                      </Typography>
-                    </Box>
-                  </GlassCard>
+                        color: themeColors.primary,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        mb: 0.5,
+                      }}
+                    >
+                      Focus Area
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: '#fff',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {focusSuggestion}
+                    </Typography>
+                  </Box>
                 )}
 
                 {/* Play Best With + Rivalries */}

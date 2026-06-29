@@ -11,6 +11,7 @@ import {
     Divider,
     CircularProgress,
     TextField,
+    InputAdornment,
     Dialog,
     DialogActions,
     DialogContent,
@@ -2763,12 +2764,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                             >
                                 Stats
                             </Typography>
-                            {/* <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mb: 1 }} /> */}
-
                             {/* Stats rows - grid layout so columns align perfectly */}
                             <Box sx={{
                                 display: 'grid',
-                                gridTemplateColumns: 'auto 1fr auto',
+                                gridTemplateColumns: 'auto 1fr',
                                 rowGap: { xs: 1.25, md: 2 },
                                 columnGap: { xs: 1, md: 2 },
                                 alignItems: 'center',
@@ -2786,7 +2785,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
-
+ 
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
@@ -2794,7 +2793,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{ style: { textAlign: 'right' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start" sx={{ pl: 1 }}>
+                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                                    Goals
+                                                </Typography>
+                                            </InputAdornment>
+                                        )
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2812,10 +2820,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                     }}
                                 />
-                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
-                                    Goals
-                                </Typography>
-
+ 
                                 {/* Assists Row */}
                                 <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
@@ -2829,7 +2834,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
-
+ 
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
@@ -2837,7 +2842,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{ style: { textAlign: 'right' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start" sx={{ pl: 1 }}>
+                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                                    Assists
+                                                </Typography>
+                                            </InputAdornment>
+                                        )
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2855,10 +2869,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                     }}
                                 />
-                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
-                                    Assists
-                                </Typography>
-
+ 
                                 {/* Clean Sheet Row */}
                                 <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
@@ -2872,7 +2883,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
-
+ 
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(1, numVal));
@@ -2880,7 +2891,16 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{ style: { textAlign: 'right' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start" sx={{ pl: 1 }}>
+                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+                                                    Clean Sheet
+                                                </Typography>
+                                            </InputAdornment>
+                                        )
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2898,9 +2918,6 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                     }}
                                 />
-                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff', fontSize: { xs: '0.85rem', md: '1rem' }, whiteSpace: 'nowrap' }}>
-                                    Clean Sheet
-                                </Typography>
                             </Box>
                             {/* ) : (
                                 <Typography variant="body2" sx={{ color: '#D1D5DB' }}>

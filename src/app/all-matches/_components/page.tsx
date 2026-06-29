@@ -2963,7 +2963,7 @@ export default function AllMatches() {
                                                             <Button
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
-                                                                sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316' }}
+                                                                sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' } }}
                                                             >
                                                                 Add Stats
                                                             </Button>
@@ -2975,7 +2975,7 @@ export default function AllMatches() {
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                             startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                             disabled={match.archived}
-                                                            sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316' }}
+                                                            sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' } }}
                                                         >
                                                             View Teams
                                                         </Button>
@@ -2984,7 +2984,7 @@ export default function AllMatches() {
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                             disabled={match.archived}
-                                                            sx={{ ...resultCardActionButtonSx, border: '1.4px solid #F97316', '&.Mui-disabled': { color: 'white' } }}
+                                                            sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' }, '&.Mui-disabled': { color: 'white' } }}
                                                         >
                                                             Results
                                                         </Button>
