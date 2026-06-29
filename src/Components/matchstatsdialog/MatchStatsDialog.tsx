@@ -2776,7 +2776,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 <img src={Goals.src} alt="Goals" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
                                     type="text"
-                                    value={stats.goals}
+                                    placeholder="Add Goals"
+                                    value={stats.goals === 0 ? '' : stats.goals}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === '') {
@@ -2793,16 +2794,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'right' } }}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start" sx={{ pl: 1 }}>
-                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                                    Goals
-                                                </Typography>
-                                            </InputAdornment>
-                                        )
-                                    }}
+                                    inputProps={{ style: { textAlign: 'center' } }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2815,6 +2807,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontWeight: 600,
                                             py: 0.75,
                                         },
+                                        '& .MuiInputBase-input::placeholder': {
+                                            color: '#fff',
+                                            opacity: 1,
+                                            fontWeight: 500,
+                                            textAlign: 'center'
+                                        },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
@@ -2825,7 +2823,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
                                     type="text"
-                                    value={stats.assists}
+                                    placeholder="Add Assists"
+                                    value={stats.assists === 0 ? '' : stats.assists}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === '') {
@@ -2842,16 +2841,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'right' } }}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start" sx={{ pl: 1 }}>
-                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                                    Assists
-                                                </Typography>
-                                            </InputAdornment>
-                                        )
-                                    }}
+                                    inputProps={{ style: { textAlign: 'center' } }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2864,6 +2854,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontWeight: 600,
                                             py: 0.75,
                                         },
+                                        '& .MuiInputBase-input::placeholder': {
+                                            color: '#fff',
+                                            opacity: 1,
+                                            fontWeight: 500,
+                                            textAlign: 'center'
+                                        },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
@@ -2874,7 +2870,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                 <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
                                     type="text"
-                                    value={stats.cleanSheets}
+                                    placeholder="Add Clean Sheet"
+                                    value={stats.cleanSheets === 0 ? '' : stats.cleanSheets}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === '') {
@@ -2891,16 +2888,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'right' } }}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start" sx={{ pl: 1 }}>
-                                                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: { xs: '0.85rem', md: '1rem' } }}>
-                                                    Clean Sheet
-                                                </Typography>
-                                            </InputAdornment>
-                                        )
-                                    }}
+                                    inputProps={{ style: { textAlign: 'center' } }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2912,6 +2900,12 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontSize: { xs: '1rem', md: '1.25rem' },
                                             fontWeight: 600,
                                             py: 0.75,
+                                        },
+                                        '& .MuiInputBase-input::placeholder': {
+                                            color: '#fff',
+                                            opacity: 1,
+                                            fontWeight: 500,
+                                            textAlign: 'center'
                                         },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
