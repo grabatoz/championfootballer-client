@@ -526,7 +526,7 @@ const createEmptyLeagueMetrics = (): LeagueMetricValues => ({
 
 const averageLeagueMetrics = (entries: Array<LeagueMetricValues | null | undefined>): LeagueMetricValues | null => {
   const metricKeys: Array<keyof LeagueMetricValues> = [
-    'goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact', 
+    'goals', 'assists', 'cleanSheets', 'defence', 'motmVotes', 'defensiveImpactVotes', 'impact',
     'expectedGoals', 'expectedAssists', 'expectedCleanSheets', 'winRate', 'wins',
     'maxSingleGoals', 'maxSingleAssists', 'maxSingleMotmVotes'
   ];
@@ -588,7 +588,7 @@ const resolveLeagueAverageFromPayload = (payload: unknown): LeagueMetricValues =
   const totalPlayers = toStatNumber(record.totalPlayers) || 1;
   const totals = record.leagueTotals;
   const avg = record.leagueAvg || {};
-  
+
   if (totals && typeof totals === 'object') {
     const totalMatches = Math.max(toStatNumber(totals.matches), 1);
     return {
@@ -1376,7 +1376,7 @@ export default function CareerPage() {
   // Compute combined league average when "all" is selected, otherwise use specific league avg
   const currentInfluenceLeagueAvg = useMemo(() => {
     const selectedLeagueId = String(filters.leagueId || '').trim().toLowerCase();
-    
+
     if (influenceLeague === 'all') {
       const scopedEntries = allAverageTargetLeagueIds
         .map((leagueId) => unfilteredLeagueAvgCache[String(leagueId).trim().toLowerCase()])
@@ -1521,6 +1521,21 @@ export default function CareerPage() {
     const [s, e] = range;
     return performanceData.slice(s, e + 1);
   }, [performanceData, range]);
+
+  // Synchronized domains for sticky Y-axes
+  const maxTotalPoints = useMemo(() => {
+    const activeData = chartData.length > 0 ? chartData : performanceData;
+    if (!activeData.length) return 100;
+    const max = Math.max(...activeData.map(d => toStatNumber(d.totalPoints)), 0);
+    return max > 0 ? Math.ceil(max * 1.05) : 100;
+  }, [chartData, performanceData]);
+
+  const maxCumulativePoints = useMemo(() => {
+    const activeData = chartData.length > 0 ? chartData : performanceData;
+    if (!activeData.length) return 100;
+    const max = Math.max(...activeData.map(d => toStatNumber(d.cumulativePoints)), 0);
+    return max > 0 ? Math.ceil(max * 1.05) : 100;
+  }, [chartData, performanceData]);
 
   // Reset range if data length changes
   useEffect(() => {
@@ -2163,7 +2178,7 @@ export default function CareerPage() {
           j?.player?.positionType ||
           j?.data?.position ||
           '';
-        
+
         if (!aborted && fetchedName) setPlayerName(fetchedName);
         if (!aborted && fetchedPosition) setPlayerPosition(fetchedPosition);
       } catch (e) {
@@ -3423,132 +3438,31 @@ export default function CareerPage() {
                       </Typography>
                     </Box>
 
-                    {/* Chart Container */}
+                    {/* Chart Container with Sticky Y-Axes */}
                     <Box
                       sx={{
                         width: '100%',
-                        overflowX: 'auto',
-                        pb: 1,
-                        '&::-webkit-scrollbar': { height: 6 },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: 'rgba(255, 255, 255, 0.2)',
-                          borderRadius: 3,
-                        },
+                        display: 'flex',
+                        position: 'relative',
+                        height: { xs: 250, sm: 280, md: 300 },
                       }}
                     >
+                      {/* Sticky Left Y-Axis */}
                       <Box
                         sx={{
-                          width: '100%',
-                          minWidth: chartData.length > 0
-                            ? Math.max(100, chartData.length * 40)
-                            : (performanceData.length > 0 ? Math.max(100, performanceData.length * 40) : '100%'),
-                          height: { xs: 250, sm: 280, md: 300 },
-                          px: 2,
+                          width: 65,
+                          flexShrink: 0,
+                          height: '100%',
+                          background: '#232528',
+                          zIndex: 10,
+                          position: 'relative',
                         }}
                       >
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart
                             data={chartData.length > 0 ? chartData : performanceData}
-                            margin={{ top: 10, left: 15, right: 15, bottom: groupMode === 'monthly' ? 40 : 50 }}
+                            margin={{ top: 10, left: 15, right: 0, bottom: groupMode === 'monthly' ? 65 : 75 }}
                           >
-                            <XAxis
-                              dataKey="label"
-                              tick={(props: any) => {
-                                const { x, y, payload, index, width: axisWidth } = props;
-                                const activeData = chartData.length > 0 ? chartData : performanceData;
-                                const currentItem = activeData[index];
-                                if (!currentItem) return <g></g>;
-
-                                const currentYear = currentItem.year;
-
-                                let yearStartIndex = index;
-                                while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
-                                  yearStartIndex--;
-                                }
-                                let yearEndIndex = index;
-                                while (yearEndIndex < activeData.length - 1 && activeData[yearEndIndex + 1].year === currentYear) {
-                                  yearEndIndex++;
-                                }
-                                const isYearCenter = index === Math.floor((yearStartIndex + yearEndIndex) / 2);
-
-                                const count = activeData.length;
-                                const widthVal = axisWidth || 800;
-                                const step = count > 1 ? widthVal / count : widthVal;
-                                const halfStep = step / 2;
-
-                                const drawLeftVertical = index === yearStartIndex;
-                                const drawRightVertical = index === yearEndIndex;
-
-                                const lineLeft = drawLeftVertical ? -halfStep + 3 : -halfStep;
-                                const lineRight = drawRightVertical ? halfStep - 3 : halfStep;
-
-                                const lineY = 32;
-                                const tickHeight = 6;
-
-                                return (
-                                  <g transform={`translate(${x},${y})`}>
-                                    <text
-                                      x={0}
-                                      y={0}
-                                      dx={-5}
-                                      dy={5}
-                                      textAnchor="end"
-                                      fill={themeColors.textDim}
-                                      fontSize={10}
-                                      transform="rotate(-90)"
-                                    >
-                                      {payload.value}
-                                    </text>
-
-                                    {/* Bracket lines for year grouping */}
-                                    <line
-                                      x1={lineLeft}
-                                      y1={lineY}
-                                      x2={lineRight}
-                                      y2={lineY}
-                                      stroke="rgba(255, 255, 255, 0.35)"
-                                      strokeWidth={1}
-                                    />
-                                    {drawLeftVertical && (
-                                      <line
-                                        x1={lineLeft}
-                                        y1={lineY}
-                                        x2={lineLeft}
-                                        y2={lineY - tickHeight}
-                                        stroke="rgba(255, 255, 255, 0.35)"
-                                        strokeWidth={1}
-                                      />
-                                    )}
-                                    {drawRightVertical && (
-                                      <line
-                                        x1={lineRight}
-                                        y1={lineY}
-                                        x2={lineRight}
-                                        y2={lineY - tickHeight}
-                                        stroke="rgba(255, 255, 255, 0.35)"
-                                        strokeWidth={1}
-                                      />
-                                    )}
-
-                                    {isYearCenter && (
-                                      <text
-                                        x={0}
-                                        y={lineY + 14}
-                                        textAnchor="middle"
-                                        fill={themeColors.textDim}
-                                        fontSize={11}
-                                        fontWeight="bold"
-                                      >
-                                        {currentYear}
-                                      </text>
-                                    )}
-                                  </g>
-                                );
-                              }}
-                              interval={0}
-                              tickLine={{ stroke: themeColors.border }}
-                              axisLine={{ stroke: themeColors.border }}
-                            />
                             <YAxis
                               yAxisId="avg"
                               stroke={themeColors.textDim}
@@ -3556,7 +3470,230 @@ export default function CareerPage() {
                               width={50}
                               tickLine={{ stroke: themeColors.border }}
                               axisLine={{ stroke: themeColors.border }}
+                              domain={[0, maxTotalPoints]}
                               label={{ value: 'Total XP', angle: -90, position: 'insideLeft', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
+                            />
+                            <YAxis
+                              yAxisId="cum"
+                              orientation="right"
+                              hide={true}
+                              domain={[0, maxCumulativePoints]}
+                            />
+                            {/* Dummy XAxis to reserve identical bottom spacing */}
+                            <XAxis dataKey="label" tick={false} tickLine={false} axisLine={false} />
+                            {/* Invisible Bar to force Y-axis generation */}
+                            <Bar
+                              yAxisId="avg"
+                              dataKey="totalPoints"
+                              fill="transparent"
+                              stroke="transparent"
+                              opacity={0}
+                              isAnimationActive={false}
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </Box>
+
+                      {/* Scrollable Chart Content */}
+                      <Box
+                        sx={{
+                          flexGrow: 1,
+                          overflowX: 'auto',
+                          pb: 1,
+                          height: '100%',
+                          '&::-webkit-scrollbar': { height: 6 },
+                          '&::-webkit-scrollbar-thumb': {
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: 3,
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: '100%',
+                            minWidth: chartData.length > 0
+                              ? Math.max(100, chartData.length * 40)
+                              : (performanceData.length > 0 ? Math.max(100, performanceData.length * 40) : '100%'),
+                            height: '100%',
+                          }}
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart
+                              data={chartData.length > 0 ? chartData : performanceData}
+                              margin={{ top: 10, left: 10, right: 10, bottom: groupMode === 'monthly' ? 65 : 75 }}
+                            >
+                              <XAxis
+                                dataKey="label"
+                                tick={({ x, y, payload, index, width: axisWidth }: { x: number; y: number; payload: { value: string | number }; index: number; width?: number }) => {
+                                  const activeData = chartData.length > 0 ? chartData : performanceData;
+                                  const currentItem = activeData[index];
+                                  if (!currentItem) return <g></g>;
+
+                                  const currentYear = currentItem.year;
+
+                                  let yearStartIndex = index;
+                                  while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
+                                    yearStartIndex--;
+                                  }
+                                  let yearEndIndex = index;
+                                  while (yearEndIndex < activeData.length - 1 && activeData[yearEndIndex + 1].year === currentYear) {
+                                    yearEndIndex++;
+                                  }
+                                  const isYearCenter = index === Math.floor((yearStartIndex + yearEndIndex) / 2);
+
+                                  const count = activeData.length;
+                                  const widthVal = axisWidth || 800;
+                                  const step = count > 1 ? widthVal / count : widthVal;
+                                  const halfStep = step / 2;
+
+                                  const drawLeftVertical = index === yearStartIndex;
+                                  const drawRightVertical = index === yearEndIndex;
+
+                                  const lineLeft = drawLeftVertical ? -halfStep + 3 : -halfStep;
+                                  const lineRight = drawRightVertical ? halfStep - 3 : halfStep;
+
+                                  const lineY = 45;
+                                  const tickHeight = 6;
+
+                                  return (
+                                    <g transform={`translate(${x},${y})`}>
+                                      <text
+                                        x={0}
+                                        y={0}
+                                        dx={-5}
+                                        dy={5}
+                                        textAnchor="end"
+                                        fill={themeColors.textDim}
+                                        fontSize={10}
+                                        transform="rotate(-90)"
+                                      >
+                                        {payload.value}
+                                      </text>
+
+                                      {/* Bracket lines for year grouping */}
+                                      <line
+                                        x1={lineLeft}
+                                        y1={lineY}
+                                        x2={lineRight}
+                                        y2={lineY}
+                                        stroke="rgba(255, 255, 255, 0.35)"
+                                        strokeWidth={1}
+                                      />
+                                      {drawLeftVertical && (
+                                        <line
+                                          x1={lineLeft}
+                                          y1={lineY}
+                                          x2={lineLeft}
+                                          y2={lineY - tickHeight}
+                                          stroke="rgba(255, 255, 255, 0.35)"
+                                          strokeWidth={1}
+                                        />
+                                      )}
+                                      {drawRightVertical && (
+                                        <line
+                                          x1={lineRight}
+                                          y1={lineY}
+                                          x2={lineRight}
+                                          y2={lineY - tickHeight}
+                                          stroke="rgba(255, 255, 255, 0.35)"
+                                          strokeWidth={1}
+                                        />
+                                      )}
+
+                                      {isYearCenter && (
+                                        <text
+                                          x={0}
+                                          y={lineY + 15}
+                                          textAnchor="middle"
+                                          fill={themeColors.textDim}
+                                          fontSize={11}
+                                          fontWeight="bold"
+                                        >
+                                          {currentYear}
+                                        </text>
+                                      )}
+                                    </g>
+                                  );
+                                }}
+                                interval={0}
+                                tickLine={{ stroke: themeColors.border }}
+                                axisLine={{ stroke: themeColors.border }}
+                              />
+                              <YAxis
+                                yAxisId="avg"
+                                hide={true}
+                                domain={[0, maxTotalPoints]}
+                              />
+                              <YAxis
+                                yAxisId="cum"
+                                orientation="right"
+                                hide={true}
+                                domain={[0, maxCumulativePoints]}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  background: themeColors.surfaceAlt,
+                                  border: `1px solid ${themeColors.border}`,
+                                  fontSize: 11,
+                                  borderRadius: 4,
+                                  color: themeColors.text
+                                }}
+                                labelStyle={{ fontWeight: 600, color: themeColors.text }}
+                                formatter={(value: unknown, name: unknown) => {
+                                  const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
+                                  const n = typeof name === 'string' ? name : String(name ?? '');
+                                  if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
+                                  if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
+                                  return [v, n];
+                                }}
+                              />
+
+                              {/* Bars for average points - Green/Teal */}
+                              <Bar
+                                yAxisId="avg"
+                                dataKey="totalPoints"
+                                fill={themeColors.chartBar}
+                                name="Total XP Points"
+                                maxBarSize={35}
+                                radius={[3, 3, 0, 0]}
+                              />
+
+                              {/* Line for cumulative points - Magenta/Pink */}
+                              <Line
+                                yAxisId="cum"
+                                type="monotone"
+                                dataKey="cumulativePoints"
+                                name="Cumulative XP Points"
+                                stroke={themeColors.chartLine}
+                                strokeWidth={2}
+                                dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
+                                activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
+                              />
+                            </ComposedChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </Box>
+
+                      {/* Sticky Right Y-Axis */}
+                      <Box
+                        sx={{
+                          width: 70,
+                          flexShrink: 0,
+                          height: '100%',
+                          background: '#232528',
+                          zIndex: 10,
+                          position: 'relative',
+                        }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            data={chartData.length > 0 ? chartData : performanceData}
+                            margin={{ top: 10, left: 0, right: 15, bottom: groupMode === 'monthly' ? 65 : 75 }}
+                          >
+                            <YAxis
+                              yAxisId="avg"
+                              hide={true}
+                              domain={[0, maxTotalPoints]}
                             />
                             <YAxis
                               yAxisId="cum"
@@ -3566,46 +3703,21 @@ export default function CareerPage() {
                               width={55}
                               tickLine={{ stroke: themeColors.border }}
                               axisLine={{ stroke: themeColors.border }}
+                              domain={[0, maxCumulativePoints]}
                               label={{ value: 'Cumulative XP', angle: 90, position: 'insideRight', style: { fill: themeColors.textDim, fontSize: 10, textAnchor: 'middle' } }}
                             />
-                            <Tooltip
-                              contentStyle={{
-                                background: themeColors.surfaceAlt,
-                                border: `1px solid ${themeColors.border}`,
-                                fontSize: 11,
-                                borderRadius: 4,
-                                color: themeColors.text
-                              }}
-                              labelStyle={{ fontWeight: 600, color: themeColors.text }}
-                              formatter={(value: unknown, name: unknown) => {
-                                const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-                                const n = typeof name === 'string' ? name : String(name ?? '');
-                                if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
-                                if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
-                                return [v, n];
-                              }}
-                            />
-
-                            {/* Bars for average points - Green/Teal */}
-                            <Bar
-                              yAxisId="avg"
-                              dataKey="totalPoints"
-                              fill={themeColors.chartBar}
-                              name="Total XP Points"
-                              maxBarSize={35}
-                              radius={[3, 3, 0, 0]}
-                            />
-
-                            {/* Line for cumulative points - Magenta/Pink */}
+                            {/* Dummy XAxis to reserve identical bottom spacing */}
+                            <XAxis dataKey="label" tick={false} tickLine={false} axisLine={false} />
+                            {/* Invisible Line to force Y-axis generation */}
                             <Line
                               yAxisId="cum"
                               type="monotone"
                               dataKey="cumulativePoints"
-                              name="Cumulative XP Points"
-                              stroke={themeColors.chartLine}
-                              strokeWidth={2}
-                              dot={{ r: 3, stroke: themeColors.chartLine, strokeWidth: 1, fill: themeColors.chartLine }}
-                              activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: themeColors.chartLine }}
+                              stroke="transparent"
+                              fill="transparent"
+                              opacity={0}
+                              dot={false}
+                              isAnimationActive={false}
                             />
                           </ComposedChart>
                         </ResponsiveContainer>
