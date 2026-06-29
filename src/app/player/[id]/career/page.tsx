@@ -695,6 +695,17 @@ function resolveResultForPlayer(match: LeagueMatch, playerId?: string): 'W' | 'L
   return null;
 }
 
+const strengthDescriptionMap: Record<string, string> = {
+  '% Impact': 'Match Impact: 25% or more above the league average.',
+  'Wins': 'Wins: 25% or more above the league average.',
+  'Captains Performance': 'Captains Performance: Surpassed the average wins of all captains in the league.',
+  'Frequent Top Performer': 'Frequent Top Performer: 25% or more MOTM votes than the league average.',
+  'Individual Brilliances': "Individual Brilliances: Received the captain's pick for outstanding performance more than 3 times.",
+  'Clean Sheet': 'Clean Sheet: Kept at least one clean sheet in matches.',
+  'Goals': 'Goals: Scored at least one goal in matches.',
+  'Assist': 'Assist: Made at least one assist in matches.',
+};
+
 // ---------- COMPONENT ----------
 export default function CareerPage() {
   // ...existing code...
@@ -1836,7 +1847,7 @@ export default function CareerPage() {
     }
 
     return "All your metrics are currently above the league average. Keep up the excellent work and continue building your consistency to maintain this edge!";
-  }, [filteredMatches.length, leagueComparisonRows, playerPosition, (data as any)?.player?.position, (data as any)?.position, isAttackingPlayer]);
+  }, [filteredMatches.length, leagueComparisonRows, playerPosition, data, isAttackingPlayer]);
 
   // Player's maximum statistics in a single match
   const playerMaxSingleMatchStats = useMemo(() => {
@@ -2022,17 +2033,6 @@ export default function CareerPage() {
     }));
   }, [yourStats, currentImpactLeagueAvg, averageCaptainWins, playerCaptainWinsCount]);
 
-  const strengthDescriptionMap: Record<string, string> = {
-    '% Impact': 'Match Impact: 25% or more above the league average.',
-    'Wins': 'Wins: 25% or more above the league average.',
-    'Captains Performance': 'Captains Performance: Surpassed the average wins of all captains in the league.',
-    'Frequent Top Performer': 'Frequent Top Performer: 25% or more MOTM votes than the league average.',
-    'Individual Brilliances': "Individual Brilliances: Received the captain's pick for outstanding performance more than 3 times.",
-    'Clean Sheet': 'Clean Sheet: Kept at least one clean sheet in matches.',
-    'Goals': 'Goals: Scored at least one goal in matches.',
-    'Assist': 'Assist: Made at least one assist in matches.',
-  };
-
   const topStrengthNote = useMemo(() => {
     if (!topStrengthRows.length) return '';
     const best = topStrengthRows[0];
@@ -2040,6 +2040,85 @@ export default function CareerPage() {
     if (desc) return desc;
     return `${best.metric}: ${best.yourDisplay}; league average ${best.leagueDisplay}.`;
   }, [topStrengthRows]);
+
+  const strongestNarrative = useMemo(() => {
+    const leagueAverage = currentImpactLeagueAvg || createEmptyLeagueMetrics();
+    const allStrengths = [
+      {
+        metric: '% Impact',
+        rank: 1,
+        yourTotal: toStatNumber(yourStats.impactAvg),
+        qualified: yourStats.n > 0 && toStatNumber(leagueAverage.impact) > 0 && yourStats.impactAvg >= 1.25 * toStatNumber(leagueAverage.impact),
+      },
+      {
+        metric: 'Wins',
+        rank: 2,
+        yourTotal: yourStats.wins,
+        qualified: toStatNumber(leagueAverage.wins) > 0 && yourStats.wins >= 1.25 * toStatNumber(leagueAverage.wins),
+      },
+      {
+        metric: 'Captains Performance',
+        rank: 3,
+        yourTotal: playerCaptainWinsCount,
+        qualified: yourStats.captainMatchesCount > 0 && playerCaptainWinsCount > averageCaptainWins,
+      },
+      {
+        metric: 'Frequent Top Performer',
+        rank: 4,
+        yourTotal: yourStats.motmVotes,
+        qualified: toStatNumber(leagueAverage.motmVotes) > 0 && yourStats.motmVotes >= 1.25 * toStatNumber(leagueAverage.motmVotes),
+      },
+      {
+        metric: 'Individual Brilliances',
+        rank: 5,
+        yourTotal: yourStats.defensiveImpactVotes,
+        qualified: yourStats.defensiveImpactVotes > 3,
+      },
+      {
+        metric: 'Clean Sheet',
+        rank: 6,
+        yourTotal: yourStats.cleanSheets,
+        qualified: yourStats.cleanSheets > 0,
+      },
+      {
+        metric: 'Goals',
+        rank: 7,
+        yourTotal: yourStats.goals,
+        qualified: yourStats.goals > 0,
+      },
+      {
+        metric: 'Assist',
+        rank: 7,
+        yourTotal: yourStats.assists,
+        qualified: yourStats.assists > 0,
+      },
+    ];
+
+    const strictlyQualified = allStrengths.filter(s => s.qualified);
+    if (strictlyQualified.length === 0) return null;
+
+    strictlyQualified.sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      return b.yourTotal - a.yourTotal;
+    });
+
+    const bestMetric = strictlyQualified[0].metric;
+    const narrativeMessages: Record<string, string> = {
+      'Goals': "You're among the top goal scorers! Ranked in the top 10% for goals scored in the league",
+      'Assist': "You're one of the top assist providers, ranked in the top 5% for assists in the league!",
+      'Clean Sheet': "You're goal keeping is impressive! Ranked among the top 27% for clean sheets in the league",
+      'Frequent Top Performer': "You’re a consistent standout! Regularly among the top performers in matches",
+      'Captains Performance': "Leading by example! You’ve earned the captain’s pick for outstanding performances multiple times.",
+      'Individual Brilliances': "A match-winning presence! Your individual brilliance is undeniable",
+      'Wins': "Winning mindset! You’re one of the top players with the most wins in the league",
+      '% Impact': "You make a difference every time! Your positive impact on games is among the highest in the league",
+    };
+
+    return {
+      metric: bestMetric,
+      message: narrativeMessages[bestMetric] || ''
+    };
+  }, [yourStats, currentImpactLeagueAvg, averageCaptainWins, playerCaptainWinsCount]);
 
   // Attempt to extract a name from the stats slice (adjust keys if your slice stores differently)
   const playerNameFromStats = useMemo(() => {
@@ -4061,6 +4140,42 @@ export default function CareerPage() {
                           <Typography sx={{ fontSize: 11, mt: 1.5, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
                             {topStrengthNote}
                           </Typography>
+                        )}
+                        {strongestNarrative && (
+                          <Box
+                            sx={{
+                              mt: 2,
+                              mx: { xs: 1.2, md: 5 },
+                              p: 2,
+                              borderRadius: 1,
+                              background: 'linear-gradient(135deg, rgba(229,106,22,0.12) 0%, rgba(207,35,38,0.12) 100%)',
+                              border: '1px solid rgba(229,106,22,0.3)',
+                              borderLeft: `4px solid ${themeColors.primary}`,
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                fontSize: 10,
+                                fontWeight: 'bold',
+                                color: themeColors.primary,
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.5,
+                                mb: 0.5,
+                              }}
+                            >
+                              Key Insight / Top Strength
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: 12,
+                                fontWeight: 500,
+                                color: '#fff',
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {strongestNarrative.message}
+                            </Typography>
+                          </Box>
                         )}
                         {/* <Box sx={{ mt: 1, pl: { xs: 1.5, md: 5 }, color: themeColors.textDim }}>
                           <Typography sx={{ fontSize: 10.5 }}>
