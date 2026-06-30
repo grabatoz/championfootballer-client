@@ -603,7 +603,7 @@ export default function WorldRankingTable() {
               stickyHeader
               size="small"
               sx={{
-                minWidth: { xs: 760, sm: 860 },
+                minWidth: { xs: 550, sm: 860 },
                 '& .MuiTableCell-root': { border: 'none' },
                 '& .MuiTableCell-head': {
                   bgcolor: '#dddddd !important',
@@ -623,6 +623,14 @@ export default function WorldRankingTable() {
                       { label: 'COUNTRY', key: 'position' },
                       { label: 'XP STATUS', key: 'position' },
                       ...(showAvg ? [{ label: 'AVG XP', key: 'avgXP' } as Column] : [{ label: 'TOTAL XP', key: 'totalXP' } as Column]),
+                    ];
+                    const colWidths = [
+                      { xs: 60, sm: 90 },
+                      { xs: 130, sm: 210 },
+                      { xs: 80, sm: 120 },
+                      { xs: 80, sm: 120 },
+                      { xs: 90, sm: 120 },
+                      { xs: 80, sm: 120 },
                     ];
                     return cols.map((col, i) => {
                       const isActiveSort = isSortableKey(col.key) && sort.key === col.key;
@@ -646,7 +654,9 @@ export default function WorldRankingTable() {
                             fontSize: 13,
                             letterSpacing: 0.5,
                             py: 1.5,
-                            minWidth: i === 0 ? 90 : i === 1 ? 210 : 120,
+                            minWidth: colWidths[i],
+                            width: colWidths[i],
+                            maxWidth: colWidths[i],
                             textAlign: isPrimaryInfoCol ? 'left' : 'center',
                             // borderBottom: '2px solid #e56a16 !important',
                             pl: i === 0 ? 3 : 1.5,
@@ -698,7 +708,7 @@ export default function WorldRankingTable() {
                         transition: 'background 0.15s',
                       }}
                     >
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8, minWidth: 90 }}>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, pl: 3, py: 1.8, minWidth: { xs: 60, sm: 90 }, width: { xs: 60, sm: 90 }, maxWidth: { xs: 60, sm: 90 } }}>
                         {p.rank}
                       </TableCell>
                       <TableCell
@@ -707,7 +717,9 @@ export default function WorldRankingTable() {
                           color: '#fff',
                           fontSize: 14,
                           py: 1.8,
-                          minWidth: 210,
+                          minWidth: { xs: 130, sm: 210 },
+                          width: { xs: 130, sm: 210 },
+                          maxWidth: { xs: 130, sm: 210 },
                           position: 'sticky',
                           left: 0,
                           zIndex: 3,
@@ -723,10 +735,10 @@ export default function WorldRankingTable() {
                           {p.name}
                         </Link>
                       </TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{getPositionShortForm(p.position)}</TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8 }}>{p.country || '-'}</TableCell>
-                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, textAlign: 'center' }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
-                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8, textAlign: 'center' }}>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, minWidth: { xs: 80, sm: 120 }, width: { xs: 80, sm: 120 }, maxWidth: { xs: 80, sm: 120 } }}>{getPositionShortForm(p.position)}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, minWidth: { xs: 80, sm: 120 }, width: { xs: 80, sm: 120 }, maxWidth: { xs: 80, sm: 120 } }}>{p.country || '-'}</TableCell>
+                      <TableCell sx={{ color: '#ccc', fontSize: 13, py: 1.8, textAlign: 'center', minWidth: { xs: 90, sm: 120 }, width: { xs: 90, sm: 120 }, maxWidth: { xs: 90, sm: 120 } }}>{getLevelTitle(p.totalXP ?? 0)}</TableCell>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: 14, py: 1.8, textAlign: 'center', minWidth: { xs: 80, sm: 120 }, width: { xs: 80, sm: 120 }, maxWidth: { xs: 80, sm: 120 } }}>
                         {filters.mode === 'avg'
                           ? formatNum(p.avgXP, { decimals: 2 })
                           : formatNum(p.totalXP)}

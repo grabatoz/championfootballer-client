@@ -1083,7 +1083,7 @@ const AllPlayersPage = () => {
               sx={{
                 width: { xs: '100%', md: '440px' },
                 ml: { xs: 0, md: 0.8 },
-                color:'white',
+                color: 'white',
                 '& .MuiOutlinedInput-root': {
                   height: { xs: 38, sm: 42 },
                   color: 'white',
@@ -1634,7 +1634,9 @@ const AllPlayersPage = () => {
                 pr: { xs: 2, sm: 3 },
                 backgroundColor: '#dddddd',
                 // borderRadius: '8px 8px 0 0',
-                borderBottom: '1px solid rgba(0,0,0,0.12)'
+                borderBottom: '1px solid rgba(0,0,0,0.12)',
+                borderTopLeftRadius: '8px',
+                borderTopRightRadius: '8px',
               }}>
                 {/* All Positions */}
                 <Box
@@ -1657,7 +1659,7 @@ const AllPlayersPage = () => {
                     backgroundColor: '#dddddd',
                     boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                   }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
                     {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
                   </Typography>
                   <Box
@@ -1721,7 +1723,7 @@ const AllPlayersPage = () => {
                   display: 'block',
                   textAlign: 'center'
                 }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
                     PLAYING STYLE
                   </Typography>
                 </Box>
@@ -1731,14 +1733,14 @@ const AllPlayersPage = () => {
 
                 {/* View Stats */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, textTransform: 'uppercase', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
                     VIEW STATS
                   </Typography>
                 </Box>
 
                 {/* XP Points */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 'bold', fontSize: { xs: 11, sm: 19 }, fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
                     <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
                   </Typography>
                 </Box>
@@ -1836,11 +1838,11 @@ const AllPlayersPage = () => {
                                 backgroundColor: rowBgColorHover,
                                 boxShadow: '8px 0 12px -12px rgba(0,0,0,0.72)',
                               },
-                               position: 'sticky',
-                    left: 0,
-                    zIndex: 3,
-                    // backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                    boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 3,
+                              // backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                              boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                             }}>
                               <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                                 <Box sx={{
