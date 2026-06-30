@@ -1659,7 +1659,7 @@ const AllPlayersPage = () => {
                     backgroundColor: '#dddddd',
                     boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                   }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                     {selectedPosition === 'all' ? 'ALL POSITIONS' : selectedPosition.toUpperCase()}
                   </Typography>
                   <Box
@@ -1723,7 +1723,7 @@ const AllPlayersPage = () => {
                   display: 'block',
                   textAlign: 'center'
                 }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                     PLAYING STYLE
                   </Typography>
                 </Box>
@@ -1733,14 +1733,14 @@ const AllPlayersPage = () => {
 
                 {/* View Stats */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                     VIEW STATS
                   </Typography>
                 </Box>
 
                 {/* XP Points */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 700, fontSize: 13, letterSpacing: 0.5, fontFamily: "'Inter', Roboto, Helvetica, Arial, sans-serif" }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                     <span style={{ textTransform: 'uppercase' }}>CAREER</span> xp
                   </Typography>
                 </Box>

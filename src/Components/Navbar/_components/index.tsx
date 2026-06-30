@@ -2554,6 +2554,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           badgeContent={unreadCount} 
           color="error" 
           max={99}
+          sx={{
+            '& .MuiBadge-badge': {
+              right: 0,
+              top: 0,
+            }
+          }}
         >
           <NotificationsIcon sx={{ fontSize: 20 }} />
         </Badge>
@@ -3055,7 +3061,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             alignItems: 'center',
             gridTemplateColumns: `repeat(${mobileBottomItems.length}, minmax(0, 1fr))`,
             width: '100%',
-            overflowX: 'hidden',
+            overflow: 'visible',
             px: 0.6,
             pr: 'max(env(safe-area-inset-right), 8px)',
             py: 0.4,

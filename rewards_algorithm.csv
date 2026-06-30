@@ -1,0 +1,16 @@
+Category,Reward/Badge Name,Rule Description,Calculation Formula / Trigger,XP Awarded,Streak / Target Limit
+Base & Stats XP,Match Played,XP earned for participating in a match,Every published match where player is in home or away team,10 XP per match,No Limit
+Base & Stats XP,Match Win,XP earned for winning a match,Team goals > Opponent goals,50 XP per win,No Limit
+Base & Stats XP,Match Draw,XP earned for drawing a match,Team goals == Opponent goals,20 XP per draw,No Limit
+Base & Stats XP,Goal Scored,XP earned for scoring a goal,Individual goals recorded in playerStats,100 XP per goal,No Limit
+Base & Stats XP,Assist Made,XP earned for making an assist,Individual assists recorded in playerStats,70 XP per assist,No Limit
+Base & Stats XP,MOTM Vote Received,XP earned for each Man of the Match vote received,Total votes received in manOfTheMatchVotes,120 XP per vote,No Limit
+Badges & Streaks,Goal Rush,Scoring in consecutive matches,Scoring at least 1 goal in 5 consecutive matches in a league,100 XP per streak,Target: 5 consecutive matches
+Badges & Streaks,Pure Magic,Assisting in consecutive matches,Making at least 1 assist in 5 consecutive matches in a league,100 XP per streak,Target: 5 consecutive matches
+Badges & Streaks,Triple Treat,Scoring hat-tricks in consecutive matches,Scoring 3 or more goals in 3 consecutive matches in a league,150 XP per streak,Target: 3 consecutive matches
+Badges & Streaks,Leader of Legends,Wins as team Captain,Winning a match while assigned as Home or Away Captain (3 times in a league),200 XP per 3 wins,Target: 3 Captain wins (re-earnable)
+Badges & Streaks,The X-Factor,Voted impact player in matches,Voted as Mentality and/or Defensive Impact player in 5 matches in a league,200 XP per 5 matches,Target: 5 matches (re-earnable)
+Badges & Streaks,Spotlight Star,Winning the overall MOTM award,Top vote-getter in match votes (earned 3 times in a league),250 XP per 3 awards,Target: 3 MOTM awards (re-earnable)
+Badges & Streaks,Finders Keepers,Team Clean Sheets,Opponent scores 0 goals in match (earned 3 times in a league),300 XP per 3 clean sheets,Target: 3 Clean Sheets (re-earnable)
+Badges & Streaks,Iron Will,High participation rate in league,Playing in at least 90% of completed matches in a league,400 XP per league,Target: 90% participation
+Badges & Streaks,Win Streak X,Winning consecutive matches,Winning 10 consecutive matches in a league,500 XP per streak,Target: 10 consecutive wins
