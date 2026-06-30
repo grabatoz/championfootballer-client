@@ -4718,7 +4718,7 @@ export default function LeagueDetailPage() {
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
                                                     <Typography className="league-table-heading league-table-heading-no-transform" sx={{ color: '#000000' }}>
-                                                        xpPTS
+                                                        CAREER xp
                                                     </Typography>
                                                 </Box>
                                             </Box>

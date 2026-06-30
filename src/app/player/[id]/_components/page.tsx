@@ -1961,7 +1961,7 @@ export default function PlayerStatsPage() {
     // Icon-style item now uses football.png with value centered, label below
     const StatItem = ({ label, value }: { label: string; value: number }) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
-            <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.8 }}>
+            <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.2 }}>
                 <Typography sx={{
                     color: '#ffffff',
                     fontSize: { xs: 15, sm: 17, md: 19 },
@@ -3299,7 +3299,7 @@ export default function PlayerStatsPage() {
                             </Grid>
                             <Grid item xs={12} sm={4} md>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
-                                    <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.8 }}>
+                                    <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.2 }}>
                                         <Typography sx={{
                                             color: '#ffffff',
                                             fontSize: { xs: 15, sm: 17, md: 19 },
