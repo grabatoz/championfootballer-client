@@ -1720,10 +1720,10 @@ const AllPlayersPage = () => {
                   minWidth: { xs: 108, sm: 150, md: 180 },
                   flexShrink: 0,
                   pr: { xs: 0.5, sm: 2 },
+                  pl: { xs: 1.5, sm: 2.5 },
                   display: 'block',
-                  textAlign: 'center'
                 }}>
-                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
+                  <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif', textAlign: 'left !important' }}>
                     PLAYING STYLE
                   </Typography>
                 </Box>
@@ -1926,8 +1926,9 @@ const AllPlayersPage = () => {
                               flexShrink: 0,
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              pr: { xs: 0.5, sm: 2 }
+                              justifyContent: 'flex-start',
+                              pr: { xs: 0.5, sm: 2 },
+                              pl: { xs: 1.5, sm: 2.5 }
                             }}>
                               <Typography sx={{
                                 fontSize: { xs: 11, sm: 13, md: 18 },

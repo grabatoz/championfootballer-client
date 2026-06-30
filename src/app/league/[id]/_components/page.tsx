@@ -4697,12 +4697,12 @@ export default function LeagueDetailPage() {
                                                     minWidth: { xs: 108, sm: 150, md: 180 },
                                                     flexShrink: 0,
                                                     pr: { xs: 0.5, sm: 2 },
+                                                    pl: { xs: 1.5, sm: 2.5 },
                                                     display: 'block',
-                                                    textAlign: 'center'
                                                 }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#000000' }}>
-                                                        PLAYING STYLE
-                                                    </Typography>
+                                                    <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
+                                                        STYLE
+                                                     </Typography>
                                                 </Box>
 
                                                 {/* Spacer */}
@@ -4839,8 +4839,9 @@ export default function LeagueDetailPage() {
                                                                     flexShrink: 0,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
-                                                                    justifyContent: 'center',
+                                                                    justifyContent: 'flex-start',
                                                                     pr: { xs: 0.5, sm: 2 },
+                                                                    pl: { xs: 1.5, sm: 2.5 },
                                                                 }}>
                                                                     <Typography className="league-table-row-text" sx={{ fontWeight: 'bold', fontSize: { xs: 11, sm: 13, md: 18 }, color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-woodford-bourne-pro), sans-serif' }}>
                                                                         {member.style}
