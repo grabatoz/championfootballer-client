@@ -1724,7 +1724,7 @@ const AllPlayersPage = () => {
                   display: 'block',
                 }}>
                   <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif', textAlign: 'left !important' }}>
-                    PLAYING STYLE
+                    STYLE
                   </Typography>
                 </Box>
 

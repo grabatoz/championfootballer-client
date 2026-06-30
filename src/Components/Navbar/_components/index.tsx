@@ -2547,6 +2547,13 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       isActive: () => isNavActive('REWARDS', '/rewards'),
     },
     {
+      key: 'players',
+      label: 'Players',
+      icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
+      href: '/all-players',
+      isActive: () => isNavActive('PLAYERS', '/all-players'),
+    },
+    {
       key: 'notifications',
       label: 'Alerts',
       icon: (
