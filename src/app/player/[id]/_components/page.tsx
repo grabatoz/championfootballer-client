@@ -1961,17 +1961,17 @@ export default function PlayerStatsPage() {
     // Icon-style item now uses football.png with value centered, label below
     const StatItem = ({ label, value }: { label: string; value: number }) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
-            <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.8)', pb: 0.5, mb: 0.8 }}>
-                <Typography sx={{ 
-                    color: '#22c55e', 
-                    fontSize: { xs: 15, sm: 17, md: 19 }, 
+            <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.8 }}>
+                <Typography sx={{
+                    color: '#ffffff',
+                    fontSize: { xs: 15, sm: 17, md: 19 },
                     fontWeight: 600,
                     px: { xs: 0.5, md: 1 }
                 }}>
                     {label}
                 </Typography>
             </Box>
-            <Typography sx={{ color: '#ffffff', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
+            <Typography sx={{ color: '#22c55e', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
                 {value ?? 0}
             </Typography>
         </Box>
@@ -3299,17 +3299,17 @@ export default function PlayerStatsPage() {
                             </Grid>
                             <Grid item xs={12} sm={4} md>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
-                                    <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.8)', pb: 0.5, mb: 0.8 }}>
-                                        <Typography sx={{ 
-                                            color: '#22c55e', 
-                                            fontSize: { xs: 15, sm: 17, md: 19 }, 
+                                    <Box sx={{ width: '100%', borderBottom: '1px solid rgba(255, 255, 255, 0.25)', pb: 0.1, mb: 0.8 }}>
+                                        <Typography sx={{
+                                            color: '#ffffff',
+                                            fontSize: { xs: 15, sm: 17, md: 19 },
                                             fontWeight: 600,
                                             px: { xs: 0.5, md: 1 }
                                         }}>
                                             Total xp
                                         </Typography>
                                     </Box>
-                                    <Typography sx={{ color: '#ffffff', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
+                                    <Typography sx={{ color: '#22c55e', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
                                         {xpLoading ? '...' : `${Math.max(0, displayXp).toLocaleString()} XP`}
                                     </Typography>
                                     {/* <Box sx={{ 

@@ -2517,7 +2517,7 @@ export default function GlobalTrophyRoom() {
       {/* Full-Width Header Section */}
       <Box sx={{
         mt: 0,
-        mb: { xs: 1.5, sm: 4, md: 2 },
+        mb: { xs: 4, sm: 4, md: 4 },
       }}>
         {/* Orange top border */}
         {/* <Box sx={{ height: '4px', bgcolor: '#E56A16', width: '100%' }} /> */}

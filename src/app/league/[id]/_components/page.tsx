@@ -4990,7 +4990,7 @@ export default function LeagueDetailPage() {
                                                                 overflow: 'hidden',
                                                                 background: '#222',
                                                                 cursor: 'pointer',
-                                                                border: '2px solid #fff',
+                                                                border: '1px solid #fff',
                                                                 '& .MuiCardContent-root': {
                                                                     pb: 0
                                                                 },
@@ -5041,7 +5041,7 @@ export default function LeagueDetailPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
-                                                                    borderBottom: '2px solid #fff',
+                                                                    borderBottom: '1px solid #fff',
                                                                     gap: 0
                                                                 }}>
                                                                     {/* Home Team */}
@@ -5255,7 +5255,7 @@ export default function LeagueDetailPage() {
                                                                     {/* Right Admin Column */}
                                                                     <Box sx={{
                                                                         width: '95px',
-                                                                        borderLeft: '2px solid #fff',
+                                                                        borderLeft: '1px solid #fff',
                                                                         borderTop: 'none',
                                                                         pl: 1,
                                                                         pr: 2,
@@ -5426,7 +5426,7 @@ export default function LeagueDetailPage() {
                                                                 borderRadius: 1,
                                                                 overflow: 'hidden',
                                                                 background: '#222',
-                                                                border: '2px solid #fff',
+                                                                border: '1px solid #fff',
                                                                 '& .MuiCardContent-root:last-child': {
                                                                     paddingBottom: 0
                                                                 },
@@ -5507,7 +5507,7 @@ export default function LeagueDetailPage() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
-                                                                    borderBottom: '2px solid #fff',
+                                                                    borderBottom: '1px solid #fff',
                                                                     mt: -3.5,
                                                                     gap: 0
                                                                 }}>
@@ -5778,8 +5778,9 @@ export default function LeagueDetailPage() {
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
-                                                                                                border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
+                                                                                                border: '1px solid #F97316',
                                                                                                 color: 'white',
+                                                                                                borderWidth: '1px !important',
                                                                                             }}
                                                                                         >
                                                                                             Add Stats
@@ -5799,7 +5800,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
+                                                                                    border: '1px solid #F97316',
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -5812,7 +5813,7 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' },
+                                                                                    border: '1px solid #F97316',
                                                                                     '&.Mui-disabled': { color: 'white' },
                                                                                 }}
                                                                             >
@@ -5824,7 +5825,7 @@ export default function LeagueDetailPage() {
                                                                     {/* Right Admin Column */}
                                                                     <Box sx={{
                                                                         width: '100px',
-                                                                        borderLeft: '2px solid #fff',
+                                                                        borderLeft: '1px solid #fff',
                                                                         borderTop: 'none',
                                                                         p: 1,
                                                                         display: 'flex',
@@ -5924,7 +5925,7 @@ export default function LeagueDetailPage() {
                                                                     sx={{
                                                                         display: 'grid',
                                                                         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                                                                        borderTop: '2px solid #fff',
+                                                                        borderTop: '1px solid #fff',
                                                                         backgroundColor: '#F97316',
                                                                     }}
                                                                 >

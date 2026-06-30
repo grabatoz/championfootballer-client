@@ -2755,7 +2755,7 @@ export default function AllMatches() {
                                             borderRadius: 1,
                                             overflow: 'hidden',
                                             background: '#222',
-                                            border: '2px solid #fff',
+                                            border: '1px solid #fff',
                                             '& .MuiCardContent-root:last-child': { paddingBottom: 0 },
                                             '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)' },
                                         }}
@@ -2781,7 +2781,7 @@ export default function AllMatches() {
                                             </Box>
 
                                             {/* Teams & Score */}
-                                            <Box sx={{ pl: 1, pr: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #fff', mt: -3.5, gap: 0 }}>
+                                            <Box sx={{ pl: 1, pr: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #fff', mt: -3.5, gap: 0 }}>
                                                 {/* Home Team */}
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
                                                     <Image src={match.homeTeamImage || HomeTeamImage} alt={match.homeTeamName || 'Home'} width={65} height={65} style={{ objectFit: 'contain' }} />
@@ -2963,7 +2963,7 @@ export default function AllMatches() {
                                                             <Button
                                                                 size="small"
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
-                                                                sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' } }}
+                                                                sx={{ ...resultCardActionButtonSx, border: '1px solid #F97316' }}
                                                             >
                                                                 Add Stats
                                                             </Button>
@@ -2975,7 +2975,7 @@ export default function AllMatches() {
                                                             onClick={(e) => { e.stopPropagation(); setViewTeamMatch({ leagueId: String(match.leagueId), matchId: match.id, matchNumber }); setViewTeamOpen(true); }}
                                                             startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                             disabled={match.archived}
-                                                            sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' } }}
+                                                            sx={{ ...resultCardActionButtonSx, border: '1px solid #F97316' }}
                                                         >
                                                             View Teams
                                                         </Button>
@@ -2984,7 +2984,7 @@ export default function AllMatches() {
                                                             onClick={() => { setResultsMatchId(match.id); setResultsDialogOpen(true); }}
                                                             startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                             disabled={match.archived}
-                                                            sx={{ ...resultCardActionButtonSx, border: { xs: '2.5px solid #F97316', sm: '2px solid #F97316' }, '&.Mui-disabled': { color: 'white' } }}
+                                                            sx={{ ...resultCardActionButtonSx, border: '1px solid #F97316', '&.Mui-disabled': { color: 'white' } }}
                                                         >
                                                             Results
                                                         </Button>
@@ -2994,7 +2994,7 @@ export default function AllMatches() {
                                                 </Box>
 
                                                 {/* Right Admin Column */}
-                                                <Box sx={{ width: '100px', borderLeft: '2px solid #fff', borderTop: 'none', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+                                                <Box sx={{ width: '100px', borderLeft: '1px solid #fff', borderTop: 'none', p: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
                                                     {isAdmin ? (
                                                         <>
                                                             <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left', ml: '5px' }}> Admin Only</Typography>
@@ -3067,7 +3067,7 @@ export default function AllMatches() {
                                                 sx={{
                                                     display: 'grid',
                                                     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                                                    borderTop: '2px solid #fff',
+                                                    borderTop: '1px solid #fff',
                                                     backgroundColor: '#F97316',
                                                 }}
                                             >
@@ -3136,7 +3136,7 @@ export default function AllMatches() {
                                         overflow: 'hidden',
                                         background: '#222',
                                         cursor: 'pointer',
-                                        border: '2px solid #fff',
+                                        border: '1px solid #fff',
                                         '& .MuiCardContent-root': { pb: 0 },
                                         '& .MuiCardContent-root:last-child': { pb: 0 },
                                         '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(0, 0, 0, 0.4)' },
@@ -3152,7 +3152,7 @@ export default function AllMatches() {
 
                                     <CardContent sx={{ p: 0 }}>
                                         {/* Teams & VS */}
-                                        <Box sx={{ pl: 1, pr: 1, py: { xs: 0.75, sm: 0 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #fff', gap: { xs: 1, sm: 0 } }}>
+                                        <Box sx={{ pl: 1, pr: 1, py: { xs: 0.75, sm: 0 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #fff', gap: { xs: 1, sm: 0 } }}>
                                             {/* Home Team */}
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
                                                 <Image src={match.homeTeamImage || HomeTeamImage} alt={match.homeTeamName || 'Home'} width={isMobile ? 54 : 65} height={isMobile ? 54 : 65} style={{ objectFit: 'contain' }} />
@@ -3247,7 +3247,7 @@ export default function AllMatches() {
                                             </Box>
 
                                             {/* Right Admin Column */}
-                                            <Box sx={{ width: '95px', borderLeft: '2px solid #fff', borderTop: 'none', pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
+                                            <Box sx={{ width: '95px', borderLeft: '1px solid #fff', borderTop: 'none', pl: 1, pr: 2, py: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2 }}>
                                                 {isAdmin ? (
                                                     <>
                                                         <Typography sx={{ color: 'white', fontSize: '0.65rem', textAlign: 'left' }}> Admin Only</Typography>
@@ -3298,7 +3298,7 @@ export default function AllMatches() {
                                             sx={{
                                                 display: 'grid',
                                                 gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                                                borderTop: '2px solid #fff',
+                                                borderTop: '1px solid #fff',
                                                 backgroundColor: '#F97316',
                                             }}
                                         >
