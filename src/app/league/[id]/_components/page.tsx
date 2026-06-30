@@ -4711,7 +4711,7 @@ export default function LeagueDetailPage() {
                                                 {/* View Stats Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
                                                     <Typography className="league-table-heading" sx={{ color: '#000000' }}>
-                                                        VIEW STATS
+                                                        {isMobile ? 'STATS' : 'VIEW STATS'}
                                                     </Typography>
                                                 </Box>
 

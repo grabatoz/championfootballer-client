@@ -1734,7 +1734,7 @@ const AllPlayersPage = () => {
                 {/* View Stats */}
                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
                   <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
-                    VIEW STATS
+                    {isMobile ? 'STATS' : 'VIEW STATS'}
                   </Typography>
                 </Box>
 
