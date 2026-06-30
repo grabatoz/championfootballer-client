@@ -2813,6 +2813,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontWeight: 500,
                                             textAlign: 'center'
                                         },
+                                        '& .MuiInputBase-input:focus::placeholder': {
+                                            color: 'transparent',
+                                            opacity: 0,
+                                        },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
@@ -2860,6 +2864,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             fontWeight: 500,
                                             textAlign: 'center'
                                         },
+                                        '& .MuiInputBase-input:focus::placeholder': {
+                                            color: 'transparent',
+                                            opacity: 0,
+                                        },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
@@ -2906,6 +2914,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                             opacity: 1,
                                             fontWeight: 500,
                                             textAlign: 'center'
+                                        },
+                                        '& .MuiInputBase-input:focus::placeholder': {
+                                            color: 'transparent',
+                                            opacity: 0,
                                         },
                                         '& input[type=number]': { MozAppearance: 'textfield' },
                                         '& input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
