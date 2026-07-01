@@ -3260,7 +3260,7 @@ export default function PlayerStatsPage() {
                         </Box>
 
                         {/* Stats Row */}
-                        <Grid container spacing={0} sx={{ mb: 3, justifyContent: 'flex-start' }}>
+                        <Grid container spacing={0} rowSpacing={1.5} sx={{ mb: 3, justifyContent: 'flex-start' }}>
                             <Grid item xs={4} sm={4} md>
                                 <StatItem
                                     label="Apps"
