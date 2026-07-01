@@ -4189,11 +4189,20 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
       {/* YOUR EXISTING DIALOGS - keeping them as they were */}
       <Dialog open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{
-          background: '#2b2b2b',
+          // background: '#2b2b2b',
+          // color: 'white',
+          // fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
+          // fontWeight: 600,
+          // fontSize: { xs: '24px', md: '32px' }
+           background: '#0e0e0e',
           color: 'white',
           fontFamily: 'Franklin Gothic Demi, Franklin Gothic Medium, Arial, sans-serif',
           fontWeight: 600,
-          fontSize: { xs: '24px', md: '32px' }
+          fontSize: { xs: '24px', md: '32px' },
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '3px solid #E56A16'
         }}>
           How to Play
           <IconButton
