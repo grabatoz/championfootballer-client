@@ -4359,8 +4359,7 @@ Compete for individual awards and seasonal honours. Every achievement is stored 
           <Typography variant="body1" sx={{ mb: 2 }}>
 Every match stats and trophy becomes part of your permanent football record as you build your legacy within your leagues          </Typography>
             <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-Important League Management Controls
-          </Typography>
+Important Management Controls:          </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
 <b>League Player Admins </b> can create leagues, manage players, schedule fixtures, generate teams, add scores, approve player stats and manage league settings          </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>

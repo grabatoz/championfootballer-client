@@ -1971,7 +1971,7 @@ export default function PlayerStatsPage() {
                     {label}
                 </Typography>
             </Box>
-            <Typography sx={{ color: '#22c55e', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
+            <Typography sx={{ color: '#00a780', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
                 {value ?? 0}
             </Typography>
         </Box>
@@ -3309,7 +3309,7 @@ export default function PlayerStatsPage() {
                                             Total xp
                                         </Typography>
                                     </Box>
-                                    <Typography sx={{ color: '#22c55e', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
+                                    <Typography sx={{ color: '#00a780', fontSize: { xs: 15, sm: 17, md: 18 }, fontWeight: 700, px: { xs: 0.5, md: 1 } }}>
                                         {xpLoading ? '...' : `${Math.max(0, displayXp).toLocaleString()} XP`}
                                     </Typography>
                                     {/* <Box sx={{ 
