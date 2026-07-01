@@ -4414,6 +4414,7 @@ export default function LeagueDetailPage() {
                                             variant="outlined"
                                             size="small"
                                             sx={{
+                                                display: { xs: 'none', sm: 'inline-flex' },
                                                 color: section === 'table' ? '#ffffff' : '#374151',
                                                 backgroundColor: section === 'table' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                 fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
@@ -4445,6 +4446,7 @@ export default function LeagueDetailPage() {
                                             variant="outlined"
                                             size="small"
                                             sx={{
+                                                display: { xs: 'none', sm: 'inline-flex' },
                                                 color: section === 'results' ? '#ffffff' : '#374151',
                                                 backgroundColor: section === 'results' ? '#10B981' : 'rgba(255,255,255,0.92)',
 
@@ -4472,6 +4474,7 @@ export default function LeagueDetailPage() {
                                             variant="outlined"
                                             size="small"
                                             sx={{
+                                                display: { xs: 'none', sm: 'inline-flex' },
                                                 color: section === 'matches' ? '#ffffff' : '#374151',
                                                 backgroundColor: section === 'matches' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                 fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
@@ -4524,6 +4527,7 @@ export default function LeagueDetailPage() {
                                             variant="outlined"
                                             size="small"
                                             sx={{
+                                                display: { xs: 'none', sm: 'inline-flex' },
                                                 color: section === 'members' ? '#ffffff' : '#374151',
                                                 backgroundColor: section === 'members' ? '#10B981' : 'rgba(255,255,255,0.92)',
                                                 fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
@@ -4582,7 +4586,7 @@ export default function LeagueDetailPage() {
                             minHeight: 400,
                             borderRadius: 3,
                             boxShadow: 'none',
-                            mt: section === 'dream-team' ? 0 : 1.2,
+                            mt: section === 'dream-team' ? 0 : 4,
                             // backdropFilter: 'blur(10px)'
                         }}>
                             {section === 'members' && (
@@ -4636,7 +4640,7 @@ export default function LeagueDetailPage() {
                                                         backgroundColor: '#dddddd',
                                                         borderTopLeftRadius: '8px',
                                                     }}>
-                                                        <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
+                                                    <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
                                                         {selectedMemberPosition === 'all' ? 'ALL POSITIONS' : selectedMemberPosition.toUpperCase()}
                                                     </Typography>
                                                     <Box
@@ -4702,7 +4706,7 @@ export default function LeagueDetailPage() {
                                                 }}>
                                                     <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
                                                         STYLE
-                                                     </Typography>
+                                                    </Typography>
                                                 </Box>
 
                                                 {/* Spacer */}
@@ -4937,10 +4941,9 @@ export default function LeagueDetailPage() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: 1.5,
-                                        mt: 1,
+                                        // mt: 1,
+                                        mb: 2,
                                     }}>
-
-
                                         <Typography
                                             sx={{
                                                 color: 'rgba(255,255,255,0.78)',
@@ -4949,7 +4952,8 @@ export default function LeagueDetailPage() {
                                                 px: { xs: 1.5, sm: 2.5 },
                                                 mb: 2,
                                                 lineHeight: 1.5,
-                                                mt: 2
+                                                mt: 2,
+                                                // mb: 2
                                             }}
                                         >
                                             Match fixtures will move to Match Results once the match has finished. Please check the fixture duration time to know when to view completed matches.

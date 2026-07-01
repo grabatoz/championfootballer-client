@@ -390,7 +390,7 @@ function LeagueMembersDialog({
   if (!league) return null
 
   const isAdmin = league.adminId === currentUserId || (league.administrators || []).some((a) => a.id === currentUserId)
-  const memberCount = league.members?.length || 0
+  const memberCount = (league.members && Array.isArray(league.members)) ? league.members.filter((m: any) => !(m.isGuest || (m.email && String(m.email).toLowerCase().includes('guest')) || m.provider === 'guest' || (m.lastName && String(m.lastName).toLowerCase().includes('guest')))).length : (typeof league.memberCount === 'number' ? league.memberCount : 0)
   const matchCount = league.matches?.length || 0
   const leagueAdmin = (league.members || []).find((m) => m.id === league.adminId)
     || (league.administrators || []).find((a) => a.id === league.adminId)
@@ -2722,7 +2722,7 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.8 }}>
                               <Image src={faceicon} alt="Players" width={18} height={18} style={{ flexShrink: 0 }} />
                               <Typography sx={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-league-spartan), "League Spartan", sans-serif', fontWeight: 300, fontSize: { xs: '12px', md: '16px' } }}>
-                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
+                                Players {(typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0))}
                               </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
@@ -5455,7 +5455,7 @@ function AllLeagues() {
         </Box>
 
         {/* Leagues List - Card Format */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 1, sm: 2, md: 13 }, mb: 7 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, px: { xs: 1, sm: 2, md: 13 }, mb: 7 , mt:4}}>
           {loading ? (
             <AllLeaguesLoadingSkeleton compact />
           ) : leagues.length === 0 ? (
@@ -5770,7 +5770,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
+                                Players {(typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0))}
                               </Typography>
                             </Box>
 
@@ -5822,7 +5822,7 @@ function AllLeagues() {
                                 fontWeight: 300,
                                 fontSize: { xs: '10px', sm: '16px' }
                               }}>
-                                Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
+                                Players {(typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0))}
                               </Typography>
                             </Box>
 
@@ -6407,7 +6407,7 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
+                                    Players {(typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0))}
                                   </Typography>
                                 </Box>
 
@@ -6453,7 +6453,7 @@ function AllLeagues() {
                                     fontWeight: 300,
                                     fontSize: { xs: '10px', sm: '16px' }
                                   }}>
-                                    Players {typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0)}
+                                    Players {(typeof league.memberCount === 'number' ? league.memberCount : (league.members?.length || 0))}
                                   </Typography>
                                 </Box>
 

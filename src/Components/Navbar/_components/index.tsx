@@ -65,7 +65,13 @@ import leagueimg from '@/Components/images/leagueimg.png';
 import progressimg from '@/Components/images/progressimg.png';
 import leaguesetting from '@/Components/images/leaguesetting.png';
 import matchdetails from '@/Components/images/matchdetails.png';
-import palyerstats from '@/Components/images/palyerstats.png';
+import availability from '@/Components/images/availability.png'
+import teamsection from '@/Components/images/teamsection.png';
+import playmatch from '@/Components/images/playmatch.png';
+import submitresult from '@/Components/images/submitresult.png';
+import trophyroomandrewards from '@/Components/images/trophyroomandrewards.png';
+import trackperformance from '@/Components/images/trackperformance.png';
+import individualstats from '@/Components/images/individualstats.png';
 import player from '@/Components/images/profile-user.png'
 import logoutpic from '@/Components/images/logout.png'
 import { useAuth } from '@/lib/hooks';
@@ -4214,7 +4220,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             fontWeight: 400,
             fontSize: { xs: '16px', md: '18px' }
           }}>
-            After signup, open your player profile and set your card details and skill levels. Keeping your card updated helps with fair team balance and better match setup.
+            Set up your player profile with your player card and profile picture to start tracking your football journey
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Image src={playercardupdate.src} alt='Player Card Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
@@ -4235,12 +4241,12 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
             fontWeight: 400,
             fontSize: { xs: '16px', md: '18px' }
           }}>
-            Use an <b>invite code</b> to join a league, or create your own from the home page. If you are in multiple leagues, you can switch between them from league selectors in the app.
+            Join an existing league using an <b>invite code</b> or create your own league and invite friends to compete throughout the league
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Image src={leagueimg.src} alt='League Example' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          {/* <Typography variant="body1" sx={{ mb: 2 }}>
             Each league can have seasons. Use the season selector to view the right season data (fixtures, results, table, leaderboard, players, and dream team).
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -4248,63 +4254,108 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Image src={leaguesetting.src} alt='League Settings' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
-          </Box>
+          </Box> */}
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-            3. Match Flow: Fixtures to Results
+            3. Create a New Match
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Open your league and use tabs like <b>Fixtures</b>, <b>Match Results</b>, <b>League Table</b>, <b>Leaderboard</b>, <b>Players</b>, and <b>Dream Team</b>.
+           League Admins can schedule match fixtures by selecting the date, time, venue and match format. All players will be notified
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          {/* <Typography variant="body1" sx={{ mb: 2 }}>
             In <b>Fixtures</b>, players mark availability. In <b>Match Results</b>, users can view teams, result details, and posted outcomes.
-          </Typography>
+          </Typography> */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-            <Image src={progressimg.src} alt='League Progress' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+            <Image src={matchdetails.src} alt='League Progress' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-            4. Admin Actions
+            4. Confirm Your Availability
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Admin can create/schedule matches, edit match details, publish scores, and manage archived matches. Teams can be viewed from each match card, and match updates refresh league data automatically.
+          Lock in your spot by marking yourself Available. Players are ranked by response time, so the earlier you confirm, the higher you'll appear during team selection
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          {/* <Typography variant="body1" sx={{ mb: 2 }}>
             Typical admin flow: <b>Fixtures</b> {`>`} <b>New Match</b> {`>`} set details {`>`} completed match {`>`} add stats and scores in <b>Match Results</b>.
-          </Typography>
+          </Typography> */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-            <Image src={matchdetails.src} alt='Match Management' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+            <Image src={availability.src} alt='Match Management' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-            5. Stats, XP, and Player Progress
+           5. Team Selection
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Player stats (goals, assists, clean sheets, MOTM, and defensive impact) are updated from match results. XP and progress indicators are shown in player pages and ranking tables.
+            Once enough players have confirmed their availability, teams are generated. Teams can be automatically balanced by the app, randomly generated, or selected manually by the League Admin. Balanced teams create fair, competitive matches every time
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          {/* <Typography variant="body1" sx={{ mb: 2 }}>
             You can open any player from league tables or leaderboards to view profile, performance history, and detailed season or career metrics.
-          </Typography>
+          </Typography> */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-            <Image src={palyerstats.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+            <Image src={teamsection.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
           </Box>
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-            6. Trophy Room and Awards
+            6. Play the Match
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Trophy Room shows league and individual awards by league and season. Awards are finalized based on completed season data and recorded performance.
+          Take to the pitch, enjoy the game and compete with your teammates. Every match contributes to your season statistics and league standings
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          {/* <Typography variant="body1" sx={{ mb: 2 }}>
             Common awards include <b>League Champion</b>, <b>Runner-Up</b>, <b>Golden Boot</b>, <b>King Playmaker</b>, <b>Ballon d&apos;Or</b>, and role-based honors.
-          </Typography>
+          </Typography> */}
+           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={playmatch.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
-            7. Best Practice for Smooth Leagues
+            7. Submit the Match Result
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Keep league settings and season selections consistent, publish results promptly, and verify match stats after each game. This keeps tables, leaderboards, dream team, and trophies accurate for everyone.
+            After the match, the League Admin submits the final score to update the league table
           </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={submitresult.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
+            8. Add Your Individual Stats
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+           Add your goals, assists, clean sheets and match stats after every game. League Admins can edit player statistics to keep records accurate
+          </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={individualstats.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
+            9. Track Your Performance
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            View your stats, performance trends, achievements and career history as you progress through the league
+          </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={trackperformance.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
+            10. Trophy Room and Awards
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+Compete for individual awards and seasonal honours. Every achievement is stored in your Trophy Room
+          </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Image src={trophyroomandrewards.src} alt='Player Stats' width={550} height={180} style={{ borderRadius: 8, objectFit: 'contain', maxWidth: '100%' }} />
+          </Box>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
+         Build Your Legacy!
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+Every match stats and trophy becomes part of your permanent football record as you build your legacy within your leagues          </Typography>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#111827' }}>
+Important League Management Controls
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+<b>League Player Admins </b> can create leagues, manage players, schedule fixtures, generate teams, add scores, approve player stats and manage league settings          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+<b>League Players </b> can confirm availability, view fixtures, submit their match statistics, track their performance and follow league standings and achievements          </Typography>
         </DialogContent>
       </Dialog>
       <Dialog open={gameRulesOpen} onClose={() => setGameRulesOpen(false)} maxWidth="lg" fullWidth>

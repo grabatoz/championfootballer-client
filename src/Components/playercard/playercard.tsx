@@ -511,8 +511,8 @@ const PlayerCard = ({
         >
         {/* Top: XP Points */}
         <Box sx={{ mt: 0.5 }}>
-          <Typography fontWeight={'bold'} fontSize="18px" color={'#000'}>
-            <span className='font-bold text-[16px]'> {(points ?? 0).toLocaleString()} xp </span>
+          <Typography fontWeight={'bold'} fontSize="20px" color={'#000'}>
+            <span className='font-bold text-[20px]'> {(points ?? 0).toLocaleString()} xp </span>
           </Typography>
         </Box>
 
@@ -596,7 +596,7 @@ const PlayerCard = ({
 
           {/* Position - CENTER */}
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.3 }}>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#000'}>
               {getPositionShortForm(position)}
             </Typography>
           </Box>
@@ -613,14 +613,14 @@ const PlayerCard = ({
                 transform: isRightFoot ? 'scaleX(-1)' : 'scaleX(1)',
               }}
             />
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#000'}>{footLabel}</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#000'}>{footLabel}</Typography>
           </Box>
         </Box>
 
         {/* Name and Title (from static logic) */}
         <Box sx={{ mt: disableImagePopup ? 1 : 2, mb: disableImagePopup ? 0.9 : 0.5 }}>
           <Typography
-            fontSize="14px"
+            fontSize="16px"
             fontWeight="bold"
             sx={{ textTransform: 'uppercase' }}
             color="#000"
@@ -631,7 +631,7 @@ const PlayerCard = ({
         </Box>
 
         <Typography
-          fontSize="16px"
+          fontSize="20px"
           fontWeight="bold"
           color="#fff"
           sx={{
@@ -647,9 +647,9 @@ const PlayerCard = ({
         <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
           {/* Left Side Stats */}
           <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.DRI} DRI</Typography>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.SHO} SHO</Typography>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PAS} PAS</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.DRI} DRI</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.SHO} SHO</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.PAS} PAS</Typography>
           </Box>
 
           {/* Vertical Line */}
@@ -664,9 +664,9 @@ const PlayerCard = ({
 
           {/* Right Side Stats */}
           <Box display="flex" flexDirection="column" alignItems="flex-start" gap={1}>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PAC} PAC</Typography>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.DEF} DEF</Typography>
-            <Typography fontSize="14px" fontWeight={'bold'} color={'#fff'}>{stats?.PHY} PHY</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.PAC} PAC</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.DEF} DEF</Typography>
+            <Typography fontSize="16px" fontWeight={'bold'} color={'#fff'}>{stats?.PHY} PHY</Typography>
           </Box>
         </Box>
 

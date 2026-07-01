@@ -1039,7 +1039,7 @@ const AllPlayersPage = () => {
         <PageHeader
           title="Players"
           fullBleed={false}
-          sx={{ mb: 4 }}
+          sx={{ mb: { xs: 1.2, md: 4 } }}
           dividerSx={{
             width: '100vw',
             position: 'relative',
@@ -1056,7 +1056,7 @@ const AllPlayersPage = () => {
             gap: { xs: 2, md: 3 },
             // Offset PageHeader internal padding so controls align with table edges.
             // mx: { xs: -2, md: -3 },
-            px: { xs: 1, sm: 3, md: 7.5 },
+            px: { xs: 2, sm: 3, md: 7.5 },
             py: { xs: 1.5, md: 1.3 },
             maxWidth: '1280px',
             mx: 'auto',
@@ -1601,8 +1601,9 @@ const AllPlayersPage = () => {
             width: '100%',
             maxWidth: 1280,
             mx: 'auto',
-            px: { xs: 1, sm: 3, md: 7.5 },
-            pb: 4
+            px: { xs: 2, sm: 3, md: 7.5 },
+            pb: 4,
+            mt: 3,
           }}
         >
           <Box
@@ -1629,7 +1630,7 @@ const AllPlayersPage = () => {
                 position: 'sticky',
                 top: 0,
                 zIndex: 12,
-                py: 1.5,
+                py: { xs: 2, sm: 1.5, md: 1.5 },
                 pl: 0,
                 pr: { xs: 2, sm: 3 },
                 backgroundColor: '#dddddd',
@@ -1805,13 +1806,15 @@ const AllPlayersPage = () => {
                               position: 'static',
                               display: 'flex',
                               alignItems: 'center',
-                              py: { xs: 0.7, sm: 0.7 },
+                              height: { xs: 58, sm: 72 },
+                              minHeight: { xs: 58, sm: 72 },
+                              py: 0,
                               pl: 0,
                               pr: { xs: 2, sm: 3 },
                               backgroundColor: rowBgColor,
                               borderBottom: '1px solid rgba(255,255,255,0.08)',
                               color: textColor,
-                              fontWeight,
+                              fontWeight: 'bold',
                               cursor: 'pointer',
                               transition: 'background-color 0.2s',
                               '&:hover': {
@@ -1823,16 +1826,13 @@ const AllPlayersPage = () => {
                             <Box sx={{
                               width: { xs: 196, sm: 280, md: 320 },
                               minWidth: { xs: 196, sm: 280, md: 320 },
+                              height: '100%',
                               flexShrink: 0,
                               display: 'flex',
                               alignItems: 'center',
                               pl: { xs: 2, sm: 3 },
                               pr: { xs: 1.2, sm: 2 },
-                              // position: 'sticky',
-                              // left: 0,
-                              // zIndex: 2,
                               backgroundColor: rowBgColor,
-                              // boxShadow: '8px 0 12px -12px rgba(0,0,0,0.68)',
                               transition: 'background-color 0.2s, box-shadow 0.2s',
                               '.MuiListItem-root:hover &': {
                                 backgroundColor: rowBgColorHover,
@@ -1841,14 +1841,13 @@ const AllPlayersPage = () => {
                               position: 'sticky',
                               left: 0,
                               zIndex: 3,
-                              // backgroundColor: 'rgba(30, 30, 30, 0.95)',
                               boxShadow: '8px 0 12px -12px rgba(0,0,0,0.6)',
                             }}>
                               <ListItemAvatar sx={{ minWidth: { xs: 52, sm: 60 } }}>
                                 <Box sx={{
                                   position: 'relative',
-                                  width: { xs: 38, sm: 42 },
-                                  height: { xs: 38, sm: 42 },
+                                  width: 40,
+                                  height: 40,
                                   borderRadius: '50%',
                                   overflow: 'hidden',
                                   backgroundColor: 'rgba(255,255,255,0.1)'
@@ -1875,8 +1874,8 @@ const AllPlayersPage = () => {
                                         justifyContent: 'center',
                                         backgroundColor: getAvatarBackgroundColor(getPlayerName(player)),
                                         color: '#fff',
-                                        fontWeight: 800,
-                                        fontSize: { xs: 12, sm: 13 },
+                                        fontWeight: 700,
+                                        fontSize: 12,
                                         textTransform: 'uppercase',
                                         letterSpacing: 0.4,
                                       }}
@@ -1893,10 +1892,11 @@ const AllPlayersPage = () => {
 
                               <Box sx={{ minWidth: 0, flex: 1 }}>
                                 <Typography
+                                  className="league-table-row-text"
                                   noWrap
                                   sx={{
-                                    fontWeight: 600,
-                                    fontSize: { xs: 12, sm: 15 },
+                                    fontWeight: 700,
+                                    fontSize: { xs: 14, sm: 15, md: 18 },
                                     color: '#fff',
                                     lineHeight: 1.4,
                                     fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
@@ -1908,12 +1908,15 @@ const AllPlayersPage = () => {
                                 >
                                   {getPlayerCardStyleName(player)}
                                 </Typography>
-                                <Typography sx={{
-                                  fontSize: { xs: 10, sm: 12 },
-                                  color: 'rgba(255,255,255,0.6)',
-                                  mt: 0.25,
-                                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
-                                }}>
+                                <Typography
+                                  className="league-player-pos"
+                                  sx={{
+                                    fontSize: { xs: 12, sm: 12 },
+                                    color: 'rgba(255,255,255,0.6)',
+                                    mt: 0.25,
+                                    fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
+                                  }}
+                                >
                                   {getPositionLabel(player)}
                                 </Typography>
                               </Box>
@@ -1930,12 +1933,15 @@ const AllPlayersPage = () => {
                               pr: { xs: 0.5, sm: 2 },
                               pl: { xs: 1.5, sm: 2.5 }
                             }}>
-                              <Typography sx={{
-                                fontSize: { xs: 11, sm: 13, md: 18 },
-                                color: 'rgba(255,255,255,0.9)',
-                                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
-                                fontWeight: 'bold',
-                              }}>
+                              <Typography
+                                className="league-table-row-text"
+                                sx={{
+                                  fontSize: { xs: 14, sm: 15, md: 18 },
+                                  color: 'rgba(255,255,255,0.9)',
+                                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
+                                  fontWeight: 'bold',
+                                }}
+                              >
                                 {getPlayingStyle(player)}
                               </Typography>
                             </Box>
@@ -1965,12 +1971,16 @@ const AllPlayersPage = () => {
                               ml: { xs: 1, sm: 1.5, md: 5.5 },
                               textAlign: 'center'
                             }}>
-                              <Typography sx={{
-                                fontWeight: 'bold',
-                                fontSize: { xs: 13, sm: 16 },
-                                color: '#fff',
-                                fontFamily: 'var(--font-woodford-bourne-pro), sans-serif'
-                              }}>
+                              <Typography
+                                className="league-table-row-text"
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: { xs: 14, sm: 15, md: 18 },
+                                  color: '#fff',
+                                  fontFamily: 'var(--font-woodford-bourne-pro), sans-serif',
+                                  textTransform: 'uppercase'
+                                }}
+                              >
                                 {getCpPoints(player)?.toLocaleString()}
                               </Typography>
                             </Box>
