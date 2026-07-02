@@ -577,9 +577,9 @@ const AllPlayersPage = () => {
         );
 
         // Keep leagues visible for switching, including inactive ones.
-        // Only hide archived/completed leagues (same as league detail page).
+        // Only hide archived leagues.
         const activeLeagues = enrichedLeagues.filter(
-          (l) => l.archived !== true && !leagueIsCompleted(l)
+          (l) => l.archived !== true
         );
 
         // Sort alphabetically
