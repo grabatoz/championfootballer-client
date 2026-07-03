@@ -2680,9 +2680,9 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
         return orderedLeader ? String(orderedLeader.id) : leaders[0] || null;
     };
 
-    const motmWinnerId = getTopVotedPlayerId(motmVoteCounts, votedForId);
-    const defensiveWinnerId = getTopVotedPlayerId(defensiveVoteCounts, captainPicks.defence);
-    const mentalityWinnerId = getTopVotedPlayerId(mentalityVoteCounts, captainPicks.influence);
+    const motmWinnerId = votedForId || getTopVotedPlayerId(motmVoteCounts, null);
+    const defensiveWinnerId = captainPicks.defence || getTopVotedPlayerId(defensiveVoteCounts, null);
+    const mentalityWinnerId = captainPicks.influence || getTopVotedPlayerId(mentalityVoteCounts, null);
 
     const motmPlayer = motmWinnerId ? allPlayersForVoting.find((p) => String(p.id) === motmWinnerId) : undefined;
     const defensivePlayer = defensiveWinnerId ? allPlayersForVoting.find((p) => String(p.id) === defensiveWinnerId) : undefined;
