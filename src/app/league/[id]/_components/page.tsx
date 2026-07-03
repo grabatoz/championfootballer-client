@@ -4679,7 +4679,7 @@ export default function LeagueDetailPage() {
                                                     <MenuItem
                                                         selected={selectedMemberPosition === 'all'}
                                                         onClick={() => handleMemberPositionChange('all')}
-                                                        sx={{ fontFamily: 'var(--font-woodford-bourne-pro), sans-serif', fontSize: { xs: 13, sm: 15 } }}
+                                                        sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}
                                                     >
                                                         All Positions
                                                     </MenuItem>
@@ -4700,11 +4700,11 @@ export default function LeagueDetailPage() {
                                                     width: { xs: 108, sm: 150, md: 180 },
                                                     minWidth: { xs: 108, sm: 150, md: 180 },
                                                     flexShrink: 0,
-                                                    pr: { xs: 0.5, sm: 2 , md: 7 },
-                                                    // pl: { xs: 1.5, sm: 2.5 },
+                                                    // pr: { xs: 0.5, sm: 2 , md: 7 },
+                                                    pl: { xs: 1.5, sm: 2.5, md: 4 },
                                                     display: 'block',
                                                 }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
+                                                    <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                                                         STYLE
                                                     </Typography>
                                                 </Box>
@@ -4714,14 +4714,14 @@ export default function LeagueDetailPage() {
 
                                                 {/* View Stats Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                                                    <Typography className="league-table-heading" sx={{ color: '#000000' }}>
+                                                    <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                                                         {isMobile ? 'STATS' : 'VIEW STATS'}
                                                     </Typography>
                                                 </Box>
 
                                                 {/* XP Points Header */}
                                                 <Box sx={{ minWidth: { xs: 90, sm: 120 }, ml: { xs: 1, sm: 1.5, md: 7.5 }, textAlign: 'center' }}>
-                                                    <Typography className="league-table-heading league-table-heading-no-transform" sx={{ color: '#000000' }}>
+                                                    <Typography sx={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
                                                         CAREER xp
                                                     </Typography>
                                                 </Box>
@@ -6243,16 +6243,16 @@ export default function LeagueDetailPage() {
 
                                                 <>
                                                     <div className="grid mt-0 grid-cols-[50px_minmax(125px,1fr)_70px_45px_45px_45px_45px_50px_55px_60px] sm:grid-cols-[50px_minmax(180px,1fr)_80px_60px_60px_60px_60px_70px_70px_80px] items-center px-4 py-3 bg-table-header text-black league-header-row league-header-inset font-bold sticky top-0 z-20 ">
-                                                        <div className="text-center league-table-heading league-table-sticky-rank">#</div>
-                                                        <div className="pl-[52px] league-table-heading league-table-heading-left league-table-sticky-name">NAME</div>
-                                                        <div className="text-center league-table-heading">MOTM</div>
-                                                        <div className="text-center league-table-heading">P</div>
-                                                        <div className="text-center league-table-heading">W</div>
-                                                        <div className="text-center league-table-heading">D</div>
-                                                        <div className="text-center league-table-heading">L</div>
-                                                        <div className="text-center league-table-heading">GD</div>
-                                                        <div className="text-center league-table-heading">W%</div>
-                                                        <div className="text-center league-table-heading league-table-heading-no-transform">{filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}</div>
+                                                        <div className="text-center league-table-heading league-table-sticky-rank" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>#</div>
+                                                        <div className="pl-[52px] league-table-heading league-table-heading-left league-table-sticky-name" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>NAME</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>MOTM</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>P</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>W</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>D</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>L</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>GD</div>
+                                                        <div className="text-center league-table-heading" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>W%</div>
+                                                        <div className="text-center league-table-heading league-table-heading-no-transform" style={{ color: '#000000', fontWeight: 800, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>{filteredLeague?.showPoints === true ? 'xpPTS' : 'PTS'}</div>
                                                     </div>
                                                     {/* Full width border alag */}
                                                     <div className="w-full border-b border-border" />
