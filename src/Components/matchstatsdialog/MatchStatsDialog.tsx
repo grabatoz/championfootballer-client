@@ -2795,6 +2795,30 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     }}
                                     onFocus={(e) => e.target.select()}
                                     inputProps={{ style: { textAlign: 'center' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, goals: Math.max(0, (prev.goals || 0) - 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Remove fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, goals: Math.min(teamGoalsSafe, (prev.goals || 0) + 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Add fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2846,6 +2870,30 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     }}
                                     onFocus={(e) => e.target.select()}
                                     inputProps={{ style: { textAlign: 'center' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, assists: Math.max(0, (prev.assists || 0) - 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Remove fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, assists: Math.min(teamGoalsSafe, (prev.assists || 0) + 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Add fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
@@ -2897,6 +2945,30 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                     }}
                                     onFocus={(e) => e.target.select()}
                                     inputProps={{ style: { textAlign: 'center' } }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, cleanSheets: Math.max(0, (prev.cleanSheets || 0) - 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Remove fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setStats(prev => ({ ...prev, cleanSheets: Math.min(1, (prev.cleanSheets || 0) + 1) }))}
+                                                    sx={{ color: '#fff', p: 0.5 }}
+                                                    size="small"
+                                                >
+                                                    <Add fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             color: '#fff',
