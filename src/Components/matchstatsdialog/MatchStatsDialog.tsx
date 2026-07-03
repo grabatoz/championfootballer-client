@@ -2786,7 +2786,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
- 
+
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
@@ -2846,7 +2846,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                     }}
                                 />
- 
+
                                 {/* Assists Row */}
                                 <img src={Assist.src} alt="Assists" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
@@ -2861,7 +2861,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
- 
+
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(teamGoalsSafe, numVal));
@@ -2921,7 +2921,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         '& input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
                                     }}
                                 />
- 
+
                                 {/* Clean Sheet Row */}
                                 <img src={CleanSheet.src} alt="Clean Sheets" style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, justifySelf: 'center' }} />
                                 <TextField
@@ -2936,7 +2936,7 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                         // Only allow numbers
                                         if (!/^\d+$/.test(val)) return;
- 
+
                                         const numVal = parseInt(val, 10);
                                         if (!isNaN(numVal)) {
                                             const newVal = Math.max(0, Math.min(1, numVal));

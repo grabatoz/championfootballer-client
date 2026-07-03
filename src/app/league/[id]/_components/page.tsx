@@ -5748,6 +5748,22 @@ export default function LeagueDetailPage() {
                                                                                                 });
                                                                                                 return;
                                                                                             }
+                                                                                            if (idx >= 2) {
+                                                                                                toast('unable to enter stats as this match has been locked, please request admin to make any changes etc', {
+                                                                                                    icon: '🔒',
+                                                                                                    duration: 5000,
+                                                                                                    style: {
+                                                                                                        background: '#F59E0B',
+                                                                                                        color: '#fff',
+                                                                                                        fontWeight: 600,
+                                                                                                        fontSize: '0.95rem',
+                                                                                                        padding: '14px 20px',
+                                                                                                        borderRadius: '12px',
+                                                                                                        boxShadow: '0 4px 20px rgba(245, 158, 11, 0.5)',
+                                                                                                    },
+                                                                                                });
+                                                                                                return;
+                                                                                            }
                                                                                             if (!isInMatch) {
                                                                                                 toast('You are not added in this match.', {
                                                                                                     icon: '⚠️',
