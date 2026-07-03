@@ -4700,8 +4700,8 @@ export default function LeagueDetailPage() {
                                                     width: { xs: 108, sm: 150, md: 180 },
                                                     minWidth: { xs: 108, sm: 150, md: 180 },
                                                     flexShrink: 0,
-                                                    pr: { xs: 0.5, sm: 2 },
-                                                    pl: { xs: 1.5, sm: 2.5 },
+                                                    pr: { xs: 0.5, sm: 2 , md: 7 },
+                                                    // pl: { xs: 1.5, sm: 2.5 },
                                                     display: 'block',
                                                 }}>
                                                     <Typography className="league-table-heading" sx={{ color: '#000000', textAlign: 'left !important' }}>
