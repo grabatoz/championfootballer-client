@@ -23,7 +23,8 @@ import {
   FormControl,
   SelectChangeEvent,
   Avatar,
-  TextField
+  TextField,
+  Slider
 } from '@mui/material';
 import Image from 'next/image';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
@@ -1424,6 +1425,47 @@ export default function CareerPage() {
   // ------------- NEW STATE (grouping + range) -------------
   const [groupMode, setGroupMode] = useState<'weekly' | 'monthly'>('weekly');
   const [range, setRange] = useState<number[] | null>(null); // [startIdx, endIdx]
+  const [activeYear, setActiveYear] = useState<string | null>(null);
+
+  const chartScrollRef = useRef<HTMLDivElement | null>(null);
+  const [chartScrollPercent, setChartScrollPercent] = useState(0);
+  const [chartHasHorizontalOverflow, setChartHasHorizontalOverflow] = useState(false);
+
+  const syncChartHorizontalScroll = useCallback(() => {
+    const scrollEl = chartScrollRef.current;
+    if (!scrollEl) {
+      setChartHasHorizontalOverflow(false);
+      setChartScrollPercent(0);
+      return;
+    }
+    const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
+    setChartHasHorizontalOverflow(maxScrollLeft > 0);
+    setChartScrollPercent(maxScrollLeft > 0 ? (scrollEl.scrollLeft / maxScrollLeft) * 100 : 0);
+  }, []);
+
+  const handleChartSliderChange = useCallback((_event: Event, value: number | number[]) => {
+    const sliderValue = Array.isArray(value) ? value[0] : value;
+    const scrollEl = chartScrollRef.current;
+    if (!scrollEl) return;
+    const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
+    scrollEl.scrollLeft = (sliderValue / 100) * maxScrollLeft;
+    setChartScrollPercent(sliderValue);
+  }, []);
+
+  useEffect(() => {
+    const scrollEl = chartScrollRef.current;
+    if (!scrollEl) return;
+    const handleScrollSync = () => {
+      syncChartHorizontalScroll();
+    };
+    syncChartHorizontalScroll();
+    scrollEl.addEventListener('scroll', handleScrollSync, { passive: true });
+    window.addEventListener('resize', handleScrollSync);
+    return () => {
+      scrollEl.removeEventListener('scroll', handleScrollSync);
+      window.removeEventListener('resize', handleScrollSync);
+    };
+  }, [chartMatches.length, groupMode, syncChartHorizontalScroll]);
 
   // ------------- AGGREGATION (supports forced modes) -------------
   const { performanceData, groupingType } = useMemo(() => {
@@ -3496,14 +3538,17 @@ export default function CareerPage() {
 
                       {/* Scrollable Chart Content */}
                       <Box
+                        ref={chartScrollRef}
                         sx={{
                           flexGrow: 1,
                           overflowX: 'auto',
                           pb: 1,
                           height: '100%',
+                          WebkitOverflowScrolling: 'touch',
                           '&::-webkit-scrollbar': { height: 6 },
+                          '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: 3 },
                           '&::-webkit-scrollbar-thumb': {
-                            background: 'rgba(255, 255, 255, 0.2)',
+                            background: themeColors.primary,
                             borderRadius: 3,
                           },
                         }}
@@ -3521,6 +3566,24 @@ export default function CareerPage() {
                             <ComposedChart
                               data={chartData.length > 0 ? chartData : performanceData}
                               margin={{ top: 10, left: 10, right: 10, bottom: groupMode === 'monthly' ? 65 : 75 }}
+                              onMouseMove={(state) => {
+                                if (state && typeof state.activeTooltipIndex === 'number') {
+                                  const activeData = chartData.length > 0 ? chartData : performanceData;
+                                  const item = activeData[state.activeTooltipIndex];
+                                  if (item && item.year && item.year !== activeYear) {
+                                    setActiveYear(item.year);
+                                  }
+                                }
+                              }}
+                              onClick={(state) => {
+                                if (state && typeof state.activeTooltipIndex === 'number') {
+                                  const activeData = chartData.length > 0 ? chartData : performanceData;
+                                  const item = activeData[state.activeTooltipIndex];
+                                  if (item && item.year) {
+                                    setActiveYear(item.year);
+                                  }
+                                }
+                              }}
                             >
                               <XAxis
                                 dataKey="label"
@@ -3530,6 +3593,7 @@ export default function CareerPage() {
                                   if (!currentItem) return <g></g>;
 
                                   const currentYear = currentItem.year;
+                                  const isHighlighted = currentYear === activeYear;
 
                                   let yearStartIndex = index;
                                   while (yearStartIndex > 0 && activeData[yearStartIndex - 1].year === currentYear) {
@@ -3563,8 +3627,9 @@ export default function CareerPage() {
                                         dx={-5}
                                         dy={5}
                                         textAnchor="end"
-                                        fill={themeColors.textDim}
+                                        fill={isHighlighted ? themeColors.primary : themeColors.textDim}
                                         fontSize={10}
+                                        fontWeight={isHighlighted ? 'bold' : 'normal'}
                                         transform="rotate(-90)"
                                       >
                                         {payload.value}
@@ -3576,8 +3641,8 @@ export default function CareerPage() {
                                         y1={lineY}
                                         x2={lineRight}
                                         y2={lineY}
-                                        stroke="rgba(255, 255, 255, 0.35)"
-                                        strokeWidth={1}
+                                        stroke={isHighlighted ? themeColors.primary : "rgba(255, 255, 255, 0.35)"}
+                                        strokeWidth={isHighlighted ? 2 : 1}
                                       />
                                       {drawLeftVertical && (
                                         <line
@@ -3585,8 +3650,8 @@ export default function CareerPage() {
                                           y1={lineY}
                                           x2={lineLeft}
                                           y2={lineY - tickHeight}
-                                          stroke="rgba(255, 255, 255, 0.35)"
-                                          strokeWidth={1}
+                                          stroke={isHighlighted ? themeColors.primary : "rgba(255, 255, 255, 0.35)"}
+                                          strokeWidth={isHighlighted ? 2 : 1}
                                         />
                                       )}
                                       {drawRightVertical && (
@@ -3595,8 +3660,8 @@ export default function CareerPage() {
                                           y1={lineY}
                                           x2={lineRight}
                                           y2={lineY - tickHeight}
-                                          stroke="rgba(255, 255, 255, 0.35)"
-                                          strokeWidth={1}
+                                          stroke={isHighlighted ? themeColors.primary : "rgba(255, 255, 255, 0.35)"}
+                                          strokeWidth={isHighlighted ? 2 : 1}
                                         />
                                       )}
 
@@ -3605,8 +3670,8 @@ export default function CareerPage() {
                                           x={0}
                                           y={lineY + 15}
                                           textAnchor="middle"
-                                          fill={themeColors.textDim}
-                                          fontSize={11}
+                                          fill={isHighlighted ? themeColors.primary : themeColors.textDim}
+                                          fontSize={isHighlighted ? 12 : 11}
                                           fontWeight="bold"
                                         >
                                           {currentYear}
@@ -3631,6 +3696,13 @@ export default function CareerPage() {
                                 domain={[0, maxCumulativePoints]}
                               />
                               <Tooltip
+                                labelFormatter={(label: any, items: readonly any[]) => {
+                                  const item = items?.[0]?.payload;
+                                  if (item && item.year) {
+                                    return `${label} (${item.year})`;
+                                  }
+                                  return label;
+                                }}
                                 contentStyle={{
                                   background: themeColors.surfaceAlt,
                                   border: `1px solid ${themeColors.border}`,
@@ -3725,6 +3797,35 @@ export default function CareerPage() {
                         </ResponsiveContainer>
                       </Box>
                     </Box>
+
+                    {/* Chart horizontal scroll indicator slider */}
+                    {chartHasHorizontalOverflow && (
+                      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 1, pb: 2 }}>
+                        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', mb: 0.5 }}>
+                          Slide chart left/right
+                        </Typography>
+                        <Slider
+                          value={chartScrollPercent}
+                          onChange={handleChartSliderChange}
+                          min={0}
+                          max={100}
+                          step={1}
+                          size="small"
+                          aria-label="Chart horizontal scroll"
+                          sx={{
+                            color: themeColors.primary,
+                            px: 0.5,
+                            '& .MuiSlider-thumb': {
+                              width: 14,
+                              height: 14,
+                            },
+                            '& .MuiSlider-rail': {
+                              opacity: 0.35,
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
 
                     {/* Legend */}
                     <Box sx={{

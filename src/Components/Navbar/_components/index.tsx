@@ -1660,11 +1660,6 @@ export default function NavigationBar() {
     const current = [...notifications];
     if (!current.length) return;
 
-    const ids = current.map(n => String(n.id));
-    const nextDismissed: Record<string, true> = {};
-    ids.forEach(id => { nextDismissed[id] = true; });
-    setDismissedNotificationIds(prev => ({ ...prev, ...nextDismissed }));
-
     // Optimistic clear for UX
     setNotifications([]);
     setUnreadCount(0);
@@ -1672,30 +1667,26 @@ export default function NavigationBar() {
 
     try {
       if (!token || !user?.id) return;
-      const userId = String(user.id);
 
-      // Try bulk clear endpoints first
-      const bulkCandidates: Array<{ method: 'DELETE' | 'POST'; url: string; body?: Record<string, unknown> }> = [
-        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications?userId=${encodeURIComponent(userId)}` },
-        { method: 'DELETE', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications/clear-all?userId=${encodeURIComponent(userId)}` },
-        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/notifications/clear-all`, body: { userId } }
-      ];
-
-      for (const req of bulkCandidates) {
-        try {
-          const res = await fetch(req.url, {
-            method: req.method,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: req.body ? JSON.stringify(req.body) : undefined
-          });
-          if (res.ok || res.status === 204) return;
-        } catch {
-          // continue
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/clear-all`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-      }
+      });
 
-      // Fallback: delete one by one
-      await Promise.all(ids.map(id => deleteNotificationById(id)));
+      if (!res.ok && res.status !== 204) {
+        console.warn('Clear all notifications failed:', res.status);
+        // Revert optimistic clear on failure
+        setNotifications(current);
+        setUnreadCount(current.filter(n => !n.read).length);
+      }
+    } catch (err) {
+      console.error('Clear all notifications error:', err);
+      // Revert optimistic clear on error
+      setNotifications(current);
+      setUnreadCount(current.filter(n => !n.read).length);
     } finally {
       setIsClearingAll(false);
     }
@@ -3344,7 +3335,7 @@ const getUsersTeamName = (match: MatchLike, userId: string): string | undefined 
                 {isClearingAll ? 'Clearing...' : (
                   <Box component="span">
                     <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Clear</Box>
-                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Clear all</Box>
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Clear All</Box>
                   </Box>
                 )}
               </Button>
