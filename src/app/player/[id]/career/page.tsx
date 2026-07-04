@@ -3696,27 +3696,48 @@ export default function CareerPage() {
                                 domain={[0, maxCumulativePoints]}
                               />
                               <Tooltip
-                                labelFormatter={(label: any, items: readonly any[]) => {
-                                  const item = items?.[0]?.payload;
-                                  if (item && item.year) {
-                                    return `${label} (${item.year})`;
-                                  }
-                                  return label;
-                                }}
-                                contentStyle={{
-                                  background: themeColors.surfaceAlt,
-                                  border: `1px solid ${themeColors.border}`,
-                                  fontSize: 11,
-                                  borderRadius: 4,
-                                  color: themeColors.text
-                                }}
-                                labelStyle={{ fontWeight: 600, color: themeColors.text }}
-                                formatter={(value: unknown, name: unknown) => {
-                                  const v = (typeof value === 'number' || typeof value === 'string') ? value : String(value ?? '');
-                                  const n = typeof name === 'string' ? name : String(name ?? '');
-                                  if (n.includes('Total') || n.includes('Avg')) return [v, `Total XP Points`];
-                                  if (n.includes('Cumulative')) return [v, `Cumulative XP Points`];
-                                  return [v, n];
+                                content={({ active, payload, label }) => {
+                                  if (!active || !payload || !payload.length) return null;
+                                  const item = payload[0].payload;
+                                  return (
+                                    <Box
+                                      sx={{
+                                        position: isMobile ? 'fixed' : 'absolute',
+                                        ...(isMobile ? {
+                                          top: '50%',
+                                          left: '50%',
+                                          transform: 'translate(-50%, -50%)',
+                                          zIndex: 9999,
+                                        } : {}),
+                                        background: themeColors.surfaceAlt,
+                                        border: `1px solid ${themeColors.border}`,
+                                        borderRadius: 1,
+                                        p: 1.5,
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                        pointerEvents: 'none',
+                                      }}
+                                    >
+                                      <Typography sx={{ fontWeight: 600, fontSize: 12, mb: 1, color: themeColors.text }}>
+                                        {label} {item?.year ? `(${item.year})` : ''}
+                                      </Typography>
+                                      {payload.map((entry: any, index: number) => {
+                                        const nameStr = String(entry.name || '');
+                                        const displayName = nameStr.includes('Total') || nameStr.includes('Avg')
+                                          ? 'Total XP Points'
+                                          : nameStr.includes('Cumulative')
+                                            ? 'Cumulative XP Points'
+                                            : nameStr;
+                                        return (
+                                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: entry.color || entry.fill || themeColors.chartLine }} />
+                                            <Typography sx={{ fontSize: 11, color: themeColors.textDim }}>
+                                              {displayName}: <span style={{ color: themeColors.text, fontWeight: 'bold' }}>{entry.value}</span>
+                                            </Typography>
+                                          </Box>
+                                        );
+                                      })}
+                                    </Box>
+                                  );
                                 }}
                               />
 
