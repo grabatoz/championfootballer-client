@@ -1101,20 +1101,14 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
   const handleUpdate = async () => {
     if (!canManageLeagueSettings) return
 
-    if (selectedSeasonId) {
-      const seasonRoster = Array.isArray(currentSeason?.members) && currentSeason.members.length > 0
-        ? currentSeason.members
-        : (Array.isArray(currentSeason?.players) ? currentSeason.players : [])
-      const seasonMemberIds = new Set(
-        seasonRoster
-          .map((member) => String(member.id || '').trim())
-          .filter((id) => id.length > 0),
-      )
-
-      if (seasonMemberIds.size > 0 && (!adminId || !seasonMemberIds.has(String(adminId)))) {
-        toast.error('Select a league admin who is active in the selected season.')
-        return
-      }
+    const leagueMemberIds = new Set(
+      (Array.isArray(league?.members) ? league.members : [])
+        .map((member) => String(member.id || '').trim())
+        .filter((id) => id.length > 0)
+    )
+    if (!adminId || !leagueMemberIds.has(String(adminId))) {
+      toast.error('Select a league admin from the league members.')
+      return
     }
 
     const updatedData: LeagueUpdatePayload = {
@@ -1870,9 +1864,9 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                   Select league admin
                 </Typography>
                 <Select
-                  value={sortedSeasonMembers.some((member) => String(member.id) === String(adminId)) ? adminId : ''}
+                  value={sortedLeagueMembers.some((member) => String(member.id) === String(adminId)) ? adminId : ''}
                   onChange={(e) => setAdminId(e.target.value as string)}
-                  disabled={!canManageLeagueSettings || sortedSeasonMembers.length === 0}
+                  disabled={!canManageLeagueSettings || sortedLeagueMembers.length === 0}
                   sx={{
                     color: '#E5E7EB',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
@@ -1894,17 +1888,17 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
                 >
                   <MenuItem value="" disabled>
                     <Typography className="empty-state-message" variant="body2">
-                      {sortedSeasonMembers.length > 0 ? 'Select active season player' : 'No active players in this season'}
+                      {sortedLeagueMembers.length > 0 ? 'Select league player' : 'No players in this league'}
                     </Typography>
                   </MenuItem>
-                  {sortedSeasonMembers.map((member: User) => (
+                  {sortedLeagueMembers.map((member: User) => (
                     <MenuItem key={member.id} value={member.id}>
                       {member.firstName} {member.lastName}
                     </MenuItem>
                   ))}
                 </Select>
                 <Typography variant="caption" sx={{ color: '#9CA3AF', mt: 0.5 }}>
-                  Only players active in the selected season can be assigned as league admin.
+                  Any member of the league can be assigned as the league admin.
                 </Typography>
               </FormControl>
 
@@ -5565,9 +5559,12 @@ function AllLeagues() {
                     <Switch
                       size="small"
                       checked={isLive}
-                      disabled={!canManageLiveStatus}
                       onChange={(e, checked) => {
                         e.stopPropagation();
+                        if (!canManageLiveStatus) {
+                          toast.error('Only league admin can change the live status.');
+                          return;
+                        }
                         void handleToggleLeagueLiveStatus(league, checked);
                       }}
                       sx={{
@@ -5691,9 +5688,12 @@ function AllLeagues() {
                               <Switch
                                 size="small"
                                 checked={isLive}
-                                disabled={!canManageLiveStatus}
                                 onChange={(e, checked) => {
                                   e.stopPropagation();
+                                  if (!canManageLiveStatus) {
+                                    toast.error('Only league admin can change the live status.');
+                                    return;
+                                  }
                                   void handleToggleLeagueLiveStatus(league, checked);
                                 }}
                                 sx={{
