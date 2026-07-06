@@ -231,6 +231,7 @@ interface MatchGuest {
 }
 
 interface Match {
+    unavailableUsers: any;
     manOfTheMatchVotes?: Record<string, string | number>;
     homeTeamImage: string;
     awayTeamImage: string;
@@ -4971,7 +4972,7 @@ export default function LeagueDetailPage() {
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx) => {
                                                     const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
-                                                    const isUserUnavailable = !!match.unavailableUsers?.some(u => u?.id === user?.id);
+                                                    const isUserUnavailable = !!match.unavailableUsers?.some((u: { id: string | undefined; }) => u?.id === user?.id);
                                                     const seasonMatchNumberRaw = (match as unknown as { seasonMatchNumber?: unknown })?.seasonMatchNumber;
                                                     const seasonMatchNumber =
                                                         typeof seasonMatchNumberRaw === 'number'
