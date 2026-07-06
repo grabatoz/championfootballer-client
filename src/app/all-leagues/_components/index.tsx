@@ -2964,6 +2964,18 @@ function AllLeagues() {
   }, [user?.id]);
 
   useEffect(() => {
+    const areSeasonsDifferent = (a: Season[] = [], b: Season[] = []): boolean => {
+      if (a.length !== b.length) return true;
+      for (const sa of a) {
+        const sb = b.find((x) => String(x.id) === String(sa.id));
+        if (!sb) return true;
+        if (sa.isActive !== sb.isActive || Boolean(sa.archived) !== Boolean(sb.archived)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     if (selectedLeague) {
       const refreshedSelected = leagues.find((leagueItem) => String(leagueItem.id) === String(selectedLeague.id));
       if (refreshedSelected) {
@@ -2972,11 +2984,16 @@ function AllLeagues() {
           Boolean(selectedLeague.active) !== Boolean(refreshedSelected.active) ||
           String(selectedLeague.image || '') !== String(refreshedSelected.image || '') ||
           (selectedLeague.memberCount ?? selectedLeague.members?.length ?? 0) !== (refreshedSelected.memberCount || 0) ||
-          JSON.stringify((selectedLeague as LeagueWithStatus).seasons || []) !== JSON.stringify((refreshedSelected as LeagueWithStatus).seasons || []);
+          areSeasonsDifferent((selectedLeague as LeagueWithStatus).seasons || [], (refreshedSelected as LeagueWithStatus).seasons || []);
 
         if (needsSelectedSync) {
           setSelectedLeague((prev) => {
             if (!prev || String(prev.id) !== String(refreshedSelected.id)) return prev;
+            const updatedSeasons = (prev as LeagueWithStatus).seasons?.map((s) => {
+              const refS = (refreshedSelected as LeagueWithStatus).seasons?.find((rs) => String(rs.id) === String(s.id));
+              return refS ? { ...s, isActive: refS.isActive, archived: refS.archived } : s;
+            }) || (refreshedSelected as LeagueWithStatus).seasons;
+
             return {
               ...prev,
               name: refreshedSelected.name,
@@ -2989,7 +3006,7 @@ function AllLeagues() {
               isCompleted: (refreshedSelected as any).isCompleted,
               isLocked: refreshedSelected.isLocked,
               computedStatus: refreshedSelected.computedStatus,
-              seasons: (refreshedSelected as LeagueWithStatus).seasons,
+              seasons: updatedSeasons,
             };
           });
         }
@@ -3004,11 +3021,16 @@ function AllLeagues() {
           Boolean(adminSettingsLeague.active) !== Boolean(refreshedAdminLeague.active) ||
           String(adminSettingsLeague.image || '') !== String(refreshedAdminLeague.image || '') ||
           (adminSettingsLeague.memberCount ?? adminSettingsLeague.members?.length ?? 0) !== (refreshedAdminLeague.memberCount || 0) ||
-          JSON.stringify((adminSettingsLeague as LeagueWithStatus).seasons || []) !== JSON.stringify((refreshedAdminLeague as LeagueWithStatus).seasons || []);
+          areSeasonsDifferent((adminSettingsLeague as LeagueWithStatus).seasons || [], (refreshedAdminLeague as LeagueWithStatus).seasons || []);
 
         if (needsAdminSync) {
           setAdminSettingsLeague((prev) => {
             if (!prev || String(prev.id) !== String(refreshedAdminLeague.id)) return prev;
+            const updatedSeasons = (prev as LeagueWithStatus).seasons?.map((s) => {
+              const refS = (refreshedAdminLeague as LeagueWithStatus).seasons?.find((rs) => String(rs.id) === String(s.id));
+              return refS ? { ...s, isActive: refS.isActive, archived: refS.archived } : s;
+            }) || (refreshedAdminLeague as LeagueWithStatus).seasons;
+
             return {
               ...prev,
               name: refreshedAdminLeague.name,
@@ -3021,7 +3043,7 @@ function AllLeagues() {
               isCompleted: (refreshedAdminLeague as any).isCompleted,
               isLocked: refreshedAdminLeague.isLocked,
               computedStatus: refreshedAdminLeague.computedStatus,
-              seasons: (refreshedAdminLeague as LeagueWithStatus).seasons,
+              seasons: updatedSeasons,
             };
           });
         }
