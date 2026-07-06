@@ -1428,7 +1428,7 @@ export default function CareerPage() {
   const [activeYear, setActiveYear] = useState<string | null>(null);
 
   const chartScrollRef = useRef<HTMLDivElement | null>(null);
-  const [chartScrollPercent, setChartScrollPercent] = useState(0);
+  // const [chartScrollPercent, setChartScrollPercent] = useState(0);
   const [chartHasHorizontalOverflow, setChartHasHorizontalOverflow] = useState(false);
   const [containerWidth, setContainerWidth] = useState(600);
 
@@ -1436,23 +1436,23 @@ export default function CareerPage() {
     const scrollEl = chartScrollRef.current;
     if (!scrollEl) {
       setChartHasHorizontalOverflow(false);
-      setChartScrollPercent(0);
+      // setChartScrollPercent(0);
       return;
     }
     setContainerWidth(scrollEl.clientWidth);
     const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
     setChartHasHorizontalOverflow(maxScrollLeft > 0);
-    setChartScrollPercent(maxScrollLeft > 0 ? (scrollEl.scrollLeft / maxScrollLeft) * 100 : 0);
+    // setChartScrollPercent(maxScrollLeft > 0 ? (scrollEl.scrollLeft / maxScrollLeft) * 100 : 0);
   }, []);
 
-  const handleChartSliderChange = useCallback((_event: Event, value: number | number[]) => {
-    const sliderValue = Array.isArray(value) ? value[0] : value;
-    const scrollEl = chartScrollRef.current;
-    if (!scrollEl) return;
-    const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
-    scrollEl.scrollLeft = (sliderValue / 100) * maxScrollLeft;
-    setChartScrollPercent(sliderValue);
-  }, []);
+  // const handleChartSliderChange = useCallback((_event: Event, value: number | number[]) => {
+  //   const sliderValue = Array.isArray(value) ? value[0] : value;
+  //   const scrollEl = chartScrollRef.current;
+  //   if (!scrollEl) return;
+  //   const maxScrollLeft = Math.max(scrollEl.scrollWidth - scrollEl.clientWidth, 0);
+  //   scrollEl.scrollLeft = (sliderValue / 100) * maxScrollLeft;
+  //   setChartScrollPercent(sliderValue);
+  // }, []);
 
   useEffect(() => {
     const scrollEl = chartScrollRef.current;
@@ -3547,22 +3547,22 @@ export default function CareerPage() {
                             ref={chartScrollRef}
                             sx={{
                               flexGrow: 1,
-                              overflowX: 'auto',
+                              overflowX: 'scroll',
+                              overflowY: 'hidden',
                               pb: 1,
                               height: '100%',
-                              WebkitOverflowScrolling: 'touch',
-                              '&::-webkit-scrollbar': { height: 6 },
-                              '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: 3 },
+                              '&::-webkit-scrollbar': { height: 8 },
+                              '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.15)', borderRadius: 4 },
                               '&::-webkit-scrollbar-thumb': {
                                 background: themeColors.primary,
-                                borderRadius: 3,
+                                borderRadius: 4,
                               },
                             }}
                           >
                             <Box
                               sx={{
                                 width: `${chartWidth}px`,
-                                height: '100%',
+                                height: 'calc(100% - 8px)',
                               }}
                             >
                               <ResponsiveContainer width={chartWidth} height="100%">
@@ -3824,32 +3824,20 @@ export default function CareerPage() {
                       );
                     })()}
 
-                    {/* Chart horizontal scroll indicator slider */}
+                    {/* Chart horizontal scroll indicator (mobile only message) */}
                     {chartHasHorizontalOverflow && (
-                      <Box sx={{ pl: '65px', pr: '70px', pt: 1, pb: 2 }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', mb: 0.5 }}>
-                          Slide chart left/right
+                      <Box
+                        sx={{
+                          pl: '65px',
+                          pr: '70px',
+                          pt: 1,
+                          pb: 2,
+                          display: { xs: 'block', sm: 'none' },
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)' }}>
+                          Scroll chart left/right from the date labels
                         </Typography>
-                        <Slider
-                          value={chartScrollPercent}
-                          onChange={handleChartSliderChange}
-                          min={0}
-                          max={100}
-                          step={1}
-                          size="small"
-                          aria-label="Chart horizontal scroll"
-                          sx={{
-                            color: themeColors.primary,
-                            px: 0.5,
-                            '& .MuiSlider-thumb': {
-                              width: 14,
-                              height: 14,
-                            },
-                            '& .MuiSlider-rail': {
-                              opacity: 0.35,
-                            },
-                          }}
-                        />
                       </Box>
                     )}
 
