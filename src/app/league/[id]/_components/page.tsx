@@ -2019,14 +2019,14 @@ export default function LeagueDetailPage() {
         handleLeaguesDropdownClose();
     };
 
-    const handleToggleAvailability = async (matchId: string, isAvailable: boolean) => {
+    const handleToggleAvailability = async (matchId: string, markAvailable: boolean) => {
         if (!user) {
             setError('Please login to mark availability');
             return;
         }
 
         setAvailabilityLoading(prev => ({ ...prev, [matchId]: true }));
-        const action = isAvailable ? 'unavailable' : 'available';
+        const action = markAvailable ? 'available' : 'unavailable';
 
         try {
             console.log('🔄 Toggling availability with action:', action);
@@ -4971,6 +4971,7 @@ export default function LeagueDetailPage() {
                                                 .sort(compareMatchesDesc)
                                                 .map((match, idx) => {
                                                     const isUserAvailable = !!match.availableUsers?.some(u => u?.id === user?.id);
+                                                    const isUserUnavailable = !!match.unavailableUsers?.some(u => u?.id === user?.id);
                                                     const seasonMatchNumberRaw = (match as unknown as { seasonMatchNumber?: unknown })?.seasonMatchNumber;
                                                     const seasonMatchNumber =
                                                         typeof seasonMatchNumberRaw === 'number'
@@ -5206,7 +5207,7 @@ export default function LeagueDetailPage() {
                                                                                     size="small"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        handleToggleAvailability(match.id, false);
+                                                                                        handleToggleAvailability(match.id, true);
                                                                                     }}
                                                                                     disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
@@ -5232,7 +5233,7 @@ export default function LeagueDetailPage() {
                                                                                     size="small"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        handleToggleAvailability(match.id, true);
+                                                                                        handleToggleAvailability(match.id, false);
                                                                                     }}
                                                                                     disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
                                                                                     sx={{
@@ -5245,8 +5246,8 @@ export default function LeagueDetailPage() {
                                                                                         px: 1.25,
                                                                                         whiteSpace: 'nowrap',
                                                                                         minWidth: '100px',
-                                                                                        boxShadow: !isUserAvailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
-                                                                                        border: !isUserAvailable ? '2px solid #ff6b6b' : 'none',
+                                                                                        boxShadow: isUserUnavailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
+                                                                                        border: isUserUnavailable ? '2px solid #ff6b6b' : 'none',
                                                                                         '&:hover': { background: '#b71c1c' },
                                                                                         '&.Mui-disabled': { opacity: 0.5 }
                                                                                     }}

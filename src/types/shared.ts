@@ -40,6 +40,7 @@ export interface Match {
   homeTeamGoals?: number;
   awayTeamGoals?: number;
   availableUsers?: User[];
+  unavailableUsers?: User[];
   homeTeamUsers?: User[];
   awayTeamUsers?: User[];
   end: string;
