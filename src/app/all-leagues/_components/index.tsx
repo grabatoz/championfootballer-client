@@ -231,6 +231,7 @@ const normalizeLeagueFromPayload = (payload: unknown): League | null => {
         inviteCode: s.inviteCode || s.seasonInviteCode || '',
         completedMatches: s.completedMatches,
         isCompleted: s.isCompleted,
+        archived: s.archived,
       }))
     ) as unknown as Season[],
     isLocked:
@@ -1197,7 +1198,6 @@ function LeagueSettingsDialog({ open, onClose, league, onUpdate, onDelete, curre
       admins: adminId ? [adminId] : [],
       seasonId: selectedSeasonId,
       seasonArchived: true,
-      archived: true,
       seasonStatus: 'archived',
       seasonIsActive: false,
       seasonActive: false,
@@ -2977,7 +2977,8 @@ function AllLeagues() {
           String(selectedLeague.name || '') !== String(refreshedSelected.name || '') ||
           Boolean(selectedLeague.active) !== Boolean(refreshedSelected.active) ||
           String(selectedLeague.image || '') !== String(refreshedSelected.image || '') ||
-          (selectedLeague.memberCount ?? selectedLeague.members?.length ?? 0) !== (refreshedSelected.memberCount || 0);
+          (selectedLeague.memberCount ?? selectedLeague.members?.length ?? 0) !== (refreshedSelected.memberCount || 0) ||
+          JSON.stringify((selectedLeague as LeagueWithStatus).seasons || []) !== JSON.stringify((refreshedSelected as LeagueWithStatus).seasons || []);
 
         if (needsSelectedSync) {
           setSelectedLeague((prev) => {
@@ -2994,6 +2995,7 @@ function AllLeagues() {
               isCompleted: (refreshedSelected as any).isCompleted,
               isLocked: refreshedSelected.isLocked,
               computedStatus: refreshedSelected.computedStatus,
+              seasons: (refreshedSelected as LeagueWithStatus).seasons,
             };
           });
         }
@@ -3007,7 +3009,8 @@ function AllLeagues() {
           String(adminSettingsLeague.name || '') !== String(refreshedAdminLeague.name || '') ||
           Boolean(adminSettingsLeague.active) !== Boolean(refreshedAdminLeague.active) ||
           String(adminSettingsLeague.image || '') !== String(refreshedAdminLeague.image || '') ||
-          (adminSettingsLeague.memberCount ?? adminSettingsLeague.members?.length ?? 0) !== (refreshedAdminLeague.memberCount || 0);
+          (adminSettingsLeague.memberCount ?? adminSettingsLeague.members?.length ?? 0) !== (refreshedAdminLeague.memberCount || 0) ||
+          JSON.stringify((adminSettingsLeague as LeagueWithStatus).seasons || []) !== JSON.stringify((refreshedAdminLeague as LeagueWithStatus).seasons || []);
 
         if (needsAdminSync) {
           setAdminSettingsLeague((prev) => {
@@ -3024,6 +3027,7 @@ function AllLeagues() {
               isCompleted: (refreshedAdminLeague as any).isCompleted,
               isLocked: refreshedAdminLeague.isLocked,
               computedStatus: refreshedAdminLeague.computedStatus,
+              seasons: (refreshedAdminLeague as LeagueWithStatus).seasons,
             };
           });
         }
@@ -3559,22 +3563,25 @@ function AllLeagues() {
     setArchivedSeasonActionId(`${leagueId}:${seasonId}`);
 
     try {
-      const endpoints = [
-        `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}/restore`,
-        `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}/restore`,
-        `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}/restore`,
+      const candidates: Array<{ method: 'POST' | 'PATCH'; url: string; body?: Record<string, unknown> }> = [
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}/restore` },
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}/restore` },
+        { method: 'POST', url: `${process.env.NEXT_PUBLIC_API_URL}/api/seasons/${seasonId}/restore` },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/api/leagues/${leagueId}/seasons/${seasonId}/status`, body: { archived: false } },
+        { method: 'PATCH', url: `${process.env.NEXT_PUBLIC_API_URL}/leagues/${leagueId}/seasons/${seasonId}/status`, body: { archived: false } },
       ];
 
       let success = false;
       let errorMessage = 'Failed to restore season';
 
-      for (let i = 0; i < endpoints.length; i += 1) {
-        const response = await fetch(endpoints[i], {
-          method: 'POST',
+      for (const candidate of candidates) {
+        const response = await fetch(candidate.url, {
+          method: candidate.method,
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
+          body: candidate.body ? JSON.stringify(candidate.body) : undefined,
         });
 
         const payloadUnknown: unknown = await response.json().catch(() => ({}));
