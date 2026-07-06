@@ -3424,7 +3424,7 @@ export default function LeagueDetailPage() {
                                 <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1 }}>
                                     Player Availability
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: (match.availableUsers && match.availableUsers.length > 0) ? 2 : 0 }}>
                                     <Chip
                                         label={`Available: ${getAvailabilityCounts(match).availableCount}`}
                                         size="small"
@@ -3436,6 +3436,30 @@ export default function LeagueDetailPage() {
                                         sx={{ backgroundColor: '#dc2626', color: 'white', fontWeight: 'bold' }}
                                     />
                                 </Box>
+
+                                {match.availableUsers && match.availableUsers.length > 0 && (
+                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <Typography variant="body2" sx={{ color: '#9CA3AF', fontSize: '0.8rem', mb: 1.5, fontWeight: 'bold' }}>
+                                            Order of acceptance:
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {match.availableUsers.map((player, index) => (
+                                                <Box key={player.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                    <Image
+                                                        src={HomeTeamImage}
+                                                        alt="Green Shirt"
+                                                        width={22}
+                                                        height={22}
+                                                        style={{ objectFit: 'contain' }}
+                                                    />
+                                                    <Typography variant="body2" sx={{ color: '#E5E7EB', fontWeight: 500, fontSize: '0.9rem' }}>
+                                                        {index + 1}. {player.firstName} {player.lastName}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
                             </Box>
                         )}
                     </Box>
@@ -3457,7 +3481,7 @@ export default function LeagueDetailPage() {
                     >
                         Close
                     </Button>
-                    <Link href={`/match/${match.id}`} passHref>
+                    {/* <Link href={`/match/${match.id}`} passHref>
                         <Button
                             variant="contained"
                             sx={{
@@ -3468,7 +3492,7 @@ export default function LeagueDetailPage() {
                         >
                             View Full Details
                         </Button>
-                    </Link>
+                    </Link> */}
                 </DialogActions>
             </Dialog>
         );
@@ -5197,66 +5221,97 @@ export default function LeagueDetailPage() {
                                                                             </Box>
                                                                         )}
 
-                                                                        {/* Availability Buttons */}
+                                                                        {/* Availability Buttons & See Who Is Playing Link */}
                                                                         {isMember && (
-                                                                            <Box sx={{
-                                                                                display: 'flex', gap: 1, mb: 0, flexWrap: 'nowrap'
-                                                                                //  mt: 1
-                                                                            }}>
-                                                                                <Button
-                                                                                    variant="contained"
-                                                                                    size="small"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleToggleAvailability(match.id, true);
-                                                                                    }}
-                                                                                    disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
-                                                                                    sx={{
-                                                                                        background: '#00af80',
-                                                                                        color: 'white',
-                                                                                        textTransform: 'none',
-                                                                                        fontWeight: 500,
-                                                                                        fontSize: '0.9rem',
-                                                                                        py: 0.35,
-                                                                                        px: 1.25,
-                                                                                        whiteSpace: 'nowrap',
-                                                                                        minWidth: '100px',
-                                                                                        boxShadow: isUserAvailable ? '0 0 12px 3px rgba(0, 175, 128, 0.7), 0 0 20px rgba(0, 255, 180, 0.4)' : 'none',
-                                                                                        border: isUserAvailable ? '2px solid #00ffaa' : 'none',
-                                                                                        '&:hover': { background: '#008f6a' },
-                                                                                        '&.Mui-disabled': { opacity: 0.5 }
-                                                                                    }}
-                                                                                >
-                                                                                    {availabilityLoading[match.id] ? <CircularProgress size={16} color="inherit" /> : '✓ Available'}
-                                                                                </Button>
-                                                                                <Button
-                                                                                    variant="contained"
-                                                                                    size="small"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleToggleAvailability(match.id, false);
-                                                                                    }}
-                                                                                    disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
-                                                                                    sx={{
-                                                                                        background: '#c62828',
-                                                                                        color: 'white',
-                                                                                        textTransform: 'none',
-                                                                                        fontWeight: 500,
-                                                                                        fontSize: '0.9rem',
-                                                                                        py: 0.35,
-                                                                                        px: 1.25,
-                                                                                        whiteSpace: 'nowrap',
-                                                                                        minWidth: '100px',
-                                                                                        boxShadow: isUserUnavailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
-                                                                                        border: isUserUnavailable ? '2px solid #ff6b6b' : 'none',
-                                                                                        '&:hover': { background: '#b71c1c' },
-                                                                                        '&.Mui-disabled': { opacity: 0.5 }
-                                                                                    }}
-                                                                                >
-                                                                                    {availabilityLoading[match.id] ? <CircularProgress size={16} color="inherit" /> : '✕ Unavailable'}
-                                                                                </Button>
+                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mt: 0.5 }}>
+                                                                                <Box sx={{
+                                                                                    display: 'flex', gap: 1, mb: 0, flexWrap: 'nowrap'
+                                                                                }}>
+                                                                                    <Button
+                                                                                        variant="contained"
+                                                                                        size="small"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleToggleAvailability(match.id, true);
+                                                                                        }}
+                                                                                        disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
+                                                                                        sx={{
+                                                                                            background: '#00af80',
+                                                                                            color: 'white',
+                                                                                            textTransform: 'none',
+                                                                                            fontWeight: 500,
+                                                                                            fontSize: '0.9rem',
+                                                                                            py: 0.35,
+                                                                                            px: 1.25,
+                                                                                            whiteSpace: 'nowrap',
+                                                                                            minWidth: '100px',
+                                                                                            boxShadow: isUserAvailable ? '0 0 12px 3px rgba(0, 175, 128, 0.7), 0 0 20px rgba(0, 255, 180, 0.4)' : 'none',
+                                                                                            border: isUserAvailable ? '2px solid #00ffaa' : 'none',
+                                                                                            '&:hover': { background: '#008f6a' },
+                                                                                            '&.Mui-disabled': { opacity: 0.5 }
+                                                                                        }}
+                                                                                    >
+                                                                                        {availabilityLoading[match.id] ? <CircularProgress size={16} color="inherit" /> : '✓ Available'}
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        variant="contained"
+                                                                                        size="small"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleToggleAvailability(match.id, false);
+                                                                                        }}
+                                                                                        disabled={availabilityLoading[match.id] || !league?.active || !isSelectedSeasonActive}
+                                                                                        sx={{
+                                                                                            background: '#c62828',
+                                                                                            color: 'white',
+                                                                                            textTransform: 'none',
+                                                                                            fontWeight: 500,
+                                                                                            fontSize: '0.9rem',
+                                                                                            py: 0.35,
+                                                                                            px: 1.25,
+                                                                                            whiteSpace: 'nowrap',
+                                                                                            minWidth: '100px',
+                                                                                            boxShadow: isUserUnavailable ? '0 0 12px 3px rgba(198, 40, 40, 0.7), 0 0 20px rgba(255, 100, 100, 0.4)' : 'none',
+                                                                                            border: isUserUnavailable ? '2px solid #ff6b6b' : 'none',
+                                                                                            '&:hover': { background: '#b71c1c' },
+                                                                                            '&.Mui-disabled': { opacity: 0.5 }
+                                                                                        }}
+                                                                                    >
+                                                                                        {availabilityLoading[match.id] ? <CircularProgress size={16} color="inherit" /> : '✕ Unavailable'}
+                                                                                    </Button>
+                                                                                </Box>
                                                                             </Box>
                                                                         )}
+
+                                                                        <Button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSelectedMatchDetail(match);
+                                                                                setMatchDetailModalOpen(true);
+                                                                            }}
+                                                                            sx={{
+                                                                                color: '#00D09E',
+                                                                                fontSize: '0.85rem',
+                                                                                textTransform: 'none',
+                                                                                fontWeight: 600,
+                                                                                p: 0,
+                                                                                mt: 1,
+                                                                                justifyContent: 'flex-start',
+                                                                                alignSelf: 'flex-start',
+                                                                                textDecoration: 'underline',
+                                                                                minWidth: 0,
+                                                                                background: 'none',
+                                                                                border: 'none',
+                                                                                cursor: 'pointer',
+                                                                                '&:hover': {
+                                                                                    color: '#00af80',
+                                                                                    textDecoration: 'underline',
+                                                                                    background: 'none',
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            See who is playing
+                                                                        </Button>
                                                                     </Box>
 
                                                                     {/* Right Admin Column */}

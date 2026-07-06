@@ -40,6 +40,7 @@ interface MatchSummaryProps {
   handleToggleAvailability: (matchId: string, isAvailable: boolean) => void
   embeddedInDialog?: boolean
   seasonActive?: boolean
+  isUserInMatch?: boolean
 }
 
 const getElapsedTime = (startTime: string, endTime?: string) => {
@@ -75,6 +76,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   handleToggleAvailability,
   embeddedInDialog = false,
   seasonActive = true,
+  isUserInMatch = false,
 }) => {
   const [, setElapsed] = useState("00:00")
   const { token, user } = useAuth()
@@ -484,32 +486,62 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
               embeddedInDialog ? (
                 <>
                   {isAdmin && (
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      startIcon={<Add />}
-                      onClick={() => {
-                        setShouldShowAdminGoals(true);
-                        setStatsDialogOpen(true);
-                      }}
-                      disabled={!seasonActive}
-                      sx={{
-                        bgcolor: "#2B2B2B",
-                        color: "white",
-                        fontWeight: "bold",
-                        border: '1px solid #e16419',
-                        "&:hover": { bgcolor: "#2B2B2B" },
-                        fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
-                        px: { xs: 1, sm: 1.5, md: 2 },
-                        py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
-                        width: { xs: 120, sm: 140, md: 180 },
-                        minWidth: 0,
-                        whiteSpace: { xs: "normal", md: "nowrap" },
-                        "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
-                      }}
-                    >
-                      Add Score
-                    </Button>
+                    isUserInMatch ? (
+                      <Button
+                        variant="contained"
+                        onClick={() => handleToggleAvailability(matchId, isUserAvailable)}
+                        disabled={availabilityLoading[matchId]}
+                        sx={{
+                          backgroundColor: isUserAvailable ? "#4caf50" : "#f44336",
+                          "&:hover": {
+                            backgroundColor: isUserAvailable ? "#388e3c" : "#d32f2f",
+                          },
+                          "&.Mui-disabled": {
+                            backgroundColor: "rgba(255,255,255,0.3)",
+                            color: "rgba(255,255,255,0.5)",
+                          },
+                          fontSize: { xs: "0.6rem", sm: "0.7rem", md: "0.75rem", lg: "0.875rem" },
+                          px: { xs: 1, sm: 1.5, md: 2 },
+                          py: { xs: 0.3, sm: 0.5, md: 0.7, lg: 1 },
+                          minWidth: { xs: "auto", sm: 120, md: 140 },
+                        }}
+                      >
+                        {availabilityLoading[matchId] ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : isUserAvailable ? (
+                          "Unavailable"
+                        ) : (
+                          "Available"
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<Add />}
+                        onClick={() => {
+                          setShouldShowAdminGoals(true);
+                          setStatsDialogOpen(true);
+                        }}
+                        disabled={!seasonActive}
+                        sx={{
+                          bgcolor: "#2B2B2B",
+                          color: "white",
+                          fontWeight: "bold",
+                          border: '1px solid #e16419',
+                          "&:hover": { bgcolor: "#2B2B2B" },
+                          fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem", lg: "0.8rem" },
+                          px: { xs: 1, sm: 1.5, md: 2 },
+                          py: { xs: 0.1, sm: 0.2, md: 0.3, lg: 0.5 },
+                          width: { xs: 120, sm: 140, md: 180 },
+                          minWidth: 0,
+                          whiteSpace: { xs: "normal", md: "nowrap" },
+                          "&.Mui-disabled": { color: "rgba(255,255,255,0.65)", borderColor: "rgba(225,100,25,0.45)" },
+                        }}
+                      >
+                        Add Score
+                      </Button>
+                    )
                   )}
                   {!isAdmin && (
                     <Button

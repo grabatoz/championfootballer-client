@@ -67,6 +67,7 @@ interface User {
 }
 
 interface Match {
+  unavailableUsers: any;
   awayTeamImage?: string;
   homeTeamImage?: string;
   id: string;
@@ -873,6 +874,7 @@ export default function MatchDetailsPage({ matchIdProp }: { matchIdProp?: string
             handleToggleAvailability={handleToggleAvailability}
             embeddedInDialog={isEmbeddedInDialog}
             seasonActive={currentMatchSeasonActive}
+            isUserInMatch={match.homeTeamUsers?.some(u => u?.id === user?.id) || match.awayTeamUsers?.some(u => u?.id === user?.id) || match.availableUsers?.some(u => u?.id === user?.id) || match.unavailableUsers?.some((u: { id: string | undefined; }) => u?.id === user?.id)}
           />
           {!showGoals && (
             <Typography align="center" sx={{ mb: 3, color: 'gray' }}>
