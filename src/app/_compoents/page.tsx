@@ -235,7 +235,7 @@ export default function LandingPage() {
               }}
             >
               {/* Top Text */}
-              <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' }, mb: 1 }}>
                 <Typography
                   sx={{
                     fontFamily: 'var(--font-inter), Inter, sans-serif !important',
@@ -244,7 +244,7 @@ export default function LandingPage() {
                     lineHeight: { xs: '1.3', md: '35px' },
                     letterSpacing: '0% !important',
                     color: 'white',
-                    textAlign: { xs: 'left', md: 'right' },
+                    textAlign: { xs: 'center', md: 'right' },
                     maxWidth: { xs: '100%', md: '355px' },
                     width: '100%',
                     mt: { xs: 0, md: 1 },

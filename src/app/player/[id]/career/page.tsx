@@ -3830,12 +3830,12 @@ export default function CareerPage() {
                         sx={{
                           pl: '65px',
                           pr: '70px',
-                          pt: 1,
+                          mt: -5,
                           pb: 2,
                           display: { xs: 'block', sm: 'none' },
                         }}
                       >
-                        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)' }}>
+                        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', textAlign: 'center' }}>
                           Scroll chart left/right from the date labels
                         </Typography>
                       </Box>

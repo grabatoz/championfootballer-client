@@ -1556,8 +1556,8 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
     const playerOnAwayTeamSafe = !!(match && currentUserId && (match.awayTeamUsers ?? []).some(p => String(p.id) === currentUserId));
     const isUserAssignedToTeam = playerOnHomeTeamSafe || playerOnAwayTeamSafe;
     const teamGoalsSafe = (match && currentUserId)
-        ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 0) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 0) : 0))
-        : 0;
+        ? (playerOnHomeTeamSafe ? (match.homeTeamGoals || 20) : (playerOnAwayTeamSafe ? (match.awayTeamGoals || 20) : 20))
+        : 20;
     const matchTotalGoalsSafe = Math.max(
         0,
         Number(match?.homeTeamGoals || 0) + Number(match?.awayTeamGoals || 0)
@@ -2794,7 +2794,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{
+                                        readOnly: isMobile,
+                                        style: { textAlign: 'center', pointerEvents: isMobile ? 'none' : 'auto' }
+                                    }}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -2869,7 +2872,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{
+                                        readOnly: isMobile,
+                                        style: { textAlign: 'center', pointerEvents: isMobile ? 'none' : 'auto' }
+                                    }}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -2944,7 +2950,10 @@ const PlayMatchPagee: React.FC<EmbeddedControlProps> = (props) => {
                                         }
                                     }}
                                     onFocus={(e) => e.target.select()}
-                                    inputProps={{ style: { textAlign: 'center' } }}
+                                    inputProps={{
+                                        readOnly: isMobile,
+                                        style: { textAlign: 'center', pointerEvents: isMobile ? 'none' : 'auto' }
+                                    }}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
