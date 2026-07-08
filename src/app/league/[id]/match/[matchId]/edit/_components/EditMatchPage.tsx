@@ -823,8 +823,8 @@ const clampLocation = (value: string) => value.slice(0, 120);
 
         // Players: keep only current league members (fixes stale ex-members still attached to old matches)
         const memberIds = new Set<string>((leagueObj?.members || []).map((u: User) => String(u.id)));
-        const homeUsers = (m.homeTeamUsers || []).map(u => ({ ...u })).filter(u => isMemberUser(u.id, memberIds));
-        const awayUsers = (m.awayTeamUsers || []).map(u => ({ ...u })).filter(u => isMemberUser(u.id, memberIds));
+        const homeUsers = (m.homeTeamUsers || []).map(u => ({ ...u }));
+        const awayUsers = (m.awayTeamUsers || []).map(u => ({ ...u }));
         setHomeTeamUsers([...homeUsers, ...homeG.map(g => guestToPlayer(g))]);
         setAwayTeamUsers([...awayUsers, ...awayG.map(g => guestToPlayer(g))]);
 
