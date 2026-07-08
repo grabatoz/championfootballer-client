@@ -3830,7 +3830,7 @@ export default function CareerPage() {
                         sx={{
                           pl: '65px',
                           pr: '70px',
-                          mt: -5,
+                          mt: -4,
                           pb: 2,
                           display: { xs: 'block', sm: 'none' },
                         }}
@@ -4410,7 +4410,7 @@ export default function CareerPage() {
                     </Grid>
                   </Box>
                 </GlassCard>
- 
+
                 {/* FOCUS AREA Section (private: only when viewing your own dashboard) */}
                 {canViewPersonalSections && (
                   <Box
