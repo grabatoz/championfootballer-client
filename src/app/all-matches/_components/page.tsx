@@ -2982,8 +2982,12 @@ export default function AllMatches() {
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                                 sx={{
                                                                     ...resultCardActionButtonSx,
-                                                                    border: 'solid #F97316',
-                                                                    borderWidth: { xs: '2.5px !important', sm: '2px !important' },
+                                                                    backgroundColor: '#F97316',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    '&:hover': {
+                                                                        backgroundColor: '#C2410C',
+                                                                    },
                                                                 }}
                                                             >
                                                                 Add Stats
@@ -2998,8 +3002,12 @@ export default function AllMatches() {
                                                             disabled={match.archived}
                                                             sx={{
                                                                 ...resultCardActionButtonSx,
-                                                                border: 'solid #F97316',
-                                                                borderWidth: { xs: '2.5px !important', sm: '2px !important' },
+                                                                backgroundColor: '#F97316',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                '&:hover': {
+                                                                    backgroundColor: '#C2410C',
+                                                                },
                                                             }}
                                                         >
                                                             View Teams
@@ -3011,9 +3019,17 @@ export default function AllMatches() {
                                                             disabled={match.archived}
                                                             sx={{
                                                                 ...resultCardActionButtonSx,
-                                                                border: 'solid #F97316',
-                                                                borderWidth: { xs: '2.5px !important', sm: '2px !important' },
-                                                                '&.Mui-disabled': { color: 'white' },
+                                                                backgroundColor: '#F97316',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                '&:hover': {
+                                                                    backgroundColor: '#C2410C',
+                                                                },
+                                                                '&.Mui-disabled': {
+                                                                    backgroundColor: '#F97316',
+                                                                    color: 'white',
+                                                                    opacity: 0.5,
+                                                                },
                                                             }}
                                                         >
                                                             Results

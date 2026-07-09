@@ -5845,7 +5845,7 @@ export default function LeagueDetailPage() {
                                                                                             cursor: 'pointer',
                                                                                             width: '100%',
                                                                                             '&:hover .add-stats-btn': {
-                                                                                                backgroundColor: '#8E4B1C',
+                                                                                                backgroundColor: '#C2410C',
                                                                                             },
                                                                                         }}
                                                                                     >
@@ -5856,9 +5856,10 @@ export default function LeagueDetailPage() {
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
-                                                                                                border: 'solid #F97316',
+                                                                                                backgroundColor: '#F97316',
+                                                                                                // backgroundColor: '#FF007F',
                                                                                                 color: 'white',
-                                                                                                borderWidth: { xs: '2.5px !important', sm: '2px !important' },
+                                                                                                border: 'none',
                                                                                             }}
                                                                                         >
                                                                                             Add Stats
@@ -5878,8 +5879,13 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: 'solid #F97316',
-                                                                                    borderWidth: { xs: '2.5px !important', sm: '2px !important' },
+                                                                                    backgroundColor: '#F97316',
+                                                                                    // backgroundColor: 'blue',
+                                                                                    color: 'white',
+                                                                                    border: 'none',
+                                                                                    '&:hover': {
+                                                                                        backgroundColor: '#C2410C',
+                                                                                    },
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -5892,9 +5898,17 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: 'solid #F97316',
-                                                                                    borderWidth: { xs: '2.5px !important', sm: '2px !important' },
-                                                                                    '&.Mui-disabled': { color: 'white' },
+                                                                                    backgroundColor: '#F97316',
+                                                                                    color: 'white',
+                                                                                    border: 'none',
+                                                                                    '&:hover': {
+                                                                                        backgroundColor: '#C2410C',
+                                                                                    },
+                                                                                    '&.Mui-disabled': {
+                                                                                        backgroundColor: '#F97316',
+                                                                                        color: 'white',
+                                                                                        opacity: 0.5,
+                                                                                    },
                                                                                 }}
                                                                             >
                                                                                 Results
