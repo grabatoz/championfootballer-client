@@ -5856,9 +5856,9 @@ export default function LeagueDetailPage() {
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
-                                                                                                border: '1px solid #F97316',
+                                                                                                border: 'solid #F97316',
                                                                                                 color: 'white',
-                                                                                                borderWidth: '1px !important',
+                                                                                                borderWidth: { xs: '2.5px !important', sm: '2px !important' },
                                                                                             }}
                                                                                         >
                                                                                             Add Stats
@@ -5878,7 +5878,8 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: '1px solid #F97316',
+                                                                                    border: 'solid #F97316',
+                                                                                    borderWidth: { xs: '2.5px !important', sm: '2px !important' },
                                                                                 }}
                                                                             >
                                                                                 View Teams
@@ -5891,7 +5892,8 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    border: '1px solid #F97316',
+                                                                                    border: 'solid #F97316',
+                                                                                    borderWidth: { xs: '2.5px !important', sm: '2px !important' },
                                                                                     '&.Mui-disabled': { color: 'white' },
                                                                                 }}
                                                                             >
