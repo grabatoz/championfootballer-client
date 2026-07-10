@@ -5845,7 +5845,7 @@ export default function LeagueDetailPage() {
                                                                                             cursor: 'pointer',
                                                                                             width: '100%',
                                                                                             '&:hover .add-stats-btn': {
-                                                                                                backgroundColor: '#C2410C',
+                                                                                                backgroundColor: '#DB2777',
                                                                                             },
                                                                                         }}
                                                                                     >
@@ -5856,8 +5856,7 @@ export default function LeagueDetailPage() {
                                                                                             sx={{
                                                                                                 ...cardActionButtonSx,
                                                                                                 pointerEvents: 'none',
-                                                                                                backgroundColor: '#F97316',
-                                                                                                // backgroundColor: '#FF007F',
+                                                                                                backgroundColor: '#FF007F',
                                                                                                 color: 'white',
                                                                                                 border: 'none',
                                                                                             }}
@@ -5879,12 +5878,11 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={ViewTeamImg} alt="View Team" width={isMobile ? 13 : 17} height={isMobile ? 13 : 17} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    backgroundColor: '#F97316',
-                                                                                    // backgroundColor: 'blue',
+                                                                                    backgroundColor: '#7C3AED',
                                                                                     color: 'white',
                                                                                     border: 'none',
                                                                                     '&:hover': {
-                                                                                        backgroundColor: '#C2410C',
+                                                                                        backgroundColor: '#6D28D9',
                                                                                     },
                                                                                 }}
                                                                             >
@@ -5898,14 +5896,14 @@ export default function LeagueDetailPage() {
                                                                                 startIcon={<Image src={RESULTS} alt="Results" width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} />}
                                                                                 sx={{
                                                                                     ...cardActionButtonSx,
-                                                                                    backgroundColor: '#F97316',
+                                                                                    backgroundColor: '#2563EB',
                                                                                     color: 'white',
                                                                                     border: 'none',
                                                                                     '&:hover': {
-                                                                                        backgroundColor: '#C2410C',
+                                                                                        backgroundColor: '#1D4ED8',
                                                                                     },
                                                                                     '&.Mui-disabled': {
-                                                                                        backgroundColor: '#F97316',
+                                                                                        backgroundColor: '#2563EB',
                                                                                         color: 'white',
                                                                                         opacity: 0.5,
                                                                                     },
