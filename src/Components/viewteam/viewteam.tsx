@@ -87,6 +87,7 @@ type Player = {
   position: 'GK' | 'DF' | 'MD' | 'FW';
   isCaptain?: boolean;
   xp?: number;
+  originalPosition?: string;
 };
 
 // API types (minimal)
@@ -96,7 +97,7 @@ type ApiPlayer = {
   lastName: string;
   shirtNumber?: string | null;
   positionType?: string | null;
-  role?: 'GK' | 'DF' | 'MD' | 'FW';
+  role?: string | null;
   xp?: number | null; // per-match XP from team-view
 };
 
@@ -237,13 +238,13 @@ function normalizeRole(input?: string | null): 'GK' | 'DF' | 'MD' | 'FW' {
 
 // Auto-formation roles by team size (matches API logic)
 // Return [] when there are no players
-function targetRolesBySize(n: number): Array<'GK'|'DF'|'MD'|'FW'> {
+function targetRolesBySize(n: number): Array<'GK' | 'DF' | 'MD' | 'FW'> {
   if (n <= 0) return [];
-  if (n < 5) { const r: Array<'GK'|'DF'|'MD'|'FW'> = ['GK']; for (let i = 1; i < n; i++) r.push('DF'); return r; }
-  if (n === 5) return ['GK','DF','DF','FW','FW'];
-  if (n === 6) return ['GK','DF','DF','DF','FW','FW'];
-  if (n === 7) return ['GK','DF','DF','DF','FW','FW','FW'];
-  const arr: Array<'GK'|'DF'|'MD'|'FW'> = ['GK','DF','DF','DF'];
+  if (n < 5) { const r: Array<'GK' | 'DF' | 'MD' | 'FW'> = ['GK']; for (let i = 1; i < n; i++) r.push('DF'); return r; }
+  if (n === 5) return ['GK', 'DF', 'DF', 'FW', 'FW'];
+  if (n === 6) return ['GK', 'DF', 'DF', 'DF', 'FW', 'FW'];
+  if (n === 7) return ['GK', 'DF', 'DF', 'DF', 'FW', 'FW', 'FW'];
+  const arr: Array<'GK' | 'DF' | 'MD' | 'FW'> = ['GK', 'DF', 'DF', 'DF'];
   for (let i = arr.length; i < n; i++) arr.push('FW');
   return arr;
 }
@@ -251,12 +252,12 @@ function targetRolesBySize(n: number): Array<'GK'|'DF'|'MD'|'FW'> {
 // Reorder incoming API players to match target roles
 function arrangePlayers(list: ApiPlayer[], captainId?: string): Player[] {
   if (!Array.isArray(list) || list.length === 0) return [];
-  const buckets: Record<'GK'|'DF'|'MD'|'FW', ApiPlayer[]> = { GK: [], DF: [], MD: [], FW: [] };
+  const buckets: Record<'GK' | 'DF' | 'MD' | 'FW', ApiPlayer[]> = { GK: [], DF: [], MD: [], FW: [] };
   list.forEach(p => buckets[normalizeRole(p.role || p.positionType)].push(p));
 
-  const take = (role: 'GK'|'DF'|'MD'|'FW') => (buckets[role].length ? buckets[role].shift()! : undefined);
+  const take = (role: 'GK' | 'DF' | 'MD' | 'FW') => (buckets[role].length ? buckets[role].shift()! : undefined);
   const takeAny = () => {
-    for (const r of ['DF','MD','FW','GK'] as const) if (buckets[r].length) return buckets[r].shift()!;
+    for (const r of ['DF', 'MD', 'FW', 'GK'] as const) if (buckets[r].length) return buckets[r].shift()!;
     return undefined;
   };
 
@@ -266,7 +267,7 @@ function arrangePlayers(list: ApiPlayer[], captainId?: string): Player[] {
     const picked = take(role) || takeAny();
     if (picked) ordered.push(picked);
   }
-  (['GK','DF','MD','FW'] as const).forEach(r => { while (buckets[r].length) ordered.push(buckets[r].shift()!); });
+  (['GK', 'DF', 'MD', 'FW'] as const).forEach(r => { while (buckets[r].length) ordered.push(buckets[r].shift()!); });
 
   return ordered.map(p => mapApiToPlayer(p, captainId));
 }
@@ -280,7 +281,8 @@ function mapApiToPlayer(u: ApiPlayer, captainId?: string): Player {
     number: (u.shirtNumber || '00').toString().padStart(2, '0'),
     position: normalizeRole(u.role || u.positionType),
     isCaptain,
-    xp: typeof u.xp === 'number' ? u.xp : undefined
+    xp: typeof u.xp === 'number' ? u.xp : undefined,
+    originalPosition: u.role || u.positionType || undefined
   };
 }
 
@@ -397,7 +399,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // }, [meId, isHomeTeam, homeCaptainId, awayCaptainId]);
 
   // team-side specific drag permission (league admin or captain)
-  const canDragTeam = React.useCallback((t: 'home'|'away') => {
+  const canDragTeam = React.useCallback((t: 'home' | 'away') => {
     if (isLeagueAdmin) return true;
     if (!meId) return false;
     const homeCap = String(homeCaptainId || '');
@@ -461,7 +463,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // VERTICAL layout: Home = top half (y: 0-0.5), Away = bottom half (y: 0.5-1.0)
   // X axis = horizontal position on pitch (0=left, 1=right)
   // On small screens, CSS rotation makes this appear horizontal (Home=left, Away=right)
-  const autoLayout = React.useCallback((players: Player[], teamSide: 'home'|'away'): TeamPositions => {
+  const autoLayout = React.useCallback((players: Player[], teamSide: 'home' | 'away'): TeamPositions => {
     const isHome = teamSide === 'home';
     const keyOf = (p: Player) => String(p.id || p.name);
 
@@ -491,7 +493,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
   // Debounced save to API
   const savePositions = React.useMemo(
-    () => debounce(async (teamSide: 'home'|'away', positions: TeamPositions) => {
+    () => debounce(async (teamSide: 'home' | 'away', positions: TeamPositions) => {
       if (!leagueId || !matchId || !token) return;
       console.log(`[Debounced Save] Saving ${teamSide} positions:`, JSON.stringify(positions));
       try {
@@ -512,7 +514,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   );
 
   // Immediate save (called on drag end) — read from STATE via functional set to guarantee latest positions
-  const savePositionsNow = React.useCallback(async (teamSide: 'home'|'away') => {
+  const savePositionsNow = React.useCallback(async (teamSide: 'home' | 'away') => {
     if (!leagueId || !matchId || !token) return;
     // Read latest positions directly from the ref (synced via useEffect)
     const positions = teamSide === 'home' ? { ...homePosRef.current } : { ...awayPosRef.current };
@@ -569,17 +571,17 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         // Load saved positions from server
         const serverHome = m.positions?.home || {};
         const serverAway = m.positions?.away || {};
-        
+
         console.log('[Team View Load] Server home positions:', JSON.stringify(serverHome));
         console.log('[Team View Load] Server away positions:', JSON.stringify(serverAway));
         console.log('[Team View Load] Home players count:', home.length);
         console.log('[Team View Load] Away players count:', away.length);
-        
+
         // ALWAYS use server positions if they exist (even if empty object)
         // Only generate auto layout if server explicitly returns no positions data
         const hasHomePositions = Object.keys(serverHome).length > 0;
         const hasAwayPositions = Object.keys(serverAway).length > 0;
-        
+
         if (hasHomePositions) {
           console.log('[Team View Load] âœ“ Using saved home positions');
           setHomePos(serverHome);
@@ -587,7 +589,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           console.log('[Team View Load] âœ— Using auto layout for home (no saved positions)');
           setHomePos(autoLayout(home, 'home'));
         }
-        
+
         if (hasAwayPositions) {
           console.log('[Team View Load] âœ“ Using saved away positions');
           setAwayPos(serverAway);
@@ -721,7 +723,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               homeStrength: Number(j?.home?.average ?? 0),
               awayStrength: Number(j?.away?.average ?? 0),
               matchupPct: safePct,
-              predicted: (j?.predicted as 'home'|'away'|'draw') || 'draw',
+              predicted: (j?.predicted as 'home' | 'away' | 'draw') || 'draw',
               predictedScore: String(j?.predictedScore ?? 'â€”'),
             });
             setPredictionReason(null);
@@ -756,7 +758,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     [removed.away]
   );
 
-  const isCaptainOf = (t: 'home'|'away') => {
+  const isCaptainOf = (t: 'home' | 'away') => {
     const cap = t === 'home' ? String(homeCaptainId || '') : String(awayCaptainId || '');
     return cap !== '' && cap === meId;
   };
@@ -771,7 +773,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
   // Track screen size — on big screens, pitch is rotated 90deg to show horizontally
   const [isRotated, setIsRotated] = React.useState(() => window.innerWidth >= 900);
-  
+
   React.useEffect(() => {
     const handleResize = () => {
       setIsRotated(window.innerWidth >= 900);
@@ -781,7 +783,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   }, []);
 
   // Pointer drag within pitch bounds and team half
-  const onDrag = (e: HasClientXY, pid: string, teamSide: 'home'|'away') => {
+  const onDrag = (e: HasClientXY, pid: string, teamSide: 'home' | 'away') => {
     if (!canDragTeam(teamSide) || !pitchRef.current) return;
     const rect = pitchRef.current.getBoundingClientRect();
 
@@ -834,7 +836,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
       });
     }
   };
-  const startDrag = (pid: string, teamSide: 'home'|'away') => (ev: React.PointerEvent<HTMLDivElement>) => {
+  const startDrag = (pid: string, teamSide: 'home' | 'away') => (ev: React.PointerEvent<HTMLDivElement>) => {
     // block dragging if removed
     const removedHere = teamSide === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
     if (removedHere) return;
@@ -889,7 +891,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   // Re-apply positions when players change
   React.useEffect(() => {
     if (!dataLoaded) return; // Don't run until initial data is loaded
-    
+
     // If we have positions but some players don't have positions, fill them in
     if (homePlayers.length > 0 && Object.keys(homePos).length > 0) {
       const missingHome = homePlayers.filter(p => !homePos[String(p.id || p.name)]);
@@ -906,7 +908,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         });
       }
     }
-    
+
     if (awayPlayers.length > 0 && Object.keys(awayPos).length > 0) {
       const missingAway = awayPlayers.filter(p => !awayPos[String(p.id || p.name)]);
       if (missingAway.length > 0) {
@@ -993,7 +995,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const list = homeGuests;
     const count = Math.max(1, list.length);
     const y = 0.05;  // Home team's guest row (top)
-    const map: Record<string, {x:number;y:number}> = {};
+    const map: Record<string, { x: number; y: number }> = {};
     list.forEach((g, i) => {
       const x = (i + 1) / (count + 1);
       map[String(g.id)] = { x, y };
@@ -1005,7 +1007,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const list = awayGuests;
     const count = Math.max(1, list.length);
     const y = 0.95;  // Away team's guest row (bottom)
-    const map: Record<string, {x:number;y:number}> = {};
+    const map: Record<string, { x: number; y: number }> = {};
     list.forEach((g, i) => {
       const x = (i + 1) / (count + 1);
       map[String(g.id)] = { x, y };
@@ -1035,10 +1037,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
 
   // Context Menu
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [menuTarget, setMenuTarget] = useState<null | { id: string; name: string; team: 'home'|'away'; isRemoved: boolean }>(null);
-  const [switchMode, setSwitchMode] = useState<null | { team: 'home'|'away'; aId: string }>(null);
+  const [menuTarget, setMenuTarget] = useState<null | { id: string; name: string; team: 'home' | 'away'; isRemoved: boolean }>(null);
+  const [switchMode, setSwitchMode] = useState<null | { team: 'home' | 'away'; aId: string }>(null);
 
-  const openMenu = (e: React.MouseEvent, t: 'home'|'away', id: string, name: string) => {
+  const openMenu = (e: React.MouseEvent, t: 'home' | 'away', id: string, name: string) => {
     e.preventDefault();
     const pid = String(id); // ensure string
     const isRemoved = t === 'home' ? removedHomeSet.has(pid) : removedAwaySet.has(pid);
@@ -1055,7 +1057,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
   const [replaceLoading, setReplaceLoading] = useState(false);
   const [replaceSearch, setReplaceSearch] = useState('');
   const [replaceCandidates, setReplaceCandidates] = useState<BasicUser[]>([]);
-  const [replaceCtx, setReplaceCtx] = useState<null | { team: 'home'|'away'; removedId: string }>(null);
+  const [replaceCtx, setReplaceCtx] = useState<null | { team: 'home' | 'away'; removedId: string }>(null);
 
   // Users already in this match (exclude from list) (added)
   const matchUserIdSet = React.useMemo(() => {
@@ -1185,7 +1187,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     alert('Switch mode: click another player on the same team to swap positions.');
   };
 
-  const tryCompleteSwitch = async (team: 'home'|'away', bId: string) => {
+  const tryCompleteSwitch = async (team: 'home' | 'away', bId: string) => {
     if (!switchMode || switchMode.team !== team || switchMode.aId === bId) return;
     try {
       const res = await fetch(`${apiBase}/leagues/${leagueId}/matches/${matchId}/switch`, {
@@ -1228,7 +1230,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     } catch (e) { console.warn('Make captain error', e); }
     closeMenu();
   };
-   const doReplace = async (replacementId: string) => {
+  const doReplace = async (replacementId: string) => {
     if (!leagueId || !matchId || !token || !replaceCtx) return;
     try {
       setReplaceLoading(true);
@@ -1298,7 +1300,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const isCaptainNow = String(teamSide === 'home' ? (homeCaptainId || '') : (awayCaptainId || '')) === pid;
     const teamColor = teamSide === 'home' ? primaryColor : awayTeamColor;
     const shirtImage = teamSide === 'away' ? Shirtaway : Shirt;
-    
+
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
@@ -1320,17 +1322,17 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         }}
       >
         <Box sx={{ position: 'relative', width: { xs: 44, sm: 60 }, height: { xs: 44, sm: 60 } }}>
-          <img 
-            src={shirtImage.src} 
-            alt="shirt" 
+          <img
+            src={shirtImage.src}
+            alt="shirt"
             draggable={false}
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'contain', 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
               opacity: 0.85,
               userSelect: 'none'
-            }} 
+            }}
           />
           {hasPublishedResult && typeof player.xp === 'number' && (
             <Box
@@ -1352,14 +1354,14 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               <Typography sx={{ fontSize: { xs: 10, sm: 13 }, fontWeight: 700, letterSpacing: 0.2 }}>
                 {Math.round(player.xp).toLocaleString()}
               </Typography>
-              <Typography sx={{ fontSize: { xs: 8.5, sm: 10.5 }, fontWeight: 700  }}>
+              <Typography sx={{ fontSize: { xs: 8.5, sm: 10.5 }, fontWeight: 700 }}>
                 xp
               </Typography>
             </Box>
           )}
           {isCaptainNow && (
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 position: 'absolute',
                 top: { xs: '18px', sm: '25px' },
                 right: { xs: '-2px', sm: '-3px' },
@@ -1399,7 +1401,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
     const onClick = () => { /* no-op for guests */ };
     const teamColor = teamSide === 'home' ? primaryColor : awayTeamColor;
     const shirtImage = teamSide === 'away' ? Shirtaway : Shirt;
-    
+
     return (
       <Box
         onPointerDown={startDrag(pid, teamSide)}
@@ -1414,17 +1416,17 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         }}
       >
         <Box sx={{ position: 'relative', width: { xs: 44, sm: 60 }, height: { xs: 44, sm: 60 } }}>
-          <img 
-            src={shirtImage.src} 
-            alt="guest-shirt" 
+          <img
+            src={shirtImage.src}
+            alt="guest-shirt"
             draggable={false}
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'contain', 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
               opacity: 0.85,
               userSelect: 'none'
-            }} 
+            }}
           />
         </Box>
         <Box sx={{ height: { xs: 3, sm: 6 } }} />
@@ -1568,123 +1570,123 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
         </Box>
         {/* Formation card */}
         {viewMode === 'pitch' && (
-        <>
-        <Paper
-          ref={wrapperRef}
-          elevation={0}
-          sx={{
-            p: 0,
-            border: 'none',
-            borderRadius: 1,
-            bgcolor: '#2b2b2b',
-            overflow: 'hidden',
-            mx: { xs: 0, sm: 1, md: 'auto' },
-            maxWidth: { md: `${DESKTOP_PITCH_MAX_WIDTH}px` },
-            /* Desktop: horizontal pitch, Mobile: vertical pitch */
-            height: { xs: 500, sm: 500, md: `${desktopPitchShortSide}px` },
-            position: 'relative',
-          }}
-        >
-          {/* Desktop keeps rotated horizontal pitch; mobile stays vertical */}
-          <Box
-            ref={pitchRef}
-            sx={{
-              position: 'absolute',
-              top: { xs: 0, md: '50%' },
-              left: { xs: 0, md: '50%' },
-              width: { xs: '100%', md: `${desktopPitchShortSide}px` },
-              height: { xs: '100%', md: `${desktopPitchLongSide}px` },
-              transform: { xs: 'none', md: 'translate(-50%, -50%) rotate(-90deg)' },
-              transformOrigin: { xs: 'top left', md: 'center center' },
-              bgcolor: '#2b2b2b',
-            }}
-          >
-            {/* Vector pitch (no JPG): keeps circles/arcs perfectly shaped on all screen sizes */}
-            <svg
-              viewBox={`0 0 ${PITCH_VIEWBOX_WIDTH} ${PITCH_VIEWBOX_HEIGHT}`}
-              preserveAspectRatio="none"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none',
+          <>
+            <Paper
+              ref={wrapperRef}
+              elevation={0}
+              sx={{
+                p: 0,
+                border: 'none',
+                borderRadius: 1,
+                bgcolor: '#2b2b2b',
+                overflow: 'hidden',
+                mx: { xs: 0, sm: 1, md: 'auto' },
+                maxWidth: { md: `${DESKTOP_PITCH_MAX_WIDTH}px` },
+                /* Desktop: horizontal pitch, Mobile: vertical pitch */
+                height: { xs: 500, sm: 500, md: `${desktopPitchShortSide}px` },
+                position: 'relative',
               }}
-              aria-hidden="true"
             >
-              <g fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="butt" strokeLinejoin="miter">
-                <rect x="8" y="8" width="998" height="1584" />
-                <line x1="8" y1="800" x2="1006" y2="800" />
-                <circle cx="507" cy="800" r="165" />
+              {/* Desktop keeps rotated horizontal pitch; mobile stays vertical */}
+              <Box
+                ref={pitchRef}
+                sx={{
+                  position: 'absolute',
+                  top: { xs: 0, md: '50%' },
+                  left: { xs: 0, md: '50%' },
+                  width: { xs: '100%', md: `${desktopPitchShortSide}px` },
+                  height: { xs: '100%', md: `${desktopPitchLongSide}px` },
+                  transform: { xs: 'none', md: 'translate(-50%, -50%) rotate(-90deg)' },
+                  transformOrigin: { xs: 'top left', md: 'center center' },
+                  bgcolor: '#2b2b2b',
+                }}
+              >
+                {/* Vector pitch (no JPG): keeps circles/arcs perfectly shaped on all screen sizes */}
+                <svg
+                  viewBox={`0 0 ${PITCH_VIEWBOX_WIDTH} ${PITCH_VIEWBOX_HEIGHT}`}
+                  preserveAspectRatio="none"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                  }}
+                  aria-hidden="true"
+                >
+                  <g fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="butt" strokeLinejoin="miter">
+                    <rect x="8" y="8" width="998" height="1584" />
+                    <line x1="8" y1="800" x2="1006" y2="800" />
+                    <circle cx="507" cy="800" r="165" />
 
-                <rect x="227" y="8" width="560" height="220" />
-                <rect x="332" y="8" width="350" height="120" />
-                <path d="M 352 228 A 155 155 0 0 0 662 228" />
+                    <rect x="227" y="8" width="560" height="220" />
+                    <rect x="332" y="8" width="350" height="120" />
+                    <path d="M 352 228 A 155 155 0 0 0 662 228" />
 
-                <rect x="227" y="1372" width="560" height="220" />
-                <rect x="332" y="1472" width="350" height="120" />
-                <path d="M 352 1372 A 155 155 0 0 1 662 1372" />
+                    <rect x="227" y="1372" width="560" height="220" />
+                    <rect x="332" y="1472" width="350" height="120" />
+                    <path d="M 352 1372 A 155 155 0 0 1 662 1372" />
 
-                {/* ===== Corner Edges (EDIT THESE 4 PATHS) =====
+                    {/* ===== Corner Edges (EDIT THESE 4 PATHS) =====
                     Format:
                     M startX startY A radiusX radiusY 0 0 sweepFlag endX endY
                     - 8 = outer border inset
                     - 30 = corner radius (increase/decrease for bigger/smaller curve)
                 */}
-                {/* Top-left corner edge */}
-                <path d="M 8 44 A 36 36 0 0 0 44 8" />
-                {/* Top-right corner edge */}
-                <path d="M 970 8 A 36 36 0 0 0 1006 44" />
-                {/* Bottom-left corner edge */}
-                <path d="M 8 1556 A 36 36 0 0 1 44 1592" />
-                {/* Bottom-right corner edge */}
-                <path d="M 970 1592 A 36 36 0 0 1 1006 1556" />
-              </g>
-            </svg>
-            {awaitingTeams ? (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'rgba(0,0,0,0.20)'
-                }}
-              >
-                <Typography sx={{ color: '#fff', fontWeight: 800, transform: { xs: 'none', md: 'rotate(90deg)' } }}>
-                  Awaiting admin to generate teams
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Home Team (Orange) - Left half */}
-                {homePlayers.map((p) => <ShirtDot key={`home-${p.id || p.name}-${p.number}`} player={p} teamSide="home" />)}
-                {homeGuests.map(g => (
-                  <GuestDot
-                    key={`home-guest-${g.id}`}
-                    guestId={String(g.id)}
-                    name={formatGuestDisplayName(g)}
-                    teamSide="home"
-                  />
-                ))}
-                
-                {/* Away Team (Blue) - Right half */}
-                {awayPlayers.map((p) => <ShirtDot key={`away-${p.id || p.name}-${p.number}`} player={p} teamSide="away" />)}
-                {awayGuests.map(g => (
-                  <GuestDot
-                    key={`away-guest-${g.id}`}
-                    guestId={String(g.id)}
-                    name={formatGuestDisplayName(g)}
-                    teamSide="away"
-                  />
-                ))}
-              </>
-            )}
-          </Box>
-        </Paper>
+                    {/* Top-left corner edge */}
+                    <path d="M 8 44 A 36 36 0 0 0 44 8" />
+                    {/* Top-right corner edge */}
+                    <path d="M 970 8 A 36 36 0 0 0 1006 44" />
+                    {/* Bottom-left corner edge */}
+                    <path d="M 8 1556 A 36 36 0 0 1 44 1592" />
+                    {/* Bottom-right corner edge */}
+                    <path d="M 970 1592 A 36 36 0 0 1 1006 1556" />
+                  </g>
+                </svg>
+                {awaitingTeams ? (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'rgba(0,0,0,0.20)'
+                    }}
+                  >
+                    <Typography sx={{ color: '#fff', fontWeight: 800, transform: { xs: 'none', md: 'rotate(90deg)' } }}>
+                      Awaiting admin to generate teams
+                    </Typography>
+                  </Box>
+                ) : (
+                  <>
+                    {/* Home Team (Orange) - Left half */}
+                    {homePlayers.map((p) => <ShirtDot key={`home-${p.id || p.name}-${p.number}`} player={p} teamSide="home" />)}
+                    {homeGuests.map(g => (
+                      <GuestDot
+                        key={`home-guest-${g.id}`}
+                        guestId={String(g.id)}
+                        name={formatGuestDisplayName(g)}
+                        teamSide="home"
+                      />
+                    ))}
 
-        </>
+                    {/* Away Team (Blue) - Right half */}
+                    {awayPlayers.map((p) => <ShirtDot key={`away-${p.id || p.name}-${p.number}`} player={p} teamSide="away" />)}
+                    {awayGuests.map(g => (
+                      <GuestDot
+                        key={`away-guest-${g.id}`}
+                        guestId={String(g.id)}
+                        name={formatGuestDisplayName(g)}
+                        teamSide="away"
+                      />
+                    ))}
+                  </>
+                )}
+              </Box>
+            </Paper>
+
+          </>
         )}
 
         {/* Table View */}
@@ -1746,52 +1748,52 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
               </Box>
             </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: { xs: 1, sm: 1.5 }, justifyContent: 'center', mt: -2, width: '100%' }}>
-            {/* Home Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
-              {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
-                const pid = String(p.id || p.name);
-                const isCap = homeCaptainId === pid;
-                return (
-                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #166956', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
-                        {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: { xs: 1, sm: 1.5 }, justifyContent: 'center', mt: -2, width: '100%' }}>
+              {/* Home Team */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
+                {[...homePlayers, ...homeGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+                  const pid = String(p.id || p.name);
+                  const isCap = homeCaptainId === pid;
+                  return (
+                    <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #166956', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
+                          {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+                        </Box>
+                        {hasPublishedResult && typeof (p as Player).xp === 'number' && (
+                          <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
+                        )}
                       </Box>
-                      {hasPublishedResult && typeof (p as Player).xp === 'number' && (
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
-                      )}
+                      <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm((p as Player).originalPosition || p.position)}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm(p.position)}</Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-            {/* Divider */}
-            <Box sx={{ width: '1.5px', height: 'auto', bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
-            {/* Away Team */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
-              {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
-                const pid = String(p.id || p.name);
-                const isCap = awayCaptainId === pid;
-                return (
-                  <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #884a20', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
-                        {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+                  );
+                })}
+              </Box>
+              {/* Divider */}
+              <Box sx={{ width: '1.5px', height: 'auto', bgcolor: '#959595', borderRadius: 1, flexShrink: 0 }} />
+              {/* Away Team */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, maxWidth: { xs: '50%', sm: 275 } }}>
+                {[...awayPlayers, ...awayGuests.map(g => ({ id: g.id, name: formatGuestDisplayName(g), number: '', position: 'MD' as const, xp: undefined }))].map((p, i) => {
+                  const pid = String(p.id || p.name);
+                  const isCap = awayCaptainId === pid;
+                  return (
+                    <Box key={i} sx={{ bgcolor: '#2b2b2b', border: '1.5px solid #884a20', borderRadius: 1, px: { xs: 1, sm: 1.5 }, py: { xs: 0.8, sm: 1 }, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap' }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.9rem' }, color: '#fff' }}>{p.name}</Typography>
+                          {isCap && <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00a77f' }}>Captain</Typography>}
+                        </Box>
+                        {hasPublishedResult && typeof (p as Player).xp === 'number' && (
+                          <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
+                        )}
                       </Box>
-                      {hasPublishedResult && typeof (p as Player).xp === 'number' && (
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#aaa' }}>{(p as Player).xp?.toLocaleString()} xp</Typography>
-                      )}
+                      <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm((p as Player).originalPosition || p.position)}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, color: '#aaa', mt: 0.2 }}>Position: {getPositionShortForm(p.position)}</Typography>
-                  </Box>
-                );
-              })}
+                  );
+                })}
+              </Box>
             </Box>
-          </Box>
           </Box>
         )}
 
@@ -1928,8 +1930,8 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                     ? teamInsights.predicted === 'home'
                       ? homeTeamName
                       : teamInsights.predicted === 'away'
-                      ? awayTeamName
-                      : 'Draw'
+                        ? awayTeamName
+                        : 'Draw'
                     : homeTeamName}
                 </span>{' '}
                 <span style={{ color: '#fff' }}>
@@ -1951,10 +1953,10 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
                   {predictionReason === 'FIRST_MATCH_NO_STATS'
                     ? 'Predictions are unavailable for the first match without prior stats.'
                     : predictionReason === 'NO_SELECTED_PLAYERS'
-                    ? 'Select players to see predictions.'
-                    : predictionReason === 'NO_SIGNAL'
-                    ? 'Not enough data to estimate.'
-                    : 'Prediction unavailable.'}
+                      ? 'Select players to see predictions.'
+                      : predictionReason === 'NO_SIGNAL'
+                        ? 'Not enough data to estimate.'
+                        : 'Prediction unavailable.'}
                 </Typography>
               )}
             </>
@@ -1979,7 +1981,7 @@ export default function TeamPreviewScreen({ leagueId, matchId }: { leagueId?: st
           </Typography>
         )}
         <Box sx={{ height: { xs: 16, sm: 40 } }} />
-        
+
       </Box>
     </Box>
   );
