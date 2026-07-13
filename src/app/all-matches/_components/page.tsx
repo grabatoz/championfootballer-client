@@ -2982,11 +2982,11 @@ export default function AllMatches() {
                                                                 startIcon={<Image src={ADDSTATS} alt="Add Stats" width={isMobile ? 14 : 17} height={isMobile ? 14 : 17} />}
                                                                 sx={{
                                                                     ...resultCardActionButtonSx,
-                                                                    backgroundColor: '#F97316',
+                                                                    backgroundColor: '#FF007F',
                                                                     color: 'white',
                                                                     border: 'none',
                                                                     '&:hover': {
-                                                                        backgroundColor: '#C2410C',
+                                                                        backgroundColor: '#DB2777',
                                                                     },
                                                                 }}
                                                             >
@@ -3002,11 +3002,11 @@ export default function AllMatches() {
                                                             disabled={match.archived}
                                                             sx={{
                                                                 ...resultCardActionButtonSx,
-                                                                backgroundColor: '#F97316',
+                                                                backgroundColor: '#7C3AED',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 '&:hover': {
-                                                                    backgroundColor: '#C2410C',
+                                                                    backgroundColor: '#6D28D9',
                                                                 },
                                                             }}
                                                         >
@@ -3019,14 +3019,14 @@ export default function AllMatches() {
                                                             disabled={match.archived}
                                                             sx={{
                                                                 ...resultCardActionButtonSx,
-                                                                backgroundColor: '#F97316',
+                                                                backgroundColor: '#2563EB',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 '&:hover': {
-                                                                    backgroundColor: '#C2410C',
+                                                                    backgroundColor: '#1D4ED8',
                                                                 },
                                                                 '&.Mui-disabled': {
-                                                                    backgroundColor: '#F97316',
+                                                                    backgroundColor: '#2563EB',
                                                                     color: 'white',
                                                                     opacity: 0.5,
                                                                 },

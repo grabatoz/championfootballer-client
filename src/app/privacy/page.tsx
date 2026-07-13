@@ -24,7 +24,7 @@ function PrivacyPolicies() {
     };
 
 
-    
+
     const sections = [
         {
             title: "Purpose of this Privacy Policy",
@@ -191,10 +191,10 @@ function PrivacyPolicies() {
             title: "How Can You Contact Us About This Notice?",
             content: [
                 "If you have questions or comments about this notice, you may email us at championfootballer@outlook.com or by post to:",
-                "First Floor",
-                "85 Great Portland St,",
-                "London, England,",
-                "W1W 7LL"
+                "Suite RA01",
+                "195-197 Wood Street,",
+                "London,",
+                "E17 3NU"
             ]
         },
         {
@@ -238,7 +238,7 @@ function PrivacyPolicies() {
                 "Champion Footballer",
                 "First Floor",
                 "85 Great Portland St,",
-                "London, England,",
+                "London,",
                 "W1W 7LL"
             ]
         }
