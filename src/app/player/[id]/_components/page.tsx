@@ -2010,7 +2010,7 @@ export default function PlayerStatsPage() {
             {/* Header Section */}
             <Box sx={{
                 mt: 0,
-                mb: 4,
+                mb: {sm:0,xs:0,md:4},
                 width: '100vw',
                 position: 'relative',
                 left: '50%',

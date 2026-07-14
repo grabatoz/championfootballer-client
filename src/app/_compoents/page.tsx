@@ -109,7 +109,7 @@ export default function LandingPage() {
                   fontSize: { xs: '0.86rem', md: '18px' },
                   lineHeight: { xs: '1.4', md: '23px' },
                   letterSpacing: '0% !important',
-                  color: 'orange',
+                  color: '#00A86B',
                   width: '100%',
                   maxWidth: { md: '100%' },
                   height: { xs: 'auto', md: '49px' },
@@ -128,7 +128,8 @@ export default function LandingPage() {
                   fontSize: '0.86rem',
                   lineHeight: '1.4',
                   letterSpacing: '0% !important',
-                  color: 'orange',
+                  color: '#00A86B',
+                  textAlign: 'center',
                   width: '100%',
                   mb: 2.5,
                   display: { xs: 'block', md: 'none' }, // 👈 sirf mobile pe show
